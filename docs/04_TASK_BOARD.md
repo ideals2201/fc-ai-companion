@@ -5,6 +5,7 @@
 - Establish clean GitHub-ready repository.
 - Preserve historical folders as references only.
 - Define V0 architecture and task boundaries.
+- Initialize PM-controlled subdialogues for emulator, RAM, and bot behavior agents.
 
 ## Next
 
@@ -33,4 +34,3 @@
 - Computer vision main route.
 - Screenshot/OCR-driven bot logic.
 - LLM-controlled fast brain.
-

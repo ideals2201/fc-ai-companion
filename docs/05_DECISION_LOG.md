@@ -26,3 +26,14 @@ Decision: TAS is a route knowledge base, not a controller.
 
 Decision: browser is the product platform. Python/Gym Retro is the later training platform.
 
+## 2026-06-05: PM-Controlled Subdialogues
+
+Decision: use this main thread as the PM Control Console and create three pinned read-only initialization subdialogues.
+
+Agents:
+
+- 01 Emulator Engineer Agent
+- 02 RAM Reverse Engineering Agent
+- 03 Bot Behavior Engineer Agent
+
+Reason: the project needs focused technical review while preserving PM control over priorities, architecture, and compliance boundaries.

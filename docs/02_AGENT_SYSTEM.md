@@ -17,6 +17,8 @@ Responsibilities:
 3. RAM Reverse Engineering Agent
 4. Bot Behavior Engineer Agent
 
+The live subdialogue registry is maintained in `docs/08_SUBDIALOGUE_REGISTRY.md`.
+
 ## Current Key Agent
 
 Bot Behavior Engineer Agent.
@@ -31,4 +33,3 @@ Scope:
 ## Deferred Agents
 
 LLM, voice, training, streaming, and advanced UI animation are deferred until the tactical baseline is stable.
-
