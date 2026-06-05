@@ -1,0 +1,16 @@
+{
+  "name": "fc-ai-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-based FC/NES AI companion cockpit.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --test"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+coverage/
+.turbo/
+.vite/
+
+# Runtime and local-only files
+local_user_files/
+runtime_roms/
+roms/
+save_states/
+saves/
+logs/
+*.log
+
+# ROMs, BIOS, archives, and commercial assets
+*.nes
+*.fds
+*.unf
+*.unif
+*.zip
+*.7z
+*.rar
+*.bios
+*.sav
+*.state
+*.fm2
+
+# Secrets and machine-local config
+.env
+.env.*
+!.env.example
+*.local.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
