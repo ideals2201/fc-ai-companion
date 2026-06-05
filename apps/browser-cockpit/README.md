@@ -13,3 +13,12 @@ V0 responsibilities:
 
 Do not implement complex voice, live streaming, or advanced UI animation before the tactical baseline is stable.
 
+## Current Shell
+
+The current implementation is a runnable cockpit shell. It does not load ROMs or run an emulator yet.
+
+Run from the repository root:
+
+```powershell
+npm run dev:cockpit
+```

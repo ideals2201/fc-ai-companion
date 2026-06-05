@@ -8,6 +8,7 @@ build/
 coverage/
 .turbo/
 .vite/
+*.tsbuildinfo
 
 # Runtime and local-only files
 local_user_files/

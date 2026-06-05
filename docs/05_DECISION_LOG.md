@@ -37,3 +37,27 @@ Agents:
 - 03 Bot Behavior Engineer Agent
 
 Reason: the project needs focused technical review while preserving PM control over priorities, architecture, and compliance boundaries.
+
+## 2026-06-05: First Formal Development Step
+
+Decision: start formal implementation with the Browser Cockpit shell.
+
+Scope:
+
+- Vite / React / TypeScript app under `apps/browser-cockpit`
+- cockpit layout
+- dual control pods
+- realtime controller visualization shell
+- tactical stack status shell
+- event stream shell
+
+Boundary:
+
+- no ROM loading yet
+- no emulator runtime yet
+- no complex voice
+- no live streaming
+- no advanced animation
+- no LLM fast-brain control
+
+Reason: the project needs a runnable product surface before wiring emulator and RAM adapters, while keeping tactical logic as the next core work.

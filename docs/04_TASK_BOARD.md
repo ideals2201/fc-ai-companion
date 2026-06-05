@@ -2,10 +2,9 @@
 
 ## Now
 
-- Establish clean GitHub-ready repository.
-- Preserve historical folders as references only.
-- Define V0 architecture and task boundaries.
-- Initialize PM-controlled subdialogues for emulator, RAM, and bot behavior agents.
+- Build Browser Cockpit shell V0.
+- Keep Browser Cockpit as product platform shell only.
+- Prepare RAM State Schema and WorldX implementation.
 
 ## Next
 
@@ -18,7 +17,6 @@
 
 ## Later
 
-- Browser cockpit UI.
 - Companion text event stream.
 - Personality and synergy system.
 - TTS.
