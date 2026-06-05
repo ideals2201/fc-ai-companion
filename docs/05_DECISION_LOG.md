@@ -61,3 +61,15 @@ Boundary:
 - no LLM fast-brain control
 
 Reason: the project needs a runnable product surface before wiring emulator and RAM adapters, while keeping tactical logic as the next core work.
+
+## 2026-06-05: Version Guidance Rule
+
+Decision: PM Control Console should actively recommend when to save a checkpoint or upgrade the project version.
+
+Rules:
+
+- PM can independently make ordinary commits after coherent work and verification.
+- PM should recommend version bumps, tags, releases, or merges when justified.
+- The project owner must approve merges to `main`, tags, releases, version-number changes, GitHub pushes, branch deletion, and history rewriting.
+
+Reason: version control should protect momentum without letting process decisions silently change the project state.

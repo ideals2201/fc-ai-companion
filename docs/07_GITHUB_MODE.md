@@ -27,6 +27,27 @@ policy: add danger detector v0
 tests: cover action lock transitions
 ```
 
+## Version Guidance
+
+PM Control Console must actively recommend version actions when the project reaches a meaningful checkpoint.
+
+Recommendation types:
+
+- Save checkpoint: recommend a commit when a coherent task is complete, tests/build pass, or a decision boundary changes.
+- Upgrade version: recommend a version bump, tag, or release only when a project milestone is actually reached.
+
+Execution boundary:
+
+- PM may create ordinary task commits after verification.
+- PM may recommend a merge, tag, release, or version bump.
+- The project owner must approve merges to `main`, tag creation, release publication, version-number changes, pushes to GitHub, branch deletion, or history rewriting.
+
+Current default:
+
+- Feature branches are working checkpoints.
+- `main` is stable.
+- Tags are milestone markers, not routine save points.
+
 ## PR Gate
 
 Before merge:
@@ -36,4 +57,3 @@ Before merge:
 - no screenshot/OCR main-route logic
 - tests or verification notes added
 - decision log updated for route/model/compliance changes
-
