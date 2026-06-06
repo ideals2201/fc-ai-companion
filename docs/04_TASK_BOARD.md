@@ -10,6 +10,7 @@
 
 - 实现 RAM state schema。
 - 实现 WorldX 推导。
+- 设计并实现 V0 战术调试驾驶舱面板。
 - 实现 Danger Detector V0。
 - 实现 Route Script V0。
 - 实现 Action Lock V0。

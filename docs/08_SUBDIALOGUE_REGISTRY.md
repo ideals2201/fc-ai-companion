@@ -1,32 +1,32 @@
-# Subdialogue Registry
+# 子对话登记表
 
-This file records the active Codex subdialogues used by the PM Control Console.
+本文件记录 PM 总控台使用中的 Codex 子对话。
 
-The current main thread is the PM Control Console. Subdialogues do not change project direction by themselves. They report back to PM, and PM routes decisions to the project owner.
+当前主线程是 PM 总控台。子对话不能自行改变项目方向。它们向 PM 汇报，由 PM 把需要决策的事项提交给项目主人。
 
-## Active Subdialogues
+## 活跃子对话
 
-| Agent | Thread ID | Status | Current Mode | Boundary |
+| Agent | Thread ID | 状态 | 当前模式 | 边界 |
 | --- | --- | --- | --- | --- |
-| 01 Emulator Engineer Agent | `019e9805-b4b8-7b22-8b2e-f1184a63f234` | active, pinned | read-only initialization | emulator host, frame loop, RAM read adapter, controller input adapter |
-| 02 RAM Reverse Engineering Agent | `019e9806-4162-7be2-9b06-31fdd891e28c` | active, pinned | read-only initialization | RAM state schema, CameraX, PlayerX, WorldX, validation |
-| 03 Bot Behavior Engineer Agent | `019e9806-6330-7cc2-bd56-9205f2693845` | active, pinned | read-only initialization | Danger Detector, Route Script, Action Lock, FSM |
+| 01 模拟器工程师 Agent | `019e9805-b4b8-7b22-8b2e-f1184a63f234` | 活跃，已置顶 | 只读初始化 | 模拟器承载、帧循环、RAM 读取适配器、手柄输入适配器 |
+| 02 RAM 逆向工程师 Agent | `019e9806-4162-7be2-9b06-31fdd891e28c` | 活跃，已置顶 | 只读初始化 | RAM state schema、CameraX、PlayerX、WorldX、验证 |
+| 03 Bot 行为工程师 Agent | `019e9806-6330-7cc2-bd56-9205f2693845` | 活跃，已置顶 | 只读初始化 | Danger Detector、Route Script、Action Lock、FSM |
+| 04 界面 / 产品体验 Agent | `019e9a69-787f-75b2-9883-35754145194a` | 活跃，已置顶 | 只读初始化 | 中文界面、驾驶舱布局、真实测试可读性、玩家 / AI 状态体验 |
 
-## Delegation Rules
+## 委托规则
 
-- Dispatch is not completion.
-- A subdialogue must return a fixed report before PM accepts its work.
-- Subdialogues may not modify architecture, model route, directory structure, business direction, or compliance boundary without PM review and project owner approval.
-- Current initialization tasks are read-only.
-- Code changes start only after PM turns the returned reports into an accepted task.
+- 派发不等于完成。
+- 子对话必须返回固定报告，PM 才能验收其工作。
+- 未经 PM 审查和项目主人批准，子对话不得修改架构、模型路线、目录结构、业务方向或合规边界。
+- 当前初始化任务均为只读。
+- 只有 PM 把返回报告转成已接受任务后，才开始代码改动。
 
-## Fixed Return Report
+## 固定返回报告
 
-Every subdialogue report must include:
+每个子对话报告必须包含：
 
-1. What it read.
-2. What it concludes.
-3. What it proposes next.
-4. What it needs from PM.
-5. What it must not do.
-
+1. 它读取了什么。
+2. 它得出什么结论。
+3. 它建议下一步做什么。
+4. 它需要 PM 提供什么。
+5. 它不能做什么。
