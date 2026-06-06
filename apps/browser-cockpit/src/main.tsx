@@ -36,6 +36,22 @@ type PlayerSide = "1P" | "2P";
 type ButtonName = "up" | "down" | "left" | "right" | "a" | "b" | "start" | "select";
 type ButtonState = Record<ButtonName, boolean>;
 type PlayerButtonStates = Record<PlayerSide, ButtonState>;
+type AiActionLockReason = "idle" | "move" | "fire" | "aim-fire" | "jump" | "evade" | "menu";
+type AiFsmStateName = "idle" | "menu" | "advance" | "danger" | "attack" | "boss" | "respawn" | "coop-wait";
+
+type AiActionLockState = {
+  buttons: ButtonState;
+  remainingFrames: number;
+  priority: number;
+  reason: AiActionLockReason;
+};
+
+type AiFsmState = {
+  state: AiFsmStateName;
+  reason: string;
+  sinceFrame: number;
+};
+
 type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "error";
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
 type ControlMode = "human" | "ai" | "hybrid";
@@ -134,6 +150,9 @@ type PlayTraceSample = {
     worldX: number;
     playerX: number;
     playerY: number;
+    p2PlayerX: number;
+    p2PlayerY: number;
+    p2WorldX: number;
     p1State: number;
     p2State: number;
     deathFlag: number;
@@ -274,6 +293,9 @@ type GameRamSnapshot = {
   playerX: number;
   playerY: number;
   worldX: number;
+  p2PlayerX: number;
+  p2PlayerY: number;
+  p2WorldX: number;
   twoPlayerActive: boolean;
   bullets: PlayerBulletSnapshot[];
   enemies: EnemySlotSnapshot[];
@@ -641,6 +663,37 @@ function createButtonState(): ButtonState {
   };
 }
 
+function createAiActionLockState(): AiActionLockState {
+  return {
+    buttons: createButtonState(),
+    remainingFrames: 0,
+    priority: 0,
+    reason: "idle"
+  };
+}
+
+function createAiActionLockStates(): Record<PlayerSide, AiActionLockState> {
+  return {
+    "1P": createAiActionLockState(),
+    "2P": createAiActionLockState()
+  };
+}
+
+function createAiFsmState(): AiFsmState {
+  return {
+    state: "idle",
+    reason: "init",
+    sinceFrame: 0
+  };
+}
+
+function createAiFsmStates(): Record<PlayerSide, AiFsmState> {
+  return {
+    "1P": createAiFsmState(),
+    "2P": createAiFsmState()
+  };
+}
+
 function createPlayerButtonStates(): PlayerButtonStates {
   return {
     "1P": createButtonState(),
@@ -830,6 +883,8 @@ function readGameRamSnapshot(nes: NES | null, frame: number): GameRamSnapshot | 
   const scroll = read(0x0065);
   const playerX = read(0x0334);
   const playerY = read(0x031a);
+  const p2PlayerX = read(0x0335);
+  const p2PlayerY = read(0x031b);
   const playerMode = read(0x0022);
   const playerModeAlt = read(0x001d);
   const p2Lives = read(0x0033);
@@ -918,6 +973,9 @@ function readGameRamSnapshot(nes: NES | null, frame: number): GameRamSnapshot | 
     playerX,
     playerY,
     worldX: cameraX + playerX,
+    p2PlayerX,
+    p2PlayerY,
+    p2WorldX: cameraX + p2PlayerX,
     twoPlayerActive: playerMode === 0x01,
     bullets,
     enemies
@@ -961,6 +1019,47 @@ function getPlayerDeathFields(side: PlayerSide, snapshot: GameRamSnapshot) {
     state: snapshot.p2State,
     deathFlag: snapshot.p2DeathFlag,
     active: snapshot.twoPlayerActive
+  };
+}
+
+function playerCoordinateFields(side: PlayerSide, snapshot: GameRamSnapshot) {
+  if (
+    side === "2P"
+    && snapshot.twoPlayerActive
+    && snapshot.p2PlayerX > 0
+    && snapshot.p2PlayerY > 0
+  ) {
+    return {
+      playerX: snapshot.p2PlayerX,
+      playerY: snapshot.p2PlayerY,
+      worldX: snapshot.p2WorldX,
+      source: "2p-candidate"
+    };
+  }
+
+  return {
+    playerX: snapshot.playerX,
+    playerY: snapshot.playerY,
+    worldX: snapshot.worldX,
+    source: "1p"
+  };
+}
+
+function tacticalSnapshotForSide(snapshot: GameRamSnapshot | null, side: PlayerSide) {
+  if (!snapshot) return null;
+  const coordinates = playerCoordinateFields(side, snapshot);
+  if (
+    coordinates.playerX === snapshot.playerX
+    && coordinates.playerY === snapshot.playerY
+    && coordinates.worldX === snapshot.worldX
+  ) {
+    return snapshot;
+  }
+  return {
+    ...snapshot,
+    playerX: coordinates.playerX,
+    playerY: coordinates.playerY,
+    worldX: coordinates.worldX
   };
 }
 
@@ -1189,6 +1288,107 @@ function cloneButtonState(buttons: ButtonState) {
   return { ...buttons };
 }
 
+function aiActionLockCandidate(
+  buttons: ButtonState,
+  snapshot: GameRamSnapshot | null,
+  strategyKey: AiStrategyKey
+): AiActionLockState {
+  if (!hasPressedButton(buttons)) return createAiActionLockState();
+  if (buttons.start || buttons.select) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: 10,
+      priority: 6,
+      reason: "menu"
+    };
+  }
+
+  const immediateDanger = snapshot ? hasImmediateDanger(snapshot) : false;
+  if (buttons.a && immediateDanger) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: strategyKey === "survival-v0" ? 14 : 10,
+      priority: 5,
+      reason: "evade"
+    };
+  }
+  if ((buttons.left || buttons.right) && immediateDanger) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: strategyKey === "speedrun-v0" ? 6 : 9,
+      priority: 4,
+      reason: "evade"
+    };
+  }
+  if (buttons.a) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: 9,
+      priority: 4,
+      reason: "jump"
+    };
+  }
+  if (buttons.b && (buttons.up || buttons.down)) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: 6,
+      priority: 3,
+      reason: "aim-fire"
+    };
+  }
+  if (buttons.b) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: 4,
+      priority: 2,
+      reason: "fire"
+    };
+  }
+  if (buttons.left || buttons.right) {
+    return {
+      buttons: cloneButtonState(buttons),
+      remainingFrames: 5,
+      priority: 1,
+      reason: "move"
+    };
+  }
+  return createAiActionLockState();
+}
+
+function applyAiActionLock(
+  rawButtons: ButtonState,
+  previousLock: AiActionLockState,
+  snapshot: GameRamSnapshot | null,
+  strategyKey: AiStrategyKey
+) {
+  const candidate = aiActionLockCandidate(rawButtons, snapshot, strategyKey);
+  if (candidate.reason === "idle") return candidate;
+
+  if (
+    previousLock.remainingFrames > 0
+    && previousLock.reason !== "idle"
+    && previousLock.priority >= candidate.priority
+  ) {
+    const lockedButtons = cloneButtonState(previousLock.buttons);
+    // Allow current-frame fire and aim to join an active movement/jump lock.
+    lockedButtons.b = lockedButtons.b || rawButtons.b;
+    lockedButtons.up = lockedButtons.up || rawButtons.up;
+    lockedButtons.down = lockedButtons.down || rawButtons.down;
+    return {
+      ...previousLock,
+      buttons: lockedButtons,
+      remainingFrames: previousLock.remainingFrames - 1
+    };
+  }
+
+  return candidate;
+}
+
+function aiActionLockLabel(lock: AiActionLockState) {
+  if (lock.reason === "idle" || lock.remainingFrames <= 0) return "idle";
+  return `${lock.reason}:${lock.remainingFrames}`;
+}
+
 function routeKeyForStrategy(strategyKey: AiStrategyKey): AiStrategyKey | null {
   if (strategyKey === "rules-v0") return "speedrun-v0";
   if (strategyKey === "follow-test") return "guard-v0";
@@ -1298,13 +1498,15 @@ function planForStrategy(strategyKey: AiStrategyKey, plans: LoadedStrategyPlans)
   return plans[routeKey] ?? fallbackStageOnePlans[routeKey] ?? (routeKey === "personal-v0" ? createDefaultPersonalPlan() : null);
 }
 
-function activeRouteSegment(strategyKey: AiStrategyKey, snapshot: GameRamSnapshot | null, plans: LoadedStrategyPlans) {
-  if (!snapshot || snapshot.level !== STAGE_ONE_LEVEL_INDEX) return null;
-  const plan = planForStrategy(strategyKey, plans);
-  if (!plan) return null;
+function activeRouteSegmentForPlan(snapshot: GameRamSnapshot | null, plan: StageStrategyPlan | null) {
+  if (!snapshot || snapshot.level !== STAGE_ONE_LEVEL_INDEX || !plan) return null;
   return plan.segments.find((segment) => (
     snapshot.worldX >= segment.worldStart && snapshot.worldX < segment.worldEnd
   )) ?? plan.segments[plan.segments.length - 1] ?? null;
+}
+
+function activeRouteSegment(strategyKey: AiStrategyKey, snapshot: GameRamSnapshot | null, plans: LoadedStrategyPlans) {
+  return activeRouteSegmentForPlan(snapshot, planForStrategy(strategyKey, plans));
 }
 
 function routeLineForStrategy(strategyKey: AiStrategyKey, snapshot: GameRamSnapshot | null, plans: LoadedStrategyPlans) {
@@ -1366,6 +1568,9 @@ function buildPlayTraceSample({
       worldX: ramSnapshot.worldX,
       playerX: ramSnapshot.playerX,
       playerY: ramSnapshot.playerY,
+      p2PlayerX: ramSnapshot.p2PlayerX,
+      p2PlayerY: ramSnapshot.p2PlayerY,
+      p2WorldX: ramSnapshot.p2WorldX,
       p1State: ramSnapshot.p1State,
       p2State: ramSnapshot.p2State,
       deathFlag: ramSnapshot.deathFlag,
@@ -1529,18 +1734,134 @@ function findNearestThreat(snapshot: GameRamSnapshot, predicate?: (enemy: EnemyS
     })[0] ?? null;
 }
 
+function isProjectileLike(enemy: EnemySlotSnapshot) {
+  return enemy.kind === "projectile" || enemy.type >= 0x40 || Math.abs(enemy.vx) >= 2 || Math.abs(enemy.vy) >= 2;
+}
+
+function findBestThreat(snapshot: GameRamSnapshot, predicate?: (enemy: EnemySlotSnapshot) => boolean) {
+  return snapshot.enemies
+    .filter((enemy) => enemy.threat && (!predicate || predicate(enemy)))
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      const scoreA = (a.priority * 36) + (a.hp * 10) - distanceA + (a.x >= snapshot.playerX - 12 ? 14 : 0);
+      const scoreB = (b.priority * 36) + (b.hp * 10) - distanceB + (b.x >= snapshot.playerX - 12 ? 14 : 0);
+      return scoreB - scoreA;
+    })[0] ?? null;
+}
+
 function enemyIsShootableFromPlayer(snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot, range = 150) {
   return enemy.x >= snapshot.playerX - 18
     && enemy.x - snapshot.playerX <= range
-    && Math.abs(enemy.y - snapshot.playerY) <= 72;
+    && Math.abs(enemy.y - snapshot.playerY) <= 96;
+}
+
+function aimAtEnemy(next: ButtonState, snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot | null) {
+  if (!enemy) return;
+  const dy = enemy.y - snapshot.playerY;
+  if (dy < -28) next.up = true;
+  if (dy > 32) next.down = true;
+}
+
+function applyFireDecision(
+  next: ButtonState,
+  shouldFire: boolean,
+  snapshot: GameRamSnapshot,
+  target: EnemySlotSnapshot | null
+) {
+  if (!shouldFire) return;
+  next.b = true;
+  aimAtEnemy(next, snapshot, target);
+}
+
+function findImmediateDangerThreat(snapshot: GameRamSnapshot) {
+  const bodyThreat = findNearestThreat(snapshot, (enemy) => (
+    Math.abs(enemy.x - snapshot.playerX) < 44
+    && Math.abs(enemy.y - snapshot.playerY) < 52
+  ));
+  if (bodyThreat) return bodyThreat;
+
+  return findNearestThreat(snapshot, (enemy) => (
+    isProjectileLike(enemy)
+    && enemy.x >= snapshot.playerX - 44
+    && enemy.x <= snapshot.playerX + 88
+    && Math.abs(enemy.y - snapshot.playerY) < 38
+  ));
 }
 
 function hasImmediateDanger(snapshot: GameRamSnapshot) {
-  return snapshot.enemies.some((enemy) => (
-    enemy.threat
-    && Math.abs(enemy.x - snapshot.playerX) < 44
-    && Math.abs(enemy.y - snapshot.playerY) < 52
-  ));
+  return Boolean(findImmediateDangerThreat(snapshot));
+}
+
+function playerIsDeathOrRespawn(side: PlayerSide, snapshot: GameRamSnapshot | null) {
+  if (!snapshot) return false;
+  const fields = getPlayerDeathFields(side, snapshot);
+  return fields.active
+    && (
+      fields.state === PLAYER_DEAD_STATE
+      || fields.deathFlag !== 0
+      || (side === "1P" && snapshot.p1State === 0 && !isLikelyGameMenu(snapshot))
+    );
+}
+
+function classifyAiFsmState({
+  side,
+  mode,
+  strategyKey,
+  snapshot,
+  gameplayActive,
+  twoPlayerActive,
+  twoPlayerRequested,
+  humanOverrideActive,
+  routeSegment
+}: {
+  side: PlayerSide;
+  mode: ControlMode;
+  strategyKey: AiStrategyKey;
+  snapshot: GameRamSnapshot | null;
+  gameplayActive: boolean;
+  twoPlayerActive: boolean;
+  twoPlayerRequested: boolean;
+  humanOverrideActive: boolean;
+  routeSegment: StageRouteSegment | null;
+}): Pick<AiFsmState, "state" | "reason"> {
+  if (mode === "human") return { state: "idle", reason: "human-control" };
+  if (!aiStrategyWritesInput(strategyKey)) return { state: "idle", reason: "ai-disabled" };
+  if (mode === "hybrid" && humanOverrideActive) return { state: "idle", reason: "human-override" };
+  if (side === "2P" && !twoPlayerActive) {
+    return {
+      state: "coop-wait",
+      reason: twoPlayerRequested ? "waiting-two-player-start" : "inactive-two-player"
+    };
+  }
+  if (!snapshot) return { state: "menu", reason: "waiting-ram" };
+  if (playerIsDeathOrRespawn(side, snapshot)) return { state: "respawn", reason: "death-or-respawn" };
+  if (!gameplayActive) {
+    if (isLikelyGameMenu(snapshot)) {
+      if (side === "1P" && twoPlayerRequested && !twoPlayerActive) {
+        return { state: "menu", reason: "select-two-player" };
+      }
+      return { state: "menu", reason: "press-start" };
+    }
+    return { state: "idle", reason: "game-not-active" };
+  }
+  if (routeSegment?.action === "hold-fire" || (snapshot.level === STAGE_ONE_LEVEL_INDEX && snapshot.worldX >= 2180)) {
+    return { state: "boss", reason: routeSegment ? `route:${routeSegment.id}` : "boss-zone" };
+  }
+  if (findImmediateDangerThreat(snapshot)) return { state: "danger", reason: "immediate-threat" };
+  if (findBestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy))) {
+    return { state: "attack", reason: "shootable-threat" };
+  }
+  return { state: "advance", reason: routeSegment ? `route:${routeSegment.id}` : "fallback-advance" };
+}
+
+function transitionAiFsmState(previous: AiFsmState, next: Pick<AiFsmState, "state" | "reason">, frame: number): AiFsmState {
+  if (previous.state === next.state && previous.reason === next.reason) return previous;
+  return {
+    state: next.state,
+    reason: next.reason,
+    sinceFrame: frame
+  };
 }
 
 function rewardTargetAhead(snapshot: GameRamSnapshot) {
@@ -1573,7 +1894,7 @@ function applyRouteAdvance(
   frame: number
 ) {
   next.right = true;
-  next.b = shouldRouteFire(segment, nearestShootable, frame);
+  applyFireDecision(next, shouldRouteFire(segment, nearestShootable, frame), snapshot, nearestShootable);
   if (shouldRouteJump(segment, grounded, immediateDanger, frame)) next.a = true;
 }
 
@@ -1593,7 +1914,7 @@ function applyRouteCautious(
     && Math.abs(enemy.y - snapshot.playerY) < 90
   )).length;
   next.right = !immediateDanger && nearbyThreatCount < 3;
-  next.b = shouldRouteFire(segment, nearestShootable, frame);
+  applyFireDecision(next, shouldRouteFire(segment, nearestShootable, frame), snapshot, nearestShootable);
   if (nearestShootable?.x !== undefined && nearestShootable.x < snapshot.playerX - 8) {
     next.right = false;
     next.left = frame % 20 < 6;
@@ -1609,7 +1930,8 @@ function applyRouteHoldFire(
   grounded: boolean,
   frame: number
 ) {
-  next.b = true;
+  const bossTarget = findBestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy, 190));
+  applyFireDecision(next, true, snapshot, bossTarget);
   if (snapshot.bossDefeated) {
     next.right = true;
     return;
@@ -1631,7 +1953,12 @@ function applyRouteLoot(
 ) {
   if (rewardTarget) {
     horizontalDecision(next, snapshot.playerX, rewardTarget.x, 10);
-    next.b = rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || shouldRouteFire(segment, nearestShootable, frame);
+    applyFireDecision(
+      next,
+      rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || shouldRouteFire(segment, nearestShootable, frame),
+      snapshot,
+      rewardTarget
+    );
     if (grounded && rewardTarget.y < snapshot.playerY - 20 && Math.abs(rewardTarget.x - snapshot.playerX) < 56) next.a = true;
     return;
   }
@@ -1651,14 +1978,14 @@ function applyRouteGuard(
     && Math.abs(enemy.y - snapshot.playerY) < 92
   ));
   if (guardedThreat) {
-    next.b = true;
+    applyFireDecision(next, true, snapshot, guardedThreat);
     if (guardedThreat.x > snapshot.playerX + 112) next.right = true;
     if (guardedThreat.x < snapshot.playerX - 18) next.left = true;
     if (shouldRouteJump(segment, grounded, immediateDanger, frame)) next.a = true;
     return;
   }
   next.right = frame % 42 < 14;
-  next.b = shouldRouteFire(segment, guardedThreat, frame);
+  applyFireDecision(next, shouldRouteFire(segment, guardedThreat, frame), snapshot, guardedThreat);
   if (shouldRouteJump(segment, grounded, immediateDanger, frame)) next.a = true;
 }
 
@@ -1682,7 +2009,7 @@ function applyRouteSurvive(
     && Math.abs(enemy.y - snapshot.playerY) < 84
   )).length;
 
-  next.b = shouldRouteFire(segment, nearestShootable ?? closeThreat, frame);
+  applyFireDecision(next, shouldRouteFire(segment, nearestShootable ?? closeThreat, frame), snapshot, nearestShootable ?? closeThreat);
 
   if (closeThreat) {
     if (grounded) next.a = true;
@@ -1704,109 +2031,169 @@ function applyRouteSurvive(
   if (shouldRouteJump(segment, grounded, immediateDanger, frame)) next.a = true;
 }
 
+function applyTacticalSafetyLayer(
+  next: ButtonState,
+  strategyKey: AiStrategyKey,
+  snapshot: GameRamSnapshot,
+  grounded: boolean,
+  frame: number
+) {
+  const immediateThreat = findImmediateDangerThreat(snapshot);
+  if (!immediateThreat) return next;
+
+  applyFireDecision(next, true, snapshot, immediateThreat);
+  if (grounded) next.a = true;
+
+  const threatAhead = immediateThreat.x >= snapshot.playerX - 4;
+  const threatBehind = immediateThreat.x < snapshot.playerX - 10;
+  const canRetreat = strategyKey !== "speedrun-v0" || frame % 18 < 10;
+
+  if (threatAhead && canRetreat) {
+    next.right = false;
+    next.left = true;
+  } else if (threatBehind) {
+    next.left = false;
+    next.right = true;
+  }
+
+  return next;
+}
+
+function applyCoopSpacing(next: ButtonState, actorSnapshot: GameRamSnapshot, teammateSnapshot: GameRamSnapshot, frame: number) {
+  if (!teammateSnapshot.twoPlayerActive) return false;
+  const worldGap = actorSnapshot.worldX - teammateSnapshot.worldX;
+  if (worldGap < -32) {
+    next.right = true;
+    next.left = false;
+    return true;
+  }
+  if (worldGap > 64) {
+    next.left = true;
+    next.right = false;
+    return true;
+  }
+  next.right = frame % 42 < 10;
+  return true;
+}
+
 function decideTacticalAiButtons(
   strategyKey: AiStrategyKey,
   side: PlayerSide,
   snapshot: GameRamSnapshot,
   frame: number,
-  strategyPlan: StageStrategyPlan | null
+  strategyPlan: StageStrategyPlan | null,
+  fsmState: AiFsmState,
+  teamSnapshot: GameRamSnapshot | null
 ) {
   const next = createButtonState();
   const immediateDanger = hasImmediateDanger(snapshot);
-  const nearestShootable = findNearestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy));
+  const nearestShootable = findBestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy));
   const rewardTarget = rewardTargetAhead(snapshot);
   const grounded = isGrounded(snapshot, side);
-  const routeSegment = snapshot.level === STAGE_ONE_LEVEL_INDEX && strategyPlan
-    ? strategyPlan.segments.find((segment) => snapshot.worldX >= segment.worldStart && snapshot.worldX < segment.worldEnd)
-      ?? strategyPlan.segments[strategyPlan.segments.length - 1]
-      ?? null
-    : null;
+  const routeSegment = activeRouteSegmentForPlan(snapshot, strategyPlan);
+
+  if (fsmState.state === "boss") {
+    applyRouteHoldFire(next, routeSegment, snapshot, immediateDanger, grounded, frame);
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+  }
+
+  if (fsmState.state === "danger") {
+    applyRouteSurvive(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+  }
 
   if (routeSegment) {
     if (routeSegment.action === "advance") {
       applyRouteAdvance(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     if (routeSegment.action === "cautious") {
       applyRouteCautious(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     if (routeSegment.action === "hold-fire") {
       applyRouteHoldFire(next, routeSegment, snapshot, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     if (routeSegment.action === "loot") {
       applyRouteLoot(next, routeSegment, snapshot, rewardTarget, nearestShootable, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     if (routeSegment.action === "guard") {
       applyRouteGuard(next, routeSegment, snapshot, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     if (routeSegment.action === "survive") {
       applyRouteSurvive(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
   }
 
   if (strategyKey === "survival-v0") {
     applyRouteSurvive(next, null, snapshot, nearestShootable, immediateDanger, grounded, frame);
-    return next;
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
   }
 
   if (strategyKey === "speedrun-v0" || strategyKey === "rules-v0") {
     next.right = true;
-    next.b = Boolean(nearestShootable) || frame % 14 < 5;
+    applyFireDecision(next, Boolean(nearestShootable) || frame % 14 < 5, snapshot, nearestShootable);
     if (grounded && (immediateDanger || frame % 170 < 8)) next.a = true;
-    return next;
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
   }
 
   if (strategyKey === "combat-v0") {
     if (nearestShootable) {
-      next.b = true;
+      applyFireDecision(next, true, snapshot, nearestShootable);
       if (nearestShootable.x > snapshot.playerX + 96) next.right = true;
       if (nearestShootable.x < snapshot.playerX - 12) next.left = true;
       if (grounded && immediateDanger) next.a = true;
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     next.right = true;
-    next.b = frame % 18 < 6;
+    applyFireDecision(next, frame % 18 < 6, snapshot, nearestShootable);
     if (grounded && immediateDanger) next.a = true;
-    return next;
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
   }
 
   if (strategyKey === "loot-v0") {
     if (rewardTarget) {
       horizontalDecision(next, snapshot.playerX, rewardTarget.x, 10);
-      next.b = rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || frame % 12 < 6;
+      applyFireDecision(next, rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || frame % 12 < 6, snapshot, rewardTarget);
       if (grounded && rewardTarget.y < snapshot.playerY - 20 && Math.abs(rewardTarget.x - snapshot.playerX) < 52) next.a = true;
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     next.right = true;
-    next.b = Boolean(nearestShootable) || frame % 20 < 5;
+    applyFireDecision(next, Boolean(nearestShootable) || frame % 20 < 5, snapshot, nearestShootable);
     if (grounded && immediateDanger) next.a = true;
-    return next;
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
   }
 
   if (strategyKey === "guard-v0" || strategyKey === "follow-test") {
-    const guardedThreat = findNearestThreat(snapshot, (enemy) => (
-      Math.abs(enemy.x - snapshot.playerX) < 128
-      && Math.abs(enemy.y - snapshot.playerY) < 90
+    const guardAnchor = side === "2P" && teamSnapshot ? teamSnapshot : snapshot;
+    const guardedThreat = findBestThreat(guardAnchor, (enemy) => (
+      Math.abs(enemy.x - guardAnchor.playerX) < 128
+      && Math.abs(enemy.y - guardAnchor.playerY) < 90
     ));
     if (guardedThreat) {
-      next.b = true;
+      applyFireDecision(next, true, snapshot, guardedThreat);
       if (guardedThreat.x > snapshot.playerX + 112) next.right = true;
       if (guardedThreat.x < snapshot.playerX - 18) next.left = true;
+      if (side === "2P" && teamSnapshot) applyCoopSpacing(next, snapshot, teamSnapshot, frame);
       if (grounded && immediateDanger) next.a = true;
-      return next;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    }
+    if (side === "2P" && teamSnapshot && applyCoopSpacing(next, snapshot, teamSnapshot, frame)) {
+      applyFireDecision(next, frame % 22 < 6, snapshot, null);
+      if (grounded && immediateDanger) next.a = true;
+      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
     }
     next.right = frame % 36 < 12;
-    next.b = frame % 18 < 6;
+    applyFireDecision(next, frame % 18 < 6, snapshot, guardedThreat);
     if (grounded && immediateDanger) next.a = true;
-    return next;
+    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
   }
 
-  return next;
+  return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
 }
 
 function decideAiButtons({
@@ -1820,7 +2207,9 @@ function decideAiButtons({
   twoPlayerRequested,
   humanOverrideActive,
   mirrorButtons,
-  frame
+  frame,
+  fsmState,
+  teamSnapshot
 }: {
   side: PlayerSide;
   mode: ControlMode;
@@ -1833,6 +2222,8 @@ function decideAiButtons({
   humanOverrideActive: boolean;
   mirrorButtons: ButtonState;
   frame: number;
+  fsmState: AiFsmState;
+  teamSnapshot: GameRamSnapshot | null;
 }) {
   const next = createButtonState();
   if (mode === "human" || strategyKey === "off" || strategyKey === "placeholder") return next;
@@ -1856,7 +2247,7 @@ function decideAiButtons({
     return next;
   }
 
-  return decideTacticalAiButtons(strategyKey, side, snapshot, frame, strategyPlan);
+  return decideTacticalAiButtons(strategyKey, side, snapshot, frame, strategyPlan, fsmState, teamSnapshot);
 }
 
 function aiStrategyWritesInput(strategyKey: AiStrategyKey) {
@@ -1947,6 +2338,8 @@ function buildPilotMetricGroups(
   const rawWeapon = weaponForSide(ramSnapshot, side);
   const combatValue = (key: CombatMetricKey) => sideStatsAvailable ? `${metrics.combat[key]}` : pendingSideStats;
   const weaponValue = (key: WeaponMetricKey) => sideStatsAvailable ? `${metrics.weapons[key]}` : pendingSideStats;
+  const sideCoordinates = ramSnapshot ? playerCoordinateFields(side, ramSnapshot) : null;
+  const routeValue = sideCoordinates ? `WorldX ${sideCoordinates.worldX}` : "等待 RAM";
 
   return [
     {
@@ -1987,7 +2380,7 @@ function buildPilotMetricGroups(
         { label: "死亡", value: sideStatsAvailable ? `${metrics.deaths}` : pendingSideStats, status: sideStatsAvailable ? "real" : "pending" },
         { label: "当前按键", value: activeButtonLabel(buttons), status: "real" },
         { label: "统计", value: statsState, status: "mode" },
-        { label: "路线", value: isP1 && ramSnapshot ? `WorldX ${ramSnapshot.worldX}` : "等待 2P 坐标", status: isP1 && hasRam ? "real" : "pending" },
+        { label: "路线", value: sideStatsAvailable && sideCoordinates ? routeValue : pendingSideStats, status: sideStatsAvailable && hasRam ? "real" : "pending" },
         { label: "危险", value: hasRam ? `${threatCount} 威胁` : "等待 Danger", status: hasRam ? "real" : "pending" },
         { label: "双人局", value: twoPlayerActive ? "已检测" : "等待 1P", status: twoPlayerActive ? "real" : "pending" },
         { label: "控制权", value: getAuthorityLabel(mode), status: "mode" }
@@ -2019,7 +2412,7 @@ function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey) {
     return ["奖励优先：优先追武器箱和飞行胶囊。", "发现奖励目标时会靠近并射击，之后恢复推进。"];
   }
   if (strategyKey === "guard-v0") {
-    return ["护卫队友：优先保护 1P 周围威胁。", "2P 坐标待验证，当前 V0 不做精确站位跟随。"];
+    return ["护卫队友：优先保护 1P 周围威胁。", "2P 会用候选坐标保持队形距离，仍需双人局实测校准。"];
   }
   if (strategyKey === "personal-v0") {
     return ["个人策略：执行本地保存的第一关路线脚本。", "可在策略设计窗口修改 WorldX 段落、动作和开火方式。"];
@@ -2030,7 +2423,7 @@ function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey) {
   if (mode === "ai") {
     return [
       `${getAiStrategyLabel(strategyKey)} 已选择。`,
-      "AI 操作层 V0 正在写入手柄，尚未接入 FSM。"
+      "路线 + 危险 + 动作锁 V0 正在写入手柄，完整协作 FSM 待接入。"
     ];
   }
   return [
@@ -2057,12 +2450,15 @@ function buildDataStream(
   ramSnapshot: GameRamSnapshot | null,
   gameplayActive: boolean,
   runtimeStatus: RuntimeStatus,
-  strategyPlans: LoadedStrategyPlans
+  strategyPlans: LoadedStrategyPlans,
+  actionLock: AiActionLockState,
+  fsmState: AiFsmState
 ) {
-  const inputAllowed = mode !== "human"
-    && aiStrategyWritesInput(strategyKey)
+  const aiControlActive = mode !== "human" && aiStrategyWritesInput(strategyKey);
+  const inputAllowed = aiControlActive
     && (side === "1P" || Boolean(ramSnapshot?.twoPlayerActive));
-  const route = routeLineForStrategy(strategyKey, ramSnapshot, strategyPlans);
+  const streamSnapshot = tacticalSnapshotForSide(ramSnapshot, side);
+  const route = routeLineForStrategy(strategyKey, streamSnapshot, strategyPlans);
   const lines = [
     `${side}.mode=${mode}`,
     `${side}.strategy=${strategyKey}`,
@@ -2075,27 +2471,35 @@ function buildDataStream(
     `twoPlayer.active=${ramSnapshot?.twoPlayerActive ? "true" : "false"}`,
     `ram.schema=${ramSnapshot ? "active" : "pending"}`,
     `gameplay.active=${gameplayActive ? "true" : "false"}`,
-    "fsm.state=pending"
+    `fsm.state=${aiControlActive ? fsmState.state : "idle"}`,
+    `fsm.reason=${aiControlActive ? fsmState.reason : "input-disabled"}`,
+    `fsm.sinceFrame=${aiControlActive ? fsmState.sinceFrame : 0}`,
+    `action.lock=${inputAllowed ? aiActionLockLabel(actionLock) : "idle"}`
   ];
-  if (ramSnapshot) {
+  if (ramSnapshot && streamSnapshot) {
     lines.splice(4, 0, `ram.level=${ramSnapshot.level}`);
     lines.splice(5, 0, `ram.screen=${ramSnapshot.screen}`);
-    lines.splice(6, 0, `ram.worldX=${ramSnapshot.worldX}`);
-    lines.splice(7, 0, `ram.enemies=${ramSnapshot.enemies.length}`);
-    lines.splice(8, 0, `ram.playerMode=${ramSnapshot.playerMode}`);
-    lines.splice(9, 0, `ram.modeAlt=${ramSnapshot.playerModeAlt}`);
-    lines.splice(10, 0, `ram.bullets=${ramSnapshot.bullets.length}`);
+    lines.splice(6, 0, `ram.worldX=${streamSnapshot.worldX}`);
+    lines.splice(7, 0, `ram.playerX=${streamSnapshot.playerX}`);
+    lines.splice(8, 0, `ram.playerY=${streamSnapshot.playerY}`);
+    lines.splice(9, 0, `ram.enemies=${ramSnapshot.enemies.length}`);
+    lines.splice(10, 0, `ram.playerMode=${ramSnapshot.playerMode}`);
+    lines.splice(11, 0, `ram.modeAlt=${ramSnapshot.playerModeAlt}`);
+    lines.splice(12, 0, `ram.bullets=${ramSnapshot.bullets.length}`);
     if (side === "1P") {
-      lines.splice(11, 0, `p1.score=${ramSnapshot.p1Score}`);
-      lines.splice(12, 0, `p1.weapon=${ramSnapshot.weapon}`);
-      lines.splice(13, 0, `p1.state=${ramSnapshot.p1State}`);
-      lines.splice(14, 0, `p1.deathFlag=${ramSnapshot.deathFlag}`);
+      lines.splice(13, 0, `p1.score=${ramSnapshot.p1Score}`);
+      lines.splice(14, 0, `p1.weapon=${ramSnapshot.weapon}`);
+      lines.splice(15, 0, `p1.state=${ramSnapshot.p1State}`);
+      lines.splice(16, 0, `p1.deathFlag=${ramSnapshot.deathFlag}`);
     } else {
-      lines.splice(11, 0, `p2.score=${ramSnapshot.p2Score}`);
-      lines.splice(12, 0, `p2.weapon=${ramSnapshot.p2Weapon}`);
-      lines.splice(13, 0, `p2.state=${ramSnapshot.p2State}`);
-      lines.splice(14, 0, `p2.deathFlag=${ramSnapshot.p2DeathFlag}`);
-      lines.splice(15, 0, `p2.gameOver=${ramSnapshot.p2GameOver}`);
+      lines.splice(13, 0, `p2.score=${ramSnapshot.p2Score}`);
+      lines.splice(14, 0, `p2.weapon=${ramSnapshot.p2Weapon}`);
+      lines.splice(15, 0, `p2.state=${ramSnapshot.p2State}`);
+      lines.splice(16, 0, `p2.deathFlag=${ramSnapshot.p2DeathFlag}`);
+      lines.splice(17, 0, `p2.gameOver=${ramSnapshot.p2GameOver}`);
+      lines.splice(18, 0, `p2.xCandidate=${ramSnapshot.p2PlayerX}`);
+      lines.splice(19, 0, `p2.yCandidate=${ramSnapshot.p2PlayerY}`);
+      lines.splice(20, 0, `p2.worldXCandidate=${ramSnapshot.p2WorldX}`);
     }
   }
   return lines;
@@ -2818,8 +3222,8 @@ function DataDashboard({
   onTraceClear: () => void;
   onTraceExport: () => void;
 }) {
-  const p1Route = routeLineForStrategy(strategyModels["1P"], ramSnapshot, strategyPlans);
-  const p2Route = routeLineForStrategy(strategyModels["2P"], ramSnapshot, strategyPlans);
+  const p1Route = routeLineForStrategy(strategyModels["1P"], tacticalSnapshotForSide(ramSnapshot, "1P"), strategyPlans);
+  const p2Route = routeLineForStrategy(strategyModels["2P"], tacticalSnapshotForSide(ramSnapshot, "2P"), strategyPlans);
   const enemies = ramSnapshot?.enemies ?? [];
   const bullets = ramSnapshot?.bullets ?? [];
   const threatCount = enemies.filter((enemy) => enemy.threat).length;
@@ -2849,8 +3253,10 @@ function DataDashboard({
         { label: "屏幕", value: ramSnapshot ? `${ramSnapshot.screen}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
         { label: "卷轴", value: ramSnapshot ? `${ramSnapshot.scroll}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
         { label: "CameraX", value: ramSnapshot ? `${ramSnapshot.cameraX}` : "等待 RAM", status: ramSnapshot ? "derived" : "pending" },
-        { label: "WorldX", value: ramSnapshot ? `${ramSnapshot.worldX}` : "等待 RAM", status: ramSnapshot ? "derived" : "pending" },
-        { label: "坐标", value: ramSnapshot ? `${ramSnapshot.playerX}, ${ramSnapshot.playerY}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
+        { label: "1P WorldX", value: ramSnapshot ? `${ramSnapshot.worldX}` : "等待 RAM", status: ramSnapshot ? "derived" : "pending" },
+        { label: "1P坐标", value: ramSnapshot ? `${ramSnapshot.playerX}, ${ramSnapshot.playerY}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
+        { label: "2P WorldX", value: ramSnapshot ? `${ramSnapshot.p2WorldX}` : "等待 RAM", status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" },
+        { label: "2P坐标", value: ramSnapshot ? `${ramSnapshot.p2PlayerX}, ${ramSnapshot.p2PlayerY}` : "等待 RAM", status: ramSnapshot?.twoPlayerActive ? "real" : "pending" },
         { label: "1P路线", value: `${p1Route.segment} / ${p1Route.action}`, status: ramSnapshot ? "derived" : "pending" },
         { label: "2P路线", value: `${p2Route.segment} / ${p2Route.action}`, status: ramSnapshot ? "derived" : "pending" },
         { label: "Boss", value: ramSnapshot ? boolText(ramSnapshot.bossDefeated !== 0) : "等待 RAM", status: ramSnapshot ? "real" : "pending" }
@@ -3074,6 +3480,8 @@ function App() {
   const traceRecordingRef = useRef(false);
   const traceSamplesRef = useRef<PlayTraceSample[]>([]);
   const strategyPlansRef = useRef<LoadedStrategyPlans>(defaultStrategyPlans);
+  const aiActionLocksRef = useRef<Record<PlayerSide, AiActionLockState>>(createAiActionLockStates());
+  const aiFsmStatesRef = useRef<Record<PlayerSide, AiFsmState>>(createAiFsmStates());
   const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
   const strategyModelsRef = useRef<Record<PlayerSide, AiStrategyKey>>({
     "1P": defaultAiStrategyForSide("1P"),
@@ -3443,6 +3851,8 @@ function App() {
     }
     sourceButtonsRef.current = createSourceInputStates();
     finalButtonsRef.current = createPlayerButtonStates();
+    aiActionLocksRef.current = createAiActionLockStates();
+    aiFsmStatesRef.current = createAiFsmStates();
     setButtonStates(createPlayerButtonStates());
     setLastInputs({ "1P": "等待输入", "2P": "等待输入" });
   }, []);
@@ -3466,6 +3876,8 @@ function App() {
     if (mode === "human") clearSourcesForSide(side, ["ai"]);
     if (mode === "ai") clearSourcesForSide(side, ["keyboard", "gamepad", "panel"]);
     if (mode === "hybrid") recomputeSide(side);
+    aiActionLocksRef.current[side] = createAiActionLockState();
+    aiFsmStatesRef.current[side] = createAiFsmState();
 
     if (mode !== "human" && (strategyModelsRef.current[side] === "off" || strategyModelsRef.current[side] === "placeholder")) {
       const nextStrategy = defaultAiStrategyForSide(side);
@@ -3682,20 +4094,41 @@ function App() {
       const mode = controlModesRef.current[side];
       const strategyKey = strategyModelsRef.current[side];
       const mirrorSide = side === "1P" ? "2P" : "1P";
-      const aiButtons = decideAiButtons({
+      const humanOverrideActive = hasHumanInputForSide(side);
+      const strategyPlan = planForStrategy(strategyKey, strategyPlansRef.current);
+      const actorSnapshot = tacticalSnapshotForSide(snapshot, side);
+      const routeSegment = activeRouteSegmentForPlan(actorSnapshot, strategyPlan);
+      const nextFsm = classifyAiFsmState({
         side,
         mode,
         strategyKey,
-        strategyPlan: planForStrategy(strategyKey, strategyPlansRef.current),
-        snapshot,
+        snapshot: actorSnapshot,
         gameplayActive: active,
         twoPlayerActive: Boolean(snapshot?.twoPlayerActive),
         twoPlayerRequested,
-        humanOverrideActive: hasHumanInputForSide(side),
-        mirrorButtons: finalButtonsRef.current[mirrorSide],
-        frame: frameRef.current
+        humanOverrideActive,
+        routeSegment
       });
-      setSourceButtons(side, "ai", aiButtons);
+      const fsmState = transitionAiFsmState(aiFsmStatesRef.current[side], nextFsm, frameRef.current);
+      aiFsmStatesRef.current[side] = fsmState;
+      const rawAiButtons = decideAiButtons({
+        side,
+        mode,
+        strategyKey,
+        strategyPlan,
+        snapshot: actorSnapshot,
+        gameplayActive: active,
+        twoPlayerActive: Boolean(snapshot?.twoPlayerActive),
+        twoPlayerRequested,
+        humanOverrideActive,
+        mirrorButtons: finalButtonsRef.current[mirrorSide],
+        frame: frameRef.current,
+        fsmState,
+        teamSnapshot: snapshot
+      });
+      const locked = applyAiActionLock(rawAiButtons, aiActionLocksRef.current[side], actorSnapshot, strategyKey);
+      aiActionLocksRef.current[side] = locked;
+      setSourceButtons(side, "ai", locked.buttons);
     }
   }, [hasHumanInputForSide, setSourceButtons]);
 
@@ -3993,7 +4426,7 @@ function App() {
       authority: getAuthorityLabel(controlModes["1P"]),
       metricGroups: buildPilotMetricGroups("1P", controlModes["1P"], buttonStates["1P"], playerMetrics["1P"], ramSnapshot, gameplayActive, status),
       dialogue: buildPilotDialogue("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot),
-      dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive, status, strategyPlans)
+      dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["1P"], aiFsmStatesRef.current["1P"])
     },
     {
       side: "2P",
@@ -4011,7 +4444,7 @@ function App() {
       authority: getAuthorityLabel(controlModes["2P"]),
       metricGroups: buildPilotMetricGroups("2P", controlModes["2P"], buttonStates["2P"], playerMetrics["2P"], ramSnapshot, gameplayActive, status),
       dialogue: buildPilotDialogue("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot),
-      dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive, status, strategyPlans)
+      dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["2P"], aiFsmStatesRef.current["2P"])
     }
   ];
 

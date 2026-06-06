@@ -159,3 +159,31 @@ test("identifies the current Contra US strategy target ROM profile", () => {
   assert.equal(metadata.romSupportLabel, "正式适配");
   assert.equal(metadata.compatibilityGroup, "contra-us");
 });
+
+test("bundled Contra stage 1 strategy files are valid and ROM-bound", () => {
+  const strategyDir = new URL("../apps/browser-cockpit/public/strategies/contra/stage1/", import.meta.url);
+  const strategyFiles = fs.readdirSync(strategyDir).filter((fileName) => fileName.endsWith(".json")).sort();
+
+  assert.deepEqual(strategyFiles, [
+    "stage1-combat.json",
+    "stage1-guard.json",
+    "stage1-loot.json",
+    "stage1-speedrun.json",
+    "stage1-survival.json"
+  ]);
+
+  for (const fileName of strategyFiles) {
+    const plan = JSON.parse(fs.readFileSync(new URL(fileName, strategyDir), "utf8"));
+    assert.equal(plan.gameId, "contra", fileName);
+    assert.equal(plan.romProfileId, "contra-us-good", fileName);
+    assert.equal(plan.compatibilityGroup, "contra-us", fileName);
+    assert.equal(plan.stage, 1, fileName);
+    assert.ok(Array.isArray(plan.segments), fileName);
+    assert.ok(plan.segments.length >= 6, fileName);
+    for (const segment of plan.segments) {
+      assert.equal(typeof segment.worldStart, "number", `${fileName}:${segment.id}`);
+      assert.equal(typeof segment.worldEnd, "number", `${fileName}:${segment.id}`);
+      assert.ok(segment.worldEnd > segment.worldStart, `${fileName}:${segment.id}`);
+    }
+  }
+});
