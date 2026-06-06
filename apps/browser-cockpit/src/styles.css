@@ -155,6 +155,29 @@ button:disabled {
   margin: 0;
 }
 
+.mode-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.mode-button {
+  min-height: 34px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  background: #0b0f16;
+  color: #9eacbd;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mode-button.active {
+  color: #ffffff;
+  border-color: #68e391;
+  background: #1b5438;
+}
+
 .compact-grid div,
 .state-strip div {
   display: flex;
@@ -230,6 +253,30 @@ dd {
 .switch-button {
   width: 100%;
   justify-content: center;
+}
+
+.input-meta {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 12px;
+}
+
+.input-meta div {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #b6c4d4;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.input-meta svg {
+  color: #8fa1b5;
 }
 
 .center-column {
@@ -403,6 +450,10 @@ dd {
   }
 
   .state-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-selector {
     grid-template-columns: 1fr;
   }
 

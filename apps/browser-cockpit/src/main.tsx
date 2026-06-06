@@ -9,6 +9,7 @@ import {
   Gamepad2,
   Gauge,
   HeartPulse,
+  Keyboard,
   Map as MapIcon,
   Pause,
   Play,
@@ -22,40 +23,44 @@ import {
 } from "lucide-react";
 import "./styles.css";
 
+type PlayerSide = "1P" | "2P";
 type ButtonName = "up" | "down" | "left" | "right" | "a" | "b" | "start" | "select";
-
 type ButtonState = Record<ButtonName, boolean>;
-
+type PlayerButtonStates = Record<PlayerSide, ButtonState>;
 type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "error";
-
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
+type ControlMode = "human" | "ai" | "hybrid";
+type InputSource = "keyboard" | "gamepad" | "panel" | "ai" | "system";
 
 type Pilot = {
-  side: "1P" | "2P";
+  side: PlayerSide;
   name: string;
-  role: "Human" | "AI";
   status: string;
-  mode: string;
+  mode: ControlMode;
   strategy: string;
   temperament: string;
   buttons: ButtonState;
   accent: "blue" | "red";
+  keyboardHint: string;
+  gamepadHint: string;
+  lastInput: string;
 };
 
-const blankButtons: ButtonState = {
-  up: false,
-  down: false,
-  left: false,
-  right: false,
-  a: false,
-  b: false,
-  start: false,
-  select: false
+type AudioRuntime = {
+  context: AudioContext;
+  pushSample: (left: number, right: number) => void;
+  close: () => void;
 };
 
-const AUDIO_SAMPLE_RATE = 44100;
-const AUDIO_BUFFER_SIZE = 2048;
-const AUDIO_BUFFER_CAPACITY = AUDIO_SAMPLE_RATE * 2;
+const playerSides: PlayerSide[] = ["1P", "2P"];
+const buttonNames: ButtonName[] = ["up", "down", "left", "right", "select", "start", "b", "a"];
+const inputSources: InputSource[] = ["keyboard", "gamepad", "panel", "ai", "system"];
+const humanSources: InputSource[] = ["keyboard", "gamepad", "panel"];
+
+const playerNumbers: Record<PlayerSide, 1 | 2> = {
+  "1P": 1,
+  "2P": 2
+};
 
 const buttonMap: Record<ButtonName, ButtonKey> = {
   a: Controller.BUTTON_A,
@@ -68,18 +73,48 @@ const buttonMap: Record<ButtonName, ButtonKey> = {
   right: Controller.BUTTON_RIGHT
 };
 
-const keyMap = new Map<string, ButtonName>([
-  ["ArrowUp", "up"],
-  ["ArrowDown", "down"],
-  ["ArrowLeft", "left"],
-  ["ArrowRight", "right"],
-  ["z", "b"],
-  ["Z", "b"],
-  ["x", "a"],
-  ["X", "a"],
-  ["Enter", "start"],
-  ["Shift", "select"]
+const keyboardMap = new Map<string, { side: PlayerSide; button: ButtonName }>([
+  ["ArrowUp", { side: "1P", button: "up" }],
+  ["ArrowDown", { side: "1P", button: "down" }],
+  ["ArrowLeft", { side: "1P", button: "left" }],
+  ["ArrowRight", { side: "1P", button: "right" }],
+  ["KeyZ", { side: "1P", button: "b" }],
+  ["KeyX", { side: "1P", button: "a" }],
+  ["Enter", { side: "1P", button: "start" }],
+  ["ShiftLeft", { side: "1P", button: "select" }],
+  ["ShiftRight", { side: "1P", button: "select" }],
+  ["KeyW", { side: "2P", button: "up" }],
+  ["KeyS", { side: "2P", button: "down" }],
+  ["KeyA", { side: "2P", button: "left" }],
+  ["KeyD", { side: "2P", button: "right" }],
+  ["KeyJ", { side: "2P", button: "b" }],
+  ["KeyK", { side: "2P", button: "a" }],
+  ["KeyI", { side: "2P", button: "start" }],
+  ["KeyU", { side: "2P", button: "select" }]
 ]);
+
+const controlModeLabels: Record<ControlMode, string> = {
+  human: "人类",
+  ai: "AI",
+  hybrid: "混合"
+};
+
+const modeStrategyLabels: Record<ControlMode, string> = {
+  human: "只写入人类输入",
+  ai: "AI 占位，空输入安全等待",
+  hybrid: "人类优先，AI 后续补助"
+};
+
+const modeLastInputLabels: Record<ControlMode, string> = {
+  human: "等待人类输入",
+  ai: "AI 占位，等待 FSM",
+  hybrid: "混合模式，人类优先"
+};
+
+const keyboardHints: Record<PlayerSide, string> = {
+  "1P": "方向键 / Z=B / X=A / Enter=开始 / Shift=选择",
+  "2P": "WASD / J=B / K=A / I=开始 / U=选择"
+};
 
 const tacticalStack = [
   { label: "生存", value: "等待 RAM", icon: Shield },
@@ -89,11 +124,49 @@ const tacticalStack = [
   { label: "推进", value: "受控", icon: Activity }
 ];
 
-type AudioRuntime = {
-  context: AudioContext;
-  pushSample: (left: number, right: number) => void;
-  close: () => void;
-};
+const AUDIO_SAMPLE_RATE = 44100;
+const AUDIO_BUFFER_SIZE = 2048;
+const AUDIO_BUFFER_CAPACITY = AUDIO_SAMPLE_RATE * 2;
+const GAMEPAD_AXIS_THRESHOLD = 0.5;
+
+function createButtonState(): ButtonState {
+  return {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    a: false,
+    b: false,
+    start: false,
+    select: false
+  };
+}
+
+function createPlayerButtonStates(): PlayerButtonStates {
+  return {
+    "1P": createButtonState(),
+    "2P": createButtonState()
+  };
+}
+
+function createSourceInputStates(): Record<PlayerSide, Record<InputSource, ButtonState>> {
+  return {
+    "1P": {
+      keyboard: createButtonState(),
+      gamepad: createButtonState(),
+      panel: createButtonState(),
+      ai: createButtonState(),
+      system: createButtonState()
+    },
+    "2P": {
+      keyboard: createButtonState(),
+      gamepad: createButtonState(),
+      panel: createButtonState(),
+      ai: createButtonState(),
+      system: createButtonState()
+    }
+  };
+}
 
 function createAudioRuntime(): AudioRuntime {
   const maybeWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
@@ -152,6 +225,60 @@ function createAudioRuntime(): AudioRuntime {
   };
 }
 
+async function tryResumeAudioContext(context: AudioContext) {
+  await Promise.race([
+    context.resume().catch(() => undefined),
+    new Promise((resolve) => window.setTimeout(resolve, 1200))
+  ]);
+  return context.state === "running";
+}
+
+function statusLabel(status: RuntimeStatus) {
+  if (status === "no-rom") return "未加载 ROM";
+  if (status === "loading") return "正在加载 ROM";
+  if (status === "loaded") return "ROM 已加载";
+  if (status === "running") return "运行中";
+  if (status === "paused") return "已暂停";
+  return "运行错误";
+}
+
+function audioLabel(status: AudioStatus) {
+  if (status === "starting") return "声音启动中";
+  if (status === "on") return "声音已开启";
+  if (status === "blocked") return "请点击启用声音";
+  if (status === "unsupported") return "浏览器不支持声音";
+  if (status === "error") return "声音错误";
+  return "启用声音";
+}
+
+function hasPressedButton(buttons: ButtonState) {
+  return buttonNames.some((button) => buttons[button]);
+}
+
+function mapGamepadButtons(gamepad: Gamepad | null | undefined): ButtonState {
+  const next = createButtonState();
+  if (!gamepad) return next;
+
+  const buttonPressed = (index: number) => Boolean(gamepad.buttons[index]?.pressed);
+  const axis = (index: number) => gamepad.axes[index] ?? 0;
+
+  next.up = buttonPressed(12) || axis(1) < -GAMEPAD_AXIS_THRESHOLD;
+  next.down = buttonPressed(13) || axis(1) > GAMEPAD_AXIS_THRESHOLD;
+  next.left = buttonPressed(14) || axis(0) < -GAMEPAD_AXIS_THRESHOLD;
+  next.right = buttonPressed(15) || axis(0) > GAMEPAD_AXIS_THRESHOLD;
+  next.a = buttonPressed(0);
+  next.b = buttonPressed(2) || buttonPressed(1);
+  next.select = buttonPressed(8);
+  next.start = buttonPressed(9);
+  return next;
+}
+
+function gamepadLabel(gamepad: Gamepad | null | undefined, fallbackIndex: number) {
+  if (!gamepad) return `Gamepad ${fallbackIndex} 未连接`;
+  const name = gamepad.id.length > 28 ? `${gamepad.id.slice(0, 28)}...` : gamepad.id;
+  return `Gamepad ${fallbackIndex} 已连接：${name}`;
+}
+
 function PadButton({
   label,
   active,
@@ -174,6 +301,7 @@ function PadButton({
         event.preventDefault();
         onUp?.();
       }}
+      onPointerCancel={() => onUp?.()}
       onPointerLeave={() => onUp?.()}
       type="button"
     >
@@ -216,14 +344,15 @@ function ControllerView({
 function PilotPanel({
   pilot,
   onButtonDown,
-  onButtonUp
+  onButtonUp,
+  onModeChange
 }: {
   pilot: Pilot;
   onButtonDown?: (button: ButtonName) => void;
   onButtonUp?: (button: ButtonName) => void;
+  onModeChange: (mode: ControlMode) => void;
 }) {
-  const Icon = pilot.role === "AI" ? Bot : UserRound;
-  const roleLabel = pilot.role === "AI" ? "AI" : "玩家";
+  const Icon = pilot.mode === "ai" ? Bot : UserRound;
   return (
     <section className={`pilot-panel ${pilot.accent}`}>
       <div className="panel-title">
@@ -236,56 +365,56 @@ function PilotPanel({
         </div>
         <div>
           <div className="pilot-name">{pilot.name}</div>
-          <div className="pilot-role">{roleLabel} / {pilot.status}</div>
+          <div className="pilot-role">{controlModeLabels[pilot.mode]} / {pilot.status}</div>
         </div>
+      </div>
+      <div className="mode-selector" role="group" aria-label={`${pilot.side} 控制模式`}>
+        {(["human", "ai", "hybrid"] as ControlMode[]).map((mode) => (
+          <button
+            className={pilot.mode === mode ? "mode-button active" : "mode-button"}
+            key={mode}
+            onClick={() => onModeChange(mode)}
+            type="button"
+          >
+            {controlModeLabels[mode]}
+          </button>
+        ))}
       </div>
       <dl className="compact-grid">
         <div>
           <dt>模式</dt>
-          <dd>{pilot.mode}</dd>
+          <dd>{controlModeLabels[pilot.mode]}</dd>
         </div>
         <div>
           <dt>策略</dt>
           <dd>{pilot.strategy}</dd>
         </div>
         <div>
-          <dt>性格</dt>
+          <dt>状态</dt>
           <dd>{pilot.temperament}</dd>
         </div>
       </dl>
       <ControllerView buttons={pilot.buttons} onButtonDown={onButtonDown} onButtonUp={onButtonUp} />
+      <div className="input-meta">
+        <div>
+          <Keyboard size={15} />
+          <span>{pilot.keyboardHint}</span>
+        </div>
+        <div>
+          <Gamepad2 size={15} />
+          <span>{pilot.gamepadHint}</span>
+        </div>
+        <div>
+          <Radio size={15} />
+          <span>{pilot.lastInput}</span>
+        </div>
+      </div>
       <button className="switch-button" type="button">
         <Gamepad2 size={16} />
-        <span>{pilot.role === "AI" ? "AI 待接入" : "手动输入"}</span>
+        <span>最终写入 {pilot.side}</span>
       </button>
     </section>
   );
-}
-
-function statusLabel(status: RuntimeStatus) {
-  if (status === "no-rom") return "未加载 ROM";
-  if (status === "loading") return "正在加载 ROM";
-  if (status === "loaded") return "ROM 已加载";
-  if (status === "running") return "运行中";
-  if (status === "paused") return "已暂停";
-  return "运行错误";
-}
-
-function audioLabel(status: AudioStatus) {
-  if (status === "starting") return "声音启动中";
-  if (status === "on") return "声音已开启";
-  if (status === "blocked") return "请点击启用声音";
-  if (status === "unsupported") return "浏览器不支持声音";
-  if (status === "error") return "声音错误";
-  return "启用声音";
-}
-
-async function tryResumeAudioContext(context: AudioContext) {
-  await Promise.race([
-    context.resume().catch(() => undefined),
-    new Promise((resolve) => window.setTimeout(resolve, 1200))
-  ]);
-  return context.state === "running";
 }
 
 function GameViewport({
@@ -312,8 +441,8 @@ function GameViewport({
   onRun: () => void;
   onPause: () => void;
   onReset: () => void;
-  onStartPulse: () => void;
-  onInputSmoke: () => void;
+  onStartPulse: (side: PlayerSide) => void;
+  onInputSmoke: (side: PlayerSide) => void;
 }) {
   const canRun = status === "loaded" || status === "paused";
   const isRunning = status === "running";
@@ -340,8 +469,10 @@ function GameViewport({
           ? <button onClick={onPause} type="button"><Pause size={15} /> 暂停</button>
           : <button disabled={!canRun} onClick={onRun} type="button"><Play size={15} /> 运行</button>}
         <button disabled={audioStatus === "starting" || audioStatus === "on"} onClick={onEnableAudio} type="button"><Radio size={15} /> {audioLabel(audioStatus)}</button>
-        <button disabled={!hasRom} onClick={onStartPulse} type="button"><Gamepad2 size={15} /> 按开始键</button>
-        <button disabled={!hasRom} onClick={onInputSmoke} type="button"><Zap size={15} /> 输入测试</button>
+        <button disabled={!hasRom} onClick={() => onStartPulse("1P")} type="button"><Gamepad2 size={15} /> 1P 开始</button>
+        <button disabled={!hasRom} onClick={() => onStartPulse("2P")} type="button"><Gamepad2 size={15} /> 2P 开始</button>
+        <button disabled={!hasRom} onClick={() => onInputSmoke("1P")} type="button"><Zap size={15} /> 1P 输入测试</button>
+        <button disabled={!hasRom} onClick={() => onInputSmoke("2P")} type="button"><Zap size={15} /> 2P 输入测试</button>
         <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> 重置</button>
       </div>
     </section>
@@ -410,21 +541,137 @@ function App() {
   const frameRef = useRef(0);
   const autoLoadStartedRef = useRef(false);
   const autoSmokeStartedRef = useRef(false);
+  const finalButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
+  const sourceButtonsRef = useRef(createSourceInputStates());
+  const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const gamepadLabelsRef = useRef<Record<PlayerSide, string>>({
+    "1P": gamepadLabel(null, 0),
+    "2P": gamepadLabel(null, 1)
+  });
   const [status, setStatus] = useState<RuntimeStatus>("no-rom");
   const [audioStatus, setAudioStatus] = useState<AudioStatus>("off");
   const [message, setMessage] = useState("加载本地用户自有 ROM 后开始真实模拟器测试。");
   const [frameCount, setFrameCount] = useState(0);
-  const [buttons, setButtons] = useState<ButtonState>(blankButtons);
+  const [buttonStates, setButtonStates] = useState<PlayerButtonStates>(createPlayerButtonStates);
+  const [controlModes, setControlModes] = useState<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const [gamepadLabelsState, setGamepadLabelsState] = useState<Record<PlayerSide, string>>(gamepadLabelsRef.current);
+  const [lastInputs, setLastInputs] = useState<Record<PlayerSide, string>>({
+    "1P": "等待输入",
+    "2P": "等待输入"
+  });
   const [eventLog, setEventLog] = useState<string[]>([
-    "PM：真实 ROM 测试路径已启用",
+    "PM：2P 输入路由准备中",
     "运行时：等待本地用户自有 ROM",
     "边界：仓库不提交、不打包 ROM",
-    "BOT：战术层仍待接入"
+    "BOT：AI 模式当前为安全占位"
   ]);
 
   const appendLog = useCallback((line: string) => {
-    setEventLog((current) => [line, ...current].slice(0, 8));
+    setEventLog((current) => [line, ...current].slice(0, 10));
   }, []);
+
+  const isSourceAllowed = useCallback((side: PlayerSide, source: InputSource) => {
+    const mode = controlModesRef.current[side];
+    if (source === "system") return true;
+    if (humanSources.includes(source)) return mode === "human" || mode === "hybrid";
+    if (source === "ai") return mode === "ai" || mode === "hybrid";
+    return false;
+  }, []);
+
+  const recomputeSide = useCallback((side: PlayerSide) => {
+    const next = createButtonState();
+    for (const source of inputSources) {
+      if (!isSourceAllowed(side, source)) continue;
+      const sourceButtons = sourceButtonsRef.current[side][source];
+      for (const button of buttonNames) {
+        next[button] = next[button] || sourceButtons[button];
+      }
+    }
+
+    const previous = finalButtonsRef.current[side];
+    const nes = nesRef.current;
+    for (const button of buttonNames) {
+      if (previous[button] === next[button]) continue;
+      if (nes) {
+        if (next[button]) nes.buttonDown(playerNumbers[side], buttonMap[button]);
+        else nes.buttonUp(playerNumbers[side], buttonMap[button]);
+      }
+    }
+
+    finalButtonsRef.current = {
+      ...finalButtonsRef.current,
+      [side]: next
+    };
+    setButtonStates((current) => ({
+      ...current,
+      [side]: next
+    }));
+  }, [isSourceAllowed]);
+
+  const setSourceButtons = useCallback((side: PlayerSide, source: InputSource, next: ButtonState) => {
+    sourceButtonsRef.current[side][source] = next;
+    recomputeSide(side);
+    if (source !== "system" && hasPressedButton(next)) {
+      const sourceLabel = source === "keyboard" ? "键盘" : source === "gamepad" ? "游戏手柄" : source === "panel" ? "屏幕按钮" : "AI";
+      setLastInputs((current) => ({
+        ...current,
+        [side]: `${sourceLabel} 输入`
+      }));
+    }
+  }, [recomputeSide]);
+
+  const setSourceButton = useCallback((side: PlayerSide, source: InputSource, button: ButtonName, pressed: boolean) => {
+    const allowed = isSourceAllowed(side, source);
+    const current = sourceButtonsRef.current[side][source];
+    const next = {
+      ...current,
+      [button]: pressed && allowed
+    };
+    setSourceButtons(side, source, next);
+  }, [isSourceAllowed, setSourceButtons]);
+
+  const clearSourcesForSide = useCallback((side: PlayerSide, sourcesToClear: InputSource[]) => {
+    for (const source of sourcesToClear) {
+      sourceButtonsRef.current[side][source] = createButtonState();
+    }
+    recomputeSide(side);
+  }, [recomputeSide]);
+
+  const clearAllInputs = useCallback(() => {
+    const nes = nesRef.current;
+    for (const side of playerSides) {
+      for (const button of buttonNames) {
+        if (nes && finalButtonsRef.current[side][button]) {
+          nes.buttonUp(playerNumbers[side], buttonMap[button]);
+        }
+      }
+    }
+    sourceButtonsRef.current = createSourceInputStates();
+    finalButtonsRef.current = createPlayerButtonStates();
+    setButtonStates(createPlayerButtonStates());
+    setLastInputs({ "1P": "等待输入", "2P": "等待输入" });
+  }, []);
+
+  const changeControlMode = useCallback((side: PlayerSide, mode: ControlMode) => {
+    controlModesRef.current = {
+      ...controlModesRef.current,
+      [side]: mode
+    };
+    setControlModes((current) => ({
+      ...current,
+      [side]: mode
+    }));
+
+    if (mode === "human") clearSourcesForSide(side, ["ai"]);
+    if (mode === "ai") clearSourcesForSide(side, ["keyboard", "gamepad", "panel"]);
+    if (mode === "hybrid") recomputeSide(side);
+
+    setLastInputs((current) => ({
+      ...current,
+      [side]: modeLastInputLabels[mode]
+    }));
+    appendLog(`${side} 模式切换：${controlModeLabels[mode]}`);
+  }, [appendLog, clearSourcesForSide, recomputeSide]);
 
   const renderFrame = useCallback((buffer: Uint32Array) => {
     const canvas = canvasRef.current;
@@ -487,28 +734,44 @@ function App() {
     }
   }, [appendLog]);
 
-  const setNesButton = useCallback((button: ButtonName, pressed: boolean) => {
-    const nes = nesRef.current;
-    if (!nes) return;
-    if (pressed) nes.buttonDown(1, buttonMap[button]);
-    else nes.buttonUp(1, buttonMap[button]);
-    setButtons((current) => ({ ...current, [button]: pressed }));
-  }, []);
+  const pulseButton = useCallback((side: PlayerSide, button: ButtonName, ms = 180) => {
+    setSourceButton(side, "system", button, true);
+    window.setTimeout(() => setSourceButton(side, "system", button, false), ms);
+  }, [setSourceButton]);
 
-  const pulseButton = useCallback((button: ButtonName, ms = 180) => {
-    setNesButton(button, true);
-    window.setTimeout(() => setNesButton(button, false), ms);
-  }, [setNesButton]);
+  const applyGamepads = useCallback(() => {
+    if (!navigator.getGamepads) return;
+    const pads = navigator.getGamepads();
+    const nextLabels: Record<PlayerSide, string> = {
+      "1P": gamepadLabel(pads[0], 0),
+      "2P": gamepadLabel(pads[1], 1)
+    };
+
+    for (const side of playerSides) {
+      const index = side === "1P" ? 0 : 1;
+      const nextButtons = mapGamepadButtons(pads[index]);
+      setSourceButtons(side, "gamepad", nextButtons);
+    }
+
+    if (frameRef.current % 30 === 0 && (
+      nextLabels["1P"] !== gamepadLabelsRef.current["1P"] ||
+      nextLabels["2P"] !== gamepadLabelsRef.current["2P"]
+    )) {
+      gamepadLabelsRef.current = nextLabels;
+      setGamepadLabelsState(nextLabels);
+    }
+  }, [setSourceButtons]);
 
   const tickFrame = useCallback(() => {
     if (!runningRef.current) return;
     const nes = nesRef.current;
     if (nes) {
+      applyGamepads();
       nes.frame();
       frameRef.current += 1;
       if (frameRef.current % 10 === 0) setFrameCount(frameRef.current);
     }
-  }, []);
+  }, [applyGamepads]);
 
   const setRunning = useCallback((running: boolean) => {
     runningRef.current = running;
@@ -541,7 +804,7 @@ function App() {
       nes.loadROM(data);
       frameRef.current = 0;
       setFrameCount(0);
-      setButtons(blankButtons);
+      clearAllInputs();
       setStatus("loaded");
       setMessage(`本地 ROM 已加载：${data.byteLength} 字节。`);
       appendLog(`运行时：本地 ROM 已加载（${data.byteLength} 字节）`);
@@ -551,48 +814,48 @@ function App() {
       setMessage(detail);
       appendLog(`运行错误：${detail}`);
     }
-  }, [appendLog, createNes]);
+  }, [appendLog, clearAllInputs, createNes]);
 
   const resetRuntime = useCallback(() => {
     const nes = nesRef.current;
     if (!nes) return;
     setRunning(false);
+    clearAllInputs();
     nes.reset();
     frameRef.current = 0;
     setFrameCount(0);
-    setButtons(blankButtons);
     setStatus("loaded");
     appendLog("运行时：模拟器已重置");
-  }, [appendLog, setRunning]);
+  }, [appendLog, clearAllInputs, setRunning]);
 
-  const runInputSmoke = useCallback(() => {
+  const runInputSmoke = useCallback((side: PlayerSide) => {
     if (!nesRef.current) return;
     setRunning(true);
-    appendLog("输入测试：延迟按开始键，然后按住右 + B");
-    window.setTimeout(() => pulseButton("start", 260), 1200);
-    window.setTimeout(() => pulseButton("start", 260), 2600);
+    appendLog(`${side} 输入测试：延迟按开始键，然后按住右 + B`);
+    window.setTimeout(() => pulseButton(side, "start", 260), 1200);
+    window.setTimeout(() => pulseButton(side, "start", 260), 2600);
     window.setTimeout(() => {
-      setNesButton("right", true);
-      setNesButton("b", true);
+      setSourceButton(side, "system", "right", true);
+      setSourceButton(side, "system", "b", true);
     }, 3600);
     window.setTimeout(() => {
-      setNesButton("right", false);
-      setNesButton("b", false);
+      setSourceButton(side, "system", "right", false);
+      setSourceButton(side, "system", "b", false);
     }, 6200);
-  }, [appendLog, pulseButton, setNesButton, setRunning]);
+  }, [appendLog, pulseButton, setRunning, setSourceButton]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const button = keyMap.get(event.key);
-      if (!button) return;
+      const mapped = keyboardMap.get(event.code);
+      if (!mapped) return;
       event.preventDefault();
-      setNesButton(button, true);
+      setSourceButton(mapped.side, "keyboard", mapped.button, true);
     };
     const onKeyUp = (event: KeyboardEvent) => {
-      const button = keyMap.get(event.key);
-      if (!button) return;
+      const mapped = keyboardMap.get(event.code);
+      if (!mapped) return;
       event.preventDefault();
-      setNesButton(button, false);
+      setSourceButton(mapped.side, "keyboard", mapped.button, false);
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -600,7 +863,22 @@ function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [setNesButton]);
+  }, [setSourceButton]);
+
+  useEffect(() => {
+    const onGamepadConnected = (event: GamepadEvent) => {
+      appendLog(`游戏手柄连接：${event.gamepad.index}`);
+    };
+    const onGamepadDisconnected = (event: GamepadEvent) => {
+      appendLog(`游戏手柄断开：${event.gamepad.index}`);
+    };
+    window.addEventListener("gamepadconnected", onGamepadConnected);
+    window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
+    return () => {
+      window.removeEventListener("gamepadconnected", onGamepadConnected);
+      window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    };
+  }, [appendLog]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -617,7 +895,7 @@ function App() {
     if (params.get("autorun") === "1") setRunning(true);
     if (params.get("smoke") === "1") {
       autoSmokeStartedRef.current = true;
-      runInputSmoke();
+      runInputSmoke("1P");
     }
   }, [runInputSmoke, setRunning, status]);
 
@@ -632,25 +910,33 @@ function App() {
   const pilots: Pilot[] = [
     {
       side: "1P",
-      name: "玩家",
-      role: "Human",
-      status: status === "running" ? "操作中" : statusLabel(status),
-      mode: "手动",
-      strategy: "输入测试",
-      temperament: "操作者",
-      buttons,
-      accent: "blue"
+      name: "玩家 1",
+      status: status === "running"
+        ? controlModes["1P"] === "ai" ? "AI 占位" : controlModes["1P"] === "hybrid" ? "人机混合" : "可操作"
+        : statusLabel(status),
+      mode: controlModes["1P"],
+      strategy: modeStrategyLabels[controlModes["1P"]],
+      temperament: controlModes["1P"] === "ai" ? "人类输入被隔离" : "人类输入可写入",
+      buttons: buttonStates["1P"],
+      accent: "blue",
+      keyboardHint: keyboardHints["1P"],
+      gamepadHint: gamepadLabelsState["1P"],
+      lastInput: lastInputs["1P"]
     },
     {
       side: "2P",
-      name: "AI 伙伴",
-      role: "AI",
-      status: "等待 FSM",
-      mode: "待接入",
-      strategy: "尚无快脑策略",
-      temperament: "未分配",
-      buttons: blankButtons,
-      accent: "red"
+      name: "玩家 2 / AI 伙伴",
+      status: status === "running"
+        ? controlModes["2P"] === "ai" ? "AI 占位" : controlModes["2P"] === "hybrid" ? "人机混合" : "可操作"
+        : statusLabel(status),
+      mode: controlModes["2P"],
+      strategy: modeStrategyLabels[controlModes["2P"]],
+      temperament: controlModes["2P"] === "ai" ? "AI 安全占位" : "人类输入可写入",
+      buttons: buttonStates["2P"],
+      accent: "red",
+      keyboardHint: keyboardHints["2P"],
+      gamepadHint: gamepadLabelsState["2P"],
+      lastInput: lastInputs["2P"]
     }
   ];
 
@@ -659,7 +945,7 @@ function App() {
       <header className="topbar">
         <div>
           <h1>FC AI 陪玩驾驶舱</h1>
-          <p>浏览器产品平台 / 真实 ROM 冒烟运行时</p>
+          <p>浏览器产品平台 / 双手柄输入路由</p>
         </div>
         <div className="status-cluster">
           <span><Gauge size={16} /> 目标 60 FPS</span>
@@ -668,7 +954,12 @@ function App() {
         </div>
       </header>
       <div className="layout">
-        <PilotPanel pilot={pilots[0]} onButtonDown={(button) => setNesButton(button, true)} onButtonUp={(button) => setNesButton(button, false)} />
+        <PilotPanel
+          onButtonDown={(button) => setSourceButton("1P", "panel", button, true)}
+          onButtonUp={(button) => setSourceButton("1P", "panel", button, false)}
+          onModeChange={(mode) => changeControlMode("1P", mode)}
+          pilot={pilots[0]}
+        />
         <div className="center-column">
           <GameViewport
             audioStatus={audioStatus}
@@ -681,13 +972,18 @@ function App() {
             onPause={() => setRunning(false)}
             onReset={resetRuntime}
             onRun={() => setRunning(true)}
-            onStartPulse={() => pulseButton("start", 220)}
+            onStartPulse={(side) => pulseButton(side, "start", 220)}
             status={status}
           />
           <TacticalPanel />
           <LogPanel eventLog={eventLog} />
         </div>
-        <PilotPanel pilot={pilots[1]} />
+        <PilotPanel
+          onButtonDown={(button) => setSourceButton("2P", "panel", button, true)}
+          onButtonUp={(button) => setSourceButton("2P", "panel", button, false)}
+          onModeChange={(mode) => changeControlMode("2P", mode)}
+          pilot={pilots[1]}
+        />
       </div>
     </main>
   );

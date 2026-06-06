@@ -2,12 +2,14 @@
 
 ## 当前
 
-- 稳定浏览器驾驶舱真实 ROM 冒烟运行时。
-- 保持 ROM 访问只走本地 `.env.local`，且该文件被 Git 忽略。
+- 接入 1P / 2P 双手柄输入路由。
+- 支持每路自由切换人类、AI、混合模式。
+- 支持键盘与浏览器 Gamepad API 输入。
 - 准备 RAM State Schema 和 WorldX 实现。
 
 ## 下一步
 
+- 验收双手柄输入不破坏 V0.1.0 的 1P 输入。
 - 实现 RAM state schema。
 - 实现 WorldX 推导。
 - 设计并实现 V0 战术调试驾驶舱面板。
