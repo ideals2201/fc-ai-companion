@@ -6,21 +6,29 @@ import {
   AlertTriangle,
   Bot,
   Brain,
+  Cpu,
+  Database,
   Gamepad2,
   Gauge,
   HeartPulse,
   Keyboard,
   Map as MapIcon,
-  Pause,
-  Play,
+  Maximize2,
+  MessageSquareText,
+  Minus,
+  Plus,
+  Power,
   Radio,
   RotateCcw,
   Shield,
+  SlidersHorizontal,
   Target,
+  Tv,
   Upload,
   UserRound,
-  Zap
+  Volume2
 } from "lucide-react";
+import { parseNesRomMetadata, readRomMetadataHeaders, type RomMetadata } from "./romMetadata";
 import "./styles.css";
 
 type PlayerSide = "1P" | "2P";
@@ -31,12 +39,14 @@ type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "e
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
 type ControlMode = "human" | "ai" | "hybrid";
 type InputSource = "keyboard" | "gamepad" | "panel" | "ai" | "system";
+type AiStrategyKey = "off" | "placeholder" | "rules-v0" | "follow-test" | "input-mirror";
 
 type Pilot = {
   side: PlayerSide;
   name: string;
   status: string;
   mode: ControlMode;
+  strategyKey: AiStrategyKey;
   strategy: string;
   temperament: string;
   buttons: ButtonState;
@@ -44,12 +54,89 @@ type Pilot = {
   keyboardHint: string;
   gamepadHint: string;
   lastInput: string;
+  authority: string;
+  stats: StatItem[];
+  dialogue: string[];
+  dataStream: string[];
+};
+
+type StatItem = {
+  label: string;
+  value: string;
+  status?: "real" | "pending" | "mode" | "derived";
+};
+
+type PlayerMetrics = {
+  kills: number;
+  deaths: number;
+  shots: number;
+  jumps: number;
+  moves: number;
+};
+
+type PlayerMetricStates = Record<PlayerSide, PlayerMetrics>;
+
+type VisualSettings = {
+  brightness: number;
+  contrast: number;
+  saturation: number;
 };
 
 type AudioRuntime = {
   context: AudioContext;
   pushSample: (left: number, right: number) => void;
+  setVolume: (volume: number) => void;
   close: () => void;
+};
+
+type EnemySlotSnapshot = {
+  slot: number;
+  type: number;
+  hp: number;
+  x: number;
+  y: number;
+  routine: number;
+  vx: number;
+  vy: number;
+  attackDelay: number;
+  animationFrame: number;
+  attr: number;
+  kind: string;
+  threat: boolean;
+  fixed: boolean;
+  priority: number;
+};
+
+type GameRamSnapshot = {
+  frame: number;
+  level: number;
+  playerMode: number;
+  playerModeAlt: number;
+  p1Lives: number;
+  p2Lives: number;
+  gameOver: number;
+  p2GameOver: number;
+  bossDefeated: number;
+  screen: number;
+  scroll: number;
+  cameraX: number;
+  p1State: number;
+  p2State: number;
+  jumpState: number;
+  weapon: number;
+  deathFlag: number;
+  p2DeathFlag: number;
+  playerX: number;
+  playerY: number;
+  worldX: number;
+  twoPlayerActive: boolean;
+  enemies: EnemySlotSnapshot[];
+};
+
+type NesWithCpuRam = NES & {
+  cpu?: {
+    mem?: ArrayLike<number>;
+  };
 };
 
 const playerSides: PlayerSide[] = ["1P", "2P"];
@@ -101,8 +188,8 @@ const controlModeLabels: Record<ControlMode, string> = {
 
 const modeStrategyLabels: Record<ControlMode, string> = {
   human: "只写入人类输入",
-  ai: "AI 占位，空输入安全等待",
-  hybrid: "人类优先，AI 后续补助"
+  ai: "AI 根据策略写入手柄",
+  hybrid: "人类优先，AI 补助写入"
 };
 
 const modeLastInputLabels: Record<ControlMode, string> = {
@@ -111,23 +198,28 @@ const modeLastInputLabels: Record<ControlMode, string> = {
   hybrid: "混合模式，人类优先"
 };
 
+const aiStrategyOptions: Array<{ key: AiStrategyKey; label: string; description: string }> = [
+  { key: "off", label: "关闭 AI", description: "只显示人类输入" },
+  { key: "placeholder", label: "安全占位 Bot", description: "空输入 / 待机" },
+  { key: "rules-v0", label: "规则基线 V0", description: "等待 RAM/FSM" },
+  { key: "follow-test", label: "跟随/待机测试", description: "后续 2P 陪玩预留" },
+  { key: "input-mirror", label: "调试输入镜像", description: "只作输入诊断" }
+];
+
 const keyboardHints: Record<PlayerSide, string> = {
   "1P": "方向键 / Z=B / X=A / Enter=开始 / Shift=选择",
   "2P": "WASD / J=B / K=A / I=开始 / U=选择"
 };
 
-const tacticalStack = [
-  { label: "生存", value: "等待 RAM", icon: Shield },
-  { label: "路线", value: "等待 WorldX", icon: MapIcon },
-  { label: "协作", value: "排队中", icon: HeartPulse },
-  { label: "战斗", value: "仅输入测试", icon: Target },
-  { label: "推进", value: "受控", icon: Activity }
-];
-
 const AUDIO_SAMPLE_RATE = 44100;
-const AUDIO_BUFFER_SIZE = 2048;
-const AUDIO_BUFFER_CAPACITY = AUDIO_SAMPLE_RATE * 2;
+const AUDIO_BUFFER_SIZE = 1024;
+const AUDIO_TARGET_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.07);
+const AUDIO_MAX_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.18);
+const AUDIO_BUFFER_CAPACITY = Math.round(AUDIO_SAMPLE_RATE * 0.35);
 const GAMEPAD_AXIS_THRESHOLD = 0.5;
+const ENEMY_SLOT_COUNT = 16;
+const P1_ALIVE_STATE = 1;
+const P1_DEAD_STATE = 2;
 
 function createButtonState(): ButtonState {
   return {
@@ -146,6 +238,13 @@ function createPlayerButtonStates(): PlayerButtonStates {
   return {
     "1P": createButtonState(),
     "2P": createButtonState()
+  };
+}
+
+function createPlayerMetricStates(): PlayerMetricStates {
+  return {
+    "1P": { kills: 0, deaths: 0, shots: 0, jumps: 0, moves: 0 },
+    "2P": { kills: 0, deaths: 0, shots: 0, jumps: 0, moves: 0 }
   };
 }
 
@@ -168,7 +267,7 @@ function createSourceInputStates(): Record<PlayerSide, Record<InputSource, Butto
   };
 }
 
-function createAudioRuntime(): AudioRuntime {
+function createAudioRuntime(initialVolume = 0.28): AudioRuntime {
   const maybeWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
   const AudioContextConstructor = window.AudioContext ?? maybeWindow.webkitAudioContext;
   if (!AudioContextConstructor) {
@@ -184,7 +283,7 @@ function createAudioRuntime(): AudioRuntime {
   let writeIndex = 0;
   let buffered = 0;
 
-  gain.gain.value = 0.28;
+  gain.gain.value = initialVolume;
 
   processor.onaudioprocess = (event) => {
     const outputLeft = event.outputBuffer.getChannelData(0);
@@ -208,6 +307,11 @@ function createAudioRuntime(): AudioRuntime {
   return {
     context,
     pushSample: (left, right) => {
+      if (buffered >= AUDIO_MAX_BUFFERED_SAMPLES) {
+        const dropCount = buffered - AUDIO_TARGET_BUFFERED_SAMPLES;
+        readIndex = (readIndex + dropCount) % AUDIO_BUFFER_CAPACITY;
+        buffered -= dropCount;
+      }
       if (buffered >= AUDIO_BUFFER_CAPACITY) {
         readIndex = (readIndex + 1) % AUDIO_BUFFER_CAPACITY;
         buffered -= 1;
@@ -217,12 +321,179 @@ function createAudioRuntime(): AudioRuntime {
       writeIndex = (writeIndex + 1) % AUDIO_BUFFER_CAPACITY;
       buffered += 1;
     },
+    setVolume: (volume) => {
+      gain.gain.value = volume;
+    },
     close: () => {
       processor.disconnect();
       gain.disconnect();
       void context.close();
     }
   };
+}
+
+function signedByte(value: number) {
+  return value > 127 ? value - 256 : value;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function readCpuRamByte(nes: NES | null, address: number) {
+  const ram = (nes as NesWithCpuRam | null)?.cpu?.mem;
+  if (!ram) return 0;
+  return ram[address & 0x7ff] ?? 0;
+}
+
+function enemyKind(type: number, hp: number, routine: number) {
+  if (hp > 1) return "durable";
+  if (type >= 0x40) return "projectile";
+  if (routine > 0) return "enemy";
+  return "object";
+}
+
+function isEnemySlotActive(type: number, hp: number, routine: number, x: number, y: number) {
+  return routine !== 0 || type !== 0 || hp !== 0 || (x !== 0 && y !== 0);
+}
+
+function enemyThreat(type: number, hp: number, routine: number, x: number, y: number) {
+  if (!isEnemySlotActive(type, hp, routine, x, y)) return false;
+  if (x <= 4 || x >= 252 || y <= 4 || y >= 236) return false;
+  return hp > 0 || routine > 0 || type > 0;
+}
+
+function readGameRamSnapshot(nes: NES | null, frame: number): GameRamSnapshot | null {
+  if (!nes) return null;
+
+  const read = (address: number) => readCpuRamByte(nes, address);
+  const screen = read(0x0064);
+  const scroll = read(0x0065);
+  const playerX = read(0x0334);
+  const playerY = read(0x031a);
+  const playerMode = read(0x0022);
+  const playerModeAlt = read(0x001d);
+  const p2Lives = read(0x0033);
+  const p2GameOver = read(0x0039);
+  const p2State = read(0x0091);
+  const p2DeathFlag = read(0x00b5);
+  const cameraX = screen * 256 + scroll;
+  const enemies: EnemySlotSnapshot[] = [];
+
+  for (let slot = 0; slot < ENEMY_SLOT_COUNT; slot += 1) {
+    const y = read(0x0324 + slot);
+    const x = read(0x033e + slot);
+    const routine = read(0x04b8 + slot);
+    const vy = signedByte(read(0x04e8 + slot));
+    const vx = signedByte(read(0x0508 + slot));
+    const type = read(0x0528 + slot);
+    const attackDelay = read(0x0558 + slot);
+    const animationFrame = read(0x0568 + slot);
+    const hp = read(0x0578 + slot);
+    const attr = read(0x05a8 + slot);
+
+    if (!isEnemySlotActive(type, hp, routine, x, y)) continue;
+
+    const threat = enemyThreat(type, hp, routine, x, y);
+    enemies.push({
+      slot,
+      type,
+      hp,
+      x,
+      y,
+      routine,
+      vx,
+      vy,
+      attackDelay,
+      animationFrame,
+      attr,
+      kind: enemyKind(type, hp, routine),
+      threat,
+      fixed: vx === 0 && vy === 0,
+      priority: threat ? Math.max(1, Math.min(9, hp + (attackDelay > 0 ? 1 : 0))) : 0
+    });
+  }
+
+  return {
+    frame,
+    level: read(0x0030),
+    playerMode,
+    playerModeAlt,
+    p1Lives: read(0x0032),
+    p2Lives,
+    gameOver: read(0x0038),
+    p2GameOver,
+    bossDefeated: read(0x003b),
+    screen,
+    scroll,
+    cameraX,
+    p1State: read(0x0090),
+    p2State,
+    jumpState: read(0x00a0),
+    weapon: read(0x00aa),
+    deathFlag: read(0x00b4),
+    p2DeathFlag,
+    playerX,
+    playerY,
+    worldX: cameraX + playerX,
+    twoPlayerActive: playerMode === 0x01,
+    enemies
+  };
+}
+
+function isGameplayActive(snapshot: GameRamSnapshot | null) {
+  if (!snapshot) return false;
+  return snapshot.gameOver === 0
+    && snapshot.p1State === P1_ALIVE_STATE
+    && snapshot.playerX > 0
+    && snapshot.playerY > 0;
+}
+
+function shouldCountP1Death(before: GameRamSnapshot | null, after: GameRamSnapshot | null, deathLatched: boolean) {
+  if (!before || !after || deathLatched) return false;
+  const stateDeath = before.p1State === P1_ALIVE_STATE && after.p1State === P1_DEAD_STATE;
+  const flagDeath = before.deathFlag === 0 && after.deathFlag !== 0;
+  return stateDeath || flagDeath;
+}
+
+function shouldReleaseDeathLatch(snapshot: GameRamSnapshot | null) {
+  return isGameplayActive(snapshot) && snapshot?.deathFlag === 0;
+}
+
+function enemyBySlot(enemies: EnemySlotSnapshot[]) {
+  return new Map(enemies.map((enemy) => [enemy.slot, enemy]));
+}
+
+function likelyVisibleKillDisappearance(enemy: EnemySlotSnapshot) {
+  if (!enemy.threat || enemy.hp <= 0) return false;
+  return enemy.x > 8 && enemy.x < 248 && enemy.y > 8 && enemy.y < 232;
+}
+
+function countLikelyKillEvents(before: GameRamSnapshot | null, after: GameRamSnapshot | null) {
+  if (!before || !after || !isGameplayActive(before)) return 0;
+  const afterSlots = enemyBySlot(after.enemies);
+  let count = 0;
+
+  for (const previousEnemy of before.enemies) {
+    const currentEnemy = afterSlots.get(previousEnemy.slot);
+    if (currentEnemy) {
+      if (
+        previousEnemy.type === currentEnemy.type
+        && previousEnemy.hp > 0
+        && currentEnemy.hp === 0
+        && likelyVisibleKillDisappearance(previousEnemy)
+      ) {
+        count += 1;
+      }
+      continue;
+    }
+
+    if (likelyVisibleKillDisappearance(previousEnemy)) {
+      count += 1;
+    }
+  }
+
+  return count;
 }
 
 async function tryResumeAudioContext(context: AudioContext) {
@@ -251,8 +522,244 @@ function audioLabel(status: AudioStatus) {
   return "启用声音";
 }
 
+function volumeControlLabel(status: AudioStatus) {
+  if (status === "starting") return "音量启动中";
+  if (status === "blocked") return "音量待启用";
+  if (status === "unsupported") return "声音不支持";
+  if (status === "error") return "声音错误";
+  return "音量";
+}
+
 function hasPressedButton(buttons: ButtonState) {
   return buttonNames.some((button) => buttons[button]);
+}
+
+function cloneButtonState(buttons: ButtonState) {
+  return { ...buttons };
+}
+
+function getPilotName(side: PlayerSide, mode: ControlMode) {
+  if (side === "1P") {
+    if (mode === "ai") return "AI 接管 1P";
+    if (mode === "hybrid") return "玩家 1 + AI 辅助";
+    return "玩家 1";
+  }
+  if (mode === "ai") return "AI 伙伴";
+  if (mode === "hybrid") return "玩家 2 + AI 伙伴";
+  return "玩家 2";
+}
+
+function getPilotStatus(
+  side: PlayerSide,
+  status: RuntimeStatus,
+  mode: ControlMode,
+  strategyKey: AiStrategyKey,
+  twoPlayerActive: boolean
+) {
+  if (status !== "running") return statusLabel(status);
+  if (side === "2P" && mode !== "human" && !twoPlayerActive) return "等待双人局";
+  if (mode === "human") return "可操作";
+  if (strategyKey === "off" || strategyKey === "placeholder") return "安全待机";
+  if (mode === "hybrid") return "AI 补助";
+  return "操作中";
+}
+
+function getPilotTemperament(side: PlayerSide, mode: ControlMode, strategyKey: AiStrategyKey, twoPlayerActive: boolean) {
+  if (mode === "human") return "人类输入可写入";
+  if (side === "2P" && !twoPlayerActive) return "等待 1P 启动双人模式";
+  if (strategyKey === "off") return "AI 未启用";
+  if (strategyKey === "placeholder") return "AI 安全占位";
+  if (mode === "hybrid") return "人类优先，AI 填补空档";
+  return "AI 正在写入手柄";
+}
+
+function activeButtonLabel(buttons: ButtonState) {
+  const labels: Record<ButtonName, string> = {
+    up: "上",
+    down: "下",
+    left: "左",
+    right: "右",
+    a: "A",
+    b: "B",
+    start: "开始",
+    select: "选择"
+  };
+  const active = buttonNames.filter((button) => buttons[button]).map((button) => labels[button]);
+  return active.length > 0 ? active.join(" + ") : "无";
+}
+
+function getAiStrategyLabel(strategyKey: AiStrategyKey) {
+  return aiStrategyOptions.find((option) => option.key === strategyKey)?.label ?? "安全占位 Bot";
+}
+
+function getAuthorityLabel(mode: ControlMode) {
+  if (mode === "human") return "Human Control";
+  if (mode === "ai") return "AI Control V0";
+  return "Human Override";
+}
+
+function decideAiButtons({
+  side,
+  mode,
+  strategyKey,
+  snapshot,
+  gameplayActive,
+  twoPlayerActive,
+  humanOverrideActive,
+  mirrorButtons,
+  frame
+}: {
+  side: PlayerSide;
+  mode: ControlMode;
+  strategyKey: AiStrategyKey;
+  snapshot: GameRamSnapshot | null;
+  gameplayActive: boolean;
+  twoPlayerActive: boolean;
+  humanOverrideActive: boolean;
+  mirrorButtons: ButtonState;
+  frame: number;
+}) {
+  const next = createButtonState();
+  if (mode === "human" || strategyKey === "off" || strategyKey === "placeholder") return next;
+  if (side === "2P" && !twoPlayerActive) return next;
+  if (mode === "hybrid" && humanOverrideActive) return next;
+
+  if (strategyKey === "input-mirror") {
+    return cloneButtonState(mirrorButtons);
+  }
+
+  if (!snapshot || !gameplayActive) {
+    next.start = frame % 120 < 24;
+    return next;
+  }
+
+  const enemyAhead = snapshot.enemies.some((enemy) => (
+    enemy.threat
+    && enemy.x >= snapshot.playerX
+    && enemy.x - snapshot.playerX < 128
+    && Math.abs(enemy.y - snapshot.playerY) < 64
+  ));
+
+  next.right = true;
+  next.b = enemyAhead || frame % 12 < 5;
+
+  if (strategyKey === "rules-v0" && snapshot.jumpState === 0 && frame % 180 < 10) {
+    next.a = true;
+  }
+
+  if (strategyKey === "follow-test" && side === "2P") {
+    next.b = frame % 18 < 6;
+  }
+
+  return next;
+}
+
+function aiStrategyWritesInput(strategyKey: AiStrategyKey) {
+  return strategyKey !== "off" && strategyKey !== "placeholder";
+}
+
+function buildPilotStats(
+  side: PlayerSide,
+  mode: ControlMode,
+  buttons: ButtonState,
+  metrics: PlayerMetrics,
+  ramSnapshot: GameRamSnapshot | null,
+  gameplayActive: boolean
+): StatItem[] {
+  const hasRam = Boolean(ramSnapshot);
+  const threatCount = ramSnapshot?.enemies.filter((enemy) => enemy.threat).length ?? 0;
+  const isP1 = side === "1P";
+  const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
+  const sideStatsActive = gameplayActive && (isP1 || twoPlayerActive);
+  const statsState = sideStatsActive ? "游戏中" : side === "2P" && !twoPlayerActive ? "等待双人局" : "待入局";
+  return [
+    { label: "击杀", value: isP1 ? `${metrics.kills} 推导` : "等待 2P RAM", status: isP1 ? "derived" : "pending" },
+    { label: "死亡", value: isP1 ? `${metrics.deaths}` : "等待 2P RAM", status: isP1 ? "real" : "pending" },
+    { label: "开枪", value: `${metrics.shots}`, status: "real" },
+    { label: "跳跃", value: `${metrics.jumps}`, status: "real" },
+    { label: "移动", value: `${metrics.moves}`, status: "real" },
+    { label: "当前按键", value: activeButtonLabel(buttons), status: "real" },
+    { label: "路线", value: isP1 && ramSnapshot ? `WorldX ${ramSnapshot.worldX}` : "等待 WorldX", status: isP1 && hasRam ? "real" : "pending" },
+    { label: "危险", value: hasRam ? `${threatCount} 威胁` : "等待 Danger", status: hasRam ? "real" : "pending" },
+    { label: "统计", value: statsState, status: "mode" },
+    { label: "双人局", value: twoPlayerActive ? "已检测" : "等待 1P", status: twoPlayerActive ? "real" : "pending" },
+    { label: "控制权", value: getAuthorityLabel(mode), status: "mode" }
+  ];
+}
+
+function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey) {
+  if (mode === "human") {
+    return ["人类正在控制，我只记录输入。", "AI 不写入手柄，等待你切换模式。"];
+  }
+  if (strategyKey === "off" || strategyKey === "placeholder") {
+    return [
+      `${getAiStrategyLabel(strategyKey)} 已选择。`,
+      "当前策略不会写入动作，可切换到规则基线 V0。"
+    ];
+  }
+  if (mode === "ai") {
+    return [
+      `${getAiStrategyLabel(strategyKey)} 已选择。`,
+      "AI 操作层 V0 正在写入手柄，尚未接入 FSM。"
+    ];
+  }
+  return [
+    "混合模式：人类输入优先。",
+    `${getAiStrategyLabel(strategyKey)} 在无人类输入时补助操作。`
+  ];
+}
+
+function buildPilotDialogue(side: PlayerSide, mode: ControlMode, strategyKey: AiStrategyKey, ramSnapshot: GameRamSnapshot | null) {
+  if (side === "2P" && mode !== "human" && !ramSnapshot?.twoPlayerActive) {
+    return [
+      "2P 等待双人模式启动。",
+      "请先由 1P 在游戏菜单选择双人模式。"
+    ];
+  }
+  return buildDialogue(mode, strategyKey);
+}
+
+function buildDataStream(
+  side: PlayerSide,
+  mode: ControlMode,
+  strategyKey: AiStrategyKey,
+  lastInput: string,
+  ramSnapshot: GameRamSnapshot | null,
+  gameplayActive: boolean
+) {
+  const inputAllowed = mode !== "human"
+    && aiStrategyWritesInput(strategyKey)
+    && (side === "1P" || Boolean(ramSnapshot?.twoPlayerActive));
+  const lines = [
+    `${side}.mode=${mode}`,
+    `${side}.strategy=${strategyKey}`,
+    `${side}.lastInput=${lastInput}`,
+    `ai.write=${inputAllowed ? "enabled" : "idle"}`,
+    `twoPlayer.active=${ramSnapshot?.twoPlayerActive ? "true" : "false"}`,
+    `ram.schema=${ramSnapshot ? "active" : "pending"}`,
+    `gameplay.active=${gameplayActive ? "true" : "false"}`,
+    "fsm.state=pending"
+  ];
+  if (ramSnapshot) {
+    lines.splice(4, 0, `ram.level=${ramSnapshot.level}`);
+    lines.splice(5, 0, `ram.screen=${ramSnapshot.screen}`);
+    lines.splice(6, 0, `ram.worldX=${ramSnapshot.worldX}`);
+    lines.splice(7, 0, `ram.enemies=${ramSnapshot.enemies.length}`);
+    lines.splice(8, 0, `ram.playerMode=${ramSnapshot.playerMode}`);
+    lines.splice(9, 0, `ram.modeAlt=${ramSnapshot.playerModeAlt}`);
+    if (side === "1P") {
+      lines.splice(10, 0, `p1.state=${ramSnapshot.p1State}`);
+      lines.splice(11, 0, `p1.deathFlag=${ramSnapshot.deathFlag}`);
+    } else {
+      lines.splice(10, 0, `p2.state=${ramSnapshot.p2State}`);
+      lines.splice(11, 0, `p2.gameOver=${ramSnapshot.p2GameOver}`);
+    }
+  }
+  return lines;
+}
+
+function visualFilter(settings: VisualSettings) {
+  return `brightness(${settings.brightness}%) contrast(${settings.contrast}%) saturate(${settings.saturation}%)`;
 }
 
 function mapGamepadButtons(gamepad: Gamepad | null | undefined): ButtonState {
@@ -345,19 +852,24 @@ function PilotPanel({
   pilot,
   onButtonDown,
   onButtonUp,
-  onModeChange
+  onModeChange,
+  onStrategyChange
 }: {
   pilot: Pilot;
   onButtonDown?: (button: ButtonName) => void;
   onButtonUp?: (button: ButtonName) => void;
   onModeChange: (mode: ControlMode) => void;
+  onStrategyChange: (strategy: AiStrategyKey) => void;
 }) {
-  const Icon = pilot.mode === "ai" ? Bot : UserRound;
+  const Icon = pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
   return (
-    <section className={`pilot-panel ${pilot.accent}`}>
-      <div className="panel-title">
-        <Icon size={18} />
-        <span>{pilot.side} 控制舱</span>
+    <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"}`}>
+      <div className="controller-head">
+        <div className="panel-title">
+          <Icon size={18} />
+          <span>{pilot.side} 实体手柄舱</span>
+        </div>
+        <span className="authority-chip">{pilot.authority}</span>
       </div>
       <div className="pilot-card">
         <div className="avatar">
@@ -380,6 +892,19 @@ function PilotPanel({
           </button>
         ))}
       </div>
+      <label className="field-row">
+        <span>AI 策略模型</span>
+        <select
+          value={pilot.strategyKey}
+          onChange={(event) => onStrategyChange(event.target.value as AiStrategyKey)}
+        >
+          {aiStrategyOptions.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <dl className="compact-grid">
         <div>
           <dt>模式</dt>
@@ -395,6 +920,32 @@ function PilotPanel({
         </div>
       </dl>
       <ControllerView buttons={pilot.buttons} onButtonDown={onButtonDown} onButtonUp={onButtonUp} />
+      <div className="stats-grid" aria-label={`${pilot.side} 数据面板`}>
+        {pilot.stats.map((item) => (
+          <div className={`stat-tile ${item.status ?? "pending"}`} key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="ai-dialogue" aria-label={`${pilot.side} AI 对话`}>
+        <div className="sub-title">
+          <MessageSquareText size={15} />
+          <span>AI 对话</span>
+        </div>
+        {pilot.dialogue.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+      <div className="micro-stream" aria-label={`${pilot.side} 数据流`}>
+        <div className="sub-title">
+          <Database size={15} />
+          <span>数据流</span>
+        </div>
+        {pilot.dataStream.map((line) => (
+          <code key={line}>{line}</code>
+        ))}
+      </div>
       <div className="input-meta">
         <div>
           <Keyboard size={15} />
@@ -409,77 +960,287 @@ function PilotPanel({
           <span>{pilot.lastInput}</span>
         </div>
       </div>
-      <button className="switch-button" type="button">
+      <div className="write-strip">
         <Gamepad2 size={16} />
         <span>最终写入 {pilot.side}</span>
-      </button>
+      </div>
     </section>
   );
 }
 
-function GameViewport({
+function TelevisionView({
+  tvRef,
   canvasRef,
   status,
   audioStatus,
   message,
   frameCount,
+  ramSnapshot,
+  visualSettings,
+  isFullscreen,
+  volume,
   onEnableAudio,
-  onLoadLocalRom,
-  onRun,
-  onPause,
-  onReset,
-  onStartPulse,
-  onInputSmoke
+  onVolumeChange,
+  onVisualChange,
+  onToggleFullscreen
 }: {
+  tvRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   status: RuntimeStatus;
   audioStatus: AudioStatus;
   message: string;
   frameCount: number;
+  ramSnapshot: GameRamSnapshot | null;
+  visualSettings: VisualSettings;
+  isFullscreen: boolean;
+  volume: number;
   onEnableAudio: () => void;
-  onLoadLocalRom: () => void;
-  onRun: () => void;
-  onPause: () => void;
-  onReset: () => void;
-  onStartPulse: (side: PlayerSide) => void;
-  onInputSmoke: (side: PlayerSide) => void;
+  onVolumeChange: (volume: number) => void;
+  onVisualChange: (key: keyof VisualSettings, value: number) => void;
+  onToggleFullscreen: () => void;
 }) {
-  const canRun = status === "loaded" || status === "paused";
-  const isRunning = status === "running";
   const hasRom = status === "loaded" || status === "running" || status === "paused";
+  const handleVolumeActivate = () => {
+    if (audioStatus !== "on" && audioStatus !== "starting") onEnableAudio();
+  };
+  const stepVolume = (delta: number) => {
+    handleVolumeActivate();
+    onVolumeChange(clamp(Number((volume + delta).toFixed(2)), 0, 0.6));
+  };
+  const stepVisual = (key: keyof VisualSettings, delta: number, min: number, max: number) => {
+    onVisualChange(key, clamp(visualSettings[key] + delta, min, max));
+  };
 
   return (
-    <section className="game-stage" aria-label="游戏画面">
-      <div className="runtime-row">
-        <span>{statusLabel(status)}</span>
-        <span>帧数：{frameCount}</span>
-      </div>
-      <div className="crt">
-        <canvas ref={canvasRef} className="nes-canvas" width={256} height={240} />
-        {!hasRom && (
-          <div className="rom-overlay">
-            <AlertTriangle size={22} />
-            <strong>{message}</strong>
+    <section className="tv-station" aria-label="中间电视">
+      <div className="tv-shell" ref={tvRef}>
+        <div className="tv-top">
+          <div className="panel-title">
+            <Tv size={19} />
+            <span>中间电视</span>
           </div>
-        )}
-      </div>
-      <div className="stage-toolbar">
-        <button onClick={onLoadLocalRom} type="button"><Upload size={15} /> 加载本地 ROM</button>
-        {isRunning
-          ? <button onClick={onPause} type="button"><Pause size={15} /> 暂停</button>
-          : <button disabled={!canRun} onClick={onRun} type="button"><Play size={15} /> 运行</button>}
-        <button disabled={audioStatus === "starting" || audioStatus === "on"} onClick={onEnableAudio} type="button"><Radio size={15} /> {audioLabel(audioStatus)}</button>
-        <button disabled={!hasRom} onClick={() => onStartPulse("1P")} type="button"><Gamepad2 size={15} /> 1P 开始</button>
-        <button disabled={!hasRom} onClick={() => onStartPulse("2P")} type="button"><Gamepad2 size={15} /> 2P 开始</button>
-        <button disabled={!hasRom} onClick={() => onInputSmoke("1P")} type="button"><Zap size={15} /> 1P 输入测试</button>
-        <button disabled={!hasRom} onClick={() => onInputSmoke("2P")} type="button"><Zap size={15} /> 2P 输入测试</button>
-        <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> 重置</button>
+          <div className="tv-osd">
+            <span>{statusLabel(status)}</span>
+            <span>FPS 目标 60</span>
+            <span>帧数 {frameCount}</span>
+            <span>{ramSnapshot ? `屏幕 ${ramSnapshot.screen} / WorldX ${ramSnapshot.worldX}` : "屏幕数 等待 RAM"}</span>
+          </div>
+        </div>
+        <div className="screen-frame">
+          <div className="screen-picture" style={{ filter: visualFilter(visualSettings) }}>
+            <canvas ref={canvasRef} className="nes-canvas" width={256} height={240} />
+          </div>
+          {!hasRom && (
+            <div className="rom-overlay">
+              <AlertTriangle size={22} />
+              <strong>{message}</strong>
+            </div>
+          )}
+        </div>
+        <div className="tv-controls" aria-label="电视设置">
+          <button className="icon-button" onClick={onToggleFullscreen} type="button">
+            <Maximize2 size={15} />
+            {isFullscreen ? "退出全屏" : "电视全屏"}
+          </button>
+          <label className="range-control volume-control">
+            <Volume2 size={14} />
+            <span>{volumeControlLabel(audioStatus)}</span>
+            <div className="range-input-row">
+              <button aria-label="降低音量" className="step-button" onClick={() => stepVolume(-0.03)} type="button">
+                <Minus size={13} />
+              </button>
+              <input
+                max="0.6"
+                min="0"
+                onChange={(event) => {
+                  onVolumeChange(Number(event.target.value));
+                  handleVolumeActivate();
+                }}
+                onFocus={handleVolumeActivate}
+                onPointerDown={handleVolumeActivate}
+                step="0.01"
+                type="range"
+                value={volume}
+              />
+              <button aria-label="提高音量" className="step-button" onClick={() => stepVolume(0.03)} type="button">
+                <Plus size={13} />
+              </button>
+            </div>
+          </label>
+          <label className="range-control">
+            <SlidersHorizontal size={14} />
+            <span>亮度</span>
+            <div className="range-input-row">
+              <button aria-label="降低亮度" className="step-button" onClick={() => stepVisual("brightness", -5, 70, 130)} type="button">
+                <Minus size={13} />
+              </button>
+              <input
+                max="130"
+                min="70"
+                onChange={(event) => onVisualChange("brightness", Number(event.target.value))}
+                step="1"
+                type="range"
+                value={visualSettings.brightness}
+              />
+              <button aria-label="提高亮度" className="step-button" onClick={() => stepVisual("brightness", 5, 70, 130)} type="button">
+                <Plus size={13} />
+              </button>
+            </div>
+          </label>
+          <label className="range-control">
+            <SlidersHorizontal size={14} />
+            <span>对比</span>
+            <div className="range-input-row">
+              <button aria-label="降低对比" className="step-button" onClick={() => stepVisual("contrast", -5, 75, 140)} type="button">
+                <Minus size={13} />
+              </button>
+              <input
+                max="140"
+                min="75"
+                onChange={(event) => onVisualChange("contrast", Number(event.target.value))}
+                step="1"
+                type="range"
+                value={visualSettings.contrast}
+              />
+              <button aria-label="提高对比" className="step-button" onClick={() => stepVisual("contrast", 5, 75, 140)} type="button">
+                <Plus size={13} />
+              </button>
+            </div>
+          </label>
+          <label className="range-control">
+            <SlidersHorizontal size={14} />
+            <span>色彩</span>
+            <div className="range-input-row">
+              <button aria-label="降低色彩" className="step-button" onClick={() => stepVisual("saturation", -5, 60, 150)} type="button">
+                <Minus size={13} />
+              </button>
+              <input
+                max="150"
+                min="60"
+                onChange={(event) => onVisualChange("saturation", Number(event.target.value))}
+                step="1"
+                type="range"
+                value={visualSettings.saturation}
+              />
+              <button aria-label="提高色彩" className="step-button" onClick={() => stepVisual("saturation", 5, 60, 150)} type="button">
+                <Plus size={13} />
+              </button>
+            </div>
+          </label>
+        </div>
       </div>
     </section>
   );
 }
 
-function TacticalPanel() {
+function ConsoleDeck({
+  status,
+  romMetadata,
+  onLoadLocalRom,
+  onRun,
+  onPause,
+  onReset
+}: {
+  status: RuntimeStatus;
+  romMetadata: RomMetadata | null;
+  onLoadLocalRom: () => void;
+  onRun: () => void;
+  onPause: () => void;
+  onReset: () => void;
+}) {
+  const isRunning = status === "running";
+  const hasRom = status === "loaded" || status === "running" || status === "paused";
+
+  return (
+    <section className="console-deck" aria-label="主机">
+      <div className="console-status-strip">
+        <span>位置：{romMetadata?.filePath || "未提供本地路径"}</span>
+        <strong>主机状态：{statusLabel(status)}</strong>
+      </div>
+      <div className="console-left">
+        <div className="panel-title">
+          <Cpu size={18} />
+          <span>主机</span>
+        </div>
+        <div className="cartridge-slot">
+          <span>卡带槽</span>
+          {romMetadata ? (
+            <>
+              <strong>{romMetadata.displayTitle}</strong>
+              <div className="rom-meta-grid" aria-label="ROM 信息">
+                <div>
+                  <span>文件</span>
+                  <b>{romMetadata.fileName}</b>
+                </div>
+                <div>
+                  <span>版本</span>
+                  <b>{romMetadata.versionLabel}</b>
+                </div>
+                <div>
+                  <span>容量</span>
+                  <b>{romMetadata.sizeLabel}</b>
+                </div>
+                <div>
+                  <span>Mapper</span>
+                  <b>{romMetadata.mapperLabel}</b>
+                </div>
+                <div>
+                  <span>PRG</span>
+                  <b>{romMetadata.prgRomBanks} banks / {romMetadata.prgRomKb} KB</b>
+                </div>
+                <div>
+                  <span>CHR</span>
+                  <b>{romMetadata.chrRomBanks} banks / {romMetadata.chrRomKb} KB</b>
+                </div>
+                <div>
+                  <span>镜像</span>
+                  <b>{romMetadata.mirroring}</b>
+                </div>
+                <div>
+                  <span>标志</span>
+                  <b>{romMetadata.battery ? "Battery" : "No Battery"} / {romMetadata.trainer ? "Trainer" : "No Trainer"}</b>
+                </div>
+                <div>
+                  <span>校验</span>
+                  <b>{romMetadata.sha256Short || "未计算"}</b>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <strong>{hasRom ? "本地 ROM 已插入" : "等待本地用户自有 ROM"}</strong>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="console-controls">
+        <button onClick={onLoadLocalRom} type="button"><Upload size={15} /> 更换卡带</button>
+        <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
+          <Power size={15} />
+          {isRunning ? "暂停" : "继续"}
+        </button>
+        <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
+      </div>
+    </section>
+  );
+}
+
+function TacticalPanel({
+  ramSnapshot,
+  gameplayActive
+}: {
+  ramSnapshot: GameRamSnapshot | null;
+  gameplayActive: boolean;
+}) {
+  const threatCount = ramSnapshot?.enemies.filter((enemy) => enemy.threat).length ?? 0;
+  const stackRows = [
+    { label: "生存", value: gameplayActive ? "可操作" : ramSnapshot ? "待入局" : "等待 RAM", icon: Shield },
+    { label: "路线", value: ramSnapshot ? `WorldX ${ramSnapshot.worldX}` : "等待 WorldX", icon: MapIcon },
+    { label: "协作", value: "排队中", icon: HeartPulse },
+    { label: "战斗", value: ramSnapshot ? `${threatCount} 威胁` : "仅输入测试", icon: Target },
+    { label: "推进", value: ramSnapshot ? `屏幕 ${ramSnapshot.screen}` : "受控", icon: Activity }
+  ];
+
   return (
     <section className="tactical-panel">
       <div className="panel-title">
@@ -489,19 +1250,19 @@ function TacticalPanel() {
       <div className="state-strip">
         <div>
           <dt>CameraX</dt>
-          <dd>等待</dd>
+          <dd>{ramSnapshot ? ramSnapshot.cameraX : "等待"}</dd>
         </div>
         <div>
           <dt>PlayerX</dt>
-          <dd>等待</dd>
+          <dd>{ramSnapshot ? ramSnapshot.playerX : "等待"}</dd>
         </div>
         <div>
           <dt>WorldX</dt>
-          <dd>等待</dd>
+          <dd>{ramSnapshot ? ramSnapshot.worldX : "等待"}</dd>
         </div>
       </div>
       <div className="stack-list">
-        {tacticalStack.map((item) => {
+        {stackRows.map((item) => {
           const Icon = item.icon;
           return (
             <div className="stack-row" key={item.label}>
@@ -534,16 +1295,30 @@ function LogPanel({ eventLog }: { eventLog: string[] }) {
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const tvRef = useRef<HTMLDivElement | null>(null);
   const nesRef = useRef<NES | null>(null);
   const audioRef = useRef<AudioRuntime | null>(null);
   const timerRef = useRef<number | null>(null);
   const runningRef = useRef(false);
   const frameRef = useRef(0);
+  const volumeRef = useRef(0.28);
+  const romBytesRef = useRef<Uint8Array | null>(null);
   const autoLoadStartedRef = useRef(false);
+  const autoRunStartedRef = useRef(false);
   const autoSmokeStartedRef = useRef(false);
+  const audioBlockedLoggedRef = useRef(false);
+  const audioOnLoggedRef = useRef(false);
+  const gameplayActiveRef = useRef(false);
+  const ramSnapshotRef = useRef<GameRamSnapshot | null>(null);
+  const deathLatchedRef = useRef(false);
   const finalButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
+  const playerMetricsRef = useRef<PlayerMetricStates>(createPlayerMetricStates());
   const sourceButtonsRef = useRef(createSourceInputStates());
   const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const strategyModelsRef = useRef<Record<PlayerSide, AiStrategyKey>>({
+    "1P": "off",
+    "2P": "placeholder"
+  });
   const gamepadLabelsRef = useRef<Record<PlayerSide, string>>({
     "1P": gamepadLabel(null, 0),
     "2P": gamepadLabel(null, 1)
@@ -551,9 +1326,24 @@ function App() {
   const [status, setStatus] = useState<RuntimeStatus>("no-rom");
   const [audioStatus, setAudioStatus] = useState<AudioStatus>("off");
   const [message, setMessage] = useState("加载本地用户自有 ROM 后开始真实模拟器测试。");
+  const [romMetadata, setRomMetadata] = useState<RomMetadata | null>(null);
   const [frameCount, setFrameCount] = useState(0);
+  const [ramSnapshot, setRamSnapshot] = useState<GameRamSnapshot | null>(null);
+  const [gameplayActive, setGameplayActive] = useState(false);
   const [buttonStates, setButtonStates] = useState<PlayerButtonStates>(createPlayerButtonStates);
+  const [playerMetrics, setPlayerMetrics] = useState<PlayerMetricStates>(createPlayerMetricStates);
   const [controlModes, setControlModes] = useState<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const [strategyModels, setStrategyModels] = useState<Record<PlayerSide, AiStrategyKey>>({
+    "1P": "off",
+    "2P": "placeholder"
+  });
+  const [volume, setVolume] = useState(0.28);
+  const [visualSettings, setVisualSettings] = useState<VisualSettings>({
+    brightness: 100,
+    contrast: 108,
+    saturation: 112
+  });
+  const [isTvFullscreen, setIsTvFullscreen] = useState(false);
   const [gamepadLabelsState, setGamepadLabelsState] = useState<Record<PlayerSide, string>>(gamepadLabelsRef.current);
   const [lastInputs, setLastInputs] = useState<Record<PlayerSide, string>>({
     "1P": "等待输入",
@@ -568,6 +1358,34 @@ function App() {
 
   const appendLog = useCallback((line: string) => {
     setEventLog((current) => [line, ...current].slice(0, 10));
+  }, []);
+
+  const addPlayerMetricDeltas = useCallback((side: PlayerSide, deltas: Partial<PlayerMetrics>) => {
+    const currentMetrics = playerMetricsRef.current[side];
+    const updatedMetrics = {
+      kills: currentMetrics.kills + (deltas.kills ?? 0),
+      deaths: currentMetrics.deaths + (deltas.deaths ?? 0),
+      shots: currentMetrics.shots + (deltas.shots ?? 0),
+      jumps: currentMetrics.jumps + (deltas.jumps ?? 0),
+      moves: currentMetrics.moves + (deltas.moves ?? 0)
+    };
+
+    playerMetricsRef.current = {
+      ...playerMetricsRef.current,
+      [side]: updatedMetrics
+    };
+    setPlayerMetrics((current) => ({
+      ...current,
+      [side]: updatedMetrics
+    }));
+  }, []);
+
+  const resetRamTracking = useCallback(() => {
+    gameplayActiveRef.current = false;
+    ramSnapshotRef.current = null;
+    deathLatchedRef.current = false;
+    setGameplayActive(false);
+    setRamSnapshot(null);
   }, []);
 
   const isSourceAllowed = useCallback((side: PlayerSide, source: InputSource) => {
@@ -590,12 +1408,30 @@ function App() {
 
     const previous = finalButtonsRef.current[side];
     const nes = nesRef.current;
+    const shouldCountInputMetrics = gameplayActiveRef.current
+      && (side === "1P" || Boolean(ramSnapshotRef.current?.twoPlayerActive));
+    let shotsDelta = 0;
+    let jumpsDelta = 0;
+    let movesDelta = 0;
     for (const button of buttonNames) {
       if (previous[button] === next[button]) continue;
+      if (shouldCountInputMetrics && !previous[button] && next[button]) {
+        if (button === "b") shotsDelta += 1;
+        if (button === "a") jumpsDelta += 1;
+        if (button === "up" || button === "down" || button === "left" || button === "right") movesDelta += 1;
+      }
       if (nes) {
         if (next[button]) nes.buttonDown(playerNumbers[side], buttonMap[button]);
         else nes.buttonUp(playerNumbers[side], buttonMap[button]);
       }
+    }
+
+    if (shotsDelta > 0 || jumpsDelta > 0 || movesDelta > 0) {
+      addPlayerMetricDeltas(side, {
+        shots: shotsDelta,
+        jumps: jumpsDelta,
+        moves: movesDelta
+      });
     }
 
     finalButtonsRef.current = {
@@ -606,7 +1442,7 @@ function App() {
       ...current,
       [side]: next
     }));
-  }, [isSourceAllowed]);
+  }, [addPlayerMetricDeltas, isSourceAllowed]);
 
   const setSourceButtons = useCallback((side: PlayerSide, source: InputSource, next: ButtonState) => {
     sourceButtonsRef.current[side][source] = next;
@@ -652,6 +1488,12 @@ function App() {
     setLastInputs({ "1P": "等待输入", "2P": "等待输入" });
   }, []);
 
+  const resetPlayerMetrics = useCallback(() => {
+    const next = createPlayerMetricStates();
+    playerMetricsRef.current = next;
+    setPlayerMetrics(next);
+  }, []);
+
   const changeControlMode = useCallback((side: PlayerSide, mode: ControlMode) => {
     controlModesRef.current = {
       ...controlModesRef.current,
@@ -666,12 +1508,68 @@ function App() {
     if (mode === "ai") clearSourcesForSide(side, ["keyboard", "gamepad", "panel"]);
     if (mode === "hybrid") recomputeSide(side);
 
+    if (mode !== "human" && (strategyModelsRef.current[side] === "off" || strategyModelsRef.current[side] === "placeholder")) {
+      strategyModelsRef.current = {
+        ...strategyModelsRef.current,
+        [side]: "rules-v0"
+      };
+      setStrategyModels((current) => ({
+        ...current,
+        [side]: "rules-v0"
+      }));
+      appendLog(`${side} AI 策略：自动切换到规则基线 V0`);
+    }
+
     setLastInputs((current) => ({
       ...current,
       [side]: modeLastInputLabels[mode]
     }));
     appendLog(`${side} 模式切换：${controlModeLabels[mode]}`);
+    if (side === "2P" && mode !== "human" && !ramSnapshotRef.current?.twoPlayerActive) {
+      appendLog("2P：等待 1P 在游戏菜单启动双人模式");
+    }
   }, [appendLog, clearSourcesForSide, recomputeSide]);
+
+  const changeStrategyModel = useCallback((side: PlayerSide, strategy: AiStrategyKey) => {
+    strategyModelsRef.current = {
+      ...strategyModelsRef.current,
+      [side]: strategy
+    };
+    setStrategyModels((current) => ({
+      ...current,
+      [side]: strategy
+    }));
+    appendLog(`${side} AI 策略：${getAiStrategyLabel(strategy)}`);
+  }, [appendLog]);
+
+  const changeVolume = useCallback((nextVolume: number) => {
+    volumeRef.current = nextVolume;
+    setVolume(nextVolume);
+    audioRef.current?.setVolume(nextVolume);
+  }, []);
+
+  const changeVisualSetting = useCallback((key: keyof VisualSettings, value: number) => {
+    setVisualSettings((current) => ({
+      ...current,
+      [key]: value
+    }));
+  }, []);
+
+  const toggleTvFullscreen = useCallback(() => {
+    const target = tvRef.current;
+    if (!target) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch((error) => {
+        const detail = error instanceof Error ? error.message : String(error);
+        appendLog(`电视全屏退出失败：${detail}`);
+      });
+      return;
+    }
+    void target.requestFullscreen().catch((error) => {
+      const detail = error instanceof Error ? error.message : String(error);
+      appendLog(`电视全屏请求失败：${detail}`);
+    });
+  }, [appendLog]);
 
   const renderFrame = useCallback((buffer: Uint32Array) => {
     const canvas = canvasRef.current;
@@ -707,24 +1605,40 @@ function App() {
       const resumed = await tryResumeAudioContext(audioRef.current.context);
       if (resumed) {
         setAudioStatus("on");
-        appendLog("声音：已开启");
+        audioBlockedLoggedRef.current = false;
+        if (!audioOnLoggedRef.current) {
+          audioOnLoggedRef.current = true;
+          appendLog("声音：已开启");
+        }
       } else {
         setAudioStatus("blocked");
-        appendLog("声音：浏览器等待真实点击");
+        audioOnLoggedRef.current = false;
+        if (!audioBlockedLoggedRef.current) {
+          audioBlockedLoggedRef.current = true;
+          appendLog("声音：浏览器等待真实点击");
+        }
       }
       return;
     }
     setAudioStatus("starting");
     try {
-      const runtime = createAudioRuntime();
+      const runtime = createAudioRuntime(volumeRef.current);
       audioRef.current = runtime;
       const resumed = await tryResumeAudioContext(runtime.context);
       if (resumed) {
         setAudioStatus("on");
-        appendLog("声音：已开启");
+        audioBlockedLoggedRef.current = false;
+        if (!audioOnLoggedRef.current) {
+          audioOnLoggedRef.current = true;
+          appendLog("声音：已开启");
+        }
       } else {
         setAudioStatus("blocked");
-        appendLog("声音：浏览器等待真实点击");
+        audioOnLoggedRef.current = false;
+        if (!audioBlockedLoggedRef.current) {
+          audioBlockedLoggedRef.current = true;
+          appendLog("声音：浏览器等待真实点击");
+        }
       }
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -762,21 +1676,75 @@ function App() {
     }
   }, [setSourceButtons]);
 
+  const hasHumanInputForSide = useCallback((side: PlayerSide) => (
+    humanSources.some((source) => hasPressedButton(sourceButtonsRef.current[side][source]))
+  ), []);
+
+  const applyAiInputs = useCallback((snapshot: GameRamSnapshot | null, active: boolean) => {
+    for (const side of playerSides) {
+      const mode = controlModesRef.current[side];
+      const strategyKey = strategyModelsRef.current[side];
+      const mirrorSide = side === "1P" ? "2P" : "1P";
+      const aiButtons = decideAiButtons({
+        side,
+        mode,
+        strategyKey,
+        snapshot,
+        gameplayActive: active,
+        twoPlayerActive: side === "1P" || Boolean(snapshot?.twoPlayerActive),
+        humanOverrideActive: hasHumanInputForSide(side),
+        mirrorButtons: finalButtonsRef.current[mirrorSide],
+        frame: frameRef.current
+      });
+      setSourceButtons(side, "ai", aiButtons);
+    }
+  }, [hasHumanInputForSide, setSourceButtons]);
+
   const tickFrame = useCallback(() => {
     if (!runningRef.current) return;
     const nes = nesRef.current;
     if (nes) {
+      const beforeSnapshot = readGameRamSnapshot(nes, frameRef.current);
+      ramSnapshotRef.current = beforeSnapshot;
+      gameplayActiveRef.current = isGameplayActive(beforeSnapshot);
+
       applyGamepads();
+      applyAiInputs(beforeSnapshot, gameplayActiveRef.current);
       nes.frame();
       frameRef.current += 1;
-      if (frameRef.current % 10 === 0) setFrameCount(frameRef.current);
-    }
-  }, [applyGamepads]);
 
-  const setRunning = useCallback((running: boolean) => {
+      const afterSnapshot = readGameRamSnapshot(nes, frameRef.current);
+      const deathsDelta = shouldCountP1Death(beforeSnapshot, afterSnapshot, deathLatchedRef.current) ? 1 : 0;
+      const killsDelta = countLikelyKillEvents(beforeSnapshot, afterSnapshot);
+      if (deathsDelta > 0) deathLatchedRef.current = true;
+      if (shouldReleaseDeathLatch(afterSnapshot)) deathLatchedRef.current = false;
+      if (deathsDelta > 0 || killsDelta > 0) {
+        addPlayerMetricDeltas("1P", {
+          deaths: deathsDelta,
+          kills: killsDelta
+        });
+      }
+
+      ramSnapshotRef.current = afterSnapshot;
+      gameplayActiveRef.current = isGameplayActive(afterSnapshot);
+
+      if (frameRef.current % 10 === 0) {
+        setFrameCount(frameRef.current);
+        setRamSnapshot(afterSnapshot);
+        setGameplayActive(gameplayActiveRef.current);
+      }
+    }
+  }, [addPlayerMetricDeltas, applyAiInputs, applyGamepads]);
+
+  const setRunning = useCallback((running: boolean, forceRestart = false) => {
     runningRef.current = running;
     if (running) {
+      void enableAudio();
       setStatus("running");
+      if (forceRestart && timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       if (timerRef.current === null) {
         tickFrame();
         timerRef.current = window.setInterval(tickFrame, 1000 / 60);
@@ -788,11 +1756,13 @@ function App() {
         timerRef.current = null;
       }
     }
-  }, [tickFrame]);
+  }, [enableAudio, tickFrame]);
 
   const loadLocalRom = useCallback(async () => {
     setStatus("loading");
     setMessage("正在通过本地开发端点加载 ROM...");
+    setRomMetadata(null);
+    romBytesRef.current = null;
     try {
       const response = await fetch("/api/local-test-rom", { cache: "no-store" });
       if (!response.ok) {
@@ -800,33 +1770,44 @@ function App() {
         throw new Error(body || `ROM endpoint returned ${response.status}`);
       }
       const data = new Uint8Array(await response.arrayBuffer());
+      const metadata = parseNesRomMetadata(data, readRomMetadataHeaders(response.headers));
       const nes = nesRef.current || createNes();
       nes.loadROM(data);
+      romBytesRef.current = data;
       frameRef.current = 0;
       setFrameCount(0);
       clearAllInputs();
+      resetPlayerMetrics();
+      resetRamTracking();
+      setRomMetadata(metadata);
       setStatus("loaded");
-      setMessage(`本地 ROM 已加载：${data.byteLength} 字节。`);
-      appendLog(`运行时：本地 ROM 已加载（${data.byteLength} 字节）`);
+      setMessage(`本地 ROM 已加载：${metadata.displayTitle} / ${metadata.sizeLabel}。`);
+      appendLog(`运行时：本地 ROM 已加载（${metadata.displayTitle}，${metadata.sizeLabel}）`);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
+      setRomMetadata(null);
+      resetRamTracking();
       setStatus("error");
       setMessage(detail);
       appendLog(`运行错误：${detail}`);
     }
-  }, [appendLog, clearAllInputs, createNes]);
+  }, [appendLog, clearAllInputs, createNes, resetPlayerMetrics, resetRamTracking]);
 
   const resetRuntime = useCallback(() => {
-    const nes = nesRef.current;
-    if (!nes) return;
+    const currentRom = romBytesRef.current;
+    if (!currentRom) return;
     setRunning(false);
     clearAllInputs();
-    nes.reset();
+    resetPlayerMetrics();
+    resetRamTracking();
+    const nes = createNes();
+    nes.loadROM(currentRom);
     frameRef.current = 0;
     setFrameCount(0);
     setStatus("loaded");
-    appendLog("运行时：模拟器已重置");
-  }, [appendLog, clearAllInputs, setRunning]);
+    appendLog("主机：Reset，断电重启");
+    window.setTimeout(() => setRunning(true, true), 140);
+  }, [appendLog, clearAllInputs, createNes, resetPlayerMetrics, resetRamTracking, setRunning]);
 
   const runInputSmoke = useCallback((side: PlayerSide) => {
     if (!nesRef.current) return;
@@ -849,6 +1830,7 @@ function App() {
       const mapped = keyboardMap.get(event.code);
       if (!mapped) return;
       event.preventDefault();
+      void enableAudio();
       setSourceButton(mapped.side, "keyboard", mapped.button, true);
     };
     const onKeyUp = (event: KeyboardEvent) => {
@@ -863,7 +1845,7 @@ function App() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [setSourceButton]);
+  }, [enableAudio, setSourceButton]);
 
   useEffect(() => {
     const onGamepadConnected = (event: GamepadEvent) => {
@@ -881,6 +1863,16 @@ function App() {
   }, [appendLog]);
 
   useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsTvFullscreen(document.fullscreenElement === tvRef.current);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("autoload") === "1" && !autoLoadStartedRef.current) {
       autoLoadStartedRef.current = true;
@@ -892,7 +1884,10 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const hasRom = status === "loaded" || status === "paused" || status === "running";
     if (!hasRom || autoSmokeStartedRef.current) return;
-    if (params.get("autorun") === "1") setRunning(true);
+    if (params.get("autorun") === "1" && !autoRunStartedRef.current) {
+      autoRunStartedRef.current = true;
+      setRunning(true);
+    }
     if (params.get("smoke") === "1") {
       autoSmokeStartedRef.current = true;
       runInputSmoke("1P");
@@ -907,36 +1902,43 @@ function App() {
     };
   }, []);
 
+  const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const pilots: Pilot[] = [
     {
       side: "1P",
-      name: "玩家 1",
-      status: status === "running"
-        ? controlModes["1P"] === "ai" ? "AI 占位" : controlModes["1P"] === "hybrid" ? "人机混合" : "可操作"
-        : statusLabel(status),
+      name: getPilotName("1P", controlModes["1P"]),
+      status: getPilotStatus("1P", status, controlModes["1P"], strategyModels["1P"], twoPlayerActive),
       mode: controlModes["1P"],
-      strategy: modeStrategyLabels[controlModes["1P"]],
-      temperament: controlModes["1P"] === "ai" ? "人类输入被隔离" : "人类输入可写入",
+      strategyKey: strategyModels["1P"],
+      strategy: `${getAiStrategyLabel(strategyModels["1P"])} / ${modeStrategyLabels[controlModes["1P"]]}`,
+      temperament: getPilotTemperament("1P", controlModes["1P"], strategyModels["1P"], twoPlayerActive),
       buttons: buttonStates["1P"],
       accent: "blue",
       keyboardHint: keyboardHints["1P"],
       gamepadHint: gamepadLabelsState["1P"],
-      lastInput: lastInputs["1P"]
+      lastInput: lastInputs["1P"],
+      authority: getAuthorityLabel(controlModes["1P"]),
+      stats: buildPilotStats("1P", controlModes["1P"], buttonStates["1P"], playerMetrics["1P"], ramSnapshot, gameplayActive),
+      dialogue: buildPilotDialogue("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot),
+      dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive)
     },
     {
       side: "2P",
-      name: "玩家 2 / AI 伙伴",
-      status: status === "running"
-        ? controlModes["2P"] === "ai" ? "AI 占位" : controlModes["2P"] === "hybrid" ? "人机混合" : "可操作"
-        : statusLabel(status),
+      name: getPilotName("2P", controlModes["2P"]),
+      status: getPilotStatus("2P", status, controlModes["2P"], strategyModels["2P"], twoPlayerActive),
       mode: controlModes["2P"],
-      strategy: modeStrategyLabels[controlModes["2P"]],
-      temperament: controlModes["2P"] === "ai" ? "AI 安全占位" : "人类输入可写入",
+      strategyKey: strategyModels["2P"],
+      strategy: `${getAiStrategyLabel(strategyModels["2P"])} / ${modeStrategyLabels[controlModes["2P"]]}`,
+      temperament: getPilotTemperament("2P", controlModes["2P"], strategyModels["2P"], twoPlayerActive),
       buttons: buttonStates["2P"],
       accent: "red",
       keyboardHint: keyboardHints["2P"],
       gamepadHint: gamepadLabelsState["2P"],
-      lastInput: lastInputs["2P"]
+      lastInput: lastInputs["2P"],
+      authority: getAuthorityLabel(controlModes["2P"]),
+      stats: buildPilotStats("2P", controlModes["2P"], buttonStates["2P"], playerMetrics["2P"], ramSnapshot, gameplayActive),
+      dialogue: buildPilotDialogue("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot),
+      dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive)
     }
   ];
 
@@ -953,37 +1955,57 @@ function App() {
           <span><Radio size={16} /> {audioLabel(audioStatus)}</span>
         </div>
       </header>
-      <div className="layout">
+      <div className="equipment-layout">
         <PilotPanel
-          onButtonDown={(button) => setSourceButton("1P", "panel", button, true)}
+          onButtonDown={(button) => {
+            void enableAudio();
+            setSourceButton("1P", "panel", button, true);
+          }}
           onButtonUp={(button) => setSourceButton("1P", "panel", button, false)}
           onModeChange={(mode) => changeControlMode("1P", mode)}
+          onStrategyChange={(strategy) => changeStrategyModel("1P", strategy)}
           pilot={pilots[0]}
         />
         <div className="center-column">
-          <GameViewport
+          <TelevisionView
             audioStatus={audioStatus}
             canvasRef={canvasRef}
             frameCount={frameCount}
+            isFullscreen={isTvFullscreen}
             message={message}
             onEnableAudio={enableAudio}
-            onInputSmoke={runInputSmoke}
+            onToggleFullscreen={toggleTvFullscreen}
+            onVisualChange={changeVisualSetting}
+            onVolumeChange={changeVolume}
+            ramSnapshot={ramSnapshot}
+            status={status}
+            tvRef={tvRef}
+            visualSettings={visualSettings}
+            volume={volume}
+          />
+          <ConsoleDeck
             onLoadLocalRom={loadLocalRom}
             onPause={() => setRunning(false)}
             onReset={resetRuntime}
             onRun={() => setRunning(true)}
-            onStartPulse={(side) => pulseButton(side, "start", 220)}
+            romMetadata={romMetadata}
             status={status}
           />
-          <TacticalPanel />
-          <LogPanel eventLog={eventLog} />
         </div>
         <PilotPanel
-          onButtonDown={(button) => setSourceButton("2P", "panel", button, true)}
+          onButtonDown={(button) => {
+            void enableAudio();
+            setSourceButton("2P", "panel", button, true);
+          }}
           onButtonUp={(button) => setSourceButton("2P", "panel", button, false)}
           onModeChange={(mode) => changeControlMode("2P", mode)}
+          onStrategyChange={(strategy) => changeStrategyModel("2P", strategy)}
           pilot={pilots[1]}
         />
+      </div>
+      <div className="debug-floor">
+        <TacticalPanel gameplayActive={gameplayActive} ramSnapshot={ramSnapshot} />
+        <LogPanel eventLog={eventLog} />
       </div>
     </main>
   );

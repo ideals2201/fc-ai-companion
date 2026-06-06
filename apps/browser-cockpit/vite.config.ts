@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
@@ -27,9 +28,17 @@ function localRomPlugin(mode: string): Plugin {
           return;
         }
 
+        const romBytes = fs.readFileSync(romPath);
+        const romStat = fs.statSync(romPath);
+        const romSha256 = crypto.createHash("sha256").update(romBytes).digest("hex");
+
         res.statusCode = 200;
         res.setHeader("content-type", "application/octet-stream");
-        res.end(fs.readFileSync(romPath));
+        res.setHeader("x-rom-file-name", encodeURIComponent(path.basename(romPath)));
+        res.setHeader("x-rom-file-path", encodeURIComponent(romPath));
+        res.setHeader("x-rom-size", String(romStat.size));
+        res.setHeader("x-rom-sha256", romSha256);
+        res.end(romBytes);
       });
     }
   };

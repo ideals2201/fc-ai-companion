@@ -11,7 +11,7 @@
   "scripts": {
     "dev:cockpit": "npm run dev --workspace @fc-ai/browser-cockpit",
     "build": "npm run build --workspace @fc-ai/browser-cockpit",
-    "test": "node --test",
+    "test": "node --test tests/romMetadata.test.mjs",
     "check": "npm test && npm run build"
   },
   "license": "UNLICENSED"

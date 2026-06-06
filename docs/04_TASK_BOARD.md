@@ -2,16 +2,25 @@
 
 ## 当前
 
-- 接入 1P / 2P 双手柄输入路由。
-- 支持每路自由切换人类、AI、混合模式。
-- 支持键盘与浏览器 Gamepad API 输入。
-- 准备 RAM State Schema 和 WorldX 实现。
+- 验收物理化浏览器驾驶舱 V0 外壳。
+- 验收左右 1P / 2P 实体手柄舱。
+- 验收中间电视与电视下方三按钮主机布局。
+- 验收 RAM Reader V0、WorldX 推导和入局后战绩统计。
+- 验收 1P / 2P 名称随人类、AI、混合模式自动变化。
+- 验收 AI 操作层 V0：自动入局、向右推进、射击、基础跳跃。
+- 验收 2P 门禁：未检测到双人模式时，2P AI 不写入手柄、不累计战绩。
+- 验收 autorun 不干扰主机暂停 / 继续。
 
 ## 下一步
 
 - 验收双手柄输入不破坏 V0.1.0 的 1P 输入。
-- 实现 RAM state schema。
-- 实现 WorldX 推导。
+- 验收主机三按钮：更换卡带 / 暂停继续 / Reset。
+- 验证 RAM state schema 在真实 ROM 运行中的稳定性。
+- 验证 WorldX 推导与 Stage 1 路线地标是否匹配。
+- 补 2P RAM map。
+- 验证双人模式 RAM 字段 `0x0022` 在真实双人局中的稳定性。
+- 验证 killCount 推导过滤条件。
+- 基于 RAM Reader V0 实现 Danger Detector V0。
 - 设计并实现 V0 战术调试驾驶舱面板。
 - 实现 Danger Detector V0。
 - 实现 Route Script V0。
