@@ -1,75 +1,101 @@
-# Decision Log
+# 决策日志
 
-## 2026-06-05: Clean Repository Mode
+## 2026-06-05：干净仓库模式
 
-Decision: create a new clean project repository and treat existing folders as historical references.
+决策：创建新的干净项目仓库，把已有文件夹作为历史参考。
 
-Reason: the current workspace contains prior test packages and local user files. The new product needs a controlled GitHub-ready structure.
+原因：当前工作区包含历史测试包和本地用户文件。新产品需要一个可控、可进入 GitHub 模式的结构。
 
-## 2026-06-05: Current Bot Reality
+## 2026-06-05：当前 Bot 现实
 
-Decision: record that the AI already has basic action control.
+决策：记录 AI 已经具备基础动作控制能力。
 
-The current problem is tactical ability, not button ability.
+当前问题是战术能力，不是按键能力。
 
-## 2026-06-05: Tactical Priority
+## 2026-06-05：战术优先级
 
-Decision: prioritize Danger Detector, Route Script, Action Lock, and FSM.
+决策：优先实现 Danger Detector、Route Script、Action Lock 和 FSM。
 
-Reason: the bot can operate but dies without tactical survival logic.
+原因：Bot 已经会操作，但缺少战术生存逻辑，所以经常死亡。
 
-## 2026-06-05: TAS Boundary
+## 2026-06-05：TAS 边界
 
-Decision: TAS is a route knowledge base, not a controller.
+决策：TAS 是路线知识库，不是控制器。
 
-## 2026-06-05: Browser / Training Split
+## 2026-06-05：浏览器 / 训练分工
 
-Decision: browser is the product platform. Python/Gym Retro is the later training platform.
+决策：浏览器是产品平台。Python / Gym Retro 是后续训练平台。
 
-## 2026-06-05: PM-Controlled Subdialogues
+## 2026-06-05：PM 控制的子对话
 
-Decision: use this main thread as the PM Control Console and create three pinned read-only initialization subdialogues.
+决策：使用本主线程作为 PM 总控台，并创建三个置顶、只读初始化子对话。
 
-Agents:
+Agent：
 
-- 01 Emulator Engineer Agent
-- 02 RAM Reverse Engineering Agent
-- 03 Bot Behavior Engineer Agent
+- 01 模拟器工程师 Agent
+- 02 RAM 逆向工程师 Agent
+- 03 Bot 行为工程师 Agent
 
-Reason: the project needs focused technical review while preserving PM control over priorities, architecture, and compliance boundaries.
+原因：项目需要聚焦的技术审查，同时保持 PM 对优先级、架构和合规边界的控制。
 
-## 2026-06-05: First Formal Development Step
+## 2026-06-05：第一个正式开发步骤
 
-Decision: start formal implementation with the Browser Cockpit shell.
+决策：从浏览器驾驶舱外壳开始正式实现。
 
-Scope:
+范围：
 
-- Vite / React / TypeScript app under `apps/browser-cockpit`
-- cockpit layout
-- dual control pods
-- realtime controller visualization shell
-- tactical stack status shell
-- event stream shell
+- `apps/browser-cockpit` 下的 Vite / React / TypeScript 应用
+- 驾驶舱布局
+- 双控制舱
+- 实时手柄可视化外壳
+- 战术栈状态外壳
+- 事件流外壳
 
-Boundary:
+边界：
 
-- no ROM loading yet
-- no emulator runtime yet
-- no complex voice
-- no live streaming
-- no advanced animation
-- no LLM fast-brain control
+- ROM 加载只走本地 `.env.local`，且该文件被 Git 忽略
+- 模拟器运行时当前仅为 JSNES 冒烟运行时
+- 不做复杂语音
+- 不做直播
+- 不做高级动画
+- 不做 LLM 快脑控制
 
-Reason: the project needs a runnable product surface before wiring emulator and RAM adapters, while keeping tactical logic as the next core work.
+原因：项目需要先拥有可运行的产品表面，再接入模拟器与 RAM 适配器；战术逻辑仍是下一阶段核心工作。
 
-## 2026-06-05: Version Guidance Rule
+## 2026-06-05：真实 ROM 冒烟运行时
 
-Decision: PM Control Console should actively recommend when to save a checkpoint or upgrade the project version.
+决策：用真实 JSNES 冒烟运行时替换模拟游戏画面。
 
-Rules:
+范围：
 
-- PM can independently make ordinary commits after coherent work and verification.
-- PM should recommend version bumps, tags, releases, or merges when justified.
-- The project owner must approve merges to `main`, tags, releases, version-number changes, GitHub pushes, branch deletion, and history rewriting.
+- `jsnes@2.1.0`
+- Vite 开发端点 `/api/local-test-rom`
+- 通过本地 `.env.local` 配置用户自有 ROM 测试路径
+- NES canvas 渲染
+- 手动手柄输入
+- 延迟开始键和右 + B 输入冒烟测试
+- Web Audio 声音入口
+- 中文产品界面
 
-Reason: version control should protect momentum without letting process decisions silently change the project state.
+边界：
+
+- 不提交 ROM
+- 不提交真实 ROM 路径
+- 尚无路线 AI
+- 尚无 RAM schema
+- 尚无 WorldX
+- 不做 TAS 直接控制
+
+原因：参考程序已经证明真实运行路径可行；正式项目应该从真实本地 ROM 测试开始，而不是继续保留模拟画面。
+
+## 2026-06-05：版本建议规则
+
+决策：PM 总控台应该主动建议何时保存检查点或升级项目版本。
+
+规则：
+
+- PM 可以在完成一组连贯工作并验证后，独立创建普通 commit。
+- 当理由充分时，PM 应该建议版本号升级、tag、release 或 merge。
+- merge 到 `main`、tag、release、版本号变化、推送 GitHub、删除分支、改写历史，必须由项目主人批准。
+
+原因：版本控制应该保护推进速度，但不能让流程决策静默改变项目状态。
