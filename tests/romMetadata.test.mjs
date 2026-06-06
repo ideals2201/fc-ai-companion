@@ -18,7 +18,9 @@ async function importTypeScriptModule(path) {
 const {
   decodeRomHeaderValue,
   formatRomSize,
-  parseNesRomMetadata
+  identifyRomProfile,
+  parseNesRomMetadata,
+  readRomMetadataHeaders
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/romMetadata.ts", import.meta.url));
 
 function makeHeader(bytes = {}) {
@@ -44,6 +46,8 @@ test("parses iNES cartridge metadata from header bytes and local file info", () 
   const metadata = parseNesRomMetadata(romBytes, {
     fileName: "sample-owned-test.nes",
     filePath: "D:\\Roms\\sample-owned-test.nes",
+    md5: "0123456789ABCDEF0123456789ABCDEF",
+    sha1: "abcdef1234567890abcdef1234567890abcdef12",
     sha256: "abcdef1234567890abcdef",
     sizeBytes: 40976
   });
@@ -61,8 +65,13 @@ test("parses iNES cartridge metadata from header bytes and local file info", () 
   assert.equal(metadata.mirroring, "Vertical");
   assert.equal(metadata.battery, true);
   assert.equal(metadata.trainer, false);
+  assert.equal(metadata.md5, "0123456789abcdef0123456789abcdef");
+  assert.equal(metadata.md5Short, "0123456789ab");
+  assert.equal(metadata.sha1Short, "abcdef123456");
   assert.equal(metadata.sha256Short, "abcdef123456");
   assert.equal(metadata.sizeLabel, "40.0 KB");
+  assert.equal(metadata.romProfileId, "unknown");
+  assert.equal(metadata.romSupportLabel, "未识别");
 });
 
 test("detects NES 2.0 format and four-screen mirroring", () => {
@@ -99,10 +108,54 @@ test("keeps invalid ROM bytes safe and still reports local file information", ()
   assert.equal(metadata.format, "Unknown");
   assert.equal(metadata.mapperLabel, "Unknown");
   assert.equal(metadata.sizeLabel, "4 B");
+  assert.equal(metadata.romProfileId, "unknown");
 });
 
 test("decodes URL-safe ROM metadata headers", () => {
   assert.equal(decodeRomHeaderValue("D%3A%5Croms%5Csample-owned-test.nes"), "D:\\roms\\sample-owned-test.nes");
   assert.equal(decodeRomHeaderValue(null), "");
   assert.equal(formatRomSize(131088), "128.0 KB");
+});
+
+test("reads checksum headers from the local ROM endpoint", () => {
+  const headers = new Headers({
+    "x-rom-file-name": "contra_us_test.nes",
+    "x-rom-file-path": "D%3A%5CAi-Play%5CROM%5Ccontra_us_test.nes",
+    "x-rom-size": "131088",
+    "x-rom-md5": "7BDAD8B4A7A56A634C9649D20BD3011B",
+    "x-rom-sha1": "C9EA66BB7CB30AD5343F1721B1D4D3219859319B",
+    "x-rom-sha256": "26541A5550EE22DEEB3D5484E4A96130219B58CFF74D068FB1EB6567FA5E5519"
+  });
+
+  const fileInfo = readRomMetadataHeaders(headers);
+
+  assert.equal(fileInfo.filePath, "D:\\Ai-Play\\ROM\\contra_us_test.nes");
+  assert.equal(fileInfo.sizeBytes, 131088);
+  assert.equal(fileInfo.md5, "7bdad8b4a7a56a634c9649d20bd3011b");
+  assert.equal(fileInfo.sha1, "c9ea66bb7cb30ad5343f1721b1d4d3219859319b");
+  assert.equal(fileInfo.sha256, "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519");
+});
+
+test("identifies the current Contra US strategy target ROM profile", () => {
+  const profile = identifyRomProfile({
+    md5: "7bdad8b4a7a56a634c9649d20bd3011b",
+    sha1: "c9ea66bb7cb30ad5343f1721b1d4d3219859319b"
+  });
+
+  assert.equal(profile?.gameId, "contra");
+  assert.equal(profile?.romProfileId, "contra-us-good");
+  assert.equal(profile?.support, "supported");
+
+  const metadata = parseNesRomMetadata(makeHeader({ 4: 8, 5: 0 }), {
+    fileName: "contra_us_test.nes",
+    filePath: "D:\\Ai-Play\\ROM\\contra_us_test.nes",
+    md5: profile?.md5,
+    sha1: profile?.sha1,
+    sizeBytes: 131088
+  });
+
+  assert.equal(metadata.versionLabel, "Contra (U) [!]");
+  assert.equal(metadata.romProfileId, "contra-us-good");
+  assert.equal(metadata.romSupportLabel, "正式适配");
+  assert.equal(metadata.compatibilityGroup, "contra-us");
 });

@@ -36,3 +36,21 @@
 - 不提交真实 ROM 路径。
 - 不提交 ROM 字节、即时存档、BIOS 文件或下载归档。
 - 该端点只用于本地开发。
+
+## ROM 版本匹配
+
+策略、RAM map、TAS、Route Script、Boss 打法、训练轨迹和语料资料必须绑定明确 ROM 版本。
+
+规则：
+
+- ROM 版本识别优先使用 `MD5 + SHA1 + SHA256`，文件名只能作为辅助信息。
+- 外部资料必须标注适配等级：`精确匹配`、`已验证兼容`、`仅参考`。
+- 未识别 ROM 默认只允许人类操作和 RAM 观察；正式 AI 策略必须等待版本确认或实验模式标记。
+- TAS 只能作为路线知识库，不作为实时控制器。
+- 不同游戏或改版必须分开建资料，不得把 Contra、Super C、Contra Force、中文改版和 Probotector 混用。
+
+版本矩阵见：
+
+```text
+docs/09_ROM_VERSION_MATRIX.md
+```

@@ -1,0 +1,66 @@
+{
+  "game": "contra-us",
+  "gameId": "contra",
+  "romProfileId": "contra-us-good",
+  "compatibilityGroup": "contra-us",
+  "stage": 1,
+  "strategy": "survival-v0",
+  "version": 1,
+  "description": "Stage 1 survival route script V0. Prioritizes danger avoidance, short pauses, and low-risk advance.",
+  "segments": [
+    {
+      "id": "start-survive",
+      "label": "开局稳健",
+      "worldStart": 0,
+      "worldEnd": 520,
+      "action": "survive",
+      "fire": "threat",
+      "jumpEvery": 190
+    },
+    {
+      "id": "bridge-survive",
+      "label": "桥段稳健",
+      "worldStart": 520,
+      "worldEnd": 930,
+      "action": "survive",
+      "fire": "threat",
+      "jumpEvery": 130
+    },
+    {
+      "id": "mid-survive",
+      "label": "中段稳健",
+      "worldStart": 930,
+      "worldEnd": 1550,
+      "action": "survive",
+      "fire": "always",
+      "jumpEvery": 120
+    },
+    {
+      "id": "danger-survive",
+      "label": "爆桥避险",
+      "worldStart": 1550,
+      "worldEnd": 2050,
+      "action": "survive",
+      "fire": "always",
+      "jumpEvery": 72
+    },
+    {
+      "id": "boss-approach-survive",
+      "label": "关底稳进",
+      "worldStart": 2050,
+      "worldEnd": 2180,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 86
+    },
+    {
+      "id": "boss-wall-survive",
+      "label": "Boss 稳定合火",
+      "worldStart": 2180,
+      "worldEnd": 9999,
+      "action": "hold-fire",
+      "fire": "always",
+      "jumpEvery": 48
+    }
+  ]
+}

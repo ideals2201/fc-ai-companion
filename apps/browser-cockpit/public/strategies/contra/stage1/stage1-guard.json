@@ -1,0 +1,18 @@
+{
+  "game": "contra-us",
+  "gameId": "contra",
+  "romProfileId": "contra-us-good",
+  "compatibilityGroup": "contra-us",
+  "stage": 1,
+  "strategy": "guard-v0",
+  "version": 1,
+  "description": "Stage 1 companion guard route script V0. Keeps firing around 1P and advances conservatively.",
+  "segments": [
+    { "id": "start-guard", "label": "开局护卫", "worldStart": 0, "worldEnd": 520, "action": "guard", "fire": "threat", "jumpEvery": 170 },
+    { "id": "bridge-guard", "label": "桥段护卫", "worldStart": 520, "worldEnd": 930, "action": "guard", "fire": "always", "jumpEvery": 140 },
+    { "id": "mid-guard", "label": "中段护卫", "worldStart": 930, "worldEnd": 1550, "action": "guard", "fire": "always", "jumpEvery": 150 },
+    { "id": "danger-guard", "label": "爆桥护卫", "worldStart": 1550, "worldEnd": 2050, "action": "cautious", "fire": "always", "jumpEvery": 80 },
+    { "id": "boss-approach-guard", "label": "关底护卫", "worldStart": 2050, "worldEnd": 2180, "action": "hold-fire", "fire": "always", "jumpEvery": 80 },
+    { "id": "boss-wall-guard", "label": "Boss 合火", "worldStart": 2180, "worldEnd": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+  ]
+}

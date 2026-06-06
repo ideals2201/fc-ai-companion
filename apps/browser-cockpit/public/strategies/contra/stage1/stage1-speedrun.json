@@ -1,0 +1,66 @@
+{
+  "game": "contra-us",
+  "gameId": "contra",
+  "romProfileId": "contra-us-good",
+  "compatibilityGroup": "contra-us",
+  "stage": 1,
+  "strategy": "speedrun-v0",
+  "version": 1,
+  "description": "Stage 1 route script V0. Player-editable knowledge base for fast solo AI and co-op AI.",
+  "segments": [
+    {
+      "id": "start-run",
+      "label": "开局推进",
+      "worldStart": 0,
+      "worldEnd": 520,
+      "action": "advance",
+      "fire": "pulse",
+      "jumpEvery": 150
+    },
+    {
+      "id": "first-bridge",
+      "label": "第一桥段",
+      "worldStart": 520,
+      "worldEnd": 930,
+      "action": "advance",
+      "fire": "always",
+      "jumpEvery": 95
+    },
+    {
+      "id": "mid-jungle",
+      "label": "中段丛林",
+      "worldStart": 930,
+      "worldEnd": 1550,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 70
+    },
+    {
+      "id": "bridge-danger",
+      "label": "爆桥危险段",
+      "worldStart": 1550,
+      "worldEnd": 2050,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 60
+    },
+    {
+      "id": "boss-approach",
+      "label": "关底前压速",
+      "worldStart": 2050,
+      "worldEnd": 2180,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 80
+    },
+    {
+      "id": "boss-wall",
+      "label": "Boss 停位射击",
+      "worldStart": 2180,
+      "worldEnd": 9999,
+      "action": "hold-fire",
+      "fire": "always",
+      "jumpEvery": 45
+    }
+  ]
+}
