@@ -1,0 +1,117 @@
+{
+  "schema": "fc-ai-strategy-fragment-proposal-v1",
+  "schemaVersion": "1.0.0",
+  "fragment": {
+    "id": "candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068",
+    "label": "Fixed-threat route and shared fire candidate",
+    "status": "candidate",
+    "strategyTypes": [
+      "survival",
+      "combat",
+      "fixed-threat-hp-lock"
+    ],
+    "progressionWindow": {
+      "metric": "progression.primary",
+      "start": 1444,
+      "end": 2073,
+      "unit": "ContraWorldPixels",
+      "strictEnd": true
+    },
+    "conditions": [
+      {
+        "ref": "stage.id",
+        "op": "eq",
+        "value": "stage-1"
+      },
+      {
+        "ref": "player.1P.alive",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "ref": "rom.profile",
+        "op": "eq",
+        "value": "contra-j-good"
+      }
+    ],
+    "actionAdvice": {
+      "intent": "advance",
+      "intentCombination": [
+        {
+          "intent": "advance",
+          "weight": 0.9643478260869566
+        },
+        {
+          "intent": "jump",
+          "weight": 0.7
+        },
+        {
+          "intent": "fire_target",
+          "weight": 0.65
+        },
+        {
+          "intent": "aim_down",
+          "weight": 0.45
+        }
+      ],
+      "priority": 70,
+      "parameters": {
+        "sourceKind": "tas-side-baseline-plus-trace-evidence",
+        "routeClass": "training:survival-v0:ai-run-mid-fixed-threat",
+        "requiredValidation": "real-runtime-trace",
+        "tasWindowId": "fixed-threat-route"
+      },
+      "lockFrames": 0
+    },
+    "safetyOverrides": [
+      "immediate-lethal-danger",
+      "real-runtime-trace-required",
+      "safety-override-required",
+      "side-owned-promotion-required",
+      "tas-desync-guard"
+    ],
+    "exitConditions": [
+      {
+        "ref": "progression.primary",
+        "op": "gte",
+        "value": 2073
+      },
+      {
+        "ref": "player.1P.alive",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "ref": "validation.desynced",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "source": {
+      "traceEvidence": {
+        "fragmentId": "candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068",
+        "routeClass": "training:survival-v0:ai-run-mid-fixed-threat",
+        "branchOutcome": "route-class-failed-stop",
+        "sampleCount": 900
+      },
+      "tasSideBaseline": {
+        "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+        "movieId": "contra-j-2p-any-percent",
+        "windowId": "fixed-threat-route",
+        "frameWindow": [
+          1350,
+          2500
+        ],
+        "tasIsController": false
+      }
+    },
+    "telemetry": {
+      "requiredRefs": [
+        "progression.primary",
+        "player.1P.position",
+        "runtime.finalInput",
+        "validation.desynced"
+      ]
+    }
+  }
+}

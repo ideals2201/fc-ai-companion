@@ -931,3 +931,22 @@ TAS is a strong timing and route baseline, but it is still not the AI controller
 Required next direction:
 - Require Safety Override review and a passing ValidationReport before package save or promotion.
 - Do not mix this `contra-j-good` evidence with `contra-us-good` strategy claims without explicit migration validation.
+
+## 2026-06-08: Contra Japan runtime failures must be archived before patching
+
+Decision: when `contra-j-good` AI fails before a TAS-derived candidate window, archive the runtime failure as standard TraceEvidence under `data/training/contra/runtime_runs/` before making another strategy patch.
+
+Evidence:
+- Browser botrun `post-fragment-j-check-20260608` ended with `status=death`, `frameCount=3986`, `deaths=1`, `finalWorldX=2068`, `bossDefeated=0`.
+- The failure route was `weapon-gate-survive` / `loot`, script action `p03-mid-fixed-threat`, script mode `fixed-hp-fire`, primary threat `slot15:type0x07@118,160/hp6`.
+- `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json` stores the failure as `fc-ai-strategy-trace-evidence-v1`.
+- `data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json` stores the generated `fixed-threat-hp-lock` candidate proposal from the failure evidence plus the TAS `fixed-threat-route` side baseline.
+- Verification passed:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `2/2`.
+
+Reason:
+The boss-approach `platform-capture` candidate cannot be validated until the AI reaches that window. The current blocker is an earlier fixed-threat death, so the next executable strategy work must target the `WorldX 1444-2073` fixed-threat window with evidence and tests first.
+
+Required next direction:
+- Add runtime regression tests for the J-version fixed-threat failure window before changing AI behavior.
+- Keep the generated proposal `candidate` until browser validation proves no death/desync.
