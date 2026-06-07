@@ -8,6 +8,7 @@ Current state:
 - `training-base.json` defines the first standard TAS-derived candidate fragment set.
 - `side-baselines.json` splits the verified 2P any% TAS into side-owned 1P and 2P baseline windows.
 - `trace-evidence/` stores compact standard runtime evidence captured from TAS watch/training windows.
+- `candidate-fragments/` stores generated `fc-ai-strategy-fragment-proposal-v1` proposals derived from side baselines plus TraceEvidence.
 - The candidates are not validated StrategyPack fragments yet.
 - A candidate becomes usable for runtime AI only after schema conversion, Safety Override review, and real browser or FCEUX trace validation.
 
@@ -31,3 +32,12 @@ This file is a `fc-ai-strategy-trace-evidence-v1` artifact captured from browser
 It covers 1P WorldX `2500-2960`, contains `466` recorded samples, and has no death trace.
 
 It is still training evidence, not validated AI strategy evidence. Promotion still requires Safety Override review, candidate StrategyFragment conversion, validation replay, and a passing ValidationReport.
+
+## Candidate Fragments
+
+Current generated proposal:
+
+- `candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json`
+
+This proposal combines the `boss-approach-platform-capture` 1P TAS side baseline with the archived TraceEvidence above.
+It remains `candidate`, uses semantic `actionAdvice`, and records `tasIsController: false`.

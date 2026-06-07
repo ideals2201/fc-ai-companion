@@ -1,13 +1,32 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import ts from "typescript";
 
+const candidateProposalPath = "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json";
 const evidencePath = "data/training/contra/tas_bases/contra-j-good/trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json";
+const sideBaselinesPath = "data/training/contra/tas_bases/contra-j-good/side-baselines.json";
 const trainingBasePath = "data/training/contra/tas_bases/contra-j-good/training-base.json";
+
+async function importTypeScriptModule(path) {
+  const source = fs.readFileSync(path, "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022
+    }
+  });
+  const dataUrl = `data:text/javascript;base64,${Buffer.from(transpiled.outputText).toString("base64")}`;
+  return import(dataUrl);
+}
 
 function readJson(path) {
   return JSON.parse(fs.readFileSync(path, "utf8"));
 }
+
+const {
+  createCandidateStrategyFragmentProposal
+} = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/strategyFragmentProposal.ts", import.meta.url));
 
 test("Contra Japan TAS boss approach runtime trace is archived as standard training evidence", () => {
   const evidence = readJson(evidencePath);
@@ -55,4 +74,30 @@ test("Contra Japan TAS training base indexes archived trace evidence", () => {
     trainingBase.derivedArtifacts.traceEvidence.includes(evidencePath),
     "training-base should index TAS-derived training trace evidence"
   );
+  assert.ok(
+    trainingBase.derivedArtifacts.candidateFragments.includes(candidateProposalPath),
+    "training-base should index TAS-derived candidate fragment proposals"
+  );
+});
+
+test("Contra Japan TAS boss approach evidence has a generated candidate StrategyFragment proposal", () => {
+  const evidence = readJson(evidencePath);
+  const sideBaselines = readJson(sideBaselinesPath);
+  const baseline = sideBaselines.baselines.find((candidate) => (
+    candidate.side === "1P" && candidate.windowId === "boss-approach-platform-capture"
+  ));
+  assert.ok(baseline, "matching 1P TAS side baseline should exist");
+
+  const expected = createCandidateStrategyFragmentProposal({
+    evidence,
+    tasSideBaseline: baseline,
+    tasSideBaselinePath: sideBaselinesPath
+  });
+  const proposal = readJson(candidateProposalPath);
+
+  assert.deepEqual(proposal, expected);
+  assert.equal(proposal.fragment.status, "candidate");
+  assert.ok(proposal.fragment.strategyTypes.includes("platform-capture"));
+  assert.equal(proposal.fragment.source.tasSideBaseline.tasIsController, false);
+  assert.equal("buttons" in proposal.fragment.actionAdvice, false);
 });

@@ -493,18 +493,18 @@ Next:
 Current:
 - `contra-j-good` TAS watch-mode now has a standard compact TraceEvidence artifact for the Stage 1 boss-approach platform-capture window.
 - The artifact is stored at `data/training/contra/tas_bases/contra-j-good/trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json`.
-- `training-base.json` indexes the artifact through `derivedArtifacts.traceEvidence`.
+- A generated candidate StrategyFragment proposal is stored at `data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json`.
+- `training-base.json` indexes the artifacts through `derivedArtifacts.traceEvidence` and `derivedArtifacts.candidateFragments`.
 - The captured runtime window is 1P WorldX `2500-2960`, `466` samples, first frame `2914`, last frame `3379`, death trace count `0`.
 - This remains TAS-derived training evidence only. It is not a validated AI strategy and cannot upgrade the Strategy Pack without Safety Override review and a passing ValidationReport.
 
 Verification:
 - Browser CDP against visible Chrome at `http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&record=tas-boss-approach-platform-capture&recordStart=2500&recordEnd=2960&recordStopOnDeath=1&recordStopOnEnd=1`: TAS matched, `contra-j-good` visible, `466` trace samples, WorldX `2500-2960`, death trace count `0`.
-- `node --test tests/tasTrainingTraceEvidence.test.mjs`: `2/2`.
+- `node --test tests/tasTrainingTraceEvidence.test.mjs`: `3/3`.
 - `npm test`: `211/211`.
 - `npm run build`: passed with the existing Vite chunk-size warning.
 - ROM compliance scan with `rg --files -g "*.nes" -g "*.fds" -g "*.unf" -g "*.unif" -g "*.rom" -g "*.bin"`: no ROM-like files listed.
 
 Next:
-- Convert this evidence plus the matching TAS side baseline into a candidate StrategyFragment proposal for the `platform-capture` route.
 - Run browser validation replay before saving or exporting any AI strategy package that claims this window.
 - Keep US and Japan ROMProfile evidence separate until a migration validation proves compatibility.

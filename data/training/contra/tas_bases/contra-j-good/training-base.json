@@ -19,6 +19,9 @@
     "sideBaselines": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
     "traceEvidence": [
       "data/training/contra/tas_bases/contra-j-good/trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json"
+    ],
+    "candidateFragments": [
+      "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json"
     ]
   },
   "runtimePolicy": {
