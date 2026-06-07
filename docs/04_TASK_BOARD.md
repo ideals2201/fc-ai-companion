@@ -26,9 +26,14 @@
 - 建立 ROM 版本矩阵：外部资料、TAS、RAM map、Route Script 和语料资料必须绑定 ROM 版本。
 - 建立 FC 通用平台 Game Profile 架构：魂斗罗作为第一个 Game Profile，不作为平台边界。
 - 建立首批 Game Profile 路线图：先魂斗罗系列，再赤色要塞，首批八强覆盖不同 FC 游戏能力。
+- 发布 FC 游戏 AI 操作策略标准手册 1.0.0：`docs/16_OPERATION_STRATEGY_STANDARD.md` 是标准手册总入口，已包含策略分类、形成过程、输入资料、输出文件、Runtime 调用、语义化意图融合、输入采样延迟、RNG 影响范围、安全守则、验收等级、数据可信度和统一开发流程；通用核心协议以 `docs/STRATEGY_PROTOCOL_CORE.md` 为准；Contra US 专用落地经验进入 `references/contra-us/IMPLEMENTATION_GUIDE.md`；当前 Contra US 第一关 StrategyPack 示例进入 `references/contra-us/strategy-db/contra-us-stage1-strategy-pack-example.md`。
 
 ## 下一步
 
+- 按操作策略标准拆解 `2026-06-06T23-55-55-772Z-human-run-analysis.md`，把人工正例和反例写入 Contra US 第一关策略片段库。
+- 按 `docs/STRATEGY_PROTOCOL_CORE.md` 把 Contra US 示例 StrategyPack 拆成实际 JSON 文件：`manifest.json`、`game-profile.json`、`rom-profile.json`、`condition-registry.json`、`entity-taxonomy.json`、`action-map.json`、`strategy-types.json`、`stage-plan.json`、`fragments.json`。
+- 为 StrategyPack 建立 `schemas/` 文件清单，并先实现 `manifest.schema.json`、`rom-profile.schema.json`、`condition-registry.schema.json`、`entity-taxonomy.schema.json`、`action-map.schema.json`、`fragments.schema.json` 和 `runtime-api.schema.json`。
+- 在策略加载器里增加 ROM 兼容等级和错误码：`exact-match`、`compatible-tested`、`reference-only`、`blocked`。
 - 本地 ROM 端点增加 MD5 / SHA1 / SHA256 三种哈希输出。
 - 浏览器驾驶舱显示 ROM Profile 支持状态：已支持 / 实验 / 仅参考 / 未支持。
 - Route Script 增加 `gameId` 和 `romProfileId` 或兼容组字段。

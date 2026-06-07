@@ -534,3 +534,62 @@ Agent：
 - 改版和中文 hack 不作为主支持版本，除非完成独立 ROM Profile 和验证。
 
 原因：八强不是按知名度排列，而是按平台能力覆盖排列。这样能逐步验证通用平台，而不是把所有代码写成魂斗罗专用。
+
+## 2026-06-07：操作策略标准文档
+
+决策：建立 `docs/16_OPERATION_STRATEGY_STANDARD.md` 作为项目操作策略系统的总标准。
+
+范围：
+
+- 策略分类统一为稳健生存、快速推进、清敌优先、奖励优先、护卫队友、个人策略。
+- 策略数据库分层为 Game Profile、ROM Profile、Stage Strategy Plan、Strategy Fragment、Trace Evidence。
+- 标准输出产品定义为 Strategy Pack，入口为 `manifest.json`，并包含 `game-profile.json`、`rom-profile.json`、`stage-plan.json`、`fragments.json`、`trace-evidence/` 和验收文档。
+- 所有 Strategy Pack 必须强制说明目标 ROM Profile 和哈希；策略包不得包含商业 ROM 文件，用户必须提供自己的 ROM。
+- 策略片段以 WorldX、RAM 条件、Action Advice、Safety Override、Exit Conditions 和 Telemetry 为核心。
+- 人工轨迹必须拆成正例和反例，不能把多次尝试混合轨迹当成单次完美路线。
+- TAS 的定位冻结为路线知识库，不作为实时控制器。
+- 单 AI、人类 + AI、双 AI 必须分开验收。
+- 采用 JSON Schema Draft 2020-12 作为 Strategy Pack、Trace Evidence 和 Runtime API 的结构校验标准。
+- 采用 Semantic Versioning 2.0.0 作为 `schemaVersion`、`packVersion`、`strategyVersion`、`fragmentVersion` 的版本升级语义。
+- 采用 SPDX License List 作为策略数据、外部资料和文档授权来源的标识标准。
+- 跨程序调用必须先校验 schema、ROM Profile、ROM 哈希、RAM map、坐标体系、按键语义和 Runtime API。
+- 未通过 `exact-match` 或 `compatible-tested` 的 ROM，不得自动启用正式 AI。
+
+原因：当前项目已经进入从“会操作”到“会战术”的阶段。如果没有标准，策略会变成散落在代码、聊天和临时 JSON 里的局部补丁。统一标准后，人工打法、TAS 资料、RAM 研究、策略片段、AI 测试和子对话产出都能进入同一套数据库和验收流程。项目目标是让大家统一一套可调用的操作策略数据文件，而不是共享 ROM 文件；只要 schema、ROM Profile、RAM map、坐标体系、按键语义和运行时优先级一致，不同程序就可以调用同一 Strategy Pack。
+
+## 2026-06-07：FC 通用策略协议拆分
+
+决策：将 `docs/16_OPERATION_STRATEGY_STANDARD.md` 定位为 FC 游戏 AI 操作策略标准手册总入口，并将具体内容拆分为通用核心协议和 Contra US 实现手册。
+
+范围：
+
+- `docs/16_OPERATION_STRATEGY_STANDARD.md` 成为标准手册总入口，负责定义标准体系和文档关系。
+- `docs/STRATEGY_PROTOCOL_CORE.md` 成为 FC/NES 通用策略协议。
+- `references/contra-us/IMPLEMENTATION_GUIDE.md` 记录 Contra US 的 ROM、RAM、WorldX、实体分类、动作映射、第一关路线、失败反例和当前策略经验。
+- `references/contra-us/strategy-db/contra-us-stage1-strategy-pack-example.md` 作为 Contra US 第一关 StrategyPack 示例。
+- 通用协议引入 `ProgressionMetric`，不再默认所有游戏都是 `WorldX = CameraX + PlayerX`。
+- 通用协议引入 `Condition Registry`，StrategyFragment 不得直接引用 RAM 地址。
+- 通用协议引入 `Intent-to-Action Mapping`，策略层输出 intent，GameProfile 再映射到具体按键；Runtime 最终仍输出 `finalInput`。
+- Runtime API 增加 `contextualState`、`rngState`、`inputSamplingDelay`、`intentCombination` 和 `latencyCompensationFrames`。
+- GameProfile 增加 `rngSensitivity` 和 `rngControlStrategy`，用于声明 RNG 对策略复现的影响范围及可否通过等待、暂停或空操作影响随机数。
+- 安全仲裁升级为 Safety Code of Conduct：所有 StrategyFragment 执行前必须经过 Safety Override，速度、清敌、奖励和目标节点策略不得绕过立即生存。
+- 每个游戏专用 StrategyPack 必须明确包含 manifest、GameProfile、ROMProfile、Condition Registry、EntityTaxonomy、ActionMap、StrategyTypes、StagePlan、Fragments、TraceEvidence、Schemas 和来源登记。
+- 项目根目录 `strategy-packs/` 作为正式操作策略源码目录和标准存档目录；每个游戏一个子目录；浏览器 `public/strategies/` 或后续 `public/game-profiles/` 只能作为运行时加载目录或构建产物目录。
+- 标准手册必须包含策略分类、策略形成过程、标准输入资料、标准输出文件、Runtime 调用标准、验收等级、数据可信度标准和开发者统一使用流程，确保不同人按同一标准开发出的操作策略可以被统一调用。
+- 标准手册不记录某个游戏的当前落地状态、下一阶段执行顺序、未完成项或验收进度；这些内容必须进入对应游戏的 `IMPLEMENTATION_GUIDE.md` 或 StrategyPack 档案。
+- `schemas/` 下的 JSON Schema 必须保持跨游戏通用，只约束结构、类型、必填字段、版本和枚举，不得写入具体游戏名称、ROM 哈希、RAM 地址、关卡坐标或策略片段 ID。
+
+原因：原标准混入了大量 Contra US 第一关具体数值和术语，不适合作为 FC 通用平台协议。拆分后，通用核心保持抽象，Contra 经验单独沉淀；未来赤色要塞、忍者龙剑传等新 GameProfile 可以复用协议，而不继承 Contra 的坐标和打法假设。
+
+## 2026-06-07：FC 游戏 AI 操作策略标准 1.0.0 发布
+
+决策：发布 FC 游戏 AI 操作策略标准 1.0.0。
+
+范围：
+
+- `docs/16_OPERATION_STRATEGY_STANDARD.md` 标记为标准手册 1.0.0。
+- `docs/STRATEGY_PROTOCOL_CORE.md` 标记为核心协议 1.0.0。
+- 当前发布对象是策略标准，不是浏览器应用 1.0.0。
+- 当前 StrategyPack 示例仍为 `candidate`，不代表 Contra US 第一关策略已完成验收。
+
+原因：标准手册已经具备统一开发所需的策略分类、形成过程、输入资料、输出文件、Runtime API、安全守则、RNG 规范、Schema 通用性、验收等级、数据可信度和开发流程。可以作为后续所有游戏策略包开发的 1.0 基线。
