@@ -841,3 +841,24 @@ Rule:
 - ROM files stay outside the repo and strategy pack.
 - TAS is route knowledge and training evidence, not the live controller.
 - `contra-j-good` must collect its own trace evidence before any strategy is marked validated.
+
+## 2026-06-08: Side training archive must produce standard TraceEvidence
+
+Decision: side controller training panels must archive captured samples as `fc-ai-strategy-trace-evidence-v1`, while raw trace export remains a separate debugging/export action.
+
+Evidence:
+- `createSideTrainingTraceEvidence()` was added as the side-owned bridge from captured frame samples to standard evidence.
+- The archive handler now binds evidence to side, selected strategy key, selected baseline id, loaded ROMProfile, and stage id.
+- The browser runtime exposes latest 1P/2P archived evidence through hidden JSON outputs for automated validation and future packaging.
+- Verification passed:
+  - `node --test tests/strategyTraceEvidence.test.mjs`: `3/3`.
+  - `node --test tests/trainingPanelLayout.test.mjs`: `12/12`.
+  - `npm test`: `186/186`.
+  - `npm run build`: passed.
+
+Reason:
+Strategy packs, rollback, and sharing need schema-bound evidence. A raw play trace is useful for debugging, but it is not enough to prove which side, baseline, strategy category, ROMProfile, and progression window a candidate fragment belongs to.
+
+Required next direction:
+- Use archived side evidence as the input for validation replay and strategy-package save.
+- Do not mark a candidate strategy package as validated until its archived evidence and validation report both pass.

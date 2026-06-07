@@ -99,6 +99,10 @@ import {
 } from "./tasPlaybackGate";
 import { DEFAULT_LANGUAGE, t, type UiLanguage } from "./i18n";
 import { analyzePlayTrace, type PlayTraceAnalysisReport } from "./playTraceAnalysis";
+import {
+  createSideTrainingTraceEvidence,
+  type StrategyTraceEvidence
+} from "./strategyTraceEvidence";
 import { classifyBotRunTerminalState } from "./runtimeStopControl";
 import {
   parseTraceCaptureConfig,
@@ -7936,6 +7940,10 @@ function App() {
   const [deathTraceReports, setDeathTraceReports] = useState<DeathTraceReport[]>([]);
   const [playTraceReport, setPlayTraceReport] = useState<PlayTraceAnalysisReport | null>(null);
   const [traceSampleSnapshot, setTraceSampleSnapshot] = useState<PlayTraceSample[]>([]);
+  const [sideTrainingTraceEvidence, setSideTrainingTraceEvidence] = useState<Record<PlayerSide, StrategyTraceEvidence | null>>({
+    "1P": null,
+    "2P": null
+  });
   const [botRunReport, setBotRunReport] = useState<BotRunReport>(createIdleBotRunReport);
   const [packageSideScope, setPackageSideScope] = useState<StrategyPackageSideScope>("1p-only");
   const [strategyExportName, setStrategyExportName] = useState<string>(ACTIVE_STRATEGY_PACK.displayName["zh-CN"]);
@@ -8154,6 +8162,19 @@ function App() {
     anchor.remove();
     window.URL.revokeObjectURL(url);
     appendLog(`Trace：已导出 ${samples.length} 帧`);
+  }, [appendLog]);
+
+  const exportStrategyTraceEvidence = useCallback((side: PlayerSide, evidence: StrategyTraceEvidence) => {
+    const blob = new Blob([JSON.stringify(evidence, null, 2)], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fc-ai-strategy-trace-evidence-${side.toLowerCase()}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+    appendLog(`TraceEvidence ${side}: archived ${evidence.sampleCount} frames / ${evidence.branchOutcome}`);
   }, [appendLog]);
 
   useEffect(() => {
@@ -9219,10 +9240,31 @@ function App() {
   }, [appendLog, openStrategyDesigner]);
 
   const onSideTrainingArchiveStrategy = useCallback((side: PlayerSide) => {
+    const samples = traceSamplesRef.current.length > 0 ? traceSamplesRef.current : traceSampleSnapshot;
+    if (samples.length === 0) {
+      appendLog(`Training ${side}: archive blocked because no trace samples are available`);
+      return;
+    }
+    const evidence = createSideTrainingTraceEvidence(samples, {
+      baselineId: selectedSideBaselineIds[side],
+      gameProfileId: "contra",
+      romProfileId: romMetadata?.romProfileId ?? "unknown-rom",
+      side,
+      stageId: "stage-1",
+      strategyKey: strategyModels[side]
+    });
+    setSideTrainingTraceEvidence((current) => ({ ...current, [side]: evidence }));
     appendLog(`Training ${side}: archiving current trace samples as strategy evidence`);
     appendLog("训练：归档当前采集样本为策略证据");
-    exportTraceRecording();
-  }, [appendLog, exportTraceRecording]);
+    exportStrategyTraceEvidence(side, evidence);
+  }, [
+    appendLog,
+    exportStrategyTraceEvidence,
+    romMetadata?.romProfileId,
+    selectedSideBaselineIds,
+    strategyModels,
+    traceSampleSnapshot
+  ]);
 
   const onTrainingSaveStrategy = useCallback(() => {
     if (packageSideScope === "none") {
@@ -9929,6 +9971,9 @@ function App() {
       <output data-testid="bot-run-report-json" hidden>{JSON.stringify(botRunReport)}</output>
       <output data-testid="play-trace-report-json" hidden>{JSON.stringify(playTraceReport)}</output>
       <output data-testid="play-trace-samples-json" hidden>{JSON.stringify(traceSampleSnapshot)}</output>
+      <output data-testid="side-training-evidence-json" hidden>{JSON.stringify(sideTrainingTraceEvidence)}</output>
+      <output data-testid="side-training-evidence-1p-json" hidden>{JSON.stringify(sideTrainingTraceEvidence["1P"])}</output>
+      <output data-testid="side-training-evidence-2p-json" hidden>{JSON.stringify(sideTrainingTraceEvidence["2P"])}</output>
       <StrategyDesignerPanel
         draft={strategyDraft}
         language={uiLanguage}

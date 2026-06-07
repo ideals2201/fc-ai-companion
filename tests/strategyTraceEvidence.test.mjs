@@ -18,6 +18,7 @@ async function importTypeScriptModule(path) {
 const {
   classifyBranchOutcome,
   createStrategyTraceEvidence,
+  createSideTrainingTraceEvidence,
   traceInputLabel
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/strategyTraceEvidence.ts", import.meta.url));
 
@@ -152,4 +153,66 @@ test("creates compact strategy evidence for a failed pre-boss route class", () =
   assert.equal(evidence.inputSummary["down+right+B"], 2);
   assert.equal(evidence.branchOutcome, "route-class-failed-stop");
   assert.equal(classifyBranchOutcome(evidence), "route-class-failed-stop");
+});
+
+test("archives side-owned training samples as standard strategy evidence", () => {
+  const samples = [
+    sample(1200, 900, {
+      p2Input: input({ right: true, b: true }),
+      ram: {
+        p2PlayerX: 120,
+        p2PlayerY: 130,
+        p2WorldX: 910,
+        p2State: 1
+      }
+    }),
+    sample(1220, 940, {
+      p2Input: input({ down: true, right: true, b: true }),
+      ram: {
+        p2PlayerX: 126,
+        p2PlayerY: 134,
+        p2WorldX: 980,
+        p2State: 1,
+        enemies: [
+          enemy({ slot: 4, hp: 4, priority: 88 })
+        ]
+      }
+    }),
+    sample(1240, 1000, {
+      p2Input: input({ right: true, a: true, b: true }),
+      ram: {
+        p2PlayerX: 132,
+        p2PlayerY: 128,
+        p2WorldX: 1042,
+        p2State: 1
+      }
+    })
+  ];
+
+  const evidence = createSideTrainingTraceEvidence(samples, {
+    baselineId: "human-demo-new",
+    gameProfileId: "contra",
+    romProfileId: "contra-j-good",
+    side: "2P",
+    stageId: "stage-1",
+    strategyKey: "guard-v0"
+  });
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.side, "2P");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.fragmentId, "candidate-2p-guard-v0-human-demo-new");
+  assert.equal(evidence.routeClass, "training:guard-v0:human-demo-new");
+  assert.deepEqual(evidence.progressionWindow, {
+    metric: "progression.primary",
+    start: 910,
+    end: 1042,
+    unit: "ProgressionUnits"
+  });
+  assert.equal(evidence.startWorldX, 910);
+  assert.equal(evidence.endWorldX, 1042);
+  assert.equal(evidence.maxWorldX, 1042);
+  assert.equal(evidence.inputSummary["right+B"], 1);
+  assert.equal(evidence.inputSummary["down+right+B"], 1);
+  assert.equal(evidence.branchOutcome, "window-complete");
 });

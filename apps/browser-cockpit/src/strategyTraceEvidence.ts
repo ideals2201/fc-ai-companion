@@ -63,6 +63,19 @@ export type StrategyTraceEvidenceOptions = {
   stageId: string;
 };
 
+export type SideTrainingTraceEvidenceOptions = {
+  baselineId: string;
+  failureId?: string;
+  gameProfileId?: string;
+  progressionMetric?: string;
+  progressionUnit?: string;
+  progressionWindow?: StrategyTraceEvidenceOptions["progressionWindow"];
+  romProfileId?: string;
+  side: StrategyTraceSide;
+  stageId?: string;
+  strategyKey: string;
+};
+
 export type StrategyBranchOutcome =
   | "route-class-failed-stop"
   | "death-counterexample"
@@ -233,4 +246,49 @@ export function createStrategyTraceEvidence(
     ...evidenceWithoutOutcome,
     branchOutcome: classifyBranchOutcome(evidenceWithoutOutcome)
   };
+}
+
+function normalizeEvidenceId(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "unknown";
+}
+
+function deriveProgressionWindow(
+  samples: StrategyTraceSample[],
+  options: SideTrainingTraceEvidenceOptions
+): StrategyTraceEvidenceOptions["progressionWindow"] {
+  if (options.progressionWindow) return options.progressionWindow;
+  const observedWorldXs = samples
+    .map((sample) => worldXForSide(sample, options.side))
+    .filter((worldX): worldX is number => worldX !== null);
+  const start = observedWorldXs.length > 0 ? Math.min(...observedWorldXs) : 0;
+  const end = observedWorldXs.length > 0 ? Math.max(...observedWorldXs) : 0;
+  return {
+    metric: options.progressionMetric ?? "progression.primary",
+    start,
+    end,
+    unit: options.progressionUnit ?? "ProgressionUnits"
+  };
+}
+
+export function createSideTrainingTraceEvidence(
+  samples: StrategyTraceSample[],
+  options: SideTrainingTraceEvidenceOptions
+): StrategyTraceEvidence {
+  const sideId = options.side.toLowerCase();
+  const strategyId = normalizeEvidenceId(options.strategyKey);
+  const baselineId = normalizeEvidenceId(options.baselineId);
+  return createStrategyTraceEvidence(samples, {
+    failureId: options.failureId,
+    fragmentId: `candidate-${sideId}-${strategyId}-${baselineId}`,
+    gameProfileId: options.gameProfileId ?? "unknown-game",
+    progressionWindow: deriveProgressionWindow(samples, options),
+    romProfileId: options.romProfileId ?? "unknown-rom",
+    routeClass: `training:${options.strategyKey}:${options.baselineId}`,
+    side: options.side,
+    stageId: options.stageId ?? "unknown-stage"
+  });
 }

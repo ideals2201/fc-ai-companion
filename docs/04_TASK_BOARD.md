@@ -414,3 +414,21 @@ Stop rule:
 Next:
 - Collect/export a full frame trace for the owner's `WorldX 2600-2960` demonstration.
 - Use that trace to generate a state-action Strategy Fragment instead of another local coordinate patch.
+
+## 2026-06-08 Side Training TraceEvidence Archive Bridge
+
+Current:
+- Side-owned training archival now produces standard `fc-ai-strategy-trace-evidence-v1` output instead of only exporting raw play traces.
+- `createSideTrainingTraceEvidence()` derives side, selected strategy key, selected baseline id, ROMProfile, stage id, input summary, enemy summary, and observed progression window from captured samples.
+- The cockpit keeps latest 1P and 2P evidence in runtime state and exposes hidden JSON outputs for browser verification and future package-export wiring.
+
+Verification:
+- `node --test tests/strategyTraceEvidence.test.mjs`: `3/3`.
+- `node --test tests/trainingPanelLayout.test.mjs`: `12/12`.
+- `npm test`: `186/186`.
+- `npm run build`: passed.
+- Browser check: page loaded at `http://127.0.0.1:5173/?autoload=1`; both side training panels and all side evidence outputs were present.
+
+Next:
+- Wire validated evidence into the strategy-package save flow.
+- Keep raw trace export separate from strategy archival so package evidence remains schema-bound.

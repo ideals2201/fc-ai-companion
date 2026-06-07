@@ -234,3 +234,15 @@ test("side training panels derive their target from the selected AI strategy", (
   assert.match(mainSource, /case "guard-v0"/, "guard strategy should have its own training profile");
   assert.match(mainSource, /archiveTarget: .*strategyKey/s, "archive target should include the selected strategy key");
 });
+
+test("side training archive produces standard trace evidence for packaging", () => {
+  assert.match(mainSource, /createSideTrainingTraceEvidence/, "side training archival should use the standard trace-evidence helper");
+  assert.match(mainSource, /sideTrainingTraceEvidence/, "latest side-owned evidence should be kept in runtime state");
+  assert.match(mainSource, /setSideTrainingTraceEvidence/, "archival should update the side-owned evidence state");
+  assert.match(mainSource, /selectedSideBaselineIds\[side\]/, "archival should attach the selected baseline id");
+  assert.match(mainSource, /strategyModels\[side\]/, "archival should attach the selected strategy key");
+  assert.match(mainSource, /romMetadata\?\.romProfileId/, "archival should attach the loaded ROM profile id");
+  assert.match(mainSource, /data-testid="side-training-evidence-json"/, "browser tests should be able to inspect the latest side training evidence");
+  assert.match(mainSource, /data-testid="side-training-evidence-1p-json"/, "1P evidence should be inspectable separately");
+  assert.match(mainSource, /data-testid="side-training-evidence-2p-json"/, "2P evidence should be inspectable separately");
+});
