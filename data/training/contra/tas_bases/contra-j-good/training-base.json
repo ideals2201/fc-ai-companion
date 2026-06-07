@@ -29,6 +29,7 @@
       "category": "1P any%",
       "players": "1P",
       "playbackStartFrame": 450,
+      "entrySyncStatus": "needs-calibration",
       "recommendedBaselines": ["survival-v0", "speedrun-v0", "combat-v0"],
       "primaryUse": "Single-player route, bridge timing, fixed-target handling, and boss-wall rhythm."
     },
@@ -38,6 +39,7 @@
       "category": "2P any%",
       "players": "2P",
       "playbackStartFrame": 450,
+      "entrySyncStatus": "verified-user",
       "recommendedBaselines": ["survival-v0", "speedrun-v0", "guard-v0"],
       "primaryUse": "Two-player spacing, screen-push cooperation, shared fixed-target damage windows."
     },
@@ -47,6 +49,7 @@
       "category": "pacifist",
       "players": "1P",
       "playbackStartFrame": 450,
+      "entrySyncStatus": "needs-calibration",
       "recommendedBaselines": ["survival-v0", "special-reference"],
       "primaryUse": "Threat avoidance, non-combat progress windows, safety analysis."
     },
@@ -56,6 +59,7 @@
       "category": "2P low%",
       "players": "2P",
       "playbackStartFrame": 450,
+      "entrySyncStatus": "verified-user",
       "recommendedBaselines": ["survival-v0", "guard-v0", "special-reference"],
       "primaryUse": "Low-resource two-player routing, conservative cooperation, no-strong-weapon reference."
     }

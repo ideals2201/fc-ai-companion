@@ -125,6 +125,11 @@ button:disabled {
   border-color: rgba(255, 91, 109, 0.52);
 }
 
+.controller-bay.tas-locked {
+  border-color: rgba(126, 200, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(126, 200, 255, 0.2), 0 0 24px rgba(52, 151, 255, 0.16);
+}
+
 .controller-head,
 .tv-top,
 .console-left,
@@ -326,6 +331,33 @@ button:disabled {
 .ai-toggle.active {
   border-color: rgba(126, 200, 255, 0.72);
   background: #153453;
+}
+
+.tas-locked .ai-toggle.active {
+  border-color: rgba(126, 200, 255, 0.95);
+  background: #174d7a;
+  box-shadow: 0 0 14px rgba(126, 200, 255, 0.22);
+}
+
+.tas-locked .human-toggle {
+  border-color: rgba(255,255,255,0.08);
+  background: #070a0e;
+  color: #6c7784;
+}
+
+.tas-input-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  margin: 0 0 8px;
+  border: 1px solid rgba(126, 200, 255, 0.32);
+  border-radius: 6px;
+  background: #071522;
+  color: #bce5ff;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 850;
 }
 
 .strategy-button-section {
@@ -1408,6 +1440,44 @@ dd {
   background: #143522;
 }
 
+.tas-baseline-actions {
+  display: grid;
+  gap: 5px;
+}
+
+.tas-baseline-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 72px;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+}
+
+.tas-baseline-action span {
+  min-width: 0;
+  color: #d7e9ff;
+  font-size: 11px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tas-baseline-action button {
+  min-height: 26px;
+  border: 1px solid rgba(104, 214, 140, 0.28);
+  border-radius: 6px;
+  background: #0f1721;
+  color: #dfffea;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.tas-baseline-action button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .tas-control-row {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -1428,19 +1498,39 @@ dd {
   padding: 5px;
 }
 
-.tas-status-line {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+.tas-header-status {
+  display: inline-grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  max-width: 70%;
   min-height: 24px;
+  margin-left: auto;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  background: #070a0e;
   color: #94a3b5;
   font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
 }
 
-.tas-status-line strong {
+.tas-header-status strong {
+  color: #b9f2cc;
+  white-space: nowrap;
+}
+
+.tas-header-status span {
+  color: #7ec8ff;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tas-header-status b {
   min-width: 0;
   color: #edf5ff;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

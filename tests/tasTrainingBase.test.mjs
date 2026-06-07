@@ -21,6 +21,8 @@ test("Contra Japan TAS training base is a machine-readable standard artifact", (
   assert.equal(trainingBase.runtimePolicy.requiresStrategyPackPromotion, true);
   assert.equal(trainingBase.movies.length, 4);
   assert.ok(trainingBase.movies.some((movie) => movie.recommendedBaselines.includes("survival-v0")));
+  assert.equal(trainingBase.movies.find((movie) => movie.id === "contra-j-2p-any-percent")?.entrySyncStatus, "verified-user");
+  assert.equal(trainingBase.movies.find((movie) => movie.id === "contra-j-2p-low-percent")?.entrySyncStatus, "verified-user");
   assert.ok(trainingBase.candidateFragments.length >= 4);
 
   for (const fragment of trainingBase.candidateFragments) {

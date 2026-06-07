@@ -81,13 +81,14 @@ test("exposes selectable TAS movies with bilingual summaries and baseline recomm
 
   assert.equal(movies.length, 4);
   assert.equal(movies.every((movie) => Number.isInteger(movie.playbackStartFrame)), true);
-  assert.equal(defaultMovie?.id, "contra-j-1p-any-percent");
+  assert.equal(defaultMovie?.id, "contra-j-2p-any-percent");
+  assert.equal(defaultMovie?.entrySyncStatus, "verified-user");
   assert.equal(defaultMovie?.playbackStartFrame, 450);
-  assert.equal(defaultMovie?.title.en, "Contra Japan 1P any% TAS");
-  assert.equal(defaultMovie?.title.zh, "魂斗罗日版 1P 任意通关 TAS");
+  assert.equal(defaultMovie?.title.en, "Contra Japan 2P any% TAS");
+  assert.equal(defaultMovie?.title.zh, "魂斗罗日版 2P 任意通关 TAS");
   assert.ok(defaultMovie?.recommendedBaselines.includes("survival-v0"));
   assert.ok(defaultMovie?.recommendedBaselines.includes("speedrun-v0"));
-  assert.match(defaultMovie?.sourceNote ?? "", /Mars608/);
+  assert.match(defaultMovie?.sourceNote ?? "", /FM2/);
   assert.ok((defaultMovie?.keyMoments.length ?? 0) >= 3);
   assert.ok((defaultMovie?.riskNotes.length ?? 0) >= 2);
   assert.match(recommendationLabel(defaultMovie), /稳健生存/);

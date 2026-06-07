@@ -76,11 +76,13 @@ import {
   identifyTasForRom,
   recommendationLabel,
   selectDefaultTasMovie,
+  tasBaselineLabel,
   tasBaseLabel,
   tasMoviesForEntry,
   tasStatusLabel,
   type TasCommentaryMode,
-  type TasRegistryEntry
+  type TasRegistryEntry,
+  type TasStrategyBaseline
 } from "./tasRegistry";
 import {
   fm2ButtonsToLabels,
@@ -720,6 +722,14 @@ const cockpitAiStrategyOptions = aiStrategyOptions.filter((option) =>
   ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0", "personal-v0"].includes(option.key)
 );
 
+const tasBaselineStrategyMap: Partial<Record<TasStrategyBaseline, AiStrategyKey>> = {
+  "survival-v0": "survival-v0",
+  "speedrun-v0": "speedrun-v0",
+  "combat-v0": "combat-v0",
+  "loot-v0": "loot-v0",
+  "guard-v0": "guard-v0"
+};
+
 const keyboardHints: Record<PlayerSide, string> = {
   "1P": "方向键 / Z=B / X=A / Enter=开始 / Shift=选择",
   "2P": "WASD / J=B / K=A / I=开始 / U=选择"
@@ -1340,6 +1350,11 @@ function tasPhaseLabel(phase: TasPlaybackUiState["phase"]) {
   if (phase === "active") return "Active Phase";
   if (phase === "desynced") return "Desync";
   return "Init Phase";
+}
+
+function matchedTasCountLabel(count: number, language: UiLanguage) {
+  if (language === "en-US") return count === 1 ? "1 matched TAS" : `${count} matched TAS files`;
+  return `已匹配 ${count} 个 TAS`;
 }
 
 function tasPlaybackMessageLabel(playback: TasPlaybackUiState, language: UiLanguage) {
@@ -5767,19 +5782,22 @@ function WarriorAvatar({ side }: { side: PlayerSide }) {
 function ModeTogglePanel({
   mode,
   language,
-  onModeChange
+  onModeChange,
+  tasLocked = false
 }: {
   mode: ControlMode;
   language: UiLanguage;
   onModeChange: (mode: ControlMode) => void;
+  tasLocked?: boolean;
 }) {
-  const humanActive = modeToggleActive(mode, "human");
-  const aiActive = modeToggleActive(mode, "ai");
+  const humanActive = tasLocked ? false : modeToggleActive(mode, "human");
+  const aiActive = tasLocked ? true : modeToggleActive(mode, "ai");
   return (
     <div className="mode-toggle-panel" role="group" aria-label="控制模式开关">
       <button
         aria-pressed={humanActive}
         className={humanActive ? "mode-toggle active human-toggle" : "mode-toggle human-toggle"}
+        disabled={tasLocked}
         onClick={() => onModeChange(nextModeFromToggle(mode, "human"))}
         type="button"
       >
@@ -5788,10 +5806,11 @@ function ModeTogglePanel({
       <button
         aria-pressed={aiActive}
         className={aiActive ? "mode-toggle active ai-toggle" : "mode-toggle ai-toggle"}
+        disabled={tasLocked}
         onClick={() => onModeChange(nextModeFromToggle(mode, "ai"))}
         type="button"
       >
-        {localizedControlModeLabel("ai", language)}
+        {tasLocked ? `${localizedControlModeLabel("ai", language)} / TAS` : localizedControlModeLabel("ai", language)}
       </button>
     </div>
   );
@@ -5854,7 +5873,8 @@ function PilotPanel({
   onButtonDown,
   onButtonUp,
   onModeChange,
-  onStrategyChange
+  onStrategyChange,
+  tasLocked
 }: {
   pilot: Pilot;
   uiLanguage: UiLanguage;
@@ -5862,17 +5882,22 @@ function PilotPanel({
   onButtonUp?: (button: ButtonName) => void;
   onModeChange: (mode: ControlMode) => void;
   onStrategyChange: (strategy: AiStrategyKey) => void;
+  tasLocked: boolean;
 }) {
-  const Icon = pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
-  const aiActive = aiControlIsActive(pilot.mode);
+  const Icon = tasLocked ? Radio : pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
+  const aiActive = tasLocked || aiControlIsActive(pilot.mode);
+  const authorityLabel = tasLocked ? t(uiLanguage, "tas.controllerLock") : pilot.authority;
+  const roleLabel = tasLocked
+    ? `${localizedControlModeLabel("ai", uiLanguage)} / TAS / ${t(uiLanguage, "tas.inputLocked")}`
+    : `${localizedControlModeLabel(pilot.mode, uiLanguage)} / ${pilot.status}`;
   return (
-    <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"}`}>
+    <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"} ${tasLocked ? "tas-locked" : ""}`}>
       <div className="controller-head">
         <div className="panel-title">
           <Icon size={18} />
           <span>{pilot.side} {t(uiLanguage, "pilot.controllerBay")}</span>
         </div>
-        <span className="authority-chip">{pilot.authority}</span>
+        <span className="authority-chip">{authorityLabel}</span>
       </div>
       <div className="pilot-control-row">
         <div className="pilot-card">
@@ -5881,11 +5906,17 @@ function PilotPanel({
           </div>
           <div>
             <div className="pilot-name">{pilot.name}</div>
-            <div className="pilot-role">{localizedControlModeLabel(pilot.mode, uiLanguage)} / {pilot.status}</div>
+            <div className="pilot-role">{roleLabel}</div>
           </div>
         </div>
-        <ModeTogglePanel language={uiLanguage} mode={pilot.mode} onModeChange={onModeChange} />
+        <ModeTogglePanel language={uiLanguage} mode={pilot.mode} onModeChange={onModeChange} tasLocked={tasLocked} />
       </div>
+      {tasLocked && (
+        <div className="tas-input-lock">
+          <Radio size={14} />
+          <span>{t(uiLanguage, "tas.inputLocked")}</span>
+        </div>
+      )}
       <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiStrategy")}`}>
         <div className="strategy-button-title">{aiActive ? t(uiLanguage, "pilot.aiStrategy") : t(uiLanguage, "pilot.aiStrategyDisabled")}</div>
         <div className="strategy-button-grid">
@@ -5905,7 +5936,7 @@ function PilotPanel({
           })}
         </div>
       </div>
-      <ControllerView buttons={pilot.buttons} onButtonDown={onButtonDown} onButtonUp={onButtonUp} />
+      <ControllerView buttons={pilot.buttons} onButtonDown={tasLocked ? undefined : onButtonDown} onButtonUp={tasLocked ? undefined : onButtonUp} />
       <div className="metric-stack" aria-label={`${pilot.side} 数据面板`}>
         {pilot.metricGroups.map((group) => (
           <div className="metric-group" key={group.title}>
@@ -6200,7 +6231,8 @@ function TasWindow({
   onMovieSelect,
   onPause,
   onPlay,
-  onStop
+  onStop,
+  onApplyBaseline
 }: {
   tasEntry: TasRegistryEntry | null;
   selectedMovieId: string;
@@ -6213,6 +6245,7 @@ function TasWindow({
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
+  onApplyBaseline: (baseline: TasStrategyBaseline, side: PlayerSide) => void;
 }) {
   const movies = tasMoviesForEntry(tasEntry);
   const selectedMovie = movies.find((movie) => movie.id === selectedMovieId) ?? selectDefaultTasMovie(tasEntry);
@@ -6236,6 +6269,11 @@ function TasWindow({
       <div className="sub-title">
         <Radio size={15} />
         <span>{t(language, "tas.windowTitle")}</span>
+        <span className="tas-header-status">
+          <strong>{matchedTasCountLabel(movies.length, language)}</strong>
+          <span>{playback.status}</span>
+          <b>{tasPlaybackMessageLabel(playback, language)}</b>
+        </span>
       </div>
       <div className="tas-window-body">
         <div className="tas-movie-list" aria-label={t(language, "tas.fileList")}>
@@ -6281,6 +6319,10 @@ function TasWindow({
                   <b>{recommendationLabel(selectedMovie)}</b>
                 </div>
                 <div>
+                  <span>{t(language, "tas.artifact")}</span>
+                  <b>{tasEntry?.trainingBasePath ?? "-"}</b>
+                </div>
+                <div>
                   <span>{t(language, "tas.checksum")}</span>
                   <b>{playback.checksumStatus}</b>
                 </div>
@@ -6309,6 +6351,30 @@ function TasWindow({
                   </button>
                 ))}
               </div>
+              <div className="tas-baseline-actions" aria-label={t(language, "tas.applyBaseline")}>
+                {selectedMovie.recommendedBaselines.map((baseline) => {
+                  const liveStrategy = tasBaselineStrategyMap[baseline];
+                  return (
+                    <div className="tas-baseline-action" key={baseline}>
+                      <span>{tasBaselineLabel(baseline)}</span>
+                      <button
+                        disabled={!liveStrategy}
+                        onClick={() => onApplyBaseline(baseline, "1P")}
+                        type="button"
+                      >
+                        {t(language, "tas.apply1P")}
+                      </button>
+                      <button
+                        disabled={!liveStrategy}
+                        onClick={() => onApplyBaseline(baseline, "2P")}
+                        type="button"
+                      >
+                        {t(language, "tas.apply2P")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
               <div className="tas-commentary">{commentary}</div>
             </>
           ) : (
@@ -6329,10 +6395,6 @@ function TasWindow({
         <button disabled={playback.status === "idle" || playback.status === "loading"} onClick={onStop} type="button">
           <Square size={14} /> {t(language, "tas.stop")}
         </button>
-      </div>
-      <div className="tas-status-line">
-        <span>{playback.status}</span>
-        <strong>{tasPlaybackMessageLabel(playback, language)}</strong>
       </div>
     </div>
   );
@@ -6389,6 +6451,7 @@ function ConsoleDeck({
   onTasPause,
   onTasPlay,
   onTasStop,
+  onTasApplyBaseline,
   onLanguageChange,
   onRun,
   onPause,
@@ -6420,6 +6483,7 @@ function ConsoleDeck({
   onTasPause: () => void;
   onTasPlay: () => void;
   onTasStop: () => void;
+  onTasApplyBaseline: (baseline: TasStrategyBaseline, side: PlayerSide) => void;
   onLanguageChange: (language: UiLanguage) => void;
   onRun: () => void;
   onPause: () => void;
@@ -6595,6 +6659,7 @@ function ConsoleDeck({
         onPause={onTasPause}
         onPlay={onTasPlay}
         onStop={onTasStop}
+        onApplyBaseline={onTasApplyBaseline}
         language={uiLanguage}
         playback={tasPlaybackState}
         selectedMovieId={selectedTasMovieId}
@@ -7519,6 +7584,16 @@ function App() {
     }));
     appendLog(`${side} AI 策略：${getAiStrategyLabel(strategy)}`);
   }, [appendLog]);
+
+  const applyTasBaselineToSide = useCallback((baseline: TasStrategyBaseline, side: PlayerSide) => {
+    const strategy = tasBaselineStrategyMap[baseline];
+    if (baseline === "special-reference" || !strategy) {
+      appendLog(`TAS baseline: ${tasBaselineLabel(baseline)} is reference-only and cannot be applied directly`);
+      return;
+    }
+    changeStrategyModel(side, strategy);
+    appendLog(`TAS baseline: applied ${tasBaselineLabel(baseline)} to ${side}`);
+  }, [appendLog, changeStrategyModel]);
 
   const openStrategyDesigner = useCallback(() => {
     const personalPlan = strategyPlansRef.current["personal-v0"] ?? createDefaultPersonalPlan();
@@ -8609,6 +8684,7 @@ function App() {
     "2P": buildSideTrainingState("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
   };
   const globalTraining = buildGlobalTrainingState(traceRecording, traceSampleCount, traceLastSummary, playTraceReport, loadedTasEntry, botRunReport, uiLanguage);
+  const tasPlaybackLocked = tasPlaybackState.status === "playing";
   const pilots: Pilot[] = [
     {
       side: "1P",
@@ -8709,6 +8785,7 @@ function App() {
           onModeChange={(mode) => changeControlMode("1P", mode)}
           onStrategyChange={(strategy) => changeStrategyModel("1P", strategy)}
           pilot={pilots[0]}
+          tasLocked={tasPlaybackLocked}
           uiLanguage={uiLanguage}
         />
         <div className="center-column">
@@ -8744,6 +8821,7 @@ function App() {
             onTasPause={pauseTasReplay}
             onTasPlay={() => { void startTasReplay(); }}
             onTasStop={stopTasReplay}
+            onTasApplyBaseline={applyTasBaselineToSide}
             onTraceClear={clearTraceRecording}
             onTraceExport={exportTraceRecording}
             onTraceStart={startTraceRecording}
@@ -8771,6 +8849,7 @@ function App() {
           onModeChange={(mode) => changeControlMode("2P", mode)}
           onStrategyChange={(strategy) => changeStrategyModel("2P", strategy)}
           pilot={pilots[1]}
+          tasLocked={tasPlaybackLocked}
           uiLanguage={uiLanguage}
         />
       </div>

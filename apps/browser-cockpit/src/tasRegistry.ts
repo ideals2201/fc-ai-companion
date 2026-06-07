@@ -33,6 +33,7 @@ export type TasMovieEntry = {
   commentaryModes: TasCommentaryMode[];
   keyMoments: string[];
   riskNotes: string[];
+  entrySyncStatus?: "verified-user" | "needs-calibration";
 };
 
 export type TasRegistryEntry = {
@@ -108,7 +109,8 @@ export const tasRegistry: TasRegistryEntry[] = [
         riskNotes: [
           "TAS 是确定性输入，不等于可直接应对人类合作中的抢屏和延迟。",
           "提取策略片段后必须经过 Safety Override 和真实 trace 验证。"
-        ]
+        ],
+        entrySyncStatus: "needs-calibration"
       },
       {
         id: "contra-j-2p-any-percent",
@@ -133,7 +135,8 @@ export const tasRegistry: TasRegistryEntry[] = [
         riskNotes: [
           "双人 TAS 对帧同步敏感，不能直接作为人类+AI 的唯一控制逻辑。",
           "提取配合策略时要保持队友安全距离和屏幕推进边界。"
-        ]
+        ],
+        entrySyncStatus: "verified-user"
       },
       {
         id: "contra-j-1p-pacifist",
@@ -157,7 +160,8 @@ export const tasRegistry: TasRegistryEntry[] = [
         riskNotes: [
           "避战片段不能直接套用到稳健清敌策略。",
           "如果人类玩家要求杀敌或吃奖励，必须切换到 combat/loot 基座。"
-        ]
+        ],
+        entrySyncStatus: "needs-calibration"
       },
       {
         id: "contra-j-2p-low-percent",
@@ -181,7 +185,8 @@ export const tasRegistry: TasRegistryEntry[] = [
         riskNotes: [
           "低收集 TAS 不代表最适合普通玩家的陪玩体验。",
           "作为参考片段时要标注 resource-limited 场景。"
-        ]
+        ],
+        entrySyncStatus: "verified-user"
       }
     ]
   }
@@ -244,12 +249,19 @@ export function tasMoviesForEntry(entry: TasRegistryEntry | null) {
 
 export function selectDefaultTasMovie(entry: TasRegistryEntry | null) {
   const movies = tasMoviesForEntry(entry);
-  return movies.find((movie) => movie.id === "contra-j-1p-any-percent") ?? movies[0] ?? null;
+  return movies.find((movie) => movie.entrySyncStatus === "verified-user")
+    ?? movies.find((movie) => movie.id === "contra-j-1p-any-percent")
+    ?? movies[0]
+    ?? null;
 }
 
 export function recommendationLabel(movie: TasMovieEntry | null) {
   if (!movie) return "无推荐基准";
-  return movie.recommendedBaselines.map((baseline) => baselineLabels[baseline]).join(" / ");
+  return movie.recommendedBaselines.map(tasBaselineLabel).join(" / ");
+}
+
+export function tasBaselineLabel(baseline: TasStrategyBaseline) {
+  return baselineLabels[baseline];
 }
 
 export function commentaryModeLabel(mode: TasCommentaryMode) {
