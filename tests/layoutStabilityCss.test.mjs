@@ -101,7 +101,13 @@ test("active training areas use highlighted borders without dimming content", ()
   assertNoDeclaration(globalDisabled, "opacity");
   assertNoDeclaration(globalDisabled, "filter");
 
-  const activeTrainingPanel = ruleFor(".side-training-panel.selected-training-side");
+  const queuedTrainingPanel = ruleFor(".side-training-panel.queued-training-side");
+  assertDeclaration(queuedTrainingPanel, "border-color", /rgba\(126,\s*200,\s*255,\s*0\.58\)/);
+  assertDeclaration(queuedTrainingPanel, "box-shadow", /rgba\(126,\s*200,\s*255,\s*0\.18\)/);
+  assertNoDeclaration(queuedTrainingPanel, "opacity");
+  assertNoDeclaration(queuedTrainingPanel, "filter");
+
+  const activeTrainingPanel = ruleFor(".side-training-panel.active-training-side");
   assertDeclaration(activeTrainingPanel, "border-color", /rgba\(104,\s*227,\s*145,\s*0\.82\)/);
   assertDeclaration(activeTrainingPanel, "box-shadow", /rgba\(104,\s*227,\s*145,\s*0\.22\)/);
   assertNoDeclaration(activeTrainingPanel, "opacity");

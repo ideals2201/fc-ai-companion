@@ -469,6 +469,7 @@ type SideTrainingState = {
   strategyBaselineLabel: string;
   selectedForTraining: boolean;
   trainingSessionActive: boolean;
+  trainingStatusLabel: string;
   baselineOptions: SideTrainingBaselineOption[];
   selectedBaselineId: string;
   sourceLabel: string;
@@ -1261,6 +1262,14 @@ function trainingControlModeForSelection(baselineId: string, method: SideTrainin
 
 function selectorClassName(baseClassName: string, inactive: boolean) {
   return inactive ? `${baseClassName} control-inactive` : baseClassName;
+}
+
+function sideTrainingPanelClassName(training: Pick<SideTrainingState, "selectedForTraining" | "trainingSessionActive">) {
+  return training.trainingSessionActive ? "side-training-panel active-training-side" : training.selectedForTraining ? "side-training-panel queued-training-side" : "side-training-panel";
+}
+
+function sideTrainingTitleClassName(training: Pick<SideTrainingState, "selectedForTraining" | "trainingSessionActive">) {
+  return training.trainingSessionActive ? "side-training-title-button active" : training.selectedForTraining ? "side-training-title-button queued" : "side-training-title-button";
 }
 
 function strategyResultMetricLabel(metric: StrategyResultMetric, language: UiLanguage, unit: "count" | "frames" = "count") {
@@ -6161,6 +6170,11 @@ function buildSideTrainingStateV2(
   const trainingMethod = findSideTrainingMethodOption(selectedTrainingMethod);
   const strategyBaselineLabel = selectedBaseline.label;
   const sourceLabel = selectedBaseline.sourceLabel;
+  const trainingStatusLabel = trainingSessionActive
+    ? language === "en-US" ? "Active" : "训练中"
+    : selectedForTraining
+      ? language === "en-US" ? "Queued" : "待启动"
+      : language === "en-US" ? "Not selected" : "未选择";
   const captureStatus = traceRecording ? t(language, "training.traceCapturing") : traceSampleCount > 0 ? "Captured" : "Not captured";
   const failureSummary = sideDeath
     ? `Death W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
@@ -6176,6 +6190,7 @@ function buildSideTrainingStateV2(
     strategyBaselineLabel,
     selectedForTraining,
     trainingSessionActive,
+    trainingStatusLabel,
     baselineOptions,
     selectedBaselineId: selectedBaseline.id,
     sourceLabel,
@@ -6415,15 +6430,16 @@ function SideTrainingPanel({
   const autoPatchArchiveLabel = training.selectedBaselineId === "ai-run-new" ? "归档AI跑局" : "生成补丁";
 
   return (
-    <div className={training.selectedForTraining ? "side-training-panel selected-training-side" : "side-training-panel"} aria-label={`${training.side} 训练区`}>
+    <div className={sideTrainingPanelClassName(training)} aria-label={`${training.side} 训练区`}>
       <button
         aria-pressed={training.selectedForTraining}
-        className={training.selectedForTraining ? "side-training-title-button active" : "side-training-title-button"}
+        className={sideTrainingTitleClassName(training)}
         onClick={() => actions.onSideTrainingFocus(training.side)}
         type="button"
       >
         <Database size={15} />
         <span>{training.ownerLabel}</span>
+        <span className="side-training-status">{training.trainingStatusLabel}</span>
       </button>
       <div className="side-training-pack-identity">
         <strong>{training.packDisplayName} ({training.strategyCategoryLabel})</strong>

@@ -692,7 +692,12 @@ dd {
   padding: 8px;
 }
 
-.side-training-panel.selected-training-side {
+.side-training-panel.queued-training-side {
+  border-color: rgba(126, 200, 255, 0.58);
+  box-shadow: 0 0 0 1px rgba(126, 200, 255, 0.18), 0 0 14px rgba(126, 200, 255, 0.05);
+}
+
+.side-training-panel.active-training-side {
   border-color: rgba(104, 227, 145, 0.82);
   box-shadow: 0 0 0 1px rgba(104, 227, 145, 0.22), 0 0 18px rgba(104, 227, 145, 0.08);
 }
@@ -715,6 +720,26 @@ dd {
   border-color: rgba(104, 227, 145, 0.72);
   background: #0d2315;
   color: #eafff0;
+}
+
+.side-training-title-button.queued {
+  border-color: rgba(126, 200, 255, 0.54);
+  background: #0a1822;
+  color: #e8f6ff;
+}
+
+.side-training-status {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: #9bd7ff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.side-training-title-button.active .side-training-status {
+  border-color: rgba(104, 227, 145, 0.35);
+  color: #90f3aa;
 }
 
 .side-training-pack-identity {

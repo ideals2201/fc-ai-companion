@@ -19,14 +19,16 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /strategyCategoryOptions: Array<\{ key: AiStrategyKey; label: string \}>/, "side training state should expose selectable strategy categories");
   assert.match(mainSource, /strategyBaselineLabel: string/, "side training state should expose the selected strategy baseline");
   assert.match(mainSource, /selectedForTraining: boolean/, "side training state should know whether it is the focused training side");
+  assert.match(mainSource, /trainingStatusLabel: string/, "side training state should expose queued vs active status");
   assert.match(mainSource, /baselineOptions: SideTrainingBaselineOption\[\]/, "side training state should expose selectable baseline options");
   assert.match(mainSource, /selectedBaselineId: string/, "side training state should carry the selected baseline id");
   assert.match(mainSource, /trainingMethodOptions: SideTrainingMethodOption\[\]/, "side training state should expose selectable training methods");
   assert.match(mainSource, /selectedTrainingMethod: SideTrainingMethod/, "side training state should carry the selected training method");
   assert.match(mainSource, /<SideTrainingPanel[\s\S]*training=\{pilot\.training\}/, "PilotPanel should place training inside the controller bay");
   assert.match(mainSource, /className="side-training-pack-identity"/, "side training panel should prominently show strategy pack identity");
-  assert.match(mainSource, /className=\{training\.selectedForTraining \? "side-training-panel selected-training-side" : "side-training-panel"\}/, "focused side training panel should have a visible selected border");
-  assert.match(mainSource, /className=\{training\.selectedForTraining \? "side-training-title-button active" : "side-training-title-button"\}/, "side training title should be a centered selectable button");
+  assert.match(mainSource, /className=\{sideTrainingPanelClassName\(training\)\}/, "side training panel should distinguish queued and active training states");
+  assert.match(mainSource, /className=\{sideTrainingTitleClassName\(training\)\}/, "side training title should distinguish queued and active training states");
+  assert.match(mainSource, /className="side-training-status"/, "side training panel should visibly label queued vs active status");
   assert.match(mainSource, /onSideTrainingFocus/, "side training title should route focus selection with side ownership");
   assert.match(mainSource, /selectorClassName\("side-strategy-category-selector"/, "side training panel should allow changing the trained strategy category");
   assert.match(mainSource, /training\.strategyCategoryOptions\.map/, "side training strategy selector should list package strategy categories");
@@ -50,7 +52,8 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /onSideTrainingValidateStrategy/, "validation should be routed with side ownership");
   assert.match(mainSource, /onSideTraceStart/, "trace capture should be available from each side training panel");
   assert.match(cssSource, /\.side-training-panel\s*\{/, "side training panel should have stable styling");
-  assert.match(cssSource, /\.side-training-panel\.selected-training-side\s*\{/, "focused side training panel should have selected border styling");
+  assert.match(cssSource, /\.side-training-panel\.queued-training-side\s*\{/, "queued training panel should have selected-but-not-active styling");
+  assert.match(cssSource, /\.side-training-panel\.active-training-side\s*\{/, "active training panel should have active border styling");
   assert.match(cssSource, /\.side-training-title-button\s*\{/, "side training title button should have stable styling");
   assert.doesNotMatch(mainSource, /className="training-stat-grid"/, "side training panel should not show debug metric cards");
   assert.doesNotMatch(mainSource, /className="training-note-grid"/, "side training panel should not show debug note cards");
@@ -101,6 +104,15 @@ test("side training sessions are independent and only lock their own play area",
   assert.match(mainSource, /const canStartTrainingSession = \(\["1P", "2P"\] as PlayerSide\[\]\)\.some/, "training start should be available when any selected side is not active");
   assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{[\s\S]*"1P": current\["1P"\] \|\| selectedTrainingSides\["1P"\][\s\S]*"2P": current\["2P"\] \|\| selectedTrainingSides\["2P"\]/, "starting training should activate every selected side without forcing 1P/2P exclusivity");
   assert.match(mainSource, /setActiveTrainingSides\(\{ "1P": false, "2P": false \}\)/, "stopping training should release every side training lock");
+});
+
+test("selected training sides are queued until the start button activates them", () => {
+  assert.match(mainSource, /function sideTrainingPanelClassName/, "panel class should be derived from queued and active training state");
+  assert.match(mainSource, /training\.trainingSessionActive \? "side-training-panel active-training-side" : training\.selectedForTraining \? "side-training-panel queued-training-side" : "side-training-panel"/, "selected inactive sides should be queued, not active");
+  assert.match(mainSource, /training\.trainingSessionActive \? "side-training-title-button active" : training\.selectedForTraining \? "side-training-title-button queued" : "side-training-title-button"/, "selected inactive titles should use queued styling");
+  assert.match(mainSource, /selectedForTraining\s*\?\s*language === "en-US" \? "Queued" : "待启动"/, "selected inactive side should show a clear queued label");
+  assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["1P"\]\.trainingSessionActive\}/, "top 1P game controls should lock only after 1P training starts");
+  assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "top 2P game controls should lock only after 2P training starts");
 });
 
 test("operation strategy control keeps only shared strategy-training workflow actions", () => {

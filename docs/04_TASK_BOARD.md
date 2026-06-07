@@ -432,3 +432,17 @@ Verification:
 Next:
 - Wire validated evidence into the strategy-package save flow.
 - Keep raw trace export separate from strategy archival so package evidence remains schema-bound.
+
+## 2026-06-08 Side Training Queued vs Active UI
+
+Current:
+- Side training selection is now visually separated from active training ownership.
+- Selected but inactive side panels show `待启动` / queued styling, while active training side panels show `训练中` / active styling.
+- Top game controls remain available while a side is only queued; they lock only after `启动训练` activates that side.
+
+Verification:
+- `node --test tests/trainingPanelLayout.test.mjs`: `13/13`.
+- `node --test tests/layoutStabilityCss.test.mjs`: `4/4`.
+- `npm test`: `187/187`.
+- `npm run build`: passed.
+- Browser check: initial 1P panel showed `待启动` with unlocked top controls; after `启动训练`, 1P showed `训练中` and the 1P top controls were locked.
