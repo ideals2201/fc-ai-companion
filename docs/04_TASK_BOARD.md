@@ -508,3 +508,20 @@ Verification:
 Next:
 - Run browser validation replay before saving or exporting any AI strategy package that claims this window.
 - Keep US and Japan ROMProfile evidence separate until a migration validation proves compatibility.
+
+## 2026-06-08 Contra Japan AI Botrun Failure Check
+
+Current:
+- A real browser botrun against `contra-j-good` still fails before the boss-approach training window.
+- The run ended with `status=death`, `reason=death-count`, `frameCount=3986`, `deaths=1`, `finalWorldX=2068`, `finalPlayerX=123`, `finalPlayerY=134`, `finalScore=2200`, `finalWeapon=0`, `bossDefeated=0`.
+- The final runtime route was `weapon-gate-survive` / `loot`, script action `p03-mid-fixed-threat`, script mode `fixed-hp-fire`, last input `↓B`, primary threat `slot15:type0x07@118,160/hp6`, active threat count `15`.
+- This proves the newly generated boss-approach `platform-capture` candidate is not yet reachable by the current AI route on `contra-j-good`.
+
+Verification:
+- Browser CDP against visible Chrome at `http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&run=post-fragment-j-check-20260608`.
+- Hidden `bot-run-report-json`: schema `fc-ai-bot-run-v1`, `status=death`, `deathTraceSamples=900`.
+
+Next:
+- Archive this J-version `WorldX 2068` mid fixed-threat death as TraceEvidence before patching.
+- Use the existing TAS `fixed-threat-route` side baseline plus that failure evidence to generate or adjust a `fixed-threat-hp-lock` candidate before trying boss approach validation again.
+- Do not claim Stage 1 pass or full clear; current verified pass amount remains `0` stages.
