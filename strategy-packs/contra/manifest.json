@@ -37,6 +37,9 @@
     "entityTaxonomy": "research/entity-taxonomy.json",
     "actionMap": "research/action-map.json",
     "strategyTypes": "research/strategy-types.json",
+    "tasTrainingBases": [
+      "data/training/contra/tas_bases/contra-j-good/training-base.json"
+    ],
     "stages": [
       "stages/stage-1/stage-plan.json"
     ],

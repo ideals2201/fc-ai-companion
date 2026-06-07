@@ -27,7 +27,7 @@ const {
   tasStatusLabel
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/tasRegistry.ts", import.meta.url));
 
-test("matches Contra Japan TAS data by ROM profile and headerless checksum", () => {
+test("matches Contra Japan TAS data only when the ROM checksum is exact", () => {
   const metadata = {
     gameId: "contra",
     romProfileId: "contra-j-good",
@@ -41,8 +41,20 @@ test("matches Contra Japan TAS data by ROM profile and headerless checksum", () 
   assert.equal(match?.tasProfileId, "contra-j-fm2-archive-2026-06-04");
   assert.equal(match?.romChecksum.fm2Base64, "0wbFTM/fXLT47FiPGbPjPQ==");
   assert.equal(tasStatusLabel(match), "TAS 已匹配");
-  assert.match(tasBaseLabel(match), /Contra \(J\) TAS 基座/);
+  assert.match(tasBaseLabel(match), /魂斗罗日版 TAS 基座/);
   assert.ok(match?.categories.includes("2P"));
+});
+
+test("does not match TAS data by ROM profile alone when checksums differ", () => {
+  const profileOnlyMismatch = identifyTasForRom({
+    gameId: "contra",
+    romProfileId: "contra-j-good",
+    md5: "11111111111111111111111111111111",
+    headerlessMd5: "22222222222222222222222222222222",
+    sha1: "3333333333333333333333333333333333333333"
+  });
+
+  assert.equal(profileOnlyMismatch, null);
 });
 
 test("reports no TAS match for unsupported or unrelated ROMs", () => {

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1.0.0",
+  "role": "tas-training-base",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "tasProfileId": "contra-j-fm2-archive-2026-06-04",
+  "createdAt": "2026-06-07",
+  "romChecksum": {
+    "fm2Base64": "0wbFTM/fXLT47FiPGbPjPQ==",
+    "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+    "fullMd5": "0e40bc1b049c16c5d7246cc28399cb5d",
+    "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e"
+  },
+  "source": {
+    "rawArchivePath": "data/tas/contra/contra-j-good",
+    "note": "FM2 inputs are route knowledge and viewing material. They must not be promoted as live AI control without StrategyPack validation."
+  },
+  "runtimePolicy": {
+    "tasIsController": false,
+    "requiresStrategyPackPromotion": true,
+    "requiresHashExactMatch": true,
+    "requiresSafetyOverride": true,
+    "requiresRealRuntimeTrace": true
+  },
+  "movies": [
+    {
+      "id": "contra-j-1p-any-percent",
+      "fileName": "mars608,aiqiyou-contraj-1p.fm2",
+      "category": "1P any%",
+      "players": "1P",
+      "playbackStartFrame": 450,
+      "recommendedBaselines": ["survival-v0", "speedrun-v0", "combat-v0"],
+      "primaryUse": "Single-player route, bridge timing, fixed-target handling, and boss-wall rhythm."
+    },
+    {
+      "id": "contra-j-2p-any-percent",
+      "fileName": "mars608,aiqiyou5-contra-nes-2players.fm2",
+      "category": "2P any%",
+      "players": "2P",
+      "playbackStartFrame": 450,
+      "recommendedBaselines": ["survival-v0", "speedrun-v0", "guard-v0"],
+      "primaryUse": "Two-player spacing, screen-push cooperation, shared fixed-target damage windows."
+    },
+    {
+      "id": "contra-j-1p-pacifist",
+      "fileName": "mars608,aiqiyou6-contra-pacifist.fm2",
+      "category": "pacifist",
+      "players": "1P",
+      "playbackStartFrame": 450,
+      "recommendedBaselines": ["survival-v0", "special-reference"],
+      "primaryUse": "Threat avoidance, non-combat progress windows, safety analysis."
+    },
+    {
+      "id": "contra-j-2p-low-percent",
+      "fileName": "mars608_aiqiyou-contraj-nes-2p,lowp.fm2",
+      "category": "2P low%",
+      "players": "2P",
+      "playbackStartFrame": 450,
+      "recommendedBaselines": ["survival-v0", "guard-v0", "special-reference"],
+      "primaryUse": "Low-resource two-player routing, conservative cooperation, no-strong-weapon reference."
+    }
+  ],
+  "candidateFragments": [
+    {
+      "id": "tas-j-stage1-opening-start-sync",
+      "status": "candidate",
+      "strategyTypes": ["survival", "speedrun"],
+      "source": {
+        "kind": "tas",
+        "romProfileId": "contra-j-good",
+        "movieId": "contra-j-1p-any-percent",
+        "frameWindow": [0, 650]
+      },
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "unit": "ProgressionUnits",
+        "start": 0,
+        "end": 520
+      },
+      "intentPattern": ["menu_start", "advance", "fire_target"],
+      "acceptanceChecks": ["real-runtime-trace-required", "safety-override-required", "hash-exact-match-required"]
+    },
+    {
+      "id": "tas-j-stage1-bridge-jump-window",
+      "status": "candidate",
+      "strategyTypes": ["survival", "bridge-jump-window", "speedrun"],
+      "source": {
+        "kind": "tas",
+        "romProfileId": "contra-j-good",
+        "movieId": "contra-j-1p-any-percent",
+        "frameWindow": [650, 1350]
+      },
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "unit": "ProgressionUnits",
+        "start": 520,
+        "end": 930
+      },
+      "intentPattern": ["advance", "jump_advance", "air_fire_target"],
+      "acceptanceChecks": ["real-runtime-trace-required", "safety-override-required", "landing-projection-required"]
+    },
+    {
+      "id": "tas-j-stage1-fixed-threat-clear",
+      "status": "candidate",
+      "strategyTypes": ["survival", "combat", "fixed-threat-hp-lock"],
+      "source": {
+        "kind": "tas",
+        "romProfileId": "contra-j-good",
+        "movieId": "contra-j-1p-any-percent",
+        "frameWindow": [1350, 2500]
+      },
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "unit": "ProgressionUnits",
+        "start": 930,
+        "end": 2050
+      },
+      "intentPattern": ["advance", "clear_fixed_threat", "fire_target"],
+      "acceptanceChecks": ["real-runtime-trace-required", "safety-override-required", "hp-monitor-required"]
+    },
+    {
+      "id": "tas-j-stage1-coop-spacing",
+      "status": "candidate",
+      "strategyTypes": ["guard", "survival", "coop-spacing"],
+      "source": {
+        "kind": "tas",
+        "romProfileId": "contra-j-good",
+        "movieId": "contra-j-2p-any-percent",
+        "frameWindow": [450, 2500]
+      },
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "unit": "ProgressionUnits",
+        "start": 0,
+        "end": 2050
+      },
+      "intentPattern": ["follow_leader", "avoid_screen_drag", "shared_fire_target"],
+      "acceptanceChecks": ["real-runtime-trace-required", "safety-override-required", "two-player-mode-required"]
+    }
+  ],
+  "promotionRules": [
+    "A candidate fragment can enter strategy-packs only after it is converted to StrategyFragment schema.",
+    "A promoted fragment must record the TAS movie id, frame window or progression window, and validation trace.",
+    "Safety Override must be evaluated before every promoted TAS-derived fragment.",
+    "A TAS-derived fragment must support recovery or exit when real runtime state diverges from the TAS route."
+  ]
+}

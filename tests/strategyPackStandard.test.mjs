@@ -51,6 +51,7 @@ test("contra strategy pack has the required 1.0 directory structure", () => {
     "strategy-packs/contra/stages/stage-1/trace-evidence",
     "strategy-packs/contra/schemas/manifest.schema.json",
     "strategy-packs/contra/schemas/runtime-api.schema.json",
+    "data/training/contra/tas_bases/contra-j-good/training-base.json",
     "strategy-packs/contra/docs/source-register.md"
   ].forEach(assertExists);
 });
@@ -67,6 +68,9 @@ test("contra manifest binds the pack to standard 1.0 and candidate status", () =
   assert.equal(manifest.files.gameProfile, "game-profile.json");
   assert.equal(manifest.files.conditionRegistry, "research/condition-registry.json");
   assert.equal(manifest.files.stages[0], "stages/stage-1/stage-plan.json");
+  assert.deepEqual(manifest.files.tasTrainingBases, [
+    "data/training/contra/tas_bases/contra-j-good/training-base.json"
+  ]);
 });
 
 test("contra stage 1 fragments use protocol 1.0 structure instead of legacy route fields", () => {

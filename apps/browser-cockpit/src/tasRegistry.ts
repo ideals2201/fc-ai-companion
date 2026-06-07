@@ -67,7 +67,7 @@ export const tasRegistry: TasRegistryEntry[] = [
     tasProfileId: "contra-j-fm2-archive-2026-06-04",
     gameId: "contra",
     romProfileId: "contra-j-good",
-    label: "Contra (J) TAS 基座",
+    label: "魂斗罗日版 TAS 基座",
     status: "exact-match",
     romChecksum: {
       fm2Base64: "0wbFTM/fXLT47FiPGbPjPQ==",
@@ -94,7 +94,7 @@ export const tasRegistry: TasRegistryEntry[] = [
         },
         category: "1P any%",
         players: "1P",
-        summaryZh: "单人高速通关基准，适合提取稳健生存、快速推进、Boss 处理和关键跳跃窗口。",
+        summaryZh: "单人高速通关基准，适合提取稳健生存、快速推进、清敌战斗、Boss 处理和关键跳跃窗口。",
         playbackStartFrame: 450,
         sourceNote: "FM2 原始输入档，作者 Mars608 & aiqiyou；仅绑定 contra-j-good ROMProfile。",
         recommendedBaselines: ["survival-v0", "speedrun-v0", "combat-v0"],
@@ -107,7 +107,7 @@ export const tasRegistry: TasRegistryEntry[] = [
         ],
         riskNotes: [
           "TAS 是确定性输入，不等于可直接应对人类合作中的抢屏和延迟。",
-          "提取策略片段后必须经过 Safety Override 和实机 trace 验证。"
+          "提取策略片段后必须经过 Safety Override 和真实 trace 验证。"
         ]
       },
       {
@@ -208,16 +208,23 @@ function normalizeHash(value: string | undefined) {
   return (value ?? "").trim().toLowerCase();
 }
 
-export function identifyTasForRom(metadata: RomMetadata | null) {
-  if (!metadata) return null;
+function hasExactChecksumMatch(entry: TasRegistryEntry, metadata: RomMetadata) {
   const md5 = normalizeHash(metadata.md5);
   const headerlessMd5 = normalizeHash(metadata.headerlessMd5);
   const sha1 = normalizeHash(metadata.sha1);
-  return tasRegistry.find((entry) => (
-    entry.romProfileId === metadata.romProfileId
-    || (!!headerlessMd5 && entry.romChecksum.headerlessMd5 === headerlessMd5)
+  return (
+    (!!headerlessMd5 && entry.romChecksum.headerlessMd5 === headerlessMd5)
     || (!!md5 && entry.romChecksum.fullMd5 === md5)
     || (!!sha1 && entry.romChecksum.sha1 === sha1)
+  );
+}
+
+export function identifyTasForRom(metadata: RomMetadata | null) {
+  if (!metadata) return null;
+  return tasRegistry.find((entry) => (
+    entry.gameId === metadata.gameId
+    && entry.romProfileId === metadata.romProfileId
+    && hasExactChecksumMatch(entry, metadata)
   )) ?? null;
 }
 
@@ -253,6 +260,6 @@ export function buildTasCommentary(movie: TasMovieEntry, mode: TasCommentaryMode
   const modeLabel = commentaryModeLabel(mode);
   const baselines = recommendationLabel(movie);
   const firstMoment = movie.keyMoments[0] ?? "关键帧窗口";
-  const risk = movie.riskNotes[0] ?? "需要实机验证后再入库";
+  const risk = movie.riskNotes[0] ?? "需要真实运行验证后再入库";
   return `${modeLabel}：${movie.title.zh}。策略分析重点是 ${firstMoment}，优先观察 WorldX 触发、输入节奏和安全覆盖。推荐训练基准：${baselines}。注意：${risk}`;
 }
