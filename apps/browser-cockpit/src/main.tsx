@@ -434,6 +434,7 @@ type SideTrainingState = {
 };
 
 type GlobalTrainingState = {
+  strategyPackLabel: string;
   modeLabel: string;
   optimizationLevel: string;
   tasBaseLabel: string;
@@ -753,6 +754,15 @@ const CONTRA_US_ROM_PROFILE_ID = "contra-us-good";
 const CONTRA_US_COMPATIBILITY_GROUP = "contra-us";
 const PERSONAL_STRATEGY_STORAGE_KEY = "fc-ai.personal.stage1.strategy.v1";
 const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · Controllers x2";
+const ACTIVE_STRATEGY_PACK = {
+  packId: "contra-stage1-strategy-v0",
+  version: "0.1.0",
+  status: "candidate",
+  displayName: {
+    "zh-CN": "魂斗罗第一关策略包 V0",
+    "en-US": "Contra Stage 1 Strategy Pack V0"
+  }
+} as const;
 
 const gameProfileUiStatus = {
   "contra": {
@@ -853,6 +863,10 @@ function localizedRomSupportLabel(label: string, language: UiLanguage) {
 
 function pendingHashLabel(language: UiLanguage) {
   return language === "en-US" ? "Pending" : "待计算";
+}
+
+function activeStrategyPackLabel(language: UiLanguage) {
+  return `${ACTIVE_STRATEGY_PACK.displayName[language]} · ${ACTIVE_STRATEGY_PACK.version} · ${ACTIVE_STRATEGY_PACK.status}`;
 }
 
 function createServerRomEntry(info: ServerRomFileInfo): RomLibraryEntry {
@@ -5665,6 +5679,7 @@ function buildGlobalTrainingState(
     : `${botRunReport.status} / W${botRunReport.finalWorldX ?? "?"}`;
 
   return {
+    strategyPackLabel: activeStrategyPackLabel(language),
     modeLabel: "Offline/Base Mode",
     optimizationLevel: language === "en-US" ? "Level 0 + Level 1 candidates" : "Level 0 + Level 1 候选",
     tasBaseLabel: localizedTasStatusLabel(tasEntry, language),
@@ -6159,7 +6174,11 @@ function GlobalTrainingConsole({
   onTraceStart,
   onTraceStop,
   onTraceClear,
-  onTraceExport
+  onTraceExport,
+  onTrainingSelectBaseline,
+  onTrainingModifyStrategy,
+  onTrainingArchiveStrategy,
+  onTrainingValidateStrategy
 }: {
   training: GlobalTrainingState;
   language: UiLanguage;
@@ -6169,12 +6188,20 @@ function GlobalTrainingConsole({
   onTraceStop: () => void;
   onTraceClear: () => void;
   onTraceExport: () => void;
+  onTrainingSelectBaseline: () => void;
+  onTrainingModifyStrategy: () => void;
+  onTrainingArchiveStrategy: () => void;
+  onTrainingValidateStrategy: () => void;
 }) {
   return (
     <div className="training-console" aria-label={t(language, "training.globalTitle")}>
       <div className="sub-title">
         <Database size={15} />
         <span>{t(language, "training.globalTitle")}</span>
+      </div>
+      <div className="training-pack-banner">
+        <strong>{training.strategyPackLabel}</strong>
+        <span>{ACTIVE_STRATEGY_PACK.packId}</span>
       </div>
       <div className="training-console-grid">
         <div>
@@ -6209,6 +6236,12 @@ function GlobalTrainingConsole({
       <div className="training-console-footer">
         <span>{training.traceSummary}</span>
         <span>{training.nextGate}</span>
+      </div>
+      <div className="training-workflow-actions">
+        <button onClick={onTrainingSelectBaseline} type="button">{t(language, "training.selectBaseline")}</button>
+        <button onClick={onTrainingModifyStrategy} type="button">{t(language, "training.modifyStrategy")}</button>
+        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTrainingArchiveStrategy} type="button">{t(language, "training.archiveStrategy")}</button>
+        <button disabled={traceRecording} onClick={onTrainingValidateStrategy} type="button">{t(language, "training.validateStrategy")}</button>
       </div>
       <div className="training-actions">
         <button disabled={traceRecording} onClick={onTraceStart} type="button">{t(language, "training.startCapture")}</button>
@@ -6459,7 +6492,11 @@ function ConsoleDeck({
   onTraceStart,
   onTraceStop,
   onTraceClear,
-  onTraceExport
+  onTraceExport,
+  onTrainingSelectBaseline,
+  onTrainingModifyStrategy,
+  onTrainingArchiveStrategy,
+  onTrainingValidateStrategy
 }: {
   status: RuntimeStatus;
   romMetadata: RomMetadata | null;
@@ -6492,6 +6529,10 @@ function ConsoleDeck({
   onTraceStop: () => void;
   onTraceClear: () => void;
   onTraceExport: () => void;
+  onTrainingSelectBaseline: () => void;
+  onTrainingModifyStrategy: () => void;
+  onTrainingArchiveStrategy: () => void;
+  onTrainingValidateStrategy: () => void;
 }) {
   const directoryInputRef = useRef<HTMLInputElement | null>(null);
   const isRunning = status === "running";
@@ -6644,6 +6685,10 @@ function ConsoleDeck({
       <GlobalTrainingConsole
         language={uiLanguage}
         training={globalTraining}
+        onTrainingArchiveStrategy={onTrainingArchiveStrategy}
+        onTrainingModifyStrategy={onTrainingModifyStrategy}
+        onTrainingSelectBaseline={onTrainingSelectBaseline}
+        onTrainingValidateStrategy={onTrainingValidateStrategy}
         onTraceClear={onTraceClear}
         onTraceExport={onTraceExport}
         onTraceStart={onTraceStart}
@@ -8319,6 +8364,33 @@ function App() {
     setRunning
   ]);
 
+  const onTrainingSelectBaseline = useCallback(() => {
+    const entry = identifyTasForRom(romMetadata);
+    const movie = tasMoviesForEntry(entry).find((item) => item.id === selectedTasMovieId)
+      ?? selectDefaultTasMovie(entry);
+    if (!entry || !movie) {
+      appendLog("训练：当前 ROM 没有可选 TAS 基准");
+      return;
+    }
+    setSelectedTasMovieId(movie.id);
+    appendLog(`训练：已选择基准 ${movie.title.zh} / ${recommendationLabel(movie)}`);
+  }, [appendLog, romMetadata, selectedTasMovieId]);
+
+  const onTrainingModifyStrategy = useCallback(() => {
+    appendLog("训练：打开策略设计器，准备修改个人策略");
+    openStrategyDesigner();
+  }, [appendLog, openStrategyDesigner]);
+
+  const onTrainingArchiveStrategy = useCallback(() => {
+    appendLog("训练：归档当前采集样本为策略证据");
+    exportTraceRecording();
+  }, [appendLog, exportTraceRecording]);
+
+  const onTrainingValidateStrategy = useCallback(() => {
+    appendLog("训练：启动基准验证回放");
+    void startTasReplay();
+  }, [appendLog, startTasReplay]);
+
   const runBotFrameBatch = useCallback(async (maxFrames: number) => {
     const nes = nesRef.current;
     const startedAt = new Date().toISOString();
@@ -8822,6 +8894,10 @@ function App() {
             onTasPlay={() => { void startTasReplay(); }}
             onTasStop={stopTasReplay}
             onTasApplyBaseline={applyTasBaselineToSide}
+            onTrainingArchiveStrategy={onTrainingArchiveStrategy}
+            onTrainingModifyStrategy={onTrainingModifyStrategy}
+            onTrainingSelectBaseline={onTrainingSelectBaseline}
+            onTrainingValidateStrategy={onTrainingValidateStrategy}
             onTraceClear={clearTraceRecording}
             onTraceExport={exportTraceRecording}
             onTraceStart={startTraceRecording}

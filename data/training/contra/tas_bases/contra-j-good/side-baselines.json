@@ -1,0 +1,671 @@
+{
+  "schemaVersion": "1.0.0",
+  "role": "tas-side-baselines",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "tasProfileId": "contra-j-fm2-archive-2026-06-04",
+  "createdAt": "2026-06-07",
+  "source": {
+    "kind": "fm2",
+    "movieId": "contra-j-2p-any-percent",
+    "fileName": "mars608,aiqiyou5-contra-nes-2players.fm2",
+    "rawMoviePath": "data/tas/contra/contra-j-good/mars608,aiqiyou5-contra-nes-2players.fm2",
+    "players": "2P",
+    "entrySyncStatus": "verified-user",
+    "frameRangeSemantics": "start-inclusive-end-exclusive",
+    "note": "2P TAS is split into side-owned baseline windows. These are training baselines, not live controller scripts."
+  },
+  "runtimePolicy": {
+    "tasIsController": false,
+    "sideOwnedPromotionRequired": true,
+    "requiresHashExactMatch": true,
+    "requiresSafetyOverride": true,
+    "requiresRealRuntimeTrace": true,
+    "supportsSingleAiDerivation": true,
+    "supportsDualAiDerivation": true,
+    "supportsHumanAiDerivation": true
+  },
+  "windows": [
+    {
+      "id": "entry-sync",
+      "label": "Entry sync and two-player start",
+      "frameWindow": [
+        0,
+        650
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "coop-spacing"
+      ]
+    },
+    {
+      "id": "opening-active",
+      "label": "Opening active control",
+      "frameWindow": [
+        650,
+        1350
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "combat"
+      ]
+    },
+    {
+      "id": "fixed-threat-route",
+      "label": "Fixed-threat route and shared fire",
+      "frameWindow": [
+        1350,
+        2500
+      ],
+      "strategyTypes": [
+        "survival",
+        "combat",
+        "fixed-threat-hp-lock"
+      ]
+    },
+    {
+      "id": "coop-advance-reference",
+      "label": "Cooperative advance reference",
+      "frameWindow": [
+        450,
+        2500
+      ],
+      "strategyTypes": [
+        "survival",
+        "guard",
+        "coop-spacing"
+      ]
+    }
+  ],
+  "baselines": [
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "1P",
+      "windowId": "entry-sync",
+      "label": "Entry sync and two-player start",
+      "frameWindow": [
+        0,
+        650
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 650,
+      "pressedFrames": 250,
+      "pressedRatio": 0.3846,
+      "buttonPressFrames": {
+        "up": 11,
+        "down": 11,
+        "left": 19,
+        "right": 200,
+        "a": 26,
+        "b": 10,
+        "start": 13,
+        "select": 15
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 200,
+          "ratio": 0.3077
+        },
+        {
+          "label": "←A",
+          "frames": 12,
+          "ratio": 0.0185
+        },
+        {
+          "label": "START",
+          "frames": 5,
+          "ratio": 0.0077
+        },
+        {
+          "label": "SELECT",
+          "frames": 4,
+          "ratio": 0.0062
+        },
+        {
+          "label": "↑SELECT",
+          "frames": 3,
+          "ratio": 0.0046
+        },
+        {
+          "label": "↑STARTSELECTBA",
+          "frames": 3,
+          "ratio": 0.0046
+        }
+      ],
+      "intentHints": [
+        "menu_sync",
+        "advance",
+        "jump"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "coop-spacing"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "1P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "2P",
+      "windowId": "entry-sync",
+      "label": "Entry sync and two-player start",
+      "frameWindow": [
+        0,
+        650
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 650,
+      "pressedFrames": 268,
+      "pressedRatio": 0.4123,
+      "buttonPressFrames": {
+        "up": 16,
+        "down": 11,
+        "left": 24,
+        "right": 201,
+        "a": 23,
+        "b": 12,
+        "start": 32,
+        "select": 14
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 198,
+          "ratio": 0.3046
+        },
+        {
+          "label": "START",
+          "frames": 22,
+          "ratio": 0.0338
+        },
+        {
+          "label": "←A",
+          "frames": 21,
+          "ratio": 0.0323
+        },
+        {
+          "label": "↓B",
+          "frames": 9,
+          "ratio": 0.0138
+        },
+        {
+          "label": "↑STARTSELECT",
+          "frames": 8,
+          "ratio": 0.0123
+        },
+        {
+          "label": "↑SELECT",
+          "frames": 4,
+          "ratio": 0.0062
+        }
+      ],
+      "intentHints": [
+        "menu_sync",
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "coop-spacing"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "2P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "1P",
+      "windowId": "opening-active",
+      "label": "Opening active control",
+      "frameWindow": [
+        650,
+        1350
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 700,
+      "pressedFrames": 642,
+      "pressedRatio": 0.9171,
+      "buttonPressFrames": {
+        "up": 0,
+        "down": 0,
+        "left": 0,
+        "right": 642,
+        "a": 2,
+        "b": 0,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 640,
+          "ratio": 0.9143
+        },
+        {
+          "label": "→A",
+          "frames": 2,
+          "ratio": 0.0029
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "combat"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "1P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "2P",
+      "windowId": "opening-active",
+      "label": "Opening active control",
+      "frameWindow": [
+        650,
+        1350
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 700,
+      "pressedFrames": 641,
+      "pressedRatio": 0.9157,
+      "buttonPressFrames": {
+        "up": 0,
+        "down": 2,
+        "left": 0,
+        "right": 641,
+        "a": 2,
+        "b": 9,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 630,
+          "ratio": 0.9
+        },
+        {
+          "label": "→B",
+          "frames": 7,
+          "ratio": 0.01
+        },
+        {
+          "label": "→↓B",
+          "frames": 2,
+          "ratio": 0.0029
+        },
+        {
+          "label": "→A",
+          "frames": 2,
+          "ratio": 0.0029
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "combat"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "2P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "1P",
+      "windowId": "fixed-threat-route",
+      "label": "Fixed-threat route and shared fire",
+      "frameWindow": [
+        1350,
+        2500
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 1150,
+      "pressedFrames": 1110,
+      "pressedRatio": 0.9652,
+      "buttonPressFrames": {
+        "up": 0,
+        "down": 35,
+        "left": 0,
+        "right": 1109,
+        "a": 5,
+        "b": 33,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 1070,
+          "ratio": 0.9304
+        },
+        {
+          "label": "→↓B",
+          "frames": 33,
+          "ratio": 0.0287
+        },
+        {
+          "label": "→A",
+          "frames": 4,
+          "ratio": 0.0035
+        },
+        {
+          "label": "→↓",
+          "frames": 2,
+          "ratio": 0.0017
+        },
+        {
+          "label": "A",
+          "frames": 1,
+          "ratio": 0.0009
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "combat",
+        "fixed-threat-hp-lock"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "1P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "2P",
+      "windowId": "fixed-threat-route",
+      "label": "Fixed-threat route and shared fire",
+      "frameWindow": [
+        1350,
+        2500
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 1150,
+      "pressedFrames": 1143,
+      "pressedRatio": 0.9939,
+      "buttonPressFrames": {
+        "up": 1,
+        "down": 36,
+        "left": 7,
+        "right": 1136,
+        "a": 4,
+        "b": 27,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 1089,
+          "ratio": 0.947
+        },
+        {
+          "label": "→↓B",
+          "frames": 20,
+          "ratio": 0.0174
+        },
+        {
+          "label": "→↓",
+          "frames": 16,
+          "ratio": 0.0139
+        },
+        {
+          "label": "←",
+          "frames": 7,
+          "ratio": 0.0061
+        },
+        {
+          "label": "→B",
+          "frames": 6,
+          "ratio": 0.0052
+        },
+        {
+          "label": "→A",
+          "frames": 4,
+          "ratio": 0.0035
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "combat",
+        "fixed-threat-hp-lock"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "2P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "1P",
+      "windowId": "coop-advance-reference",
+      "label": "Cooperative advance reference",
+      "frameWindow": [
+        450,
+        2500
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 2050,
+      "pressedFrames": 1952,
+      "pressedRatio": 0.9522,
+      "buttonPressFrames": {
+        "up": 0,
+        "down": 35,
+        "left": 0,
+        "right": 1951,
+        "a": 7,
+        "b": 33,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 1910,
+          "ratio": 0.9317
+        },
+        {
+          "label": "→↓B",
+          "frames": 33,
+          "ratio": 0.0161
+        },
+        {
+          "label": "→A",
+          "frames": 6,
+          "ratio": 0.0029
+        },
+        {
+          "label": "→↓",
+          "frames": 2,
+          "ratio": 0.001
+        },
+        {
+          "label": "A",
+          "frames": 1,
+          "ratio": 0.0005
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "guard",
+        "coop-spacing"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "1P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "2P",
+      "windowId": "coop-advance-reference",
+      "label": "Cooperative advance reference",
+      "frameWindow": [
+        450,
+        2500
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 2050,
+      "pressedFrames": 1984,
+      "pressedRatio": 0.9678,
+      "buttonPressFrames": {
+        "up": 1,
+        "down": 39,
+        "left": 7,
+        "right": 1977,
+        "a": 6,
+        "b": 38,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 1917,
+          "ratio": 0.9351
+        },
+        {
+          "label": "→↓B",
+          "frames": 23,
+          "ratio": 0.0112
+        },
+        {
+          "label": "→↓",
+          "frames": 16,
+          "ratio": 0.0078
+        },
+        {
+          "label": "→B",
+          "frames": 14,
+          "ratio": 0.0068
+        },
+        {
+          "label": "←",
+          "frames": 7,
+          "ratio": 0.0034
+        },
+        {
+          "label": "→A",
+          "frames": 6,
+          "ratio": 0.0029
+        }
+      ],
+      "intentHints": [
+        "advance"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "guard",
+        "coop-spacing"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "2P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    }
+  ]
+}

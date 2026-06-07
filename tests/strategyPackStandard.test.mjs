@@ -44,6 +44,7 @@ test("contra strategy pack has the required 1.0 directory structure", () => {
     "strategy-packs/contra/research/entity-taxonomy.json",
     "strategy-packs/contra/research/action-map.json",
     "strategy-packs/contra/research/strategy-types.json",
+    "strategy-packs/contra/research/training-scenarios.json",
     "strategy-packs/contra/stages/stage-1/stage-plan.json",
     "strategy-packs/contra/stages/stage-1/fragments.json",
     "strategy-packs/contra/stages/stage-1/validation-report.md",
@@ -51,7 +52,9 @@ test("contra strategy pack has the required 1.0 directory structure", () => {
     "strategy-packs/contra/stages/stage-1/trace-evidence",
     "strategy-packs/contra/schemas/manifest.schema.json",
     "strategy-packs/contra/schemas/runtime-api.schema.json",
+    "strategy-packs/contra/schemas/training-scenarios.schema.json",
     "data/training/contra/tas_bases/contra-j-good/training-base.json",
+    "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
     "strategy-packs/contra/docs/source-register.md"
   ].forEach(assertExists);
 });
@@ -61,16 +64,45 @@ test("contra manifest binds the pack to standard 1.0 and candidate status", () =
 
   assert.equal(manifest.schemaVersion, "1.0.0");
   assert.equal(manifest.packId, "contra-stage1-strategy-v0");
+  assert.equal(manifest.displayName.zh, "魂斗罗第一关策略包 V0");
+  assert.equal(manifest.displayName.en, "Contra Stage 1 Strategy Pack V0");
   assert.equal(manifest.gameProfileId, "contra");
   assert.deepEqual(manifest.romProfileIds, ["contra-us-good", "contra-j-good"]);
+  assert.equal(manifest.sideScope, "shared");
   assert.equal(manifest.status, "candidate");
   assert.equal(manifest.standards.strategyProtocol, "1.0.0");
   assert.equal(manifest.files.gameProfile, "game-profile.json");
   assert.equal(manifest.files.conditionRegistry, "research/condition-registry.json");
+  assert.equal(manifest.files.trainingScenarios, "research/training-scenarios.json");
   assert.equal(manifest.files.stages[0], "stages/stage-1/stage-plan.json");
   assert.deepEqual(manifest.files.tasTrainingBases, [
     "data/training/contra/tas_bases/contra-j-good/training-base.json"
   ]);
+  assert.deepEqual(manifest.files.tasSideBaselines, [
+    "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
+  ]);
+});
+
+test("contra training scenarios declare game-specific variables and terminal conditions", () => {
+  const scenariosFile = readJson("strategy-packs/contra/research/training-scenarios.json");
+  const conditionRegistry = readJson("strategy-packs/contra/research/condition-registry.json");
+  const knownRefs = new Set(Object.keys(conditionRegistry.refs));
+
+  assert.equal(scenariosFile.schemaVersion, "1.0.0");
+  assert.equal(scenariosFile.gameProfileId, "contra");
+  assert.ok(scenariosFile.scenarios.length >= 1);
+
+  for (const scenario of scenariosFile.scenarios) {
+    assert.ok(scenario.scenarioId, "scenario should have an id");
+    assert.ok(Array.isArray(scenario.variableRefs), `${scenario.scenarioId} should define variableRefs`);
+    assert.ok(Array.isArray(scenario.rewardRules), `${scenario.scenarioId} should define rewardRules`);
+    assert.ok(Array.isArray(scenario.terminalConditions), `${scenario.scenarioId} should define terminalConditions`);
+    assert.ok(Array.isArray(scenario.failureConditions), `${scenario.scenarioId} should define failureConditions`);
+
+    for (const variable of scenario.variableRefs) {
+      assert.ok(knownRefs.has(variable.ref), `${scenario.scenarioId} variable ${variable.ref} should exist in condition registry`);
+    }
+  }
 });
 
 test("contra stage 1 fragments use protocol 1.0 structure instead of legacy route fields", () => {

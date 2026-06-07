@@ -1,12 +1,17 @@
 {
   "schemaVersion": "1.0.0",
   "packId": "contra-stage1-strategy-v0",
+  "displayName": {
+    "zh": "魂斗罗第一关策略包 V0",
+    "en": "Contra Stage 1 Strategy Pack V0"
+  },
   "packVersion": "0.1.0",
   "gameProfileId": "contra",
   "romProfileIds": [
     "contra-us-good",
     "contra-j-good"
   ],
+  "sideScope": "shared",
   "strategyKeys": [
     "survival-v0",
     "speedrun-v0",
@@ -37,8 +42,12 @@
     "entityTaxonomy": "research/entity-taxonomy.json",
     "actionMap": "research/action-map.json",
     "strategyTypes": "research/strategy-types.json",
+    "trainingScenarios": "research/training-scenarios.json",
     "tasTrainingBases": [
       "data/training/contra/tas_bases/contra-j-good/training-base.json"
+    ],
+    "tasSideBaselines": [
+      "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
     ],
     "stages": [
       "stages/stage-1/stage-plan.json"

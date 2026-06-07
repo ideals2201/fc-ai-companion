@@ -19,9 +19,25 @@ test("1P and 2P controller bays include side-owned training panels", () => {
 
 test("center column includes a global training console for shared evidence and validation", () => {
   assert.match(mainSource, /type GlobalTrainingState/, "global training state should be separate from side panels");
+  assert.match(mainSource, /strategyPackLabel: string/, "global training state should carry a visible strategy-pack label");
+  assert.match(mainSource, /ACTIVE_STRATEGY_PACK/, "training UI should display the active strategy pack identity");
   assert.match(mainSource, /function GlobalTrainingConsole/, "center column should render a shared training console");
   assert.match(mainSource, /globalTraining=\{globalTraining\}/, "center column should pass global training state into the host console");
   assert.match(mainSource, /<GlobalTrainingConsole[\s\S]*training=\{globalTraining\}/, "host console should place global training under the console controls");
+  assert.match(mainSource, /className="training-pack-banner"/, "training console should show the strategy pack name prominently");
   assert.match(cssSource, /\.training-console\s*\{/, "global training console should have stable styling");
   assert.match(cssSource, /\.training-console-grid\s*\{/, "global training console should expose compact status tiles");
+  assert.match(cssSource, /\.training-pack-banner\s*\{/, "strategy-pack banner should have stable emotional-value styling");
+});
+
+test("global training console exposes explicit strategy-training workflow actions", () => {
+  assert.match(mainSource, /training\.selectBaseline/, "training console should expose baseline selection");
+  assert.match(mainSource, /training\.modifyStrategy/, "training console should expose strategy modification");
+  assert.match(mainSource, /training\.archiveStrategy/, "training console should expose strategy archival");
+  assert.match(mainSource, /training\.validateStrategy/, "training console should expose validation or replay");
+  assert.match(mainSource, /onTrainingSelectBaseline/, "baseline action should be wired to runtime state or logging");
+  assert.match(mainSource, /onTrainingModifyStrategy/, "modify action should be wired to runtime state or logging");
+  assert.match(mainSource, /onTrainingArchiveStrategy/, "archive action should be wired to runtime state or logging");
+  assert.match(mainSource, /onTrainingValidateStrategy/, "validate action should be wired to runtime state or logging");
+  assert.match(cssSource, /\.training-workflow-actions\s*\{/, "workflow buttons should have their own stable layout");
 });

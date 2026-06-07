@@ -11,6 +11,7 @@
   "scripts": {
     "dev:cockpit": "npm run dev --workspace @fc-ai/browser-cockpit",
     "build": "npm run build --workspace @fc-ai/browser-cockpit",
+    "build:tas-side-baselines": "node scripts/build-tas-side-baselines.mjs",
     "sync:strategies": "node scripts/sync-strategy-packs.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "npm test && npm run build"

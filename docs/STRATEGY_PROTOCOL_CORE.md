@@ -209,6 +209,7 @@ strategy-packs/<game-profile-id>/
     entity-taxonomy.json
     action-map.json
     strategy-types.json
+    training-scenarios.json
   stages/
     <stage-id>/
       stage-plan.json
@@ -226,6 +227,7 @@ strategy-packs/<game-profile-id>/
     action-map.schema.json
     stage-plan.schema.json
     fragments.schema.json
+    training-scenarios.schema.json
     trace-evidence.schema.json
   docs/
     implementation-notes.md
@@ -242,6 +244,7 @@ strategy-packs/<game-profile-id>/
 - `entity-taxonomy.json`：实体语义分类表。
 - `action-map.json`：intent 到候选输入的映射表。
 - `strategy-types.json`：通用策略类型和游戏自定义策略类型。
+- `training-scenarios.json`：训练与验收场景定义，声明变量引用、奖励式评分、成功终止条件和失败终止条件。
 - `stage-plan.json`：目标关卡或目标区域的粗路线。
 - `fragments.json`：可执行策略片段。
 - `trace-evidence/`：真实运行证据。
@@ -437,6 +440,76 @@ TraceEvidence 保存真实运行证据。
 
 没有 TraceEvidence 和 Validation Report 的 StrategyPack 不能标记为 `validated`。
 
+### 3.7 TrainingScenario
+
+TrainingScenario 描述一个可训练、可回放、可验收的目标场景。它只规定结构，不规定某个游戏的变量、奖励和终止条件。
+
+每个游戏必须声明自己的变量、奖励和终止条件。通用协议不能写入具体 RAM 地址、坐标公式、敌人类型值、武器名、奖励名、关卡坐标或某个游戏专属胜利规则。
+
+最低字段：
+
+```json
+{
+  "schemaVersion": "1.0.0",
+  "scenarioId": "stage-1-survival-baseline",
+  "gameProfileId": "game-id",
+  "romProfileIds": ["game-region-version"],
+  "stageId": "stage-identifier",
+  "mode": "single-ai",
+  "strategyTypes": ["survival"],
+  "variableRefs": [
+    {
+      "ref": "progression.primary",
+      "role": "progress",
+      "required": true
+    },
+    {
+      "ref": "player.alive",
+      "role": "safety",
+      "required": true
+    }
+  ],
+  "rewardRules": [
+    {
+      "id": "progress-score",
+      "ref": "progression.primary",
+      "op": "delta-positive",
+      "weight": 1
+    }
+  ],
+  "terminalConditions": [
+    {
+      "id": "goal-reached",
+      "ref": "progression.primary",
+      "op": "gte",
+      "value": 100
+    }
+  ],
+  "failureConditions": [
+    {
+      "id": "death",
+      "ref": "player.alive",
+      "op": "eq",
+      "value": false
+    }
+  ],
+  "evidenceRequirements": {
+    "requiresRuntimeTrace": true,
+    "requiresFinalState": true,
+    "requiresKnownFailureCheck": true
+  }
+}
+```
+
+规则：
+
+- `variableRefs` 只能引用 Condition Registry 中已声明的抽象变量。
+- `rewardRules` 是训练评分和比较依据，不等同于游戏内分数。
+- `terminalConditions` 定义成功停止，不允许用固定帧数替代真实目标。
+- `failureConditions` 定义失败停止，必须覆盖死亡、卡死、循环和 ROM 不匹配等基础失败。
+- 同一游戏可以为同一关卡定义多个 TrainingScenario，例如生存、速通、清敌、奖励、护卫。
+- 没有 TrainingScenario 的策略包只能做人工研究，不能声明标准化训练完成。
+
 ## 4. GameProfile 扩展指引
 
 新增一个游戏时，必须建立：
@@ -450,6 +523,7 @@ references/<game-profile-id>/
     entity-taxonomy.json
     action-map.json
     strategy-types.json
+    training-scenarios.json
   rom-profiles/
     <rom-profile-id>.json
   strategy-db/
@@ -578,6 +652,27 @@ Action Mapping 把 intent 转换为候选输入。
 ```
 
 最终输出仍然必须包含标准 `finalInput`。语义动作是策略层接口，`finalInput` 是模拟器写入接口。
+
+### 4.5 TrainingScenario Registry
+
+TrainingScenario Registry 是每个游戏的训练与验收目标表。它借鉴成熟训练环境的做法：游戏集成层声明变量映射、评分规则和结束条件，通用运行层只读取这些声明，不硬编码具体游戏逻辑。
+
+必须声明：
+
+- `variableRefs`：本场景需要观察的 Condition Registry 变量。
+- `rewardRules`：本场景用于比较训练效果的奖励式评分规则。
+- `terminalConditions`：本场景成功结束的条件。
+- `failureConditions`：本场景失败结束的条件。
+- `entryPoint`：从开机、存档点、TAS 片段或人工轨迹片段开始。
+- `syncAnchors`：可选，同步锚点，例如 ROMProfile、模拟器版本、TAS movie frame、输入行索引或关键状态变量。
+
+设计原则：
+
+- 变量、奖励和终止条件是游戏专属，不是核心协议专属。
+- TrainingScenario 可以服务本地自动补丁、人工示范采集、TAS 基准拆分和未来增强分析。
+- 评分只能用于排序和训练判断，不能绕过 Safety Override。
+- 终止条件必须同时支持成功和失败，避免无限跑局和死循环。
+- 任何可分发策略包都必须把使用过的 TrainingScenario 写入 manifest 文件索引。
 
 ## 5. Runtime API Contract
 

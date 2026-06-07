@@ -34,6 +34,43 @@ export type Fm2MovieSummary = {
   hasTwoPlayerInput: boolean;
 };
 
+export type Fm2PlayerSide = "1P" | "2P";
+
+export type Fm2BaselineWindow = {
+  id: string;
+  label: string;
+  frameWindow: [number, number];
+};
+
+export type Fm2InputPatternSummary = {
+  label: string;
+  frames: number;
+  ratio: number;
+};
+
+export type Fm2SideBaselineWindow = {
+  movieId: string;
+  sourceKind: "tas-side-split";
+  side: Fm2PlayerSide;
+  windowId: string;
+  label: string;
+  frameWindow: [number, number];
+  rangeSemantics: "start-inclusive-end-exclusive";
+  totalFrames: number;
+  pressedFrames: number;
+  pressedRatio: number;
+  buttonPressFrames: Record<Fm2ButtonName, number>;
+  topInputPatterns: Fm2InputPatternSummary[];
+  intentHints: string[];
+  acceptanceChecks: string[];
+};
+
+export type Fm2SideBaselineOptions = {
+  movieId: string;
+  windows: Fm2BaselineWindow[];
+  maxPatterns?: number;
+};
+
 const FM2_BUTTON_ORDER: Fm2ButtonName[] = ["right", "left", "down", "up", "start", "select", "b", "a"];
 
 const FM2_BUTTON_LABELS: Record<Fm2ButtonName, string> = {
@@ -71,6 +108,48 @@ function parseControllerField(field: string | undefined): Fm2ControllerButtons {
 
 function hasPressedButton(buttons: Fm2ControllerButtons) {
   return FM2_BUTTON_ORDER.some((button) => buttons[button]);
+}
+
+function createButtonCounters(): Record<Fm2ButtonName, number> {
+  return {
+    up: 0,
+    down: 0,
+    left: 0,
+    right: 0,
+    a: 0,
+    b: 0,
+    start: 0,
+    select: 0
+  };
+}
+
+function ratio(numerator: number, denominator: number) {
+  if (denominator <= 0) return 0;
+  return Number((numerator / denominator).toFixed(4));
+}
+
+function sideButtons(frame: Fm2Frame, side: Fm2PlayerSide) {
+  return side === "1P" ? frame.p1 : frame.p2;
+}
+
+function deriveIntentHints(buttonPressFrames: Record<Fm2ButtonName, number>, totalFrames: number) {
+  const hints: string[] = [];
+  const rightRatio = ratio(buttonPressFrames.right, totalFrames);
+  const leftRatio = ratio(buttonPressFrames.left, totalFrames);
+  const jumpRatio = ratio(buttonPressFrames.a, totalFrames);
+  const fireRatio = ratio(buttonPressFrames.b, totalFrames);
+  const verticalAimRatio = ratio(buttonPressFrames.up + buttonPressFrames.down, totalFrames);
+  const menuRatio = ratio(buttonPressFrames.start + buttonPressFrames.select, totalFrames);
+
+  if (menuRatio > 0.02) hints.push("menu_sync");
+  if (rightRatio >= 0.25) hints.push("advance");
+  if (leftRatio >= 0.12) hints.push("retreat_or_spacing");
+  if (jumpRatio >= 0.04) hints.push("jump");
+  if (fireRatio >= 0.12) hints.push("fire_target");
+  if (fireRatio >= 0.08 && verticalAimRatio >= 0.08) hints.push("aim_fire");
+  if (hints.length <= 0) hints.push("idle_or_wait");
+
+  return hints;
 }
 
 export function fm2ButtonsToLabels(buttons: Fm2ControllerButtons) {
@@ -141,4 +220,63 @@ export function summarizeFm2Movie(movie: Fm2Movie): Fm2MovieSummary {
     playerFrames: { p1, p2 },
     hasTwoPlayerInput: p2 > 0
   };
+}
+
+export function extractFm2SideBaselineWindows(movie: Fm2Movie, options: Fm2SideBaselineOptions): Fm2SideBaselineWindow[] {
+  const maxPatterns = Math.max(1, Math.trunc(options.maxPatterns ?? 5));
+  const sides: Fm2PlayerSide[] = ["1P", "2P"];
+  const baselines: Fm2SideBaselineWindow[] = [];
+
+  for (const window of options.windows) {
+    const start = resolveFm2PlaybackStartFrame(movie, window.frameWindow[0]);
+    const endCandidate = Math.trunc(Number.isFinite(window.frameWindow[1]) ? window.frameWindow[1] : start);
+    const end = Math.min(Math.max(endCandidate, start + 1), movie.frames.length);
+    const frames = movie.frames.slice(start, end);
+
+    for (const side of sides) {
+      const buttonPressFrames = createButtonCounters();
+      const patternCounts = new Map<string, number>();
+      let pressedFrames = 0;
+
+      for (const frame of frames) {
+        const buttons = sideButtons(frame, side);
+        if (hasPressedButton(buttons)) pressedFrames += 1;
+        for (const button of FM2_BUTTON_ORDER) {
+          if (buttons[button]) buttonPressFrames[button] += 1;
+        }
+        const label = fm2ButtonsToLabels(buttons);
+        if (label !== "-") patternCounts.set(label, (patternCounts.get(label) ?? 0) + 1);
+      }
+
+      const totalFrames = frames.length;
+      const topInputPatterns = Array.from(patternCounts.entries())
+        .map(([label, count]) => ({ label, frames: count, ratio: ratio(count, totalFrames) }))
+        .sort((left, right) => right.frames - left.frames || left.label.localeCompare(right.label))
+        .slice(0, maxPatterns);
+
+      baselines.push({
+        movieId: options.movieId,
+        sourceKind: "tas-side-split",
+        side,
+        windowId: window.id,
+        label: window.label,
+        frameWindow: [start, end],
+        rangeSemantics: "start-inclusive-end-exclusive",
+        totalFrames,
+        pressedFrames,
+        pressedRatio: ratio(pressedFrames, totalFrames),
+        buttonPressFrames,
+        topInputPatterns,
+        intentHints: deriveIntentHints(buttonPressFrames, totalFrames),
+        acceptanceChecks: [
+          "hash-exact-match-required",
+          "real-runtime-trace-required",
+          "safety-override-required",
+          "side-owned-promotion-required"
+        ]
+      });
+    }
+  }
+
+  return baselines;
 }

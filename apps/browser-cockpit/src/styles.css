@@ -284,6 +284,7 @@ button:disabled {
 .strategy-button,
 .icon-button,
 .console-controls button,
+.training-workflow-actions button,
 .training-actions button,
 .strategy-designer-actions button,
 .tactical-action {
@@ -1235,6 +1236,35 @@ dd {
   gap: 5px;
 }
 
+.training-pack-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border: 1px solid rgba(126, 200, 255, 0.28);
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(12, 32, 48, 0.95), rgba(7, 12, 18, 0.95));
+  padding: 5px 8px;
+}
+
+.training-pack-banner strong {
+  min-width: 0;
+  color: #dff3ff;
+  font-size: 13px;
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.training-pack-banner span {
+  color: #8ee7ff;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
 .training-console-grid div {
   min-height: 36px;
 }
@@ -1245,14 +1275,26 @@ dd {
   gap: 5px;
 }
 
+.training-workflow-actions,
 .training-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
+.training-workflow-actions {
+  min-width: 0;
+}
+
+.training-workflow-actions button,
 .training-actions button {
   min-height: 30px;
+}
+
+.training-workflow-actions button {
+  border-color: rgba(126, 200, 255, 0.22);
+  background: #101820;
+  color: #dff3ff;
 }
 
 .tas-window {

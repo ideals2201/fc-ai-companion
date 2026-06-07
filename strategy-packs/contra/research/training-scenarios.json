@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "scenarios": [
+    {
+      "scenarioId": "contra-stage1-survival-progress-candidate",
+      "status": "candidate",
+      "displayName": {
+        "zh": "第一关稳健生存候选训练",
+        "en": "Stage 1 Survival Candidate Training"
+      },
+      "romProfileIds": [
+        "contra-us-good",
+        "contra-j-good"
+      ],
+      "stageId": "stage-1",
+      "mode": "single-ai",
+      "strategyTypes": [
+        "survival"
+      ],
+      "entryPoint": {
+        "type": "boot-or-current-runtime",
+        "requiresRomProfileMatch": true
+      },
+      "variableRefs": [
+        {
+          "ref": "progression.primary",
+          "role": "progress",
+          "required": true
+        },
+        {
+          "ref": "player.1.alive",
+          "role": "safety",
+          "required": true
+        },
+        {
+          "ref": "danger.immediate",
+          "role": "safety",
+          "required": false
+        },
+        {
+          "ref": "threat.fixed.count",
+          "role": "fixed-threat",
+          "required": false
+        },
+        {
+          "ref": "pickup.visible.count",
+          "role": "loot",
+          "required": false
+        },
+        {
+          "ref": "loop.stuck",
+          "role": "failure",
+          "required": true
+        },
+        {
+          "ref": "runtime.finalInput",
+          "role": "input-audit",
+          "required": true
+        }
+      ],
+      "rewardRules": [
+        {
+          "id": "progress-forward",
+          "ref": "progression.primary",
+          "op": "delta-positive",
+          "weight": 1
+        },
+        {
+          "id": "death-penalty",
+          "ref": "player.1.alive",
+          "op": "eq",
+          "value": false,
+          "weight": -100
+        },
+        {
+          "id": "stuck-loop-penalty",
+          "ref": "loop.stuck",
+          "op": "eq",
+          "value": true,
+          "weight": -50
+        },
+        {
+          "id": "fixed-threat-observation",
+          "ref": "threat.fixed.count",
+          "op": "observe",
+          "weight": 0
+        }
+      ],
+      "terminalConditions": [
+        {
+          "id": "stage1-progress-checkpoint",
+          "ref": "progression.primary",
+          "op": "gte",
+          "value": 3200
+        }
+      ],
+      "failureConditions": [
+        {
+          "id": "player-death",
+          "ref": "player.1.alive",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "id": "stuck-loop",
+          "ref": "loop.stuck",
+          "op": "eq",
+          "value": true
+        }
+      ],
+      "evidenceRequirements": {
+        "requiresRuntimeTrace": true,
+        "requiresFinalState": true,
+        "requiresKnownFailureCheck": true
+      },
+      "syncAnchors": {
+        "romProfileRequired": true,
+        "tasMovieFrameAllowed": true,
+        "fm2InputRowAllowed": true
+      },
+      "notes": "Candidate scenario for current Contra Stage 1 survival development. It is not a full-stage clear claim."
+    }
+  ]
+}

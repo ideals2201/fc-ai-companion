@@ -19,6 +19,10 @@ test("Contra Japan TAS training base is a machine-readable standard artifact", (
   assert.equal(trainingBase.role, "tas-training-base");
   assert.equal(trainingBase.runtimePolicy.tasIsController, false);
   assert.equal(trainingBase.runtimePolicy.requiresStrategyPackPromotion, true);
+  assert.equal(
+    trainingBase.derivedArtifacts.sideBaselines,
+    "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
+  );
   assert.equal(trainingBase.movies.length, 4);
   assert.ok(trainingBase.movies.some((movie) => movie.recommendedBaselines.includes("survival-v0")));
   assert.equal(trainingBase.movies.find((movie) => movie.id === "contra-j-2p-any-percent")?.entrySyncStatus, "verified-user");
