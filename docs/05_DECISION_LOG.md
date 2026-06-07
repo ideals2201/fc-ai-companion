@@ -593,3 +593,251 @@ Agent：
 - 当前 StrategyPack 示例仍为 `candidate`，不代表 Contra US 第一关策略已完成验收。
 
 原因：标准手册已经具备统一开发所需的策略分类、形成过程、输入资料、输出文件、Runtime API、安全守则、RNG 规范、Schema 通用性、验收等级、数据可信度和开发流程。可以作为后续所有游戏策略包开发的 1.0 基线。
+## 2026-06-07: StrategyPack 1.0 migration becomes the default development path
+
+Decision: all future FC/NES AI strategy development and testing must follow Strategy Protocol 1.0.0.
+
+Scope:
+- `strategy-packs/` is the source of truth for reusable strategy data.
+- Runtime directories such as `apps/browser-cockpit/public/strategies/` are generated/export targets, not the source of truth.
+- A game strategy must bind `GameProfile`, `ROMProfile`, `Condition Registry`, `EntityTaxonomy`, `ActionMap`, `StrategyTypes`, `StagePlan`, `StrategyFragments`, validation notes, known failures, schemas, and source register.
+- Strategy fragments must use abstract condition refs and semantic intents. They must not directly store RAM addresses or direct controller buttons.
+- Browser runtime can keep legacy route fields only as generated compatibility output while the current cockpit loader still needs them.
+- A strategy cannot be marked validated until real trace evidence proves the target mode. `single-ai`, `human-ai`, and `dual-ai` are separate validation targets.
+- Any tactical change must update the standard StrategyPack first, then run the sync/export step, then run tests.
+
+Reason: the project goal is a reusable FC game AI operation strategy standard, not a Contra-only route script. Keeping the standard pack as the source of truth prevents context loss, makes subdialogue output mergeable, and lets different developers build compatible strategy files.
+
+## 2026-06-07: Boss wall local threshold patching is frozen
+
+Decision: stop widening Boss wall one-frame avoidance thresholds for `survival-v0` until the strategy has a pre-entry suppression and fixed-target HP-delta loop.
+
+Evidence:
+- Low-lane bailout, airborne low-lane bailout, upper swarm bailout, overextended station retreat, and Action Lock override are implemented and covered by tests.
+- `npm run check` passes with 83 tests and a production build.
+- Real botruns still die at the Boss wall with fixed targets mostly undamaged:
+  - `20260607110752-air-bailout`: death at `WorldX 3208`, `x136/y138`.
+  - `20260607111229-upper-swarm-bailout`: death at `WorldX 3203`, `x131/y142`.
+  - `20260607111526-upper-contact-earlier`: same `WorldX 3203`, `x131/y142` failure class.
+
+Reason: repeated deaths show the root problem is not a missing dodge frame. The AI reaches the Boss wall with default weapon, high-HP turrets/core, and no verified damage loop. A survival strategy must first prevent bad entry and verify fixed-target damage before allowing deeper station movement.
+
+Next design direction:
+- Add pre-entry fixed-target suppression before `WorldX 3200`.
+- Add target persistence / HP-delta monitoring.
+- Add a bounded bailout when HP is not dropping.
+- Treat Spread route or another weapon route as a candidate survival requirement, not optional loot, until proven otherwise.
+
+## 2026-06-07: Boss wall input micro-patching must stop
+
+Decision: no more same-position Boss wall input threshold patches for `survival-v0`.
+
+Evidence:
+- The local Boss wall module now covers core collision forecast, falling soldier convergence, crowded low-lane HP gate, and Action Lock override.
+- `node --test tests/contraBossWall.test.mjs` passes with `56/56` tests.
+- Real botruns after those changes still die in the same Boss wall entry class:
+  - `20260607-core-forecast-focused`: frame `5649`, `WorldX 3196`, `x124/y162`, input `left+B`.
+  - `20260607-falling-convergence-focused`: frame `5649`, `WorldX 3196`, `x124/y162`, input `left+B`.
+  - `20260607-hp-gate-focused`: frame `5700`, `WorldX 3208`, `x136/y196`, input `up+B`.
+  - `20260607-lowlane-retreat-gate`: frame `5653`, `WorldX 3198`, `x126/y171`, input `left+B`.
+- Boss wall core/turrets remain full HP in the failure reports, so the route is entering the danger zone before producing fixed-target damage.
+
+Reason:
+The failure is now architectural within the Stage 1 route: fixed-target damage is not a validated precondition for Boss wall entry. More local dodge rules increase complexity without solving the product goal.
+
+Required next direction:
+- Implement a Boss wall phase controller in the route/strategy layer.
+- Add HP-delta monitoring for fixed targets.
+- Add bounded reposition when HP does not drop.
+- Treat weapon acquisition as a survival-route dependency until evidence proves default weapon is stable.
+
+## 2026-06-07: Boss wall phase controller proves route-level blocker
+
+Decision: keep the phase-controller code and tests, but stop using further local input patches as the primary path to Stage 1 survival clearance.
+
+Evidence:
+- `tests/contraBossWallPhase.test.mjs` now covers phase station entry, HP-delta timer reset, no-damage reposition, same-lane fixed target aim, safety override handoff, and containment clamp.
+- `tests/contraBossWall.test.mjs` still passes `56/56`.
+- Real botruns after the phase-controller work:
+  - `20260607-phase-controller-focused`: phase controller caused `down+right+B` at `WorldX 3159`; fixed HP remained full.
+  - `20260607-phase-safety-focused`: safety override avoided that frame but still allowed deep entry; death at `WorldX 3198`; fixed HP remained full.
+  - `20260607-phase-containment-focused`: containment prevented deep entry but retreated/fell to low lane; death at `WorldX 3153`; fixed HP remained full.
+
+Reason:
+The remaining blocker is not a missing single-frame dodge. The AI does not own a reliable upper-lane pre-entry station and does not produce fixed-target HP damage before entering or escaping the Boss wall. Continuing local Boss wall threshold changes would be a dead loop.
+
+Required next direction:
+- Add phase telemetry before more runtime tests.
+- Redesign Boss wall route entry around upper-lane station and HP-delta gates.
+- Decide whether the survival route requires a weapon pickup before Boss wall.
+
+## 2026-06-07: Boss wall recovery exposes station crowd gate requirement
+
+Decision: continue the phase-controller path, but the next behavior change must be a station crowd gate, not another single-frame contact patch.
+
+Evidence:
+- `BossWallPhaseTelemetry` is now recorded in runtime debug and death trace samples.
+- `20260607-boss-telemetry-check` confirmed the old low-lane failure had `phase=reposition`, `fixedHpTotal=72`, and `noDamageFrames=157`.
+- After adding recovery from over-retreat, `20260607-boss-recovery-check` changed the failure:
+  - Death moved to `WorldX 3172`, `x100/y134`.
+  - Fixed HP dropped from `72` to `70`.
+  - Runtime phase became `enter-station`.
+  - The death frame had multiple close infantry in the recovery lane.
+
+Reason:
+The phase controller now proves it can recover from over-retreat and can produce fixed-target damage, but it lacks a gate that decides whether the station lane is safe to re-enter. Repeating input changes around `A+B` at the death frame would be another local loop.
+
+Required next direction:
+- Add `station-crowd-gate` to the Boss wall phase controller.
+- Report close dynamic threats in phase telemetry.
+- Station entry must wait, clear, or reposition when the recovery lane is occupied.
+
+## 2026-06-07: Station crowd gate is not enough; stop same-point Boss wall patches
+
+Decision: keep the station crowd gate, Action Lock bypass, phase-before-micro arbitration, and narrow contact jump, but stop adding more local Boss wall thresholds around `WorldX 3176-3183`.
+
+Evidence:
+- `20260607-station-crowd-gate-check` proved the gate detected the crowded station but Action Lock still forced `up+right+B`.
+- `20260607-crowd-gate-bypass-lock-check` proved Action Lock bypass works, but Boss wall micro still preempted the phase gate.
+- `20260607-phase-gate-before-micro-check` proved phase gate ownership works, but the AI died at `WorldX 3183` with `fixedHpTotal=72`.
+- `20260607-crowd-contact-jump-check` proved contact jump triggers, but the same station still dies with `fixedHpTotal=72`.
+- Focused tests pass: `contraBossWallPhase` `14/14`, `contraBossWall` `56/56`, browser cockpit build passed.
+
+Reason:
+The current upper-lane station is invalid for a stable default-weapon survival route. The AI is no longer failing because one input is overwritten; it is failing because it stands in a crowded lane without producing fixed-target HP damage. More local contact thresholds would recreate the same dead-loop pattern.
+
+Required next direction:
+- Redesign Boss wall as a route-level fixed-target damage station.
+- Gate deeper commitment on actual fixed-target HP delta.
+- Re-evaluate mandatory Spread/weapon routing for `survival-v0` before claiming Stage 1 single-AI progress.
+
+## 2026-06-07: Default weapon Boss wall branch is not the next path
+
+Decision: stop default-weapon Boss wall station threshold work and move `survival-v0` priority to mandatory weapon acquisition before Boss wall.
+
+Evidence:
+- Adding B-pulse fire changed the real result: `20260607-boss-phase-pulse-fire-check` reduced fixed HP to `69`, proving that long-held B was a real cause of no-damage behavior.
+- Adding close lower-crowd down-fire did not clear the branch: `20260607-boss-phase-downfire-check` still died at `WorldX 3183`, fixed HP `71`.
+- Expanding the crowd gate to include the station boundary did not clear the branch: `20260607-boss-station-boundary-gate-check` still died at `WorldX 3184`, fixed HP `71`.
+- The branch has now repeated after a tactical adjustment, so continuing local Boss wall thresholds would violate the no-dead-loop rule.
+
+Reason:
+Default weapon can damage Boss-wall fixed targets, but it is too slow and too exposed for the current survival route. Stable survival should arrive with a stronger weapon, then reuse the HP telemetry and pulse-fire station logic.
+
+Required next direction:
+- Promote Spread/weapon pickup from optional reward to survival prerequisite for Stage 1.
+- Validate the route reaches Boss wall with non-default weapon before more Boss-wall combat tuning.
+
+## 2026-06-07: Mandatory weapon gate exposes pre-Boss platform rhythm blocker
+
+Decision: keep the mandatory weapon route and stop local jump-threshold tuning at the `WorldX 2839` Boss-approach fall.
+
+Evidence:
+- `stageOneMandatorySpreadGatePatch` and the `weapon-gate-survive` runtime segment now route `survival-v0` through the late weapon gate before Boss approach.
+- Full verification passed after the platform-jump patch: `npm test` `115/115`, `npm run build` passed.
+- `20260607-mandatory-spread-gate-check` reached the Boss approach with non-default weapon `4`, replacing the old default-weapon Boss-wall failure with a new route-control failure.
+- `20260607-boss-approach-close-body-check` moved the death from `WorldX 2809` to `WorldX 2839`, proving the close-body lower-soldier patch had an effect.
+- `20260607-boss-platform-jump-check` still died at `WorldX 2839`, `x128/y234`. The trace showed the player was already falling from `WorldX 2788/y133`, so the attempted early jump patch was not controlling the real precondition.
+
+Reason:
+The blocker is now a route rhythm problem before the Boss approach platform, not a missing one-frame jump input. Continuing to widen or shift the same local jump window would recreate the dead-loop behavior the project explicitly forbids.
+
+Required next direction:
+- Rebuild the pre-Boss platform rhythm as an explicit route-state segment before `WorldX 2788`.
+- Make that segment own movement/jump timing until the player reaches a stable platform state.
+- Only then resume Boss-approach aiming and fixed-target combat tuning.
+
+## 2026-06-07: Stop high-platform Boss-approach jump branch
+
+Decision: stop tuning the high-platform jump/carry branch around `WorldX 2776-2864` and switch to a different Boss-approach route class.
+
+Evidence:
+- Added `stage-one-boss-approach-high-edge-jump`, tested against the recorded `WorldX 2778/y132` pre-fall state.
+- `20260607-boss-high-edge-jump-check` changed the failure from `WorldX 2839/y234` to `WorldX 2854/y236`, proving the high edge jump affects the route.
+- Added `stage-one-boss-approach-high-air-carry`, tested against the recorded `WorldX 2839/y151` state where right movement was previously cancelled.
+- `20260607-boss-high-air-carry-check` preserved rightward carry but still died at `WorldX 2854/y236`.
+- Full verification stayed green: `npm test` `117/117`, build passed.
+
+Reason:
+The remaining blocker is not the absence of a high jump or the loss of right input. The high-platform route itself does not currently produce a safe landing. More local threshold patches in this same arc would violate the no-dead-loop rule.
+
+Required next direction:
+- Replace the high-platform arc with another route class, preferably a lower/mid-platform capture route or a recorded human state-action fragment.
+- Keep the current code only as evidence-backed route components, not as proof of clearance.
+- Do not claim Stage 1 survival progress as complete until a real botrun clears the section without death.
+
+## 2026-06-07: Strategy learning must use trace evidence, not coordinate-patch loops
+
+Decision: switch the operation-strategy learning method from repeated runtime coordinate patches to a trace-evidence pipeline.
+
+Evidence:
+- The high-platform Boss-approach branch repeated after two meaningful changes: edge jump and air carry.
+- The compact evidence file `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-boss-high-air-carry-failure.json` records `731` samples for `WorldX 2500-2960`.
+- The same file proves final death at frame `5194`, `WorldX 2854`, `x128/y236`, with final input `down+right+B`.
+- This means the blocker is not simply missing right movement or missing fire; the route class does not produce safe platform capture.
+- New focused verification passed:
+  - `node --test tests/strategyTraceEvidence.test.mjs`: `2/2`.
+  - `node --test tests/strategyPackStandard.test.mjs`: `5/5`.
+
+Reason:
+Manual patching around the latest death point creates overlapping local rules and repeats failed route classes. A reusable FC/NES AI strategy standard requires every learned behavior to be backed by frame-level evidence and converted into strategy fragments.
+
+Required next direction:
+- Treat trace evidence as required input for strategy learning.
+- Store branch failures in `trace-evidence/` before changing route code.
+- Replace the failed high-platform route with a new `mid/low-platform-capture` route class before the next real botrun.
+
+## 2026-06-07: Mid-platform local correction is also a failed route class
+
+Decision: stop the `mid-platform-capture` local left/right correction branch after one evidence-backed test.
+
+Evidence:
+- `stage-one-boss-approach-mid-platform-capture` was added as a separate route class from the high-edge takeoff.
+- Focused tests, full tests, and build passed after implementation.
+- Botrun `20260607-mid-platform-capture-check` changed the failure from `WorldX 2854/y236` to `WorldX 2836/y236`.
+- The last alive state used `down+left+B`, proving the left correction was applied, but the AI still fell.
+- Machine-readable evidence is stored at `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-mid-platform-capture-failure.json`.
+
+Reason:
+The branch had measurable effect but did not produce a safe platform capture. Continuing with more local left/right or aim edits in the same fall window would repeat the dead-loop pattern.
+
+Required next direction:
+- Collect a frame-level human route for `WorldX 2600-2960`, or design a lower-route state fragment from another evidence source.
+- Provide a short-segment recording workflow before asking the owner to demonstrate.
+- Do not run another pre-Boss platform botrun until the route source changes.
+
+## 2026-06-07: Lower-platform A-edge trigger is also a failed route class
+
+Decision: stop tuning the `WorldX 2814-2828` lower-platform A-edge route.
+
+Evidence:
+- `stage-one-boss-approach-platform-jump` was changed to release A during the pre-landing fall and re-trigger A only near lower-platform contact.
+- Focused verification passed: `node --test tests/contraStage1RewardTactics.test.mjs` and `npm run build --workspace @fc-ai/browser-cockpit`.
+- Real botrun `lower-platform-edge-trigger-1780817803410` still died at frame `5179`, `WorldX 2839`, `x128/y234`, input `up+right+B`.
+- The trace shows A was re-triggered from `WorldX 2814-2828`, but the route still fell through, so this is not a missing A-edge issue.
+- Machine-readable evidence: `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-lower-platform-edge-trigger-failure.json`.
+
+Reason:
+The branch had a precise hypothesis and a targeted implementation, but it did not change the death class. Another local threshold in the same lower-platform edge window would be the same dead-loop pattern.
+
+Required next direction:
+- Use a frame-level human trace for `WorldX 2600-2960`, a different route class, or a verified spawn/table-derived segment.
+- Do not run another pre-Boss platform botrun until the route source changes.
+
+## 2026-06-07: Add Contra Japan as a ROMProfile branch, not a new project
+
+Decision: add `contra-j-good` under the existing Contra GameProfile so Japanese Contra TAS data can become a standard training baseline.
+
+Evidence:
+- Local ROM library now contains `D:\Ai-Play\ROM\contra-j\Contra (J).nes`.
+- The ROM full MD5 is `0e40bc1b049c16c5d7246cc28399cb5d`.
+- The ROM headerless MD5 is `d306c54ccfdf5cb4f8ec588f19b3e33d`, matching the known FM2 TAS `romChecksum` base64 value `0wbFTM/fXLT47FiPGbPjPQ==`.
+- `strategy-packs/contra/rom-profiles/contra-j-good.json` records the ROMProfile and TAS compatibility.
+
+Reason:
+The platform is an FC game AI companion, not a single Contra US project. However, strategy and TAS assets must stay ROM-bound. Adding the Japanese version as a ROMProfile branch lets the UI auto-match TAS data while preventing US strategy fragments from being falsely treated as validated for Japan.
+
+Rule:
+- ROM files stay outside the repo and strategy pack.
+- TAS is route knowledge and training evidence, not the live controller.
+- `contra-j-good` must collect its own trace evidence before any strategy is marked validated.

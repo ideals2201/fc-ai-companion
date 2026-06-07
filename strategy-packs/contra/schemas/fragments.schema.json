@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fc-ai.local/schemas/strategy-fragments-1.0.0.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "gameProfileId",
+    "romProfileId",
+    "stageId",
+    "fragments"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "gameProfileId": { "type": "string" },
+    "romProfileId": { "type": "string" },
+    "stageId": { "type": "string" },
+    "fragments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "strategyTypes",
+          "progressionWindow",
+          "conditions",
+          "actionAdvice",
+          "safetyOverrides",
+          "exitConditions",
+          "telemetry"
+        ]
+      }
+    }
+  },
+  "additionalProperties": true
+}

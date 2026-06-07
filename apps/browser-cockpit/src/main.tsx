@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
-import { NES, Controller, type ButtonKey } from "jsnes";
+import { createRoot, type Root } from "react-dom/client";
+import "./jsnesMapper23Patch";
+// Use the same jsnes source-module graph as the mapper patch so mapper 23
+// registration reaches the NES instances created by the cockpit runtime.
+// @ts-expect-error jsnes does not expose deep source modules through package types.
+import { NES, Controller } from "../../../node_modules/jsnes/src/index.js";
+import type { ButtonKey } from "../../../node_modules/jsnes/src/controller.js";
 import {
   Activity,
   AlertTriangle,
@@ -17,19 +22,87 @@ import {
   Maximize2,
   MessageSquareText,
   Minus,
+  Pause,
+  Play,
   Plus,
   Power,
   Radio,
   RotateCcw,
   Shield,
   SlidersHorizontal,
+  Square,
   Target,
   Tv,
   Upload,
   UserRound,
   Volume2
 } from "lucide-react";
+import { decideBossWallMicroAction, isBossWallBailoutInput } from "./contraStage1BossWall";
+import {
+  applyBossWallPhaseContainmentClamp,
+  createBossWallPhaseState,
+  describeBossWallPhaseTelemetry,
+  decideBossWallPhaseAction,
+  shouldBypassAiActionLockForBossWallPhase,
+  shouldUseBossWallPhaseSafetyOverride,
+  updateBossWallPhaseState,
+  type BossWallPhaseState,
+  type BossWallPhaseTelemetry
+} from "./contraStage1BossWallPhase";
+import {
+  midFixedScriptRewardOverride,
+  midWeaponTurretBreakoutPatch,
+  rewardStationFallingThreatPatch,
+  stageOneBossApproachCloseBodyPatch,
+  stageOneBossApproachHighAirCarryPatch,
+  stageOneBossApproachHighEdgeJumpPatch,
+  stageOneBossApproachJumpEdgePatch,
+  stageOneBossApproachMidPlatformCapturePatch,
+  stageOneBossApproachPlatformJumpPatch,
+  stageOneCloseBodyThreatPatch,
+  stageOneMandatorySpreadGatePatch,
+  stageOneRedTurretLowThreatPatch,
+  stageOneSpreadExitJumpPatch,
+  stageOneSpreadJumpEdgePatch,
+  stageOneSpreadRushPatch,
+  stageOneSpreadTurretSuppressionPatch,
+  type StageOneRewardButtonPatch
+} from "./contraStage1RewardTactics";
 import { parseNesRomMetadata, readRomMetadataHeaders, type RomMetadata } from "./romMetadata";
+import { resolveSelectedRomIdAfterLoadedSync } from "./romLibrarySelection";
+import {
+  buildTasCommentary,
+  commentaryModeLabel,
+  identifyTasForRom,
+  recommendationLabel,
+  selectDefaultTasMovie,
+  tasBaseLabel,
+  tasMoviesForEntry,
+  tasStatusLabel,
+  type TasCommentaryMode,
+  type TasRegistryEntry
+} from "./tasRegistry";
+import {
+  fm2ButtonsToLabels,
+  parseFm2Movie,
+  resolveFm2PlaybackStartFrame,
+  summarizeFm2Movie,
+  type Fm2ControllerButtons,
+  type Fm2Movie
+} from "./fm2Movie";
+import {
+  createTasPlaybackGuardState,
+  evaluateTasPlaybackGuard,
+  type TasPlaybackGuardState
+} from "./tasPlaybackGate";
+import { analyzePlayTrace, type PlayTraceAnalysisReport } from "./playTraceAnalysis";
+import { classifyBotRunTerminalState } from "./runtimeStopControl";
+import {
+  parseTraceCaptureConfig,
+  shouldKeepTraceSample,
+  shouldStopTraceCapture,
+  type TraceCaptureConfig
+} from "./traceCaptureControl";
 import "./styles.css";
 
 type PlayerSide = "1P" | "2P";
@@ -38,6 +111,7 @@ type ButtonState = Record<ButtonName, boolean>;
 type PlayerButtonStates = Record<PlayerSide, ButtonState>;
 type AiActionLockReason = "idle" | "move" | "fire" | "aim-fire" | "jump" | "evade" | "menu";
 type AiFsmStateName = "idle" | "menu" | "advance" | "danger" | "attack" | "boss" | "respawn" | "coop-wait";
+type AiLoopExitReason = "idle" | "tracking" | "world-score-enemy-stall";
 
 type AiActionLockState = {
   buttons: ButtonState;
@@ -50,6 +124,16 @@ type AiFsmState = {
   state: AiFsmStateName;
   reason: string;
   sinceFrame: number;
+};
+
+type AiLoopExitState = {
+  lastWorldX: number;
+  lastScore: number;
+  lastThreatCount: number;
+  stagnantFrames: number;
+  unlockFrames: number;
+  forcedAdvanceBias: number;
+  reason: AiLoopExitReason;
 };
 
 type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "error";
@@ -66,6 +150,7 @@ type ServerRomFileInfo = {
   sizeBytes: number;
   headerBytes: number[];
   md5: string;
+  headerlessMd5?: string;
   sha1: string;
   sha256: string;
 };
@@ -82,7 +167,7 @@ type RomLibraryEntry = {
   bytes?: Uint8Array;
 };
 type ModeToggleKey = "human" | "ai";
-type InputSource = "keyboard" | "gamepad" | "panel" | "ai" | "system";
+type InputSource = "keyboard" | "gamepad" | "panel" | "ai" | "tas" | "system";
 type AiStrategyKey =
   | "off"
   | "placeholder"
@@ -98,6 +183,7 @@ type AiStrategyKey =
 
 type RouteAction = "advance" | "cautious" | "hold-fire" | "loot" | "guard" | "survive";
 type RouteFireMode = "pulse" | "threat" | "always";
+type StageOneScriptMode = "opening-push" | "first-weapon" | "bridge-jump" | "reward-shot" | "fixed-hp-fire" | "advance";
 
 type StageRouteSegment = {
   id: string;
@@ -121,6 +207,61 @@ type StageStrategyPlan = {
   segments: StageRouteSegment[];
 };
 
+type StageOneScriptAction = {
+  id: string;
+  label: string;
+  worldStart: number;
+  worldEnd: number;
+  mode: StageOneScriptMode;
+  priority: number;
+};
+
+type StageOnePatchJumpState = "any" | "grounded" | "airborne";
+
+type StageOneButtonPatch = {
+  id: string;
+  label: string;
+  worldStart: number;
+  worldEnd: number;
+  yMin?: number;
+  yMax?: number;
+  jumpState?: StageOnePatchJumpState;
+  priority: number;
+  hold: Partial<Record<ButtonName, boolean>>;
+  pulse?: Partial<Record<ButtonName, { period: number; width: number }>>;
+};
+
+type StageOneHorizonCategory = "infantry" | "sniper" | "fixed" | "reward" | "bridge" | "boss";
+type StageOneHorizonAim = "auto" | "level" | "up" | "down";
+
+type StageOneHorizonEvent = {
+  id: string;
+  label: string;
+  screen: number;
+  x: number;
+  y: number;
+  attr: number;
+  category: StageOneHorizonCategory;
+  priority: number;
+  aim: StageOneHorizonAim;
+  note: string;
+};
+
+type StageOneHorizonTarget = StageOneHorizonEvent & {
+  worldX: number;
+  distance: number;
+};
+
+type StageOneHorizonSnapshot = {
+  upcoming: StageOneHorizonTarget[];
+  near: StageOneHorizonTarget[];
+  primary: StageOneHorizonTarget | null;
+  fixedAhead: StageOneHorizonTarget | null;
+  rewardAhead: StageOneHorizonTarget | null;
+  bridgeAhead: StageOneHorizonTarget | null;
+  combatReadiness: boolean;
+};
+
 type LoadedStrategyPlans = Partial<Record<AiStrategyKey, StageStrategyPlan>>;
 
 type TraceInputSample = {
@@ -142,6 +283,7 @@ type PlayTraceSample = {
   routeAction: string;
   p1Input: TraceInputSample;
   p2Input: TraceInputSample;
+  bossWallPhase: Record<PlayerSide, BossWallPhaseTelemetry>;
   ram: null | {
     level: number;
     screen: number;
@@ -155,6 +297,8 @@ type PlayTraceSample = {
     p2WorldX: number;
     p1State: number;
     p2State: number;
+    jumpState: number;
+    p2JumpState: number;
     deathFlag: number;
     p2DeathFlag: number;
     p1Score: number;
@@ -165,6 +309,151 @@ type PlayTraceSample = {
     twoPlayerActive: boolean;
     enemies: Array<Pick<EnemySlotSnapshot, "slot" | "type" | "hp" | "x" | "y" | "routine" | "kind" | "threat" | "fixed" | "priority">>;
   };
+};
+
+type DeathTraceReport = {
+  schema: "fc-ai-death-trace-v1";
+  side: PlayerSide;
+  frame: number;
+  worldX: number | null;
+  screen: number | null;
+  playerX: number | null;
+  playerY: number | null;
+  score: number | null;
+  weapon: number | null;
+  routeSegment: string;
+  routeAction: string;
+  input: string;
+  lastAlive: {
+    frame: number;
+    worldX: number | null;
+    playerX: number | null;
+    playerY: number | null;
+    input: string;
+  } | null;
+  topEnemies: Array<Pick<EnemySlotSnapshot, "slot" | "type" | "hp" | "x" | "y" | "routine" | "kind" | "threat" | "fixed" | "priority">>;
+  samples: PlayTraceSample[];
+};
+
+type RuntimeDebugSnapshot = {
+  schema: "fc-ai-runtime-debug-v1";
+  frame: number;
+  frameCount: number;
+  runtimeStatus: RuntimeStatus;
+  gameplayActive: boolean;
+  side: PlayerSide;
+  mode: ControlMode;
+  strategyKey: AiStrategyKey;
+  routeSegment: string;
+  routeAction: string;
+  scriptAction: string;
+  scriptMode: string;
+  fsmState: AiFsmStateName;
+  fsmReason: string;
+  actionLock: string;
+  loopExit: string;
+  loopBias: number;
+  finalButtons: string;
+  finalInput: TraceInputSample;
+  rawAiInput?: TraceInputSample;
+  lockedAiInput?: TraceInputSample;
+  ram: null | {
+    level: number;
+    screen: number;
+    scroll: number;
+    worldX: number;
+    playerX: number;
+    playerY: number;
+    p1State: number;
+    deathFlag: number;
+    score: number;
+    weapon: number;
+    enemies: number;
+    bullets: number;
+  };
+  threatPool: null | {
+    active: number;
+    turrets: number;
+    actionableTurrets: number;
+    dynamicThreats: number;
+    projectiles: number;
+    rewards: number;
+    primaryTurret: string;
+    primaryThreat: string;
+    top: Array<Pick<EnemySlotSnapshot, "slot" | "type" | "hp" | "x" | "y" | "routine" | "kind" | "threat" | "fixed" | "priority">>;
+  };
+  horizon: null | {
+    primary: string;
+    fixedAhead: string;
+    rewardAhead: string;
+    bridgeAhead: string;
+    near: number;
+    upcoming: number;
+  };
+  bossWallPhase: BossWallPhaseTelemetry | null;
+};
+
+type BotRunReport = {
+  schema: "fc-ai-bot-run-v1";
+  status: "idle" | "running" | "complete" | "death" | "stopped" | "error";
+  startedAt: string | null;
+  finishedAt: string | null;
+  maxFrames: number;
+  frameCount: number;
+  initialDeaths: number;
+  deaths: number;
+  finalWorldX: number | null;
+  finalPlayerX: number | null;
+  finalPlayerY: number | null;
+  finalScore: number | null;
+  finalWeapon: number | null;
+  bossDefeated: number | null;
+  gameplayActive: boolean;
+  reason: string;
+  lastInput: TraceInputSample;
+  finalEnemies: Array<Pick<EnemySlotSnapshot, "slot" | "type" | "hp" | "x" | "y" | "routine" | "kind" | "threat" | "fixed" | "priority">>;
+  runtime: RuntimeDebugSnapshot | null;
+  deathTrace: DeathTraceReport | null;
+};
+
+type SideTrainingState = {
+  side: PlayerSide;
+  ownerLabel: string;
+  baselineStrategy: string;
+  sourceLabel: string;
+  tasBaseLabel: string;
+  captureStatus: string;
+  windowLabel: string;
+  candidateFragments: string;
+  failureSummary: string;
+  archiveTarget: string;
+  primaryAction: string;
+};
+
+type GlobalTrainingState = {
+  modeLabel: string;
+  optimizationLevel: string;
+  tasBaseLabel: string;
+  traceSummary: string;
+  sampleCount: string;
+  evidenceTarget: string;
+  validationStatus: string;
+  botRunStatus: string;
+  nextGate: string;
+};
+
+type TasPlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "finished" | "desynced" | "error";
+
+type TasPlaybackUiState = {
+  status: TasPlaybackStatus;
+  movieId: string;
+  frameIndex: number;
+  playbackStartFrame: number;
+  totalFrames: number;
+  currentInput: string;
+  phase: "init" | "active" | "desynced";
+  checksumStatus: string;
+  message: string;
 };
 
 type Pilot = {
@@ -184,6 +473,7 @@ type Pilot = {
   metricGroups: MetricGroup[];
   dialogue: string[];
   dataStream: string[];
+  training: SideTrainingState;
 };
 
 type MetricGroup = {
@@ -254,6 +544,18 @@ type EnemySlotSnapshot = {
   priority: number;
 };
 
+type ThreatPoolSnapshot = {
+  active: EnemySlotSnapshot[];
+  turrets: EnemySlotSnapshot[];
+  actionableTurrets: EnemySlotSnapshot[];
+  dynamicThreats: EnemySlotSnapshot[];
+  projectiles: EnemySlotSnapshot[];
+  rewards: EnemySlotSnapshot[];
+  primaryTurret: EnemySlotSnapshot | null;
+  primaryThreat: EnemySlotSnapshot | null;
+  combatReadiness: boolean;
+};
+
 type PlayerBulletSnapshot = {
   slot: number;
   bulletSlotCode: number;
@@ -309,7 +611,7 @@ type NesWithCpuRam = NES & {
 
 const playerSides: PlayerSide[] = ["1P", "2P"];
 const buttonNames: ButtonName[] = ["up", "down", "left", "right", "select", "start", "b", "a"];
-const inputSources: InputSource[] = ["keyboard", "gamepad", "panel", "ai", "system"];
+const inputSources: InputSource[] = ["keyboard", "gamepad", "panel", "ai", "tas", "system"];
 const humanSources: InputSource[] = ["keyboard", "gamepad", "panel"];
 
 const playerNumbers: Record<PlayerSide, 1 | 2> = {
@@ -400,6 +702,7 @@ const PLAYER_BULLET_SLOT_COUNT = 16;
 const PLAYER_ALIVE_STATE = 1;
 const PLAYER_DEAD_STATE = 2;
 const STAGE_ONE_LEVEL_INDEX = 0;
+const STAGE_ONE_BOSS_WALL_WORLD_X = 2960;
 const CONTRA_GAME_ID = "contra";
 const CONTRA_LEGACY_GAME_ID = "contra-us";
 const CONTRA_US_ROM_PROFILE_ID = "contra-us-good";
@@ -491,6 +794,7 @@ function createServerRomEntry(info: ServerRomFileInfo): RomLibraryEntry {
     fileName: info.fileName,
     filePath: info.filePath,
     md5: info.md5,
+    headerlessMd5: info.headerlessMd5,
     sha1: info.sha1,
     sha256: info.sha256,
     sizeBytes: info.sizeBytes
@@ -534,6 +838,260 @@ const stageOneStrategyFiles: Partial<Record<AiStrategyKey, string>> = {
   "guard-v0": "/strategies/contra/stage1/stage1-guard.json"
 };
 
+const stageOneScriptActions: StageOneScriptAction[] = [
+  {
+    id: "p00-first-weapon-capsule",
+    label: "P00 first weapon capsule",
+    worldStart: 300,
+    worldEnd: 392,
+    mode: "first-weapon",
+    priority: 92
+  },
+  {
+    id: "p01-first-bridge-weapon",
+    label: "P01 第一桥段武器点",
+    worldStart: 392,
+    worldEnd: 696,
+    mode: "reward-shot",
+    priority: 90
+  },
+  {
+    id: "p02-first-bridge-cross",
+    label: "P02 第一桥段连续跳",
+    worldStart: 520,
+    worldEnd: 1040,
+    mode: "bridge-jump",
+    priority: 80
+  },
+  {
+    id: "p03-mid-fixed-threat",
+    label: "P03 中段固定火力",
+    worldStart: 1040,
+    worldEnd: 2100,
+    mode: "fixed-hp-fire",
+    priority: 95
+  }
+];
+
+const stageOneBossApproachPatches: StageOneButtonPatch[] = [
+  {
+    id: "boss-lower-edge-jump",
+    label: "Boss 前下层起跳",
+    worldStart: 2366,
+    worldEnd: 2406,
+    yMin: 196,
+    yMax: 224,
+    jumpState: "grounded",
+    priority: 120,
+    hold: { a: true, b: true, up: true, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-upper-platform-sprint",
+    label: "Boss 前上层平台冲刺",
+    worldStart: 2418,
+    worldEnd: 2449,
+    yMin: 104,
+    yMax: 188,
+    priority: 112,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-upper-edge-jump",
+    label: "Boss 前上层边缘起跳",
+    worldStart: 2450,
+    worldEnd: 2462,
+    yMin: 160,
+    yMax: 178,
+    jumpState: "grounded",
+    priority: 122,
+    hold: { a: true, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-upper-air-carry",
+    label: "Boss 前第一次空中右移",
+    worldStart: 2463,
+    worldEnd: 2514,
+    yMin: 96,
+    yMax: 204,
+    jumpState: "airborne",
+    priority: 108,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-upper-platform-capture",
+    label: "Boss 前上层平台捕获",
+    worldStart: 2472,
+    worldEnd: 2478,
+    yMin: 104,
+    yMax: 122,
+    jumpState: "airborne",
+    priority: 130,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-upper-platform-left-tap",
+    label: "Boss 前上层平台短左修正",
+    worldStart: 2479,
+    worldEnd: 2486,
+    yMin: 104,
+    yMax: 122,
+    jumpState: "airborne",
+    priority: 132,
+    hold: { a: false, b: true, up: false, down: false, left: true, right: false }
+  },
+  {
+    id: "boss-high-platform-hold",
+    label: "Boss 前高平台锁定",
+    worldStart: 2532,
+    worldEnd: 2549,
+    yMin: 140,
+    yMax: 232,
+    jumpState: "grounded",
+    priority: 134,
+    hold: { a: false, b: true, up: true, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-high-platform-jump",
+    label: "Boss 前高平台起跳",
+    worldStart: 2550,
+    worldEnd: 2562,
+    yMin: 140,
+    yMax: 158,
+    jumpState: "grounded",
+    priority: 136,
+    hold: { a: true, b: true, up: true, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-high-air-capture",
+    label: "Boss 前高平台空中落点捕获",
+    worldStart: 2584,
+    worldEnd: 2590,
+    yMin: 112,
+    yMax: 220,
+    jumpState: "airborne",
+    priority: 138,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-rotating-gun-standoff",
+    label: "Boss 前旋转炮蹲射",
+    worldStart: 2708,
+    worldEnd: 2768,
+    yMin: 96,
+    yMax: 140,
+    priority: 150,
+    hold: { a: false, b: true, up: false, down: true, left: false, right: false }
+  },
+  {
+    id: "boss-mid-platform-right-jump",
+    label: "Boss 前中平台右跳",
+    worldStart: 2814,
+    worldEnd: 2828,
+    yMin: 188,
+    yMax: 206,
+    jumpState: "grounded",
+    priority: 154,
+    hold: { a: true, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-wall-final-right-jump",
+    label: "Boss 外墙前最后右跳",
+    worldStart: 2918,
+    worldEnd: 2936,
+    yMin: 160,
+    yMax: 212,
+    jumpState: "grounded",
+    priority: 180,
+    hold: { a: true, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-wall-downright-fire",
+    label: "Boss 外墙下右压枪",
+    worldStart: 2960,
+    worldEnd: 3070,
+    yMin: 120,
+    yMax: 172,
+    priority: 210,
+    hold: { a: false, b: true, up: false, down: true, left: false, right: true }
+  },
+  {
+    id: "boss-platform-release",
+    label: "Boss 前小平台松跳蓄势",
+    worldStart: 2515,
+    worldEnd: 2516,
+    yMin: 188,
+    yMax: 206,
+    jumpState: "grounded",
+    priority: 124,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-platform-second-jump",
+    label: "Boss 前小平台二段起跳",
+    worldStart: 2518,
+    worldEnd: 2540,
+    yMin: 188,
+    yMax: 208,
+    priority: 126,
+    hold: { a: true, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-second-air-lift",
+    label: "Boss 前第二次空中抬升",
+    worldStart: 2541,
+    worldEnd: 2560,
+    yMin: 104,
+    yMax: 224,
+    jumpState: "airborne",
+    priority: 118,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  },
+  {
+    id: "boss-second-air-carry",
+    label: "Boss 前第二次空中右移",
+    worldStart: 2561,
+    worldEnd: 2638,
+    yMin: 88,
+    yMax: 232,
+    jumpState: "airborne",
+    priority: 116,
+    hold: { a: false, b: true, up: false, down: false, left: false, right: true }
+  }
+];
+
+const stageOneHorizonEvents: StageOneHorizonEvent[] = [
+  { id: "s00-soldier-10", label: "开局士兵", screen: 0, x: 0x10, y: 0x60, attr: 0x00, category: "infantry", priority: 12, aim: "level", note: "持续右移射击" },
+  { id: "s00-soldier-40", label: "开局士兵", screen: 0, x: 0x40, y: 0x60, attr: 0x00, category: "infantry", priority: 12, aim: "level", note: "持续射击" },
+  { id: "s00-sniper-50", label: "下层狙击兵", screen: 0, x: 0x50, y: 0xc0, attr: 0x00, category: "sniper", priority: 42, aim: "down", note: "靠近前压枪" },
+  { id: "s00-pillbox-60", label: "第一武器箱", screen: 0, x: 0x60, y: 0xa0, attr: 0x01, category: "reward", priority: 72, aim: "down", note: "低位奖励目标" },
+  { id: "s00-soldier-80", label: "开局士兵", screen: 0, x: 0x80, y: 0x60, attr: 0x00, category: "infantry", priority: 12, aim: "level", note: "持续射击" },
+  { id: "s00-capsule-f0", label: "Rapid 飞行胶囊", screen: 0, x: 0xf0, y: 0x40, attr: 0x00, category: "reward", priority: 64, aim: "up", note: "高位奖励目标" },
+  { id: "s01-sniper-90", label: "桥前下层狙击兵", screen: 1, x: 0x90, y: 0xc0, attr: 0x00, category: "sniper", priority: 52, aim: "down", note: "桥前先压枪清理" },
+  { id: "s02-bridge-20", label: "第一爆桥", screen: 2, x: 0x20, y: 0x80, attr: 0x00, category: "bridge", priority: 90, aim: "level", note: "进入前预载跳跃" },
+  { id: "s03-bridge-40", label: "第二爆桥", screen: 3, x: 0x40, y: 0x80, attr: 0x00, category: "bridge", priority: 86, aim: "level", note: "连续跳跃窗口" },
+  { id: "s04-rotating-gun-00", label: "旋转炮台", screen: 4, x: 0x00, y: 0xa0, attr: 0x00, category: "fixed", priority: 94, aim: "down", note: "固定火力优先" },
+  { id: "s04-sniper-10", label: "中段狙击兵", screen: 4, x: 0x10, y: 0x60, attr: 0x00, category: "sniper", priority: 40, aim: "level", note: "中段威胁" },
+  { id: "s04-sniper-50", label: "蹲姿狙击兵", screen: 4, x: 0x50, y: 0x60, attr: 0x01, category: "sniper", priority: 44, aim: "level", note: "保持火力" },
+  { id: "s04-capsule-60", label: "Spread 飞行胶囊", screen: 4, x: 0x60, y: 0x40, attr: 0x03, category: "reward", priority: 88, aim: "up", note: "优先武器目标" },
+  { id: "s05-sniper-20", label: "高位狙击兵", screen: 5, x: 0x20, y: 0x40, attr: 0x01, category: "sniper", priority: 46, aim: "up", note: "不要盲目冲" },
+  { id: "s05-pillbox-40", label: "武器箱", screen: 5, x: 0x40, y: 0xa0, attr: 0x02, category: "reward", priority: 66, aim: "down", note: "按当前武器决定追击" },
+  { id: "s05-rotating-gun-80", label: "旋转炮台", screen: 5, x: 0x80, y: 0x80, attr: 0x00, category: "fixed", priority: 92, aim: "auto", note: "射击清除" },
+  { id: "s06-rotating-gun-40", label: "中段旋转炮台", screen: 6, x: 0x40, y: 0x80, attr: 0x00, category: "fixed", priority: 92, aim: "auto", note: "固定威胁" },
+  { id: "s07-red-turret-20", label: "地面红炮台", screen: 7, x: 0x20, y: 0xa0, attr: 0x00, category: "fixed", priority: 96, aim: "down", note: "先打再推进" },
+  { id: "s07-red-turret-a0", label: "高位红炮台", screen: 7, x: 0xa0, y: 0x40, attr: 0x01, category: "fixed", priority: 96, aim: "up", note: "提前站位射击" },
+  { id: "s08-pillbox-00", label: "Spread 武器箱", screen: 8, x: 0x00, y: 0xc0, attr: 0x03, category: "reward", priority: 84, aim: "down", note: "根据当前武器决定" },
+  { id: "s08-sniper-50", label: "Boss 前狙击兵", screen: 8, x: 0x50, y: 0x80, attr: 0x00, category: "sniper", priority: 48, aim: "auto", note: "接近 Boss 前清理" },
+  { id: "s09-capsule-10-high", label: "Rapid 飞行胶囊", screen: 9, x: 0x10, y: 0x40, attr: 0x00, category: "reward", priority: 62, aim: "up", note: "高位胶囊" },
+  { id: "s09-capsule-10-low", label: "低位飞行胶囊", screen: 9, x: 0x10, y: 0xb0, attr: 0x04, category: "reward", priority: 54, aim: "down", note: "低位胶囊" },
+  { id: "s09-red-turret-e0", label: "末段红炮台", screen: 9, x: 0xe0, y: 0x80, attr: 0x01, category: "fixed", priority: 94, aim: "auto", note: "屏幕末端固定威胁" },
+  { id: "s10-rotating-gun-c0", label: "Boss 前旋转炮", screen: 10, x: 0xc0, y: 0xc0, attr: 0x00, category: "fixed", priority: 92, aim: "down", note: "Boss 前炮台" },
+  { id: "s11-rotating-gun-40", label: "Boss 前部旋转炮", screen: 11, x: 0x40, y: 0xc0, attr: 0x03, category: "fixed", priority: 92, aim: "down", note: "Boss screen 前部威胁" },
+  { id: "s11-bomb-turret-a8", label: "Boss 左炮台", screen: 11, x: 0xa8, y: 0x80, attr: 0x01, category: "boss", priority: 100, aim: "auto", note: "Boss 墙先清炮台" },
+  { id: "s11-plated-door-b1", label: "Boss 核心", screen: 11, x: 0xb1, y: 0xb0, attr: 0x00, category: "boss", priority: 98, aim: "down", note: "炮台后集火核心" },
+  { id: "s11-sniper-b4", label: "Boss 狙击兵", screen: 11, x: 0xb4, y: 0x50, attr: 0x02, category: "sniper", priority: 70, aim: "up", note: "Boss screen 杂兵" },
+  { id: "s11-bomb-turret-c0", label: "Boss 右炮台", screen: 11, x: 0xc0, y: 0x80, attr: 0x00, category: "boss", priority: 100, aim: "auto", note: "Boss 墙先清炮台" }
+];
+
 const fallbackStageOnePlans: LoadedStrategyPlans = {
   "survival-v0": {
     game: "contra-us",
@@ -548,9 +1106,10 @@ const fallbackStageOnePlans: LoadedStrategyPlans = {
       { id: "start-survive", label: "start-survive", worldStart: 0, worldEnd: 520, action: "survive", fire: "threat", jumpEvery: 190 },
       { id: "bridge-survive", label: "bridge-survive", worldStart: 520, worldEnd: 930, action: "survive", fire: "threat", jumpEvery: 130 },
       { id: "mid-survive", label: "mid-survive", worldStart: 930, worldEnd: 1550, action: "survive", fire: "always", jumpEvery: 120 },
-      { id: "danger-survive", label: "danger-survive", worldStart: 1550, worldEnd: 2050, action: "survive", fire: "always", jumpEvery: 72 },
-      { id: "boss-approach-survive", label: "boss-approach-survive", worldStart: 2050, worldEnd: 2180, action: "cautious", fire: "always", jumpEvery: 86 },
-      { id: "boss-wall-survive", label: "boss-wall-survive", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 48 }
+      { id: "danger-survive", label: "danger-survive", worldStart: 1550, worldEnd: 2048, action: "survive", fire: "always", jumpEvery: 72 },
+      { id: "weapon-gate-survive", label: "weapon-gate-survive", worldStart: 2048, worldEnd: 2366, action: "loot", fire: "always", jumpEvery: 0 },
+      { id: "boss-approach-survive", label: "boss-approach-survive", worldStart: 2366, worldEnd: STAGE_ONE_BOSS_WALL_WORLD_X, action: "cautious", fire: "always", jumpEvery: 0 },
+      { id: "boss-wall-survive", label: "boss-wall-survive", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 0 }
     ]
   },
   "speedrun-v0": {
@@ -567,8 +1126,8 @@ const fallbackStageOnePlans: LoadedStrategyPlans = {
       { id: "first-bridge", label: "first-bridge", worldStart: 520, worldEnd: 930, action: "advance", fire: "always", jumpEvery: 95 },
       { id: "mid-jungle", label: "mid-jungle", worldStart: 930, worldEnd: 1550, action: "cautious", fire: "always", jumpEvery: 70 },
       { id: "bridge-danger", label: "bridge-danger", worldStart: 1550, worldEnd: 2050, action: "cautious", fire: "always", jumpEvery: 60 },
-      { id: "boss-approach", label: "boss-approach", worldStart: 2050, worldEnd: 2180, action: "cautious", fire: "always", jumpEvery: 80 },
-      { id: "boss-wall", label: "boss-wall", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
+      { id: "boss-approach", label: "boss-approach", worldStart: 2050, worldEnd: STAGE_ONE_BOSS_WALL_WORLD_X, action: "cautious", fire: "always", jumpEvery: 80 },
+      { id: "boss-wall", label: "boss-wall", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
     ]
   },
   "combat-v0": {
@@ -585,8 +1144,8 @@ const fallbackStageOnePlans: LoadedStrategyPlans = {
       { id: "bridge-clear", label: "bridge-clear", worldStart: 520, worldEnd: 930, action: "cautious", fire: "always", jumpEvery: 130 },
       { id: "mid-clear", label: "mid-clear", worldStart: 930, worldEnd: 1550, action: "cautious", fire: "always", jumpEvery: 140 },
       { id: "danger-clear", label: "danger-clear", worldStart: 1550, worldEnd: 2050, action: "cautious", fire: "always", jumpEvery: 95 },
-      { id: "boss-approach-clear", label: "boss-approach-clear", worldStart: 2050, worldEnd: 2180, action: "hold-fire", fire: "always", jumpEvery: 80 },
-      { id: "boss-wall-clear", label: "boss-wall-clear", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
+      { id: "boss-approach-clear", label: "boss-approach-clear", worldStart: 2050, worldEnd: STAGE_ONE_BOSS_WALL_WORLD_X, action: "cautious", fire: "always", jumpEvery: 80 },
+      { id: "boss-wall-clear", label: "boss-wall-clear", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
     ]
   },
   "loot-v0": {
@@ -603,8 +1162,8 @@ const fallbackStageOnePlans: LoadedStrategyPlans = {
       { id: "bridge-loot", label: "bridge-loot", worldStart: 520, worldEnd: 930, action: "loot", fire: "threat", jumpEvery: 120 },
       { id: "mid-loot", label: "mid-loot", worldStart: 930, worldEnd: 1550, action: "loot", fire: "always", jumpEvery: 80 },
       { id: "danger-loot", label: "danger-loot", worldStart: 1550, worldEnd: 2050, action: "cautious", fire: "always", jumpEvery: 60 },
-      { id: "boss-approach-loot", label: "boss-approach-loot", worldStart: 2050, worldEnd: 2180, action: "cautious", fire: "always", jumpEvery: 80 },
-      { id: "boss-wall-loot", label: "boss-wall-loot", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
+      { id: "boss-approach-loot", label: "boss-approach-loot", worldStart: 2050, worldEnd: STAGE_ONE_BOSS_WALL_WORLD_X, action: "cautious", fire: "always", jumpEvery: 80 },
+      { id: "boss-wall-loot", label: "boss-wall-loot", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
     ]
   },
   "guard-v0": {
@@ -621,8 +1180,8 @@ const fallbackStageOnePlans: LoadedStrategyPlans = {
       { id: "bridge-guard", label: "bridge-guard", worldStart: 520, worldEnd: 930, action: "guard", fire: "always", jumpEvery: 140 },
       { id: "mid-guard", label: "mid-guard", worldStart: 930, worldEnd: 1550, action: "guard", fire: "always", jumpEvery: 150 },
       { id: "danger-guard", label: "danger-guard", worldStart: 1550, worldEnd: 2050, action: "cautious", fire: "always", jumpEvery: 80 },
-      { id: "boss-approach-guard", label: "boss-approach-guard", worldStart: 2050, worldEnd: 2180, action: "hold-fire", fire: "always", jumpEvery: 80 },
-      { id: "boss-wall-guard", label: "boss-wall-guard", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
+      { id: "boss-approach-guard", label: "boss-approach-guard", worldStart: 2050, worldEnd: STAGE_ONE_BOSS_WALL_WORLD_X, action: "guard", fire: "always", jumpEvery: 80 },
+      { id: "boss-wall-guard", label: "boss-wall-guard", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
     ]
   }
 };
@@ -640,7 +1199,7 @@ function createDefaultPersonalPlan(): StageStrategyPlan {
     description: "Personal stage 1 route script.",
     segments: basePlan?.segments.map((segment) => ({ ...segment })) ?? [
       { id: "start-run", label: "start-run", worldStart: 0, worldEnd: 520, action: "advance", fire: "pulse", jumpEvery: 150 },
-      { id: "boss-wall", label: "boss-wall", worldStart: 2180, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
+      { id: "boss-wall", label: "boss-wall", worldStart: STAGE_ONE_BOSS_WALL_WORLD_X, worldEnd: 9999, action: "hold-fire", fire: "always", jumpEvery: 45 }
     ]
   };
 }
@@ -661,6 +1220,68 @@ function createButtonState(): ButtonState {
     start: false,
     select: false
   };
+}
+
+function createIdleTasPlaybackState(): TasPlaybackUiState {
+  return {
+    status: "idle",
+    movieId: "",
+    frameIndex: 0,
+    playbackStartFrame: 0,
+    totalFrames: 0,
+    currentInput: "-",
+    phase: "init",
+    checksumStatus: "未载入",
+    message: "等待选择 TAS"
+  };
+}
+
+function fm2ButtonsToButtonState(buttons: Fm2ControllerButtons): ButtonState {
+  return {
+    up: buttons.up,
+    down: buttons.down,
+    left: buttons.left,
+    right: buttons.right,
+    a: buttons.a,
+    b: buttons.b,
+    start: buttons.start,
+    select: buttons.select
+  };
+}
+
+function applyButtonStateToNes(nes: NES, side: PlayerSide, buttons: ButtonState) {
+  for (const button of buttonNames) {
+    if (buttons[button]) nes.buttonDown(playerNumbers[side], buttonMap[button]);
+    else nes.buttonUp(playerNumbers[side], buttonMap[button]);
+  }
+}
+
+function applyFm2FrameDirectly(nes: NES, frame: Fm2Movie["frames"][number]) {
+  applyButtonStateToNes(nes, "1P", fm2ButtonsToButtonState(frame.p1));
+  applyButtonStateToNes(nes, "2P", fm2ButtonsToButtonState(frame.p2));
+}
+
+function releaseAllNesButtons(nes: NES) {
+  applyButtonStateToNes(nes, "1P", createButtonState());
+  applyButtonStateToNes(nes, "2P", createButtonState());
+}
+
+function fastForwardTasMovie(nes: NES, movie: Fm2Movie, targetFrame: number) {
+  const boundedTargetFrame = resolveFm2PlaybackStartFrame(movie, targetFrame);
+  for (let frameIndex = 0; frameIndex < boundedTargetFrame; frameIndex += 1) {
+    const frame = movie.frames[frameIndex];
+    if (!frame) break;
+    applyFm2FrameDirectly(nes, frame);
+    nes.frame();
+  }
+  releaseAllNesButtons(nes);
+  return boundedTargetFrame;
+}
+
+function tasPhaseLabel(phase: TasPlaybackUiState["phase"]) {
+  if (phase === "active") return "Active Phase";
+  if (phase === "desynced") return "Desync";
+  return "Init Phase";
 }
 
 function createAiActionLockState(): AiActionLockState {
@@ -691,6 +1312,32 @@ function createAiFsmStates(): Record<PlayerSide, AiFsmState> {
   return {
     "1P": createAiFsmState(),
     "2P": createAiFsmState()
+  };
+}
+
+function createAiLoopExitState(): AiLoopExitState {
+  return {
+    lastWorldX: 0,
+    lastScore: 0,
+    lastThreatCount: 0,
+    stagnantFrames: 0,
+    unlockFrames: 0,
+    forcedAdvanceBias: 0,
+    reason: "idle"
+  };
+}
+
+function createAiLoopExitStates(): Record<PlayerSide, AiLoopExitState> {
+  return {
+    "1P": createAiLoopExitState(),
+    "2P": createAiLoopExitState()
+  };
+}
+
+function createBossWallPhaseStates(): Record<PlayerSide, BossWallPhaseState> {
+  return {
+    "1P": createBossWallPhaseState(),
+    "2P": createBossWallPhaseState()
   };
 }
 
@@ -758,6 +1405,7 @@ function createSourceInputStates(): Record<PlayerSide, Record<InputSource, Butto
       gamepad: createButtonState(),
       panel: createButtonState(),
       ai: createButtonState(),
+      tas: createButtonState(),
       system: createButtonState()
     },
     "2P": {
@@ -765,6 +1413,7 @@ function createSourceInputStates(): Record<PlayerSide, Record<InputSource, Butto
       gamepad: createButtonState(),
       panel: createButtonState(),
       ai: createButtonState(),
+      tas: createButtonState(),
       system: createButtonState()
     }
   };
@@ -982,12 +1631,30 @@ function readGameRamSnapshot(nes: NES | null, frame: number): GameRamSnapshot | 
   };
 }
 
-function isGameplayActive(snapshot: GameRamSnapshot | null) {
+function isPlausibleRamSnapshot(snapshot: GameRamSnapshot | null): snapshot is GameRamSnapshot {
+  return Boolean(snapshot)
+    && snapshot?.level !== 0xff
+    && snapshot?.screen !== 0xff
+    && snapshot?.p1State !== 0xff;
+}
+
+function isLikelyAttractDemo(snapshot: GameRamSnapshot | null, frame = Number.POSITIVE_INFINITY) {
+  if (!snapshot || frame >= 720) return false;
+  return snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.p1State === PLAYER_ALIVE_STATE
+    && snapshot.deathFlag === 0
+    && snapshot.worldX >= 256
+    && snapshot.screen >= 1
+    && snapshot.p1Score > 0;
+}
+
+function isGameplayActive(snapshot: GameRamSnapshot | null, frame?: number) {
   if (!snapshot) return false;
   return snapshot.gameOver === 0
     && snapshot.p1State === PLAYER_ALIVE_STATE
     && snapshot.playerX > 0
-    && snapshot.playerY > 0;
+    && snapshot.playerY > 0
+    && !isLikelyAttractDemo(snapshot, frame);
 }
 
 function isLikelyGameMenu(snapshot: GameRamSnapshot | null) {
@@ -1000,11 +1667,25 @@ function isLikelyGameMenu(snapshot: GameRamSnapshot | null) {
     && snapshot.playerY === 0;
 }
 
+function isStartableMenuState(snapshot: GameRamSnapshot | null) {
+  if (!snapshot) return true;
+  return isLikelyGameMenu(snapshot)
+    || (
+      snapshot.gameOver === 0
+      && snapshot.deathFlag === 0
+      && snapshot.p1State === 0
+      && snapshot.level === STAGE_ONE_LEVEL_INDEX
+      && snapshot.screen === 0
+      && snapshot.worldX <= 96
+      && snapshot.enemies.length === 0
+    );
+}
+
 function isDeathOrRespawnTransition(snapshot: GameRamSnapshot | null) {
-  if (!snapshot) return false;
+  if (!isPlausibleRamSnapshot(snapshot)) return false;
   return snapshot.p1State === PLAYER_DEAD_STATE
     || snapshot.deathFlag !== 0
-    || (snapshot.p1State === 0 && !isLikelyGameMenu(snapshot));
+    || (snapshot.p1State === 0 && !isStartableMenuState(snapshot));
 }
 
 function getPlayerDeathFields(side: PlayerSide, snapshot: GameRamSnapshot) {
@@ -1020,6 +1701,13 @@ function getPlayerDeathFields(side: PlayerSide, snapshot: GameRamSnapshot) {
     deathFlag: snapshot.p2DeathFlag,
     active: snapshot.twoPlayerActive
   };
+}
+
+function isNonMenuRespawnState(side: PlayerSide, snapshot: GameRamSnapshot) {
+  const fields = getPlayerDeathFields(side, snapshot);
+  if (!fields.active || fields.state !== 0 || fields.deathFlag !== 0) return false;
+  if (side === "1P") return !isStartableMenuState(snapshot);
+  return snapshot.twoPlayerActive && (snapshot.p2PlayerX === 0 || snapshot.p2PlayerY === 0);
 }
 
 function playerCoordinateFields(side: PlayerSide, snapshot: GameRamSnapshot) {
@@ -1063,19 +1751,84 @@ function tacticalSnapshotForSide(snapshot: GameRamSnapshot | null, side: PlayerS
   };
 }
 
+function threatCountForSnapshot(snapshot: GameRamSnapshot) {
+  return snapshot.enemies.filter((enemy) => enemy.threat).length;
+}
+
+function updateAiLoopExitState(
+  previous: AiLoopExitState,
+  side: PlayerSide,
+  snapshot: GameRamSnapshot | null,
+  gameplayActive: boolean,
+  fsmState: AiFsmState
+): AiLoopExitState {
+  if (!snapshot || !gameplayActive || playerIsDeathOrRespawn(side, snapshot) || fsmState.state === "menu") {
+    return createAiLoopExitState();
+  }
+
+  const currentWorldX = snapshot.worldX;
+  const currentScore = scoreForSide(snapshot, side);
+  const currentThreatCount = threatCountForSnapshot(snapshot);
+  const inScriptedStallZone = snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && (
+      (snapshot.worldX >= 500 && snapshot.worldX <= 930)
+      || (snapshot.worldX >= 1040 && snapshot.worldX <= 2100)
+    );
+  const scoreProgressCounts = !(snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.worldX >= 1040
+    && snapshot.worldX <= 2100);
+  const stateCanLoop = fsmState.state === "danger" || fsmState.state === "attack" || inScriptedStallZone;
+  const hasProgress = currentWorldX > previous.lastWorldX + 10
+    || (scoreProgressCounts && currentScore > previous.lastScore)
+    || currentThreatCount < previous.lastThreatCount;
+
+  if (!stateCanLoop || hasProgress) {
+    return {
+      lastWorldX: Math.max(previous.lastWorldX, currentWorldX),
+      lastScore: Math.max(previous.lastScore, currentScore),
+      lastThreatCount: currentThreatCount,
+      stagnantFrames: 0,
+      unlockFrames: 0,
+      forcedAdvanceBias: previous.forcedAdvanceBias * 0.95,
+      reason: stateCanLoop ? "tracking" : "idle"
+    };
+  }
+
+  const stagnantFrames = previous.stagnantFrames + 1;
+  const shouldStartUnlock = stagnantFrames >= 54 && previous.unlockFrames <= 0;
+
+  return {
+    lastWorldX: Math.max(previous.lastWorldX, currentWorldX),
+    lastScore: Math.max(previous.lastScore, currentScore),
+    lastThreatCount: previous.lastThreatCount > 0 ? Math.min(previous.lastThreatCount, currentThreatCount) : currentThreatCount,
+    stagnantFrames,
+    unlockFrames: shouldStartUnlock ? 96 : Math.max(0, previous.unlockFrames - 1),
+    forcedAdvanceBias: shouldStartUnlock ? 1 : previous.forcedAdvanceBias * 0.95,
+    reason: shouldStartUnlock || previous.unlockFrames > 0 ? "world-score-enemy-stall" : "tracking"
+  };
+}
+
+function aiLoopExitLabel(loopExit: AiLoopExitState) {
+  if (loopExit.forcedAdvanceBias > 0.05) return `${loopExit.reason}:bias=${loopExit.forcedAdvanceBias.toFixed(2)}`;
+  if (loopExit.unlockFrames > 0) return `${loopExit.reason}:${loopExit.unlockFrames}`;
+  if (loopExit.stagnantFrames > 0) return `${loopExit.reason}:${loopExit.stagnantFrames}`;
+  return loopExit.reason;
+}
+
 function shouldCountPlayerDeath(
   side: PlayerSide,
   before: GameRamSnapshot | null,
   after: GameRamSnapshot | null,
   deathLatched: boolean
 ) {
-  if (!before || !after || deathLatched) return false;
+  if (!isPlausibleRamSnapshot(before) || !isPlausibleRamSnapshot(after) || deathLatched) return false;
   const beforeFields = getPlayerDeathFields(side, before);
   const afterFields = getPlayerDeathFields(side, after);
   if (!beforeFields.active || !afterFields.active) return false;
   const stateDeath = beforeFields.state === PLAYER_ALIVE_STATE && afterFields.state === PLAYER_DEAD_STATE;
   const flagDeath = beforeFields.deathFlag === 0 && afterFields.deathFlag !== 0;
-  return stateDeath || flagDeath;
+  const nonMenuRespawn = beforeFields.state === PLAYER_ALIVE_STATE && isNonMenuRespawnState(side, after);
+  return stateDeath || flagDeath || nonMenuRespawn;
 }
 
 function shouldReleaseDeathLatch(side: PlayerSide, snapshot: GameRamSnapshot | null) {
@@ -1288,15 +2041,37 @@ function cloneButtonState(buttons: ButtonState) {
   return { ...buttons };
 }
 
+function sanitizeButtonState(buttons: ButtonState, prefer?: ButtonState) {
+  const next = cloneButtonState(buttons);
+
+  if (next.left && next.right) {
+    if (prefer?.left && !prefer.right) next.right = false;
+    else next.left = false;
+  }
+
+  if (next.up && next.down) {
+    if (next.a) {
+      next.down = false;
+    } else if (prefer?.down && !prefer.up) {
+      next.up = false;
+    } else {
+      next.down = false;
+    }
+  }
+
+  return next;
+}
+
 function aiActionLockCandidate(
   buttons: ButtonState,
   snapshot: GameRamSnapshot | null,
   strategyKey: AiStrategyKey
 ): AiActionLockState {
-  if (!hasPressedButton(buttons)) return createAiActionLockState();
-  if (buttons.start || buttons.select) {
+  const safeButtons = sanitizeButtonState(buttons);
+  if (!hasPressedButton(safeButtons)) return createAiActionLockState();
+  if (safeButtons.start || safeButtons.select) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: 10,
       priority: 6,
       reason: "menu"
@@ -1304,49 +2079,49 @@ function aiActionLockCandidate(
   }
 
   const immediateDanger = snapshot ? hasImmediateDanger(snapshot) : false;
-  if (buttons.a && immediateDanger) {
+  if (safeButtons.a && immediateDanger) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: strategyKey === "survival-v0" ? 14 : 10,
       priority: 5,
       reason: "evade"
     };
   }
-  if ((buttons.left || buttons.right) && immediateDanger) {
+  if ((safeButtons.left || safeButtons.right) && immediateDanger) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: strategyKey === "speedrun-v0" ? 6 : 9,
       priority: 4,
       reason: "evade"
     };
   }
-  if (buttons.a) {
+  if (safeButtons.a) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: 9,
       priority: 4,
       reason: "jump"
     };
   }
-  if (buttons.b && (buttons.up || buttons.down)) {
+  if (safeButtons.b && (safeButtons.up || safeButtons.down)) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: 6,
       priority: 3,
       reason: "aim-fire"
     };
   }
-  if (buttons.b) {
+  if (safeButtons.b) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: 4,
       priority: 2,
       reason: "fire"
     };
   }
-  if (buttons.left || buttons.right) {
+  if (safeButtons.left || safeButtons.right) {
     return {
-      buttons: cloneButtonState(buttons),
+      buttons: safeButtons,
       remainingFrames: 5,
       priority: 1,
       reason: "move"
@@ -1363,6 +2138,23 @@ function applyAiActionLock(
 ) {
   const candidate = aiActionLockCandidate(rawButtons, snapshot, strategyKey);
   if (candidate.reason === "idle") return candidate;
+  if (snapshot && isBossWallBailoutInput(snapshot, sanitizeButtonState(rawButtons))) {
+    return {
+      ...candidate,
+      buttons: sanitizeButtonState(rawButtons),
+      remainingFrames: Math.min(Math.max(candidate.remainingFrames, 8), 10),
+      priority: 7,
+      reason: "evade" as const
+    };
+  }
+  if (snapshot && isStageOneCriticalScriptWindow(snapshot)) return candidate;
+
+  if (
+    !rawButtons.b
+    && (previousLock.reason === "fire" || previousLock.reason === "aim-fire")
+  ) {
+    return candidate;
+  }
 
   if (
     previousLock.remainingFrames > 0
@@ -1376,7 +2168,7 @@ function applyAiActionLock(
     lockedButtons.down = lockedButtons.down || rawButtons.down;
     return {
       ...previousLock,
-      buttons: lockedButtons,
+      buttons: sanitizeButtonState(lockedButtons, rawButtons),
       remainingFrames: previousLock.remainingFrames - 1
     };
   }
@@ -1505,6 +2297,89 @@ function activeRouteSegmentForPlan(snapshot: GameRamSnapshot | null, plan: Stage
   )) ?? plan.segments[plan.segments.length - 1] ?? null;
 }
 
+function activeStageOneScriptAction(snapshot: GameRamSnapshot | null) {
+  if (!snapshot || snapshot.level !== STAGE_ONE_LEVEL_INDEX) return null;
+  return stageOneScriptActions
+    .filter((action) => snapshot.worldX >= action.worldStart && snapshot.worldX < action.worldEnd)
+    .sort((a, b) => b.priority - a.priority)[0] ?? null;
+}
+
+function stageOneEventWorldX(event: StageOneHorizonEvent) {
+  return event.screen * 256 + event.x;
+}
+
+function horizonCategoryWeight(category: StageOneHorizonCategory) {
+  if (category === "boss") return 120;
+  if (category === "fixed") return 106;
+  if (category === "bridge") return 94;
+  if (category === "reward") return 82;
+  if (category === "sniper") return 70;
+  return 30;
+}
+
+function horizonPrioritySort(a: StageOneHorizonTarget, b: StageOneHorizonTarget) {
+  const scoreA = horizonCategoryWeight(a.category) + a.priority - Math.max(0, a.distance) * 0.18;
+  const scoreB = horizonCategoryWeight(b.category) + b.priority - Math.max(0, b.distance) * 0.18;
+  return scoreB - scoreA;
+}
+
+function buildStageOneHorizon(snapshot: GameRamSnapshot | null, lookAhead = 420): StageOneHorizonSnapshot | null {
+  if (!snapshot || snapshot.level !== STAGE_ONE_LEVEL_INDEX) return null;
+
+  const upcoming = stageOneHorizonEvents
+    .map((event) => {
+      const worldX = stageOneEventWorldX(event);
+      return {
+        ...event,
+        worldX,
+        distance: worldX - snapshot.worldX
+      };
+    })
+    .filter((event) => event.distance >= -48 && event.distance <= lookAhead)
+    .sort((a, b) => a.worldX - b.worldX || horizonPrioritySort(a, b));
+
+  const near = upcoming.filter((event) => event.distance >= -24 && event.distance <= 220);
+  const fixedAhead = near
+    .filter((event) => event.category === "fixed" || event.category === "boss")
+    .sort(horizonPrioritySort)[0] ?? null;
+  const rewardAhead = near
+    .filter((event) => event.category === "reward")
+    .sort(horizonPrioritySort)[0] ?? null;
+  const bridgeAhead = near
+    .filter((event) => event.category === "bridge")
+    .sort((a, b) => a.distance - b.distance)[0] ?? null;
+  const sniperAhead = near
+    .filter((event) => event.category === "sniper")
+    .sort(horizonPrioritySort)[0] ?? null;
+  const primary = [fixedAhead, rewardAhead, bridgeAhead, sniperAhead]
+    .filter((event): event is StageOneHorizonTarget => Boolean(event))
+    .sort(horizonPrioritySort)[0] ?? null;
+
+  return {
+    upcoming,
+    near,
+    primary,
+    fixedAhead,
+    rewardAhead,
+    bridgeAhead,
+    combatReadiness: Boolean(fixedAhead || bridgeAhead || sniperAhead)
+  };
+}
+
+function horizonCategoryLabel(category: StageOneHorizonCategory) {
+  if (category === "infantry") return "杂兵";
+  if (category === "sniper") return "狙击兵";
+  if (category === "fixed") return "固定火力";
+  if (category === "reward") return "奖励";
+  if (category === "bridge") return "桥段";
+  return "Boss";
+}
+
+function horizonTargetLabel(target: StageOneHorizonTarget | null) {
+  if (!target) return "none";
+  return `${target.label}@${target.worldX}/d${target.distance}`;
+}
+
 function activeRouteSegment(strategyKey: AiStrategyKey, snapshot: GameRamSnapshot | null, plans: LoadedStrategyPlans) {
   return activeRouteSegmentForPlan(snapshot, planForStrategy(strategyKey, plans));
 }
@@ -1541,7 +2416,8 @@ function buildPlayTraceSample({
   strategyKey,
   strategyPlans,
   ramSnapshot,
-  finalButtons
+  finalButtons,
+  bossWallPhaseStates
 }: {
   frame: number;
   runtimeStatus: RuntimeStatus;
@@ -1550,6 +2426,7 @@ function buildPlayTraceSample({
   strategyPlans: LoadedStrategyPlans;
   ramSnapshot: GameRamSnapshot | null;
   finalButtons: PlayerButtonStates;
+  bossWallPhaseStates: Record<PlayerSide, BossWallPhaseState>;
 }): PlayTraceSample {
   const route = routeLineForStrategy(strategyKey, ramSnapshot, strategyPlans);
   return {
@@ -1560,6 +2437,10 @@ function buildPlayTraceSample({
     routeAction: route.action,
     p1Input: traceInput(finalButtons["1P"]),
     p2Input: traceInput(finalButtons["2P"]),
+    bossWallPhase: {
+      "1P": describeBossWallPhaseTelemetry(tacticalSnapshotForSide(ramSnapshot, "1P"), bossWallPhaseStates["1P"]),
+      "2P": describeBossWallPhaseTelemetry(tacticalSnapshotForSide(ramSnapshot, "2P"), bossWallPhaseStates["2P"])
+    },
     ram: ramSnapshot ? {
       level: ramSnapshot.level,
       screen: ramSnapshot.screen,
@@ -1573,6 +2454,8 @@ function buildPlayTraceSample({
       p2WorldX: ramSnapshot.p2WorldX,
       p1State: ramSnapshot.p1State,
       p2State: ramSnapshot.p2State,
+      jumpState: ramSnapshot.jumpState,
+      p2JumpState: ramSnapshot.p2JumpState,
       deathFlag: ramSnapshot.deathFlag,
       p2DeathFlag: ramSnapshot.p2DeathFlag,
       p1Score: ramSnapshot.p1Score,
@@ -1594,6 +2477,256 @@ function buildPlayTraceSample({
         priority: enemy.priority
       }))
     } : null
+  };
+}
+
+const recentTraceSampleLimit = 1200;
+const deathTraceSampleLimit = 900;
+
+function traceInputLabel(input: TraceInputSample) {
+  const pressed = [
+    input.up ? "up" : "",
+    input.down ? "down" : "",
+    input.left ? "left" : "",
+    input.right ? "right" : "",
+    input.a ? "A" : "",
+    input.b ? "B" : "",
+    input.select ? "select" : "",
+    input.start ? "start" : ""
+  ].filter(Boolean);
+  return pressed.length > 0 ? pressed.join("+") : "none";
+}
+
+function sampleInputForSide(sample: PlayTraceSample, side: PlayerSide) {
+  return side === "1P" ? sample.p1Input : sample.p2Input;
+}
+
+function sampleIsAliveForSide(sample: PlayTraceSample, side: PlayerSide) {
+  if (!sample.ram) return false;
+  const state = side === "1P" ? sample.ram.p1State : sample.ram.p2State;
+  const deathFlag = side === "1P" ? sample.ram.deathFlag : sample.ram.p2DeathFlag;
+  return sample.gameplayActive && state === PLAYER_ALIVE_STATE && deathFlag === 0;
+}
+
+function samplePositionForSide(sample: PlayTraceSample, side: PlayerSide) {
+  if (!sample.ram) {
+    return {
+      worldX: null,
+      playerX: null,
+      playerY: null,
+      score: null,
+      weapon: null
+    };
+  }
+  if (side === "1P") {
+    return {
+      worldX: sample.ram.worldX,
+      playerX: sample.ram.playerX,
+      playerY: sample.ram.playerY,
+      score: sample.ram.p1Score,
+      weapon: sample.ram.weapon
+    };
+  }
+  return {
+    worldX: sample.ram.p2WorldX,
+    playerX: sample.ram.p2PlayerX,
+    playerY: sample.ram.p2PlayerY,
+    score: sample.ram.p2Score,
+    weapon: sample.ram.p2Weapon
+  };
+}
+
+function createDeathTraceReport(side: PlayerSide, samples: PlayTraceSample[]): DeathTraceReport | null {
+  const current = samples[samples.length - 1];
+  if (!current) return null;
+  const position = samplePositionForSide(current, side);
+  let lastAliveSample: PlayTraceSample | null = null;
+  for (let index = samples.length - 1; index >= 0; index -= 1) {
+    if (sampleIsAliveForSide(samples[index], side)) {
+      lastAliveSample = samples[index];
+      break;
+    }
+  }
+  const lastAlivePosition = lastAliveSample ? samplePositionForSide(lastAliveSample, side) : null;
+  const topEnemies = (current.ram?.enemies ?? [])
+    .filter((enemy) => enemy.type !== 0x02 && (enemy.threat || enemy.hp > 0))
+    .slice()
+    .sort((a, b) => (b.priority - a.priority) || (b.hp - a.hp))
+    .slice(0, 8);
+
+  return {
+    schema: "fc-ai-death-trace-v1",
+    side,
+    frame: current.frame,
+    worldX: position.worldX,
+    screen: current.ram?.screen ?? null,
+    playerX: position.playerX,
+    playerY: position.playerY,
+    score: position.score,
+    weapon: position.weapon,
+    routeSegment: current.routeSegment,
+    routeAction: current.routeAction,
+    input: traceInputLabel(sampleInputForSide(current, side)),
+    lastAlive: lastAliveSample && lastAlivePosition ? {
+      frame: lastAliveSample.frame,
+      worldX: lastAlivePosition.worldX,
+      playerX: lastAlivePosition.playerX,
+      playerY: lastAlivePosition.playerY,
+      input: traceInputLabel(sampleInputForSide(lastAliveSample, side))
+    } : null,
+    topEnemies,
+    samples: samples.slice(-deathTraceSampleLimit)
+  };
+}
+
+function deathTraceReportSummary(report: DeathTraceReport) {
+  const enemy = report.topEnemies[0];
+  const enemyLabel = enemy
+    ? `slot${enemy.slot}/type0x${enemy.type.toString(16).padStart(2, "0")}/hp${enemy.hp}@${enemy.x},${enemy.y}`
+    : "none";
+  return `Death trace ${report.side}: frame ${report.frame}, worldX ${report.worldX ?? "?"}, input ${report.input}, enemy ${enemyLabel}`;
+}
+
+function buildRuntimeDebugSnapshot({
+  side,
+  mode,
+  strategyKey,
+  strategyPlans,
+  ramSnapshot,
+  frameCount,
+  gameplayActive,
+  runtimeStatus,
+  actionLock,
+  fsmState,
+  loopExit,
+  buttons,
+  rawAiButtons,
+  lockedAiButtons,
+  bossWallPhaseState
+}: {
+  side: PlayerSide;
+  mode: ControlMode;
+  strategyKey: AiStrategyKey;
+  strategyPlans: LoadedStrategyPlans;
+  ramSnapshot: GameRamSnapshot | null;
+  frameCount: number;
+  gameplayActive: boolean;
+  runtimeStatus: RuntimeStatus;
+  actionLock: AiActionLockState;
+  fsmState: AiFsmState;
+  loopExit: AiLoopExitState;
+  buttons: ButtonState;
+  rawAiButtons?: ButtonState;
+  lockedAiButtons?: ButtonState;
+  bossWallPhaseState?: BossWallPhaseState;
+}): RuntimeDebugSnapshot {
+  const streamSnapshot = tacticalSnapshotForSide(ramSnapshot, side);
+  const route = routeLineForStrategy(strategyKey, streamSnapshot, strategyPlans);
+  const scriptAction = activeStageOneScriptAction(streamSnapshot);
+  const threatPool = streamSnapshot ? buildThreatPool(streamSnapshot) : null;
+  const horizon = buildStageOneHorizon(streamSnapshot);
+  const topThreats = threatPool
+    ? threatPool.active
+      .slice()
+      .sort((a, b) => (b.priority - a.priority) || (b.hp - a.hp))
+      .slice(0, 10)
+      .map((enemy) => ({
+        slot: enemy.slot,
+        type: enemy.type,
+        hp: enemy.hp,
+        x: enemy.x,
+        y: enemy.y,
+        routine: enemy.routine,
+        kind: enemy.kind,
+        threat: enemy.threat,
+        fixed: enemy.fixed,
+        priority: enemy.priority
+      }))
+    : [];
+
+  return {
+    schema: "fc-ai-runtime-debug-v1",
+    frame: streamSnapshot?.frame ?? 0,
+    frameCount,
+    runtimeStatus,
+    gameplayActive,
+    side,
+    mode,
+    strategyKey,
+    routeSegment: route.segment,
+    routeAction: route.action,
+    scriptAction: scriptAction?.id ?? "none",
+    scriptMode: scriptAction?.mode ?? "none",
+    fsmState: mode !== "human" ? fsmState.state : "idle",
+    fsmReason: mode !== "human" ? fsmState.reason : "input-disabled",
+    actionLock: mode !== "human" ? aiActionLockLabel(actionLock) : "idle",
+    loopExit: mode !== "human" ? aiLoopExitLabel(loopExit) : "idle",
+    loopBias: mode !== "human" ? Number(loopExit.forcedAdvanceBias.toFixed(3)) : 0,
+    finalButtons: activeButtonLabel(buttons),
+    finalInput: traceInput(buttons),
+    rawAiInput: rawAiButtons ? traceInput(rawAiButtons) : undefined,
+    lockedAiInput: lockedAiButtons ? traceInput(lockedAiButtons) : undefined,
+    ram: streamSnapshot ? {
+      level: streamSnapshot.level,
+      screen: streamSnapshot.screen,
+      scroll: streamSnapshot.scroll,
+      worldX: streamSnapshot.worldX,
+      playerX: streamSnapshot.playerX,
+      playerY: streamSnapshot.playerY,
+      p1State: streamSnapshot.p1State,
+      deathFlag: streamSnapshot.deathFlag,
+      score: side === "1P" ? streamSnapshot.p1Score : streamSnapshot.p2Score,
+      weapon: side === "1P" ? streamSnapshot.weapon : streamSnapshot.p2Weapon,
+      enemies: streamSnapshot.enemies.length,
+      bullets: streamSnapshot.bullets.length
+    } : null,
+    threatPool: threatPool ? {
+      active: threatPool.active.length,
+      turrets: threatPool.turrets.length,
+      actionableTurrets: threatPool.actionableTurrets.length,
+      dynamicThreats: threatPool.dynamicThreats.length,
+      projectiles: threatPool.projectiles.length,
+      rewards: threatPool.rewards.length,
+      primaryTurret: threatPoolTargetLabel(threatPool.primaryTurret),
+      primaryThreat: threatPoolTargetLabel(threatPool.primaryThreat),
+      top: topThreats
+    } : null,
+    horizon: horizon ? {
+      primary: horizonTargetLabel(horizon.primary),
+      fixedAhead: horizonTargetLabel(horizon.fixedAhead),
+      rewardAhead: horizonTargetLabel(horizon.rewardAhead),
+      bridgeAhead: horizonTargetLabel(horizon.bridgeAhead),
+      near: horizon.near.length,
+      upcoming: horizon.upcoming.length
+    } : null,
+    bossWallPhase: bossWallPhaseState
+      ? describeBossWallPhaseTelemetry(streamSnapshot, bossWallPhaseState)
+      : null
+  };
+}
+
+function createIdleBotRunReport(): BotRunReport {
+  return {
+    schema: "fc-ai-bot-run-v1",
+    status: "idle",
+    startedAt: null,
+    finishedAt: null,
+    maxFrames: 0,
+    frameCount: 0,
+    initialDeaths: 0,
+    deaths: 0,
+    finalWorldX: null,
+    finalPlayerX: null,
+    finalPlayerY: null,
+    finalScore: null,
+    finalWeapon: null,
+    bossDefeated: null,
+    gameplayActive: false,
+    reason: "not-started",
+    lastInput: traceInput(createButtonState()),
+    finalEnemies: [],
+    runtime: null,
+    deathTrace: null
   };
 }
 
@@ -1652,7 +2785,7 @@ function activeButtonLabel(buttons: ButtonState) {
     select: "选择"
   };
   const active = buttonNames.filter((button) => buttons[button]).map((button) => labels[button]);
-  return active.length > 0 ? active.join(" + ") : "无";
+  return active.length > 0 ? active.join("") : "无";
 }
 
 function getAiStrategyLabel(strategyKey: AiStrategyKey) {
@@ -1716,7 +2849,105 @@ function isGrounded(snapshot: GameRamSnapshot, side: PlayerSide) {
 }
 
 function isRewardTarget(enemy: EnemySlotSnapshot) {
-  return enemy.type === 0x00 || enemy.type === 0x02 || enemy.type === 0x03;
+  return (enemy.type === 0x00 || enemy.type === 0x12)
+    && enemy.hp <= 1
+    && enemy.kind !== "boss";
+}
+
+function isSpawnSensorLike(enemy: EnemySlotSnapshot) {
+  return enemy.type === 0x02;
+}
+
+function isIgnoredEntityForDanger(enemy: EnemySlotSnapshot) {
+  return isRewardTarget(enemy) || isSpawnSensorLike(enemy) || (!enemy.threat && enemy.hp <= 0);
+}
+
+function isEnvironmentalTarget(enemy: EnemySlotSnapshot) {
+  return !isIgnoredEntityForDanger(enemy) && (enemy.fixed || enemy.hp > 1 || enemy.kind === "durable");
+}
+
+function isDynamicThreat(enemy: EnemySlotSnapshot) {
+  return !isIgnoredEntityForDanger(enemy) && !isEnvironmentalTarget(enemy);
+}
+
+function isTurretThreat(enemy: EnemySlotSnapshot) {
+  return isEnvironmentalTarget(enemy)
+    && enemy.hp > 0
+    && !isProjectileLike(enemy);
+}
+
+function turretIsActionable(snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot) {
+  const dx = enemy.x - snapshot.playerX;
+  const dy = enemy.y - snapshot.playerY;
+  return dx >= -8
+    && dx <= 212
+    && dy >= -132
+    && dy <= 72;
+}
+
+function sortThreatsByPriority(snapshot: GameRamSnapshot, enemies: EnemySlotSnapshot[]) {
+  return enemies
+    .slice()
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      const aheadA = a.x >= snapshot.playerX - 12 ? 28 : 0;
+      const aheadB = b.x >= snapshot.playerX - 12 ? 28 : 0;
+      const fixedA = isTurretThreat(a) ? 48 : 0;
+      const fixedB = isTurretThreat(b) ? 48 : 0;
+      const scoreA = fixedA + aheadA + (a.priority * 36) + (a.hp * 10) - distanceA;
+      const scoreB = fixedB + aheadB + (b.priority * 36) + (b.hp * 10) - distanceB;
+      return scoreB - scoreA;
+    });
+}
+
+function buildThreatPool(snapshot: GameRamSnapshot): ThreatPoolSnapshot {
+  const active = snapshot.enemies.filter((enemy) => !isIgnoredEntityForDanger(enemy));
+  const turrets = sortThreatsByPriority(snapshot, active.filter(isTurretThreat));
+  const actionableTurrets = sortThreatsByPriority(snapshot, turrets.filter((enemy) => turretIsActionable(snapshot, enemy)));
+  const projectiles = sortThreatsByPriority(snapshot, active.filter(isProjectileLike));
+  const dynamicThreats = sortThreatsByPriority(snapshot, active.filter((enemy) => isDynamicThreat(enemy) && !isProjectileLike(enemy)));
+  const rewards = snapshot.enemies.filter(isRewardTarget);
+  const primaryTurret = actionableTurrets[0] ?? null;
+  const primaryThreat = primaryTurret ?? projectiles[0] ?? dynamicThreats[0] ?? null;
+
+  return {
+    active,
+    turrets,
+    actionableTurrets,
+    dynamicThreats,
+    projectiles,
+    rewards,
+    primaryTurret,
+    primaryThreat,
+    combatReadiness: turrets.length > 0 || projectiles.length > 0 || dynamicThreats.length > 0
+  };
+}
+
+function projectedCollisionRisk(snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot, frames = 30) {
+  if (isIgnoredEntityForDanger(enemy)) return false;
+  if (isEnvironmentalTarget(enemy)) {
+    return enemy.x >= snapshot.playerX - 18
+      && enemy.x <= snapshot.playerX + 112
+      && Math.abs(enemy.y - snapshot.playerY) <= 52;
+  }
+
+  const hitboxX = 18;
+  const hitboxY = 28;
+  const step = 6;
+  for (let frame = 0; frame <= frames; frame += step) {
+    const futureX = enemy.x + enemy.vx * frame;
+    const futureY = enemy.y + enemy.vy * frame;
+    if (
+      futureX >= snapshot.playerX - hitboxX
+      && futureX <= snapshot.playerX + hitboxX
+      && futureY >= snapshot.playerY - hitboxY
+      && futureY <= snapshot.playerY + hitboxY
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function horizontalDecision(next: ButtonState, playerX: number, targetX: number, deadZone = 12) {
@@ -1726,7 +2957,7 @@ function horizontalDecision(next: ButtonState, playerX: number, targetX: number,
 
 function findNearestThreat(snapshot: GameRamSnapshot, predicate?: (enemy: EnemySlotSnapshot) => boolean) {
   return snapshot.enemies
-    .filter((enemy) => enemy.threat && (!predicate || predicate(enemy)))
+    .filter((enemy) => enemy.threat && !isIgnoredEntityForDanger(enemy) && (!predicate || predicate(enemy)))
     .sort((a, b) => {
       const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
       const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
@@ -1740,20 +2971,70 @@ function isProjectileLike(enemy: EnemySlotSnapshot) {
 
 function findBestThreat(snapshot: GameRamSnapshot, predicate?: (enemy: EnemySlotSnapshot) => boolean) {
   return snapshot.enemies
-    .filter((enemy) => enemy.threat && (!predicate || predicate(enemy)))
+    .filter((enemy) => enemy.threat && !isIgnoredEntityForDanger(enemy) && (!predicate || predicate(enemy)))
     .sort((a, b) => {
       const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
       const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
-      const scoreA = (a.priority * 36) + (a.hp * 10) - distanceA + (a.x >= snapshot.playerX - 12 ? 14 : 0);
-      const scoreB = (b.priority * 36) + (b.hp * 10) - distanceB + (b.x >= snapshot.playerX - 12 ? 14 : 0);
+      const environmentA = isEnvironmentalTarget(a) ? 32 : 0;
+      const environmentB = isEnvironmentalTarget(b) ? 32 : 0;
+      const scoreA = environmentA + (a.priority * 36) + (a.hp * 10) - distanceA + (a.x >= snapshot.playerX - 12 ? 14 : 0);
+      const scoreB = environmentB + (b.priority * 36) + (b.hp * 10) - distanceB + (b.x >= snapshot.playerX - 12 ? 14 : 0);
       return scoreB - scoreA;
     })[0] ?? null;
 }
 
 function enemyIsShootableFromPlayer(snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot, range = 150) {
+  const dy = enemy.y - snapshot.playerY;
   return enemy.x >= snapshot.playerX - 18
     && enemy.x - snapshot.playerX <= range
-    && Math.abs(enemy.y - snapshot.playerY) <= 96;
+    && dy >= -70
+    && dy <= 48;
+}
+
+// Precision fire remains a deferred experiment; the active survival policy uses suppressive fire.
+function aimingVectorForButtons(buttons: ButtonState) {
+  const x = buttons.left ? -1 : 1;
+  const y = buttons.up ? -1 : buttons.down ? 1 : 0;
+  return { x, y };
+}
+
+function predictedShotCanHitEnemy(snapshot: GameRamSnapshot, buttons: ButtonState, enemy: EnemySlotSnapshot) {
+  if (enemy.x < snapshot.playerX - 12 || enemy.x > snapshot.playerX + 208) return false;
+  const vector = aimingVectorForButtons(buttons);
+  const originX = snapshot.playerX + (vector.x > 0 ? 10 : -10);
+  const originY = snapshot.playerY - 4;
+  const dx = enemy.x - originX;
+  const dy = enemy.y - originY;
+
+  if (vector.x > 0 && dx < -8) return false;
+  if (vector.x < 0 && dx > 8) return false;
+
+  const absDx = Math.abs(dx);
+  if (vector.y === 0) return Math.abs(dy) <= 18;
+
+  const predictedY = vector.y * absDx;
+  return Math.abs(dy - predictedY) <= (isEnvironmentalTarget(enemy) ? 34 : 24);
+}
+
+function predictedShotTarget(snapshot: GameRamSnapshot, buttons: ButtonState) {
+  return findBestThreat(snapshot, (enemy) => (
+    enemy.x >= snapshot.playerX - 12
+    && enemy.x <= snapshot.playerX + 208
+    && predictedShotCanHitEnemy(snapshot, buttons, enemy)
+  ));
+}
+
+function shouldFireForPlannedShot(snapshot: GameRamSnapshot, buttons: ButtonState) {
+  if (isBridgeJumpCommitWindow(snapshot)) return true;
+  if (predictedShotTarget(snapshot, buttons)) return true;
+  const horizon = buildStageOneHorizon(snapshot);
+  const target = horizon?.primary;
+  return Boolean(
+    target
+    && target.category !== "bridge"
+    && target.distance >= -20
+    && target.distance <= 160
+  );
 }
 
 function aimAtEnemy(next: ButtonState, snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot | null) {
@@ -1774,10 +3055,251 @@ function applyFireDecision(
   aimAtEnemy(next, snapshot, target);
 }
 
+function applyPulsedFireDecision(
+  next: ButtonState,
+  shouldFire: boolean,
+  snapshot: GameRamSnapshot,
+  target: EnemySlotSnapshot | null,
+  frame: number,
+  period = 8,
+  activeFrames = 3
+) {
+  if (!shouldFire) return;
+  aimAtEnemy(next, snapshot, target);
+  next.b = frame % period < activeFrames;
+}
+
+function applyThreatPoolAim(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  target: EnemySlotSnapshot,
+  grounded: boolean,
+  frame: number
+) {
+  const dx = target.x - snapshot.playerX;
+  const dy = target.y - snapshot.playerY;
+
+  next.left = false;
+  if (dx >= -8) next.right = true;
+  if (dx < -18 && !isTurretThreat(target)) {
+    next.left = true;
+    next.right = false;
+  }
+
+  if (dy < -28) {
+    next.up = true;
+    next.down = false;
+  } else if (dy > 30) {
+    next.down = true;
+    next.up = false;
+  }
+
+  next.b = pulseWindow(frame, 6, 3);
+
+  if (
+    grounded
+    && dy < -58
+    && dx > 18
+    && dx < 132
+    && frame % 42 < 10
+  ) {
+    next.a = true;
+  }
+}
+
+function applyThreatPoolCombat(
+  next: ButtonState,
+  threatPool: ThreatPoolSnapshot,
+  snapshot: GameRamSnapshot,
+  grounded: boolean,
+  frame: number
+) {
+  const target = threatPool.primaryTurret ?? threatPool.primaryThreat;
+  if (!target) return false;
+  applyThreatPoolAim(next, snapshot, target, grounded, frame);
+  return true;
+}
+
+function friendlyBulletCanNeutralizeThreat(snapshot: GameRamSnapshot, side: PlayerSide, enemy: EnemySlotSnapshot) {
+  if (isProjectileLike(enemy) || enemy.hp > 1) return false;
+  return snapshot.bullets.some((bullet) => (
+    bulletOwnerSide(bullet.owner) === side
+    && bullet.routine === 1
+    && bullet.bulletSlotCode !== 0
+    && bullet.x >= snapshot.playerX - 6
+    && bullet.x <= enemy.x + 18
+    && Math.abs(bullet.y - enemy.y) <= 14
+  ));
+}
+
+function currentFireCanNeutralizeThreat(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  side: PlayerSide,
+  enemy: EnemySlotSnapshot
+) {
+  if (isProjectileLike(enemy) || enemy.hp > 1) return false;
+  const closeDx = Math.abs(enemy.x - snapshot.playerX);
+  const closeDy = Math.abs(enemy.y - snapshot.playerY);
+  if (closeDx <= 24 && closeDy <= 34) return false;
+  if (!next.b || !enemyIsShootableFromPlayer(snapshot, enemy, 132)) return false;
+  if (next.up || next.down) {
+    const dx = Math.abs(enemy.x - snapshot.playerX);
+    const dy = enemy.y - snapshot.playerY;
+    if (next.up && dx <= 26 && dy <= 8 && dy >= -96) return true;
+    if (next.down && dx <= 26 && dy >= -8 && dy <= 96) return true;
+  }
+  if (enemy.x < snapshot.playerX + 10 || enemy.x > snapshot.playerX + 128) return false;
+  return friendlyBulletCanNeutralizeThreat(snapshot, side, enemy)
+    || Math.abs(enemy.y - snapshot.playerY) <= 42
+    || next.up
+    || next.down;
+}
+
+function findRewardShotTarget(snapshot: GameRamSnapshot) {
+  return snapshot.enemies
+    .filter((enemy) => (
+      isRewardTarget(enemy)
+      && enemy.x >= snapshot.playerX - 8
+      && enemy.x <= snapshot.playerX + 196
+      && enemy.y >= snapshot.playerY - 132
+      && enemy.y <= snapshot.playerY + 22
+    ))
+    .sort((a, b) => (
+      Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY)
+    ) - (
+      Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY)
+    ))[0] ?? null;
+}
+
+function findSuppressiveFireTarget(snapshot: GameRamSnapshot, threatPool = buildThreatPool(snapshot)) {
+  const reward = findRewardShotTarget(snapshot);
+  if (reward) return reward;
+  if (threatPool.primaryTurret) return threatPool.primaryTurret;
+  return findBestThreat(snapshot, (enemy) => (
+    enemyIsShootableFromPlayer(snapshot, enemy, isEnvironmentalTarget(enemy) ? 190 : 142)
+  ));
+}
+
+function shouldSuppressiveFire(snapshot: GameRamSnapshot, target: EnemySlotSnapshot | null, frame: number) {
+  if (!target) return false;
+  if (isRewardTarget(target) || isEnvironmentalTarget(target)) return true;
+  if (projectedCollisionRisk(snapshot, target, 24)) return true;
+  if (enemyIsShootableFromPlayer(snapshot, target, 150)) return true;
+  return frame % 10 < 4;
+}
+
+function shouldUseHorizonObjective(
+  strategyKey: AiStrategyKey,
+  horizon: StageOneHorizonSnapshot | null,
+  threatPool: ThreatPoolSnapshot,
+  nearestShootable: EnemySlotSnapshot | null
+) {
+  const target = horizon?.primary;
+  if (!target || threatPool.primaryTurret) return false;
+  if (target.category === "bridge") return target.distance <= 130;
+  if (target.category === "reward") {
+    return target.distance <= 190
+      && (strategyKey === "survival-v0" || strategyKey === "combat-v0" || strategyKey === "loot-v0" || strategyKey === "personal-v0");
+  }
+  if (target.category === "fixed" || target.category === "boss") return target.distance <= 230;
+  if (target.category === "sniper") return target.distance <= 155 && !nearestShootable;
+  return false;
+}
+
+function applyHorizonAim(next: ButtonState, snapshot: GameRamSnapshot, target: StageOneHorizonTarget) {
+  if (target.aim === "up") {
+    next.up = true;
+    next.down = false;
+    return;
+  }
+  if (target.aim === "down") {
+    next.down = true;
+    next.up = false;
+    return;
+  }
+  if (target.aim === "level") {
+    next.up = false;
+    next.down = false;
+    return;
+  }
+
+  const dy = target.y - snapshot.playerY;
+  if (dy < -28) {
+    next.up = true;
+    next.down = false;
+  } else if (dy > 30) {
+    next.down = true;
+    next.up = false;
+  }
+}
+
+function applyHorizonObjectiveButtons(
+  next: ButtonState,
+  strategyKey: AiStrategyKey,
+  snapshot: GameRamSnapshot,
+  horizon: StageOneHorizonSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  const target = horizon.primary;
+  if (!target) return false;
+
+  const isFixedTarget = target.category === "fixed" || target.category === "boss";
+  const isRewardObjective = target.category === "reward";
+  const isBridgeObjective = target.category === "bridge";
+  const isSniperObjective = target.category === "sniper";
+
+  next.left = false;
+  next.right = true;
+  next.b = pulseWindow(frame, 6, 3);
+  applyHorizonAim(next, snapshot, target);
+
+  if (nearestShootable && !isBridgeObjective) {
+    applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, nearestShootable, frame), snapshot, nearestShootable, frame, 7, 4);
+  }
+
+  if (isFixedTarget) {
+    if (target.distance <= 96) next.right = frame % 36 < 14;
+    if (target.category === "boss" && snapshot.playerX > 150) {
+      next.right = false;
+      next.left = frame % 24 < 8;
+    }
+    if (grounded && next.up && target.distance > 18 && target.distance < 120 && frame % 44 < 9) next.a = true;
+    return true;
+  }
+
+  if (isRewardObjective) {
+    if (strategyKey === "loot-v0" && target.distance < 88 && target.y < snapshot.playerY - 18 && grounded) next.a = true;
+    if (target.distance < 48 && target.aim === "down") next.right = frame % 24 < 14;
+    return true;
+  }
+
+  if (isBridgeObjective) {
+    next.b = frame % 8 < 5;
+    if (grounded && target.distance <= 32 && target.distance >= -56) next.a = true;
+    return true;
+  }
+
+  if (isSniperObjective) {
+    if (target.distance < 92 && target.aim === "down") {
+      next.right = frame % 26 < 14;
+      next.down = true;
+      next.up = false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
 function findImmediateDangerThreat(snapshot: GameRamSnapshot) {
   const bodyThreat = findNearestThreat(snapshot, (enemy) => (
-    Math.abs(enemy.x - snapshot.playerX) < 44
-    && Math.abs(enemy.y - snapshot.playerY) < 52
+    isDynamicThreat(enemy)
+    && projectedCollisionRisk(snapshot, enemy, 30)
+    && Math.abs(enemy.x - snapshot.playerX) < 62
+    && Math.abs(enemy.y - snapshot.playerY) < 56
   ));
   if (bodyThreat) return bodyThreat;
 
@@ -1785,7 +3307,7 @@ function findImmediateDangerThreat(snapshot: GameRamSnapshot) {
     isProjectileLike(enemy)
     && enemy.x >= snapshot.playerX - 44
     && enemy.x <= snapshot.playerX + 88
-    && Math.abs(enemy.y - snapshot.playerY) < 38
+    && projectedCollisionRisk(snapshot, enemy, 30)
   ));
 }
 
@@ -1794,13 +3316,13 @@ function hasImmediateDanger(snapshot: GameRamSnapshot) {
 }
 
 function playerIsDeathOrRespawn(side: PlayerSide, snapshot: GameRamSnapshot | null) {
-  if (!snapshot) return false;
+  if (!isPlausibleRamSnapshot(snapshot)) return false;
   const fields = getPlayerDeathFields(side, snapshot);
   return fields.active
     && (
       fields.state === PLAYER_DEAD_STATE
       || fields.deathFlag !== 0
-      || (side === "1P" && snapshot.p1State === 0 && !isLikelyGameMenu(snapshot))
+      || isNonMenuRespawnState(side, snapshot)
     );
 }
 
@@ -1837,7 +3359,7 @@ function classifyAiFsmState({
   if (!snapshot) return { state: "menu", reason: "waiting-ram" };
   if (playerIsDeathOrRespawn(side, snapshot)) return { state: "respawn", reason: "death-or-respawn" };
   if (!gameplayActive) {
-    if (isLikelyGameMenu(snapshot)) {
+    if (isStartableMenuState(snapshot)) {
       if (side === "1P" && twoPlayerRequested && !twoPlayerActive) {
         return { state: "menu", reason: "select-two-player" };
       }
@@ -1845,10 +3367,15 @@ function classifyAiFsmState({
     }
     return { state: "idle", reason: "game-not-active" };
   }
-  if (routeSegment?.action === "hold-fire" || (snapshot.level === STAGE_ONE_LEVEL_INDEX && snapshot.worldX >= 2180)) {
+  if (routeSegment?.action === "hold-fire" || (snapshot.level === STAGE_ONE_LEVEL_INDEX && snapshot.worldX >= STAGE_ONE_BOSS_WALL_WORLD_X)) {
     return { state: "boss", reason: routeSegment ? `route:${routeSegment.id}` : "boss-zone" };
   }
   if (findImmediateDangerThreat(snapshot)) return { state: "danger", reason: "immediate-threat" };
+  if (buildThreatPool(snapshot).primaryTurret) return { state: "attack", reason: "threat-pool-turret" };
+  const horizon = buildStageOneHorizon(snapshot);
+  if (horizon?.primary && horizon.combatReadiness && horizon.primary.distance <= 180) {
+    return { state: "attack", reason: `horizon:${horizon.primary.category}` };
+  }
   if (findBestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy))) {
     return { state: "attack", reason: "shootable-threat" };
   }
@@ -1866,7 +3393,7 @@ function transitionAiFsmState(previous: AiFsmState, next: Pick<AiFsmState, "stat
 
 function rewardTargetAhead(snapshot: GameRamSnapshot) {
   return snapshot.enemies
-    .filter((enemy) => enemy.threat && isRewardTarget(enemy) && enemy.x >= snapshot.playerX - 24)
+    .filter((enemy) => isRewardTarget(enemy) && enemy.x >= snapshot.playerX - 24)
     .sort((a, b) => Math.abs(a.x - snapshot.playerX) - Math.abs(b.x - snapshot.playerX))[0] ?? null;
 }
 
@@ -1955,7 +3482,7 @@ function applyRouteLoot(
     horizontalDecision(next, snapshot.playerX, rewardTarget.x, 10);
     applyFireDecision(
       next,
-      rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || shouldRouteFire(segment, nearestShootable, frame),
+      true,
       snapshot,
       rewardTarget
     );
@@ -2015,8 +3542,8 @@ function applyRouteSurvive(
     if (grounded) next.a = true;
     if (closeThreat.x < snapshot.playerX - 4) {
       next.right = true;
-    } else if (frame % 30 < 10) {
-      next.left = true;
+    } else {
+      next.right = frame % 24 < 8;
     }
     return;
   }
@@ -2031,9 +3558,963 @@ function applyRouteSurvive(
   if (shouldRouteJump(segment, grounded, immediateDanger, frame)) next.a = true;
 }
 
+function applyOpeningSurvivalRoute(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  const immediateThreat = findImmediateDangerThreat(snapshot);
+  const target = nearestShootable ?? immediateThreat;
+  next.right = true;
+  applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, target, frame), snapshot, target, frame, 6, 3);
+
+  if (
+    grounded
+    && immediateThreat
+    && Math.abs(immediateThreat.x - snapshot.playerX) < 28
+    && Math.abs(immediateThreat.y - snapshot.playerY) < 38
+  ) {
+    next.a = true;
+  }
+}
+
+function isStageOneBridgeRegion(snapshot: GameRamSnapshot) {
+  return snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.worldX >= 520
+    && snapshot.worldX <= 860;
+}
+
+function pulseWindow(frame: number, period: number, width: number) {
+  return ((frame % period) + period) % period < width;
+}
+
+function applyFirePulse(next: ButtonState, frame: number, period = 6, width = 3) {
+  next.b = pulseWindow(frame, period, width);
+}
+
+function matchesStageOnePatch(snapshot: GameRamSnapshot, patch: StageOneButtonPatch) {
+  if (snapshot.level !== STAGE_ONE_LEVEL_INDEX) return false;
+  if (snapshot.worldX < patch.worldStart || snapshot.worldX > patch.worldEnd) return false;
+  if (typeof patch.yMin === "number" && snapshot.playerY < patch.yMin) return false;
+  if (typeof patch.yMax === "number" && snapshot.playerY > patch.yMax) return false;
+  if (patch.jumpState === "grounded" && snapshot.jumpState !== 0) return false;
+  if (patch.jumpState === "airborne" && snapshot.jumpState === 0) return false;
+  return true;
+}
+
+function applyStageOneButtonPatch(next: ButtonState, patch: StageOneButtonPatch, frame: number) {
+  buttonNames.forEach((button) => {
+    const held = patch.hold[button];
+    if (typeof held === "boolean") next[button] = held;
+    const pulse = patch.pulse?.[button];
+    if (pulse) next[button] = pulseWindow(frame, pulse.period, pulse.width);
+  });
+}
+
+function applyStageOneBossApproachPatches(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  const patch = stageOneBossApproachPatches
+    .filter((candidate) => matchesStageOnePatch(snapshot, candidate))
+    .sort((a, b) => b.priority - a.priority)[0];
+  if (!patch) return false;
+  applyStageOneButtonPatch(next, patch, frame);
+  return true;
+}
+
+function isStageOneBossWallCombatRegion(snapshot: GameRamSnapshot | null) {
+  return Boolean(
+    snapshot
+    && snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.worldX >= STAGE_ONE_BOSS_WALL_WORLD_X
+    && !snapshot.bossDefeated
+  );
+}
+
+function findStageOneBossWallTarget(snapshot: GameRamSnapshot) {
+  const lowLaneBossTarget = snapshot.playerY >= 150 ? findBestThreat(snapshot, (enemy) => (
+    enemy.hp > 0
+    && (enemy.type === 0x11 || enemy.kind === "boss")
+    && enemy.x >= snapshot.playerX - 24
+    && enemy.x <= snapshot.playerX + 220
+    && enemy.y >= snapshot.playerY - 48
+    && enemy.y <= snapshot.playerY + 72
+  )) : null;
+  if (lowLaneBossTarget) return lowLaneBossTarget;
+
+  const lowLaneTurret = snapshot.playerY >= 150 ? findBestThreat(snapshot, (enemy) => (
+    isTurretThreat(enemy)
+    && enemy.hp > 0
+    && enemy.x >= snapshot.playerX - 72
+    && enemy.x <= snapshot.playerX + 180
+    && enemy.y >= snapshot.playerY - 8
+    && enemy.y <= snapshot.playerY + 72
+  )) : null;
+  if (lowLaneTurret) return lowLaneTurret;
+
+  const bossSideTurret = findBestThreat(snapshot, (enemy) => (
+    enemy.hp > 0
+    && enemy.type === 0x10
+    && enemy.x >= snapshot.playerX - 24
+    && enemy.x <= snapshot.playerX + 220
+    && enemy.y >= snapshot.playerY - 96
+    && enemy.y <= snapshot.playerY + 96
+  ));
+  if (bossSideTurret) return bossSideTurret;
+
+  const bossTarget = findBestThreat(snapshot, (enemy) => (
+    enemy.hp > 0
+    && (enemy.type === 0x11 || enemy.kind === "boss")
+    && enemy.x >= snapshot.playerX - 24
+    && enemy.x <= snapshot.playerX + 220
+    && enemy.y >= snapshot.playerY - 96
+    && enemy.y <= snapshot.playerY + 96
+  ));
+  if (bossTarget) return bossTarget;
+
+  return findBestThreat(snapshot, (enemy) => (
+    isTurretThreat(enemy)
+    && enemy.hp > 0
+    && enemy.x >= snapshot.playerX - 24
+    && enemy.x <= snapshot.playerX + 220
+    && enemy.y >= snapshot.playerY - 96
+    && enemy.y <= snapshot.playerY + 96
+  ));
+}
+
+function applyStageOneBossWallCombat(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  if (!isStageOneBossWallCombatRegion(snapshot)) return false;
+  const target = findStageOneBossWallTarget(snapshot);
+  const tooCloseToWall = (snapshot.worldX >= 3172 && snapshot.playerY < 150) || snapshot.playerX > 146;
+  const needsSmallAdvance = snapshot.worldX < 3068 || snapshot.playerX < 116;
+  const dx = target ? target.x - snapshot.playerX : 0;
+  const dy = target ? target.y - snapshot.playerY : 0;
+
+  next.a = false;
+  next.b = pulseWindow(frame, 6, 3);
+  next.left = false;
+  next.right = false;
+  next.up = false;
+  next.down = false;
+
+  const microAction = decideBossWallMicroAction(snapshot, frame);
+  if (microAction) {
+    buttonNames.forEach((button) => {
+      next[button] = microAction.buttons[button];
+    });
+    return true;
+  }
+
+  if (
+    snapshot.worldX >= 2968
+    && snapshot.worldX <= 2992
+    && snapshot.playerY <= 140
+    && snapshot.jumpState === 0
+  ) {
+    next.a = true;
+    next.right = true;
+    return true;
+  }
+
+  if (
+    snapshot.worldX >= 2968
+    && snapshot.worldX <= 3138
+    && snapshot.jumpState !== 0
+  ) {
+    next.right = true;
+    return true;
+  }
+
+  if (snapshot.worldX >= 2960 && snapshot.worldX < 3024 && snapshot.playerY < 160) {
+    next.right = true;
+    return true;
+  }
+
+  if (
+    snapshot.worldX >= 3012
+    && snapshot.worldX <= 3064
+    && snapshot.playerY >= 132
+    && snapshot.jumpState === 0
+  ) {
+    next.a = true;
+    next.right = true;
+    return true;
+  }
+
+  if (
+    snapshot.worldX >= 3024
+    && snapshot.worldX <= 3138
+    && snapshot.jumpState !== 0
+  ) {
+    next.right = true;
+    return true;
+  }
+
+  if (target) {
+    if (dy < -26) {
+      next.up = true;
+    } else if (dy > 28) {
+      next.down = true;
+    }
+  } else {
+    next.down = true;
+  }
+
+  if (
+    target
+    && snapshot.playerY >= 150
+    && (target.type === 0x11 || target.kind === "boss" || target.y >= snapshot.playerY + 8)
+  ) {
+    next.up = false;
+    next.down = true;
+    next.right = target.x > snapshot.playerX + 18 ? frame % 20 < 10 : false;
+  }
+
+  if (target?.type === 0x10 && Math.abs(dy) <= 20) {
+    next.up = false;
+    next.down = false;
+    next.left = false;
+    next.right = snapshot.playerX < 108 || (next.b && (snapshot.worldX < 3162 || snapshot.playerX < 112));
+    return true;
+  }
+
+  if (tooCloseToWall) {
+    next.left = frame % 22 < 8;
+  } else if (needsSmallAdvance) {
+    next.right = true;
+  } else if (target && target.x > snapshot.playerX + 10) {
+    next.right = dx > 64 ? frame % 30 < 12 : frame % 24 < 8;
+  }
+
+  if (next.left) next.right = false;
+  return true;
+}
+
+function isBridgeLowerRoute(snapshot: GameRamSnapshot) {
+  return snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.worldX >= 820
+    && snapshot.worldX <= 1120
+    && snapshot.playerY >= 196;
+}
+
+function isStageOneLowerRouteKillZone(snapshot: GameRamSnapshot) {
+  return snapshot.level === STAGE_ONE_LEVEL_INDEX
+    && snapshot.worldX >= 1080
+    && snapshot.worldX <= 1320
+    && snapshot.playerY >= 188;
+}
+
+function lowerRouteCloseThreatScore(snapshot: GameRamSnapshot, enemy: EnemySlotSnapshot) {
+  const dx = enemy.x - snapshot.playerX;
+  const dy = enemy.y - snapshot.playerY;
+  const distance = Math.abs(dx) + Math.abs(dy);
+  const contact = Math.abs(dx) <= 26 && Math.abs(dy) <= 30 ? 90 : 0;
+  const ahead = dx >= -4 ? 42 : 0;
+  const overhead = dy < 0 && Math.abs(dx) <= 34 ? 64 : 0;
+  const behindPenalty = dx < -20 ? 38 : 0;
+  return contact + ahead + overhead - behindPenalty - distance;
+}
+
+function findLowerRouteCloseBodyThreat(snapshot: GameRamSnapshot) {
+  if (!isStageOneLowerRouteKillZone(snapshot)) return null;
+  return snapshot.enemies
+    .filter((enemy) => (
+      enemy.threat
+      && isDynamicThreat(enemy)
+      && enemy.x >= snapshot.playerX - 36
+      && enemy.x <= snapshot.playerX + 58
+      && enemy.y >= snapshot.playerY - 82
+      && enemy.y <= snapshot.playerY + 40
+    ))
+    .sort((a, b) => lowerRouteCloseThreatScore(snapshot, b) - lowerRouteCloseThreatScore(snapshot, a))[0] ?? null;
+}
+
+function findLowerRouteTurret(snapshot: GameRamSnapshot) {
+  if (!isStageOneLowerRouteKillZone(snapshot)) return null;
+  return findBestThreat(snapshot, (enemy) => (
+    isTurretThreat(enemy)
+    && enemy.hp > 0
+    && enemy.x >= snapshot.playerX + 18
+    && enemy.x <= snapshot.playerX + 220
+    && enemy.y >= snapshot.playerY - 118
+    && enemy.y <= snapshot.playerY - 16
+  ));
+}
+
+function applyStageOneHighTurretStrafe(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 1628
+    || snapshot.worldX > 1685
+  ) {
+    return false;
+  }
+
+  next.a = false;
+  next.b = true;
+  next.up = snapshot.playerY >= 188;
+  next.down = snapshot.playerY < 188;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneLateLowerRouteGuard(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 1685
+    || snapshot.worldX > 1788
+    || snapshot.playerY < 188
+  ) {
+    return false;
+  }
+
+  const bodyBlocker = findBestThreat(snapshot, (enemy) => (
+    isDynamicThreat(enemy)
+    && enemy.x >= snapshot.playerX - 8
+    && enemy.x <= snapshot.playerX + 48
+    && enemy.y >= snapshot.playerY - 34
+    && enemy.y <= snapshot.playerY + 26
+  ));
+  if (bodyBlocker) {
+    const dy = bodyBlocker.y - snapshot.playerY;
+    next.a = false;
+    next.b = true;
+    next.up = false;
+    next.down = dy < -10;
+    next.left = false;
+    next.right = dy < -10;
+    return true;
+  }
+
+  const turret = findBestThreat(snapshot, (enemy) => (
+    isTurretThreat(enemy)
+    && enemy.hp > 0
+    && enemy.x >= snapshot.playerX - 72
+    && enemy.x <= snapshot.playerX + 190
+    && enemy.y < snapshot.playerY - 42
+  ));
+
+  next.a = false;
+  next.b = turret ? true : pulseWindow(frame, 8, 4);
+  next.up = Boolean(turret);
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneLatePitJump(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  const inJumpWindow = [
+    { start: 1916, end: 2055, minY: 120 },
+    { start: 2060, end: 2065, minY: 144 },
+    { start: 2078, end: 2138, minY: 160 },
+    { start: 2132, end: 2200, minY: 148 },
+    { start: 2264, end: 2332, minY: 132 }
+  ].some(({ start, end, minY }) => (
+    snapshot.worldX >= start
+    && snapshot.worldX <= end
+    && snapshot.playerY >= minY
+  ));
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || !inJumpWindow
+  ) {
+    return false;
+  }
+
+  const horizon = buildStageOneHorizon(snapshot);
+  if (stageOneSpreadTurretSuppressionPatch({ ...snapshot, horizon }, snapshot.jumpState === 0, frame)) {
+    return false;
+  }
+
+  const spreadJumpEdgePatch = stageOneSpreadJumpEdgePatch({ ...snapshot, horizon }, snapshot.jumpState === 0, frame);
+  if (spreadJumpEdgePatch) {
+    applyStageOneRewardTacticsPatch(next, spreadJumpEdgePatch);
+    return true;
+  }
+
+  const bossApproachJumpEdgePatch = stageOneBossApproachJumpEdgePatch({ ...snapshot, horizon }, snapshot.jumpState === 0, frame);
+  if (bossApproachJumpEdgePatch) {
+    applyStageOneRewardTacticsPatch(next, bossApproachJumpEdgePatch);
+    return true;
+  }
+
+  next.a = true;
+  next.b = pulseWindow(frame, 8, 4);
+  next.up = false;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachAirGuard(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2150
+    || snapshot.worldX > 2190
+    || snapshot.playerY >= 140
+  ) {
+    return false;
+  }
+
+  const lowerBodyThreat = findBestThreat(snapshot, (enemy) => (
+    isDynamicThreat(enemy)
+    && enemy.x >= snapshot.playerX - 8
+    && enemy.x <= snapshot.playerX + 68
+    && enemy.y >= snapshot.playerY + 18
+    && enemy.y <= snapshot.playerY + 58
+  ));
+  if (!lowerBodyThreat) return false;
+
+  next.b = true;
+  next.up = false;
+  next.down = true;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachGroundThreatPass(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2336
+    || snapshot.worldX > 2380
+    || snapshot.playerY < 188
+  ) {
+    return false;
+  }
+
+  const overheadThreat = findBestThreat(snapshot, (enemy) => (
+    enemy.threat
+    && isDynamicThreat(enemy)
+    && enemy.x >= snapshot.playerX - 18
+    && enemy.x <= snapshot.playerX + 46
+    && enemy.y >= snapshot.playerY - 74
+    && enemy.y <= snapshot.playerY - 14
+  ));
+  if (!overheadThreat) return false;
+
+  next.a = false;
+  next.b = true;
+  next.up = true;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachCloseBody(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  const patch = stageOneBossApproachCloseBodyPatch(snapshot, frame);
+  if (!patch) return false;
+  applyStageOneRewardTacticsPatch(next, patch);
+  return true;
+}
+
+function applyStageOneBossApproachPlatformJump(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const patch = stageOneBossApproachPlatformJumpPatch(snapshot, grounded, frame);
+  if (!patch) return false;
+  applyStageOneRewardTacticsPatch(next, patch);
+  return true;
+}
+
+function applyStageOneBossApproachHighEdgeJump(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const patch = stageOneBossApproachHighEdgeJumpPatch(snapshot, grounded, frame);
+  if (!patch) return false;
+  applyStageOneRewardTacticsPatch(next, patch);
+  return true;
+}
+
+function applyStageOneBossApproachHighAirCarry(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const patch = stageOneBossApproachHighAirCarryPatch(snapshot, grounded, frame);
+  if (!patch) return false;
+  applyStageOneRewardTacticsPatch(next, patch);
+  return true;
+}
+
+function applyStageOneBossApproachMidPlatformCapture(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const patch = stageOneBossApproachMidPlatformCapturePatch(snapshot, grounded, frame);
+  if (!patch) return false;
+  applyStageOneRewardTacticsPatch(next, patch);
+  return true;
+}
+
+function applyStageOneBossApproachLowerEdgeJump(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2366
+    || snapshot.worldX > 2406
+    || snapshot.playerY < 196
+    || snapshot.playerY > 224
+  ) {
+    return false;
+  }
+
+  next.a = true;
+  next.b = true;
+  next.up = true;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachUpperPlatformHold(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2418
+    || snapshot.worldX > 2492
+    || snapshot.playerY < 104
+    || snapshot.playerY > 188
+  ) {
+    return false;
+  }
+
+  next.a = false;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachUpperEdgeJump(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2450
+    || snapshot.worldX > 2462
+    || snapshot.playerY < 160
+    || snapshot.playerY > 178
+  ) {
+    return false;
+  }
+
+  next.a = true;
+  next.b = true;
+  next.up = false;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossApproachAirCarry(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2527
+    || snapshot.worldX > 2620
+    || snapshot.jumpState === 0
+    || snapshot.playerY < 96
+    || snapshot.playerY > 232
+  ) {
+    return false;
+  }
+
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyStageOneBossWallFinalJump(next: ButtonState, snapshot: GameRamSnapshot) {
+  if (
+    snapshot.level !== STAGE_ONE_LEVEL_INDEX
+    || snapshot.worldX < 2908
+    || snapshot.worldX > 2942
+    || snapshot.playerY < 160
+    || snapshot.playerY > 232
+    || snapshot.jumpState !== 0
+  ) {
+    return false;
+  }
+
+  next.a = true;
+  next.b = true;
+  next.up = false;
+  next.down = false;
+  next.left = false;
+  next.right = true;
+  return true;
+}
+
+function applyLowerRouteKillBox(next: ButtonState, snapshot: GameRamSnapshot, frame: number) {
+  if (snapshot.worldX >= 1200 && snapshot.worldX <= 1320 && snapshot.playerY >= 188) {
+    const turret = findLowerRouteTurret(snapshot);
+    next.a = false;
+    next.b = true;
+    next.up = Boolean(turret && turret.y < snapshot.playerY - 34);
+    next.down = false;
+    next.left = false;
+    next.right = true;
+    return true;
+  }
+
+  const closeThreat = findLowerRouteCloseBodyThreat(snapshot);
+  if (closeThreat) {
+    const dx = closeThreat.x - snapshot.playerX;
+    const dy = closeThreat.y - snapshot.playerY;
+    const overheadDrop = closeThreat.y < snapshot.playerY - 18 && Math.abs(dx) <= 24;
+    const contactRisk = Math.abs(dx) <= 26 && Math.abs(dy) <= 30;
+    const sameLaneAhead = dx > 0 && dx <= 58 && Math.abs(dy) <= 38;
+
+    next.a = false;
+    next.b = true;
+    next.up = !sameLaneAhead && !overheadDrop && !contactRisk && closeThreat.y < snapshot.playerY - 30;
+    next.down = closeThreat.y > snapshot.playerY + 26;
+    next.left = sameLaneAhead ? false : contactRisk ? dx >= 0 && snapshot.playerX > 112 : overheadDrop ? dx >= 0 && snapshot.playerX > 112 : dx < -8;
+    next.right = sameLaneAhead ? false : contactRisk ? dx < 0 : overheadDrop ? dx < 0 : dx > 34;
+    return true;
+  }
+
+  const turret = findLowerRouteTurret(snapshot);
+  if (!turret) return false;
+
+  const dx = turret.x - snapshot.playerX;
+  const incomingProjectile = findNearestThreat(snapshot, (enemy) => (
+    isProjectileLike(enemy)
+    && projectedCollisionRisk(snapshot, enemy, 18)
+  ));
+  next.a = false;
+  next.b = true;
+  next.left = !incomingProjectile && dx < 38 && pulseWindow(frame, 36, 8);
+  next.right = !incomingProjectile && dx > 72;
+  next.up = turret.y < snapshot.playerY - 26;
+  next.down = turret.y > snapshot.playerY + 32;
+  return true;
+}
+
+function shouldBridgeJump(snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const worldX = snapshot.worldX;
+  const releaseJumpWindows: Array<[number, number]> = [
+    [730, 775],
+    [836, 870],
+    [932, 952]
+  ];
+  if (releaseJumpWindows.some(([start, end]) => worldX >= start && worldX <= end)) return false;
+
+  const pressJumpWindows: Array<[number, number]> = [
+    [584, 616],
+    [704, 728],
+    [776, 835],
+    [871, 931],
+    [953, 990]
+  ];
+  if (pressJumpWindows.some(([start, end]) => worldX >= start && worldX <= end)) return true;
+  if (worldX >= 780 && worldX <= 1040 && snapshot.playerY >= 188) return true;
+
+  const broadBridgeCheckpoint = (
+    (snapshot.screen === 2 && snapshot.scroll >= 0x98 && snapshot.scroll <= 0xd8)
+    || (snapshot.screen === 3 && snapshot.scroll >= 0x30 && snapshot.scroll <= 0xc8)
+  );
+  if (broadBridgeCheckpoint) return pulseWindow(frame, 32, 12);
+
+  if (grounded && isBridgeLowerRoute(snapshot)) return pulseWindow(frame, 24, 10);
+  return false;
+}
+
+function isBridgeJumpCommitWindow(snapshot: GameRamSnapshot) {
+  if (snapshot.level !== STAGE_ONE_LEVEL_INDEX) return false;
+  return (snapshot.worldX >= 584 && snapshot.worldX <= 616)
+    || (snapshot.worldX >= 704 && snapshot.worldX <= 728)
+    || (snapshot.worldX >= 752 && snapshot.worldX <= 900)
+    || (snapshot.screen === 2 && snapshot.scroll >= 0x98 && snapshot.scroll <= 0xd8)
+    || (snapshot.screen === 3 && snapshot.scroll >= 0x30 && snapshot.scroll <= 0xc8);
+}
+
+function applyFirstWeaponCapsulePoint(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  frame: number
+) {
+  const reward = findRewardShotTarget(snapshot);
+  const target = reward ?? nearestShootable;
+  const forceUpShot = snapshot.worldX >= 320 && snapshot.worldX <= 395;
+  next.right = true;
+  next.left = false;
+  applyPulsedFireDecision(next, Boolean(target) || forceUpShot, snapshot, target, frame, 6, 4);
+  if (forceUpShot || (reward && reward.y < snapshot.playerY - 24)) {
+    next.up = true;
+    next.down = false;
+    next.b = frame % 5 < 4;
+  }
+}
+
+function applyBridgeJumpRoute(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  if (isBridgeLowerRoute(snapshot)) {
+    next.right = true;
+    next.left = false;
+    next.down = false;
+    next.up = false;
+    applyFirePulse(next, frame);
+    next.a = pulseWindow(frame, 24, 10);
+    return;
+  }
+
+  const projectileRisk = findNearestThreat(snapshot, (enemy) => (
+    isProjectileLike(enemy)
+    && projectedCollisionRisk(snapshot, enemy, 18)
+  ));
+  const target = nearestShootable ?? projectileRisk;
+  next.right = true;
+  next.left = false;
+  applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, target, frame) || frame % 18 < 4, snapshot, target, frame, 7, 4);
+  if (shouldBridgeJump(snapshot, grounded, frame) || (grounded && projectileRisk)) {
+    next.a = true;
+    next.right = true;
+    next.left = false;
+    next.down = false;
+  }
+}
+
+function applyFirstBridgeWeaponPoint(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  const reward = findRewardShotTarget(snapshot);
+  const target = reward ?? nearestShootable;
+  const bridgeApproachLowerShot = snapshot.worldX >= 392 && snapshot.worldX < 520;
+  const bridgeUpRightAimWindow = snapshot.worldX >= 532 && snapshot.worldX < 548;
+  const bridgeStationaryUpAimWindow = snapshot.worldX >= 548 && snapshot.worldX <= 562;
+  const bridgeAimWindow = bridgeUpRightAimWindow || bridgeStationaryUpAimWindow;
+  const bridgeLowerShotWindow = snapshot.worldX >= 568 && snapshot.worldX <= 620;
+  const bridgeLateLowerShotWindow = snapshot.worldX >= 668 && snapshot.worldX <= 688;
+  const forceLowerShot = bridgeLowerShotWindow || bridgeLateLowerShotWindow;
+  const forceWeaponShot = snapshot.worldX >= 500 && snapshot.worldX <= 690;
+  const stationaryAimRightPulse = bridgeStationaryUpAimWindow && frame % 30 < 8;
+  next.right = !bridgeAimWindow || bridgeUpRightAimWindow || stationaryAimRightPulse;
+  next.left = false;
+  applyPulsedFireDecision(next, Boolean(target) || forceWeaponShot, snapshot, target, frame, 6, 4);
+  if (bridgeApproachLowerShot) {
+    next.up = false;
+    next.down = true;
+    next.right = frame % 26 < 16;
+    applyFirePulse(next, frame, 6, 4);
+  } else if (forceLowerShot) {
+    next.up = false;
+    next.down = true;
+    next.right = true;
+    applyFirePulse(next, frame, 6, 4);
+  } else if (bridgeAimWindow || (reward && reward.y < snapshot.playerY - 24)) {
+    next.up = true;
+    next.down = false;
+    next.right = bridgeUpRightAimWindow || stationaryAimRightPulse;
+    applyFirePulse(next, frame, 6, 4);
+  }
+  if (shouldBridgeJump(snapshot, grounded, frame)) {
+    next.a = true;
+    next.right = true;
+    next.left = false;
+    next.down = false;
+  }
+}
+
+function isStageOneCriticalScriptWindow(snapshot: GameRamSnapshot) {
+  if (snapshot.level !== STAGE_ONE_LEVEL_INDEX) return false;
+  return isBridgeJumpCommitWindow(snapshot)
+    || (snapshot.worldX >= 392 && snapshot.worldX <= 520)
+    || (snapshot.worldX >= 532 && snapshot.worldX <= 620)
+    || (snapshot.worldX >= 668 && snapshot.worldX <= 688)
+    || (snapshot.worldX >= 1235 && snapshot.worldX <= 2100)
+    || (snapshot.worldX >= 2760 && snapshot.worldX <= 2860)
+    || isStageOneBossWallCombatRegion(snapshot);
+}
+
+function applyStageOneRewardTacticsPatch(next: ButtonState, patch: StageOneRewardButtonPatch) {
+  if (typeof patch.up === "boolean") next.up = patch.up;
+  if (typeof patch.down === "boolean") next.down = patch.down;
+  if (typeof patch.left === "boolean") next.left = patch.left;
+  if (typeof patch.right === "boolean") next.right = patch.right;
+  if (typeof patch.a === "boolean") next.a = patch.a;
+  if (typeof patch.b === "boolean") next.b = patch.b;
+}
+
+function applyMidFixedHpPoint(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  if (snapshot.worldX < 1120 && isBridgeLowerRoute(snapshot)) {
+    next.right = true;
+    next.left = false;
+    next.up = false;
+    next.down = false;
+    applyFirePulse(next, frame, 6, 4);
+    next.a = pulseWindow(frame, 18, 12);
+    return;
+  }
+
+  const horizon = buildStageOneHorizon(snapshot);
+  const mandatorySpreadGatePatch = stageOneMandatorySpreadGatePatch({
+    ...snapshot,
+    horizon
+  }, grounded, frame);
+  if (mandatorySpreadGatePatch) {
+    applyStageOneRewardTacticsPatch(next, mandatorySpreadGatePatch);
+    return;
+  }
+
+  const spreadTurretSuppressionPatch = stageOneSpreadTurretSuppressionPatch({
+    ...snapshot,
+    horizon
+  }, grounded, frame);
+  if (spreadTurretSuppressionPatch) {
+    applyStageOneRewardTacticsPatch(next, spreadTurretSuppressionPatch);
+    return;
+  }
+
+  const closeBodyThreatPatch = stageOneCloseBodyThreatPatch(snapshot, grounded, frame);
+  if (closeBodyThreatPatch) {
+    applyStageOneRewardTacticsPatch(next, closeBodyThreatPatch);
+    return;
+  }
+
+  const spreadExitJumpPatch = stageOneSpreadExitJumpPatch({
+    ...snapshot,
+    horizon
+  }, grounded, frame);
+  if (spreadExitJumpPatch) {
+    applyStageOneRewardTacticsPatch(next, spreadExitJumpPatch);
+    return;
+  }
+
+  const spreadRushPatch = stageOneSpreadRushPatch({
+    ...snapshot,
+    horizon
+  }, grounded, frame);
+  if (spreadRushPatch) {
+    applyStageOneRewardTacticsPatch(next, spreadRushPatch);
+    return;
+  }
+
+  const redTurretLowThreatPatch = stageOneRedTurretLowThreatPatch({
+    ...snapshot,
+    horizon
+  }, grounded, frame);
+  if (redTurretLowThreatPatch) {
+    applyStageOneRewardTacticsPatch(next, redTurretLowThreatPatch);
+    return;
+  }
+
+  const fallingThreatPatch = rewardStationFallingThreatPatch(snapshot, grounded, frame);
+  if (fallingThreatPatch) {
+    applyStageOneRewardTacticsPatch(next, fallingThreatPatch);
+    return;
+  }
+
+  const midTurretBreakoutPatch = midWeaponTurretBreakoutPatch({
+    horizon,
+    level: snapshot.level,
+    playerY: snapshot.playerY,
+    weapon: snapshot.weapon,
+    worldX: snapshot.worldX
+  }, grounded, frame);
+  if (midTurretBreakoutPatch) {
+    applyStageOneRewardTacticsPatch(next, midTurretBreakoutPatch);
+    return;
+  }
+
+  const rewardOverride = midFixedScriptRewardOverride(horizon);
+  if (rewardOverride) {
+    next.left = false;
+    next.right = rewardOverride.distance > 12;
+    applyHorizonAim(next, snapshot, rewardOverride);
+    next.b = frame % 5 < 4;
+    next.a = false;
+    return;
+  }
+  const fixedHorizonTarget = horizon?.fixedAhead ?? (
+    horizon?.primary && (horizon.primary.category === "fixed" || horizon.primary.category === "boss")
+      ? horizon.primary
+      : null
+  );
+  const fixedTarget = findBestThreat(snapshot, (enemy) => (
+    isEnvironmentalTarget(enemy)
+    && enemy.hp > 0
+    && enemy.x >= snapshot.playerX - 24
+    && enemy.x <= snapshot.playerX + 220
+    && Math.abs(enemy.y - snapshot.playerY) <= 132
+  ));
+  const target = fixedTarget ?? nearestShootable;
+
+  if (fixedTarget) {
+    const dx = fixedTarget.x - snapshot.playerX;
+    next.left = false;
+    next.right = dx > 118 || (dx > 18 && frame % 30 < 14);
+    applyPulsedFireDecision(next, true, snapshot, fixedTarget, frame, 6, 4);
+    next.a = false;
+    return;
+  }
+
+  if (fixedHorizonTarget && fixedHorizonTarget.distance >= 0 && fixedHorizonTarget.distance <= 220) {
+    next.left = false;
+    applyHorizonAim(next, snapshot, fixedHorizonTarget);
+    if (fixedHorizonTarget.distance > 118) {
+      next.right = true;
+    } else if (fixedHorizonTarget.distance > 44) {
+      next.right = frame % 30 < 14;
+    } else {
+      next.right = frame % 34 < 8;
+    }
+    applyFirePulse(next, frame, 6, 4);
+    next.a = false;
+    return;
+  }
+
+  if (!target) {
+    next.right = true;
+    return;
+  }
+
+  const dx = target.x - snapshot.playerX;
+  next.right = dx > 118 || (dx > 18 && frame % 30 < 14);
+  next.left = false;
+  applyPulsedFireDecision(next, true, snapshot, target, frame, 7, 4);
+  if (grounded && projectedCollisionRisk(snapshot, target, 18) && !isEnvironmentalTarget(target)) next.a = true;
+}
+
+function applyStageOneScriptAction(
+  next: ButtonState,
+  action: StageOneScriptAction,
+  snapshot: GameRamSnapshot,
+  nearestShootable: EnemySlotSnapshot | null,
+  grounded: boolean,
+  frame: number
+) {
+  if (action.mode === "first-weapon") {
+    applyFirstWeaponCapsulePoint(next, snapshot, nearestShootable, frame);
+    return true;
+  }
+  if (action.mode === "reward-shot") {
+    applyFirstBridgeWeaponPoint(next, snapshot, nearestShootable, grounded, frame);
+    return true;
+  }
+  if (action.mode === "bridge-jump") {
+    applyBridgeJumpRoute(next, snapshot, nearestShootable, grounded, frame);
+    return true;
+  }
+  if (action.mode === "fixed-hp-fire") {
+    applyMidFixedHpPoint(next, snapshot, nearestShootable, grounded, frame);
+    return true;
+  }
+  return false;
+}
+
 function applyTacticalSafetyLayer(
   next: ButtonState,
   strategyKey: AiStrategyKey,
+  side: PlayerSide,
   snapshot: GameRamSnapshot,
   grounded: boolean,
   frame: number
@@ -2042,20 +4523,86 @@ function applyTacticalSafetyLayer(
   if (!immediateThreat) return next;
 
   applyFireDecision(next, true, snapshot, immediateThreat);
-  if (grounded) next.a = true;
 
   const threatAhead = immediateThreat.x >= snapshot.playerX - 4;
   const threatBehind = immediateThreat.x < snapshot.playerX - 10;
   const canRetreat = strategyKey !== "speedrun-v0" || frame % 18 < 10;
+  const fireWillResolveThreat = currentFireCanNeutralizeThreat(next, snapshot, side, immediateThreat);
 
-  if (threatAhead && canRetreat) {
+  if (grounded && !fireWillResolveThreat) next.a = true;
+
+  if (threatAhead && canRetreat && !fireWillResolveThreat) {
     next.right = false;
-    next.left = true;
   } else if (threatBehind) {
     next.left = false;
     next.right = true;
   }
 
+  return next;
+}
+
+function findVisibleCombatTarget(snapshot: GameRamSnapshot) {
+  return findBestThreat(snapshot, (enemy) => (
+    enemy.x >= snapshot.playerX - 12
+    && enemy.x <= snapshot.playerX + 190
+    && Math.abs(enemy.y - snapshot.playerY) <= 132
+  ));
+}
+
+function applyCombatTriggerLayer(next: ButtonState, snapshot: GameRamSnapshot) {
+  const threatPool = buildThreatPool(snapshot);
+  const horizon = buildStageOneHorizon(snapshot);
+  const visibleTarget = threatPool.primaryTurret ?? findVisibleCombatTarget(snapshot);
+  const horizonTarget = horizon?.primary ?? null;
+  const horizonCombatTarget = Boolean(
+    horizonTarget
+    && horizonTarget.distance >= -28
+    && horizonTarget.distance <= 220
+    && horizonTarget.category !== "bridge"
+  );
+
+  if (visibleTarget && !next.up && !next.down) {
+    aimAtEnemy(next, snapshot, visibleTarget);
+  } else if (horizonTarget && horizonCombatTarget && !next.up && !next.down) {
+    applyHorizonAim(next, snapshot, horizonTarget);
+  }
+
+  const plannedFire = Boolean(
+    isBridgeJumpCommitWindow(snapshot)
+    || Boolean(visibleTarget)
+    || (!visibleTarget && horizonCombatTarget)
+    || next.b
+  );
+  next.b = next.b || (plannedFire && pulseWindow(snapshot.frame, 6, 3));
+
+  if (isBridgeJumpCommitWindow(snapshot)) {
+    next.right = true;
+    next.left = false;
+    next.down = false;
+  }
+
+  return next;
+}
+
+function applyScriptedProjectileSafetyLayer(
+  next: ButtonState,
+  snapshot: GameRamSnapshot,
+  grounded: boolean
+) {
+  const incomingProjectile = findNearestThreat(snapshot, (enemy) => (
+    isProjectileLike(enemy)
+    && enemy.x >= snapshot.playerX - 42
+    && enemy.x <= snapshot.playerX + 104
+    && projectedCollisionRisk(snapshot, enemy, 18)
+  ));
+  if (!incomingProjectile) return next;
+
+  applyFireDecision(next, true, snapshot, incomingProjectile);
+  if (grounded) next.a = true;
+  if (incomingProjectile.x < snapshot.playerX - 8) {
+    next.left = false;
+    next.right = true;
+  }
   return next;
 }
 
@@ -2076,6 +4623,109 @@ function applyCoopSpacing(next: ButtonState, actorSnapshot: GameRamSnapshot, tea
   return true;
 }
 
+function applyForcedAdvanceBias(next: ButtonState, loopExit: AiLoopExitState, snapshot: GameRamSnapshot) {
+  if (loopExit.forcedAdvanceBias <= 0.5) return next;
+  if (findLowerRouteCloseBodyThreat(snapshot) || findLowerRouteTurret(snapshot)) return next;
+  const bodyThreat = findImmediateDangerThreat(snapshot);
+  if (bodyThreat && !isProjectileLike(bodyThreat)) return next;
+  const incomingProjectile = findNearestThreat(snapshot, (enemy) => (
+    isProjectileLike(enemy)
+    && projectedCollisionRisk(snapshot, enemy, 18)
+  ));
+  if (!incomingProjectile) {
+    next.right = true;
+    next.left = false;
+  }
+  return next;
+}
+
+function finalizeTacticalButtons(
+  next: ButtonState,
+  strategyKey: AiStrategyKey,
+  side: PlayerSide,
+  snapshot: GameRamSnapshot,
+  grounded: boolean,
+  frame: number,
+  loopExit: AiLoopExitState
+) {
+  const tacticalButtons = applyTacticalSafetyLayer(applyCombatTriggerLayer(next, snapshot), strategyKey, side, snapshot, grounded, frame);
+  applyStageOneHighTurretStrafe(tacticalButtons, snapshot);
+  applyStageOneLateLowerRouteGuard(tacticalButtons, snapshot, frame);
+  applyStageOneLatePitJump(tacticalButtons, snapshot, frame);
+  applyStageOneBossApproachAirGuard(tacticalButtons, snapshot);
+  applyStageOneBossApproachGroundThreatPass(tacticalButtons, snapshot);
+  applyStageOneBossApproachHighEdgeJump(tacticalButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachPlatformJump(tacticalButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachCloseBody(tacticalButtons, snapshot, frame);
+  applyStageOneBossApproachHighAirCarry(tacticalButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachMidPlatformCapture(tacticalButtons, snapshot, grounded, frame);
+  applyLowerRouteKillBox(tacticalButtons, snapshot, frame);
+  applyStageOneBossApproachLowerEdgeJump(tacticalButtons, snapshot);
+  applyStageOneBossApproachUpperPlatformHold(tacticalButtons, snapshot);
+  applyStageOneBossApproachUpperEdgeJump(tacticalButtons, snapshot);
+  applyStageOneBossApproachAirCarry(tacticalButtons, snapshot);
+  applyStageOneBossApproachPatches(tacticalButtons, snapshot, frame);
+  applyStageOneBossWallFinalJump(tacticalButtons, snapshot);
+  applyStageOneBossWallCombat(tacticalButtons, snapshot, frame);
+  return applyForcedAdvanceBias(tacticalButtons, loopExit, snapshot);
+}
+
+function finalizeStageOneScriptButtons(
+  next: ButtonState,
+  strategyKey: AiStrategyKey,
+  side: PlayerSide,
+  snapshot: GameRamSnapshot,
+  grounded: boolean,
+  frame: number,
+  loopExit: AiLoopExitState
+) {
+  if (isStageOneCriticalScriptWindow(snapshot)) {
+    applyStageOneHighTurretStrafe(next, snapshot);
+    applyStageOneLateLowerRouteGuard(next, snapshot, frame);
+    applyStageOneLatePitJump(next, snapshot, frame);
+    applyStageOneBossApproachAirGuard(next, snapshot);
+    applyStageOneBossApproachGroundThreatPass(next, snapshot);
+    applyStageOneBossApproachHighEdgeJump(next, snapshot, grounded, frame);
+    applyStageOneBossApproachPlatformJump(next, snapshot, grounded, frame);
+    applyStageOneBossApproachCloseBody(next, snapshot, frame);
+    applyStageOneBossApproachHighAirCarry(next, snapshot, grounded, frame);
+    applyStageOneBossApproachMidPlatformCapture(next, snapshot, grounded, frame);
+    applyLowerRouteKillBox(next, snapshot, frame);
+    applyStageOneBossApproachLowerEdgeJump(next, snapshot);
+    applyStageOneBossApproachUpperPlatformHold(next, snapshot);
+    applyStageOneBossApproachUpperEdgeJump(next, snapshot);
+    applyStageOneBossApproachAirCarry(next, snapshot);
+    applyStageOneBossApproachPatches(next, snapshot, frame);
+    applyStageOneBossWallFinalJump(next, snapshot);
+    applyStageOneBossWallCombat(next, snapshot, frame);
+    return applyForcedAdvanceBias(next, loopExit, snapshot);
+  }
+  const scriptedButtons = applyScriptedProjectileSafetyLayer(
+    applyTacticalSafetyLayer(applyCombatTriggerLayer(next, snapshot), strategyKey, side, snapshot, grounded, frame),
+    snapshot,
+    grounded
+  );
+  applyStageOneHighTurretStrafe(scriptedButtons, snapshot);
+  applyStageOneLateLowerRouteGuard(scriptedButtons, snapshot, frame);
+  applyStageOneLatePitJump(scriptedButtons, snapshot, frame);
+  applyStageOneBossApproachAirGuard(scriptedButtons, snapshot);
+  applyStageOneBossApproachGroundThreatPass(scriptedButtons, snapshot);
+  applyStageOneBossApproachHighEdgeJump(scriptedButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachPlatformJump(scriptedButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachCloseBody(scriptedButtons, snapshot, frame);
+  applyStageOneBossApproachHighAirCarry(scriptedButtons, snapshot, grounded, frame);
+  applyStageOneBossApproachMidPlatformCapture(scriptedButtons, snapshot, grounded, frame);
+  applyLowerRouteKillBox(scriptedButtons, snapshot, frame);
+  applyStageOneBossApproachLowerEdgeJump(scriptedButtons, snapshot);
+  applyStageOneBossApproachUpperPlatformHold(scriptedButtons, snapshot);
+  applyStageOneBossApproachUpperEdgeJump(scriptedButtons, snapshot);
+  applyStageOneBossApproachAirCarry(scriptedButtons, snapshot);
+  applyStageOneBossApproachPatches(scriptedButtons, snapshot, frame);
+  applyStageOneBossWallFinalJump(scriptedButtons, snapshot);
+  applyStageOneBossWallCombat(scriptedButtons, snapshot, frame);
+  return applyForcedAdvanceBias(scriptedButtons, loopExit, snapshot);
+}
+
 function decideTacticalAiButtons(
   strategyKey: AiStrategyKey,
   side: PlayerSide,
@@ -2083,89 +4733,165 @@ function decideTacticalAiButtons(
   frame: number,
   strategyPlan: StageStrategyPlan | null,
   fsmState: AiFsmState,
-  teamSnapshot: GameRamSnapshot | null
+  teamSnapshot: GameRamSnapshot | null,
+  loopExit: AiLoopExitState,
+  bossWallPhaseState: BossWallPhaseState
 ) {
   const next = createButtonState();
   const immediateDanger = hasImmediateDanger(snapshot);
-  const nearestShootable = findBestThreat(snapshot, (enemy) => enemyIsShootableFromPlayer(snapshot, enemy));
+  const threatPool = buildThreatPool(snapshot);
+  const horizon = buildStageOneHorizon(snapshot);
+  const nearestShootable = findSuppressiveFireTarget(snapshot, threatPool);
   const rewardTarget = rewardTargetAhead(snapshot);
   const grounded = isGrounded(snapshot, side);
   const routeSegment = activeRouteSegmentForPlan(snapshot, strategyPlan);
+  const scriptAction = activeStageOneScriptAction(snapshot);
+
+  if (strategyKey === "survival-v0" && snapshot.level === STAGE_ONE_LEVEL_INDEX && snapshot.worldX < 320) {
+    applyOpeningSurvivalRoute(next, snapshot, nearestShootable, grounded, frame);
+    return applyForcedAdvanceBias(next, loopExit, snapshot);
+  }
+
+  const bossWallPhaseDecision = strategyKey === "survival-v0"
+    ? decideBossWallPhaseAction(snapshot, bossWallPhaseState, frame)
+    : null;
+  const bossWallPhaseOwnsControl = shouldBypassAiActionLockForBossWallPhase(snapshot, bossWallPhaseState);
+  if (bossWallPhaseOwnsControl && bossWallPhaseDecision) {
+    buttonNames.forEach((button) => {
+      next[button] = bossWallPhaseDecision.buttons[button];
+    });
+    return next;
+  }
+
+  const bossWallSafetyAction = strategyKey === "survival-v0"
+    ? decideBossWallMicroAction(snapshot, frame)
+    : null;
+  if (bossWallSafetyAction && shouldUseBossWallPhaseSafetyOverride(bossWallSafetyAction.reason)) {
+    const clampedButtons = applyBossWallPhaseContainmentClamp(snapshot, bossWallPhaseState, bossWallSafetyAction.buttons);
+    buttonNames.forEach((button) => {
+      next[button] = clampedButtons[button];
+    });
+    return next;
+  }
+
+  if (bossWallPhaseDecision) {
+    buttonNames.forEach((button) => {
+      next[button] = bossWallPhaseDecision.buttons[button];
+    });
+    return next;
+  }
+
+  const mandatorySpreadGatePatch = strategyKey === "survival-v0"
+    ? stageOneMandatorySpreadGatePatch({
+      ...snapshot,
+      horizon
+    }, grounded, frame)
+    : null;
+  if (mandatorySpreadGatePatch) {
+    applyStageOneRewardTacticsPatch(next, mandatorySpreadGatePatch);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
+  }
+
+  if (strategyKey === "survival-v0" && scriptAction) {
+    applyStageOneScriptAction(next, scriptAction, snapshot, nearestShootable, grounded, frame);
+    return finalizeStageOneScriptButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
+  }
 
   if (fsmState.state === "boss") {
     applyRouteHoldFire(next, routeSegment, snapshot, immediateDanger, grounded, frame);
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
   if (fsmState.state === "danger") {
     applyRouteSurvive(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
+  }
+
+  if (threatPool.primaryTurret && (strategyKey === "survival-v0" || strategyKey === "combat-v0" || fsmState.reason === "threat-pool-turret")) {
+    applyThreatPoolCombat(next, threatPool, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
+  }
+
+  if (horizon && shouldUseHorizonObjective(strategyKey, horizon, threatPool, nearestShootable)) {
+    applyHorizonObjectiveButtons(next, strategyKey, snapshot, horizon, nearestShootable, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
+  }
+
+  if (fsmState.state === "attack" && nearestShootable) {
+    if (isTurretThreat(nearestShootable)) {
+      applyThreatPoolAim(next, snapshot, nearestShootable, grounded, frame);
+    } else {
+      applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, nearestShootable, frame), snapshot, nearestShootable, frame);
+      if (nearestShootable.x > snapshot.playerX + 132) next.right = true;
+      if (nearestShootable.x < snapshot.playerX - 12) next.left = true;
+    }
+    return applyForcedAdvanceBias(next, loopExit, snapshot);
   }
 
   if (routeSegment) {
     if (routeSegment.action === "advance") {
       applyRouteAdvance(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (routeSegment.action === "cautious") {
       applyRouteCautious(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (routeSegment.action === "hold-fire") {
       applyRouteHoldFire(next, routeSegment, snapshot, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (routeSegment.action === "loot") {
       applyRouteLoot(next, routeSegment, snapshot, rewardTarget, nearestShootable, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (routeSegment.action === "guard") {
       applyRouteGuard(next, routeSegment, snapshot, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (routeSegment.action === "survive") {
       applyRouteSurvive(next, routeSegment, snapshot, nearestShootable, immediateDanger, grounded, frame);
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
   }
 
   if (strategyKey === "survival-v0") {
     applyRouteSurvive(next, null, snapshot, nearestShootable, immediateDanger, grounded, frame);
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
   if (strategyKey === "speedrun-v0" || strategyKey === "rules-v0") {
     next.right = true;
-    applyFireDecision(next, Boolean(nearestShootable) || frame % 14 < 5, snapshot, nearestShootable);
+    applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, nearestShootable, frame), snapshot, nearestShootable, frame, 10, 3);
     if (grounded && (immediateDanger || frame % 170 < 8)) next.a = true;
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
   if (strategyKey === "combat-v0") {
     if (nearestShootable) {
-      applyFireDecision(next, true, snapshot, nearestShootable);
+      applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, nearestShootable, frame), snapshot, nearestShootable, frame, 8, 4);
       if (nearestShootable.x > snapshot.playerX + 96) next.right = true;
       if (nearestShootable.x < snapshot.playerX - 12) next.left = true;
       if (grounded && immediateDanger) next.a = true;
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     next.right = true;
-    applyFireDecision(next, frame % 18 < 6, snapshot, nearestShootable);
+    applyPulsedFireDecision(next, frame % 24 < 3, snapshot, nearestShootable, frame, 12, 2);
     if (grounded && immediateDanger) next.a = true;
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
   if (strategyKey === "loot-v0") {
     if (rewardTarget) {
       horizontalDecision(next, snapshot.playerX, rewardTarget.x, 10);
-      applyFireDecision(next, rewardTarget.type === 0x02 || rewardTarget.type === 0x03 || frame % 12 < 6, snapshot, rewardTarget);
+      applyFireDecision(next, true, snapshot, rewardTarget);
       if (grounded && rewardTarget.y < snapshot.playerY - 20 && Math.abs(rewardTarget.x - snapshot.playerX) < 52) next.a = true;
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     next.right = true;
-    applyFireDecision(next, Boolean(nearestShootable) || frame % 20 < 5, snapshot, nearestShootable);
+    applyPulsedFireDecision(next, shouldSuppressiveFire(snapshot, nearestShootable, frame), snapshot, nearestShootable, frame, 10, 3);
     if (grounded && immediateDanger) next.a = true;
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
   if (strategyKey === "guard-v0" || strategyKey === "follow-test") {
@@ -2180,20 +4906,20 @@ function decideTacticalAiButtons(
       if (guardedThreat.x < snapshot.playerX - 18) next.left = true;
       if (side === "2P" && teamSnapshot) applyCoopSpacing(next, snapshot, teamSnapshot, frame);
       if (grounded && immediateDanger) next.a = true;
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     if (side === "2P" && teamSnapshot && applyCoopSpacing(next, snapshot, teamSnapshot, frame)) {
       applyFireDecision(next, frame % 22 < 6, snapshot, null);
       if (grounded && immediateDanger) next.a = true;
-      return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+      return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
     }
     next.right = frame % 36 < 12;
     applyFireDecision(next, frame % 18 < 6, snapshot, guardedThreat);
     if (grounded && immediateDanger) next.a = true;
-    return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+    return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
   }
 
-  return applyTacticalSafetyLayer(next, strategyKey, snapshot, grounded, frame);
+  return finalizeTacticalButtons(next, strategyKey, side, snapshot, grounded, frame, loopExit);
 }
 
 function decideAiButtons({
@@ -2209,7 +4935,9 @@ function decideAiButtons({
   mirrorButtons,
   frame,
   fsmState,
-  teamSnapshot
+  teamSnapshot,
+  loopExit,
+  bossWallPhaseState
 }: {
   side: PlayerSide;
   mode: ControlMode;
@@ -2224,6 +4952,8 @@ function decideAiButtons({
   frame: number;
   fsmState: AiFsmState;
   teamSnapshot: GameRamSnapshot | null;
+  loopExit: AiLoopExitState;
+  bossWallPhaseState: BossWallPhaseState;
 }) {
   const next = createButtonState();
   if (mode === "human" || strategyKey === "off" || strategyKey === "placeholder") return next;
@@ -2236,18 +4966,22 @@ function decideAiButtons({
 
   if (!snapshot || !gameplayActive) {
     if (isDeathOrRespawnTransition(snapshot)) return next;
-    if (snapshot && !isLikelyGameMenu(snapshot)) return next;
+    if (isLikelyAttractDemo(snapshot, frame)) {
+      next.start = frame % 30 < 18;
+      return next;
+    }
+    if (snapshot && !isStartableMenuState(snapshot)) return next;
     if (side === "1P" && twoPlayerRequested && !twoPlayerActive) {
       const phase = frame % 180;
       next.select = phase >= 20 && phase < 48;
       next.start = phase >= 72 && phase < 96;
       return next;
     }
-    next.start = frame % 120 < 24;
+    next.start = frame < 420 ? frame % 30 < 18 : frame % 90 < 24;
     return next;
   }
 
-  return decideTacticalAiButtons(strategyKey, side, snapshot, frame, strategyPlan, fsmState, teamSnapshot);
+  return decideTacticalAiButtons(strategyKey, side, snapshot, frame, strategyPlan, fsmState, teamSnapshot, loopExit, bossWallPhaseState);
 }
 
 function aiStrategyWritesInput(strategyKey: AiStrategyKey) {
@@ -2307,6 +5041,11 @@ function countBulletsForOwner(bullets: PlayerBulletSnapshot[], owner: number) {
 
 function rewardCount(enemies: EnemySlotSnapshot[]) {
   return enemies.filter(isRewardTarget).length;
+}
+
+function threatPoolTargetLabel(enemy: EnemySlotSnapshot | null) {
+  if (!enemy) return "none";
+  return `slot${enemy.slot}:type${formatByte(enemy.type)}@${enemy.x},${enemy.y}/hp${enemy.hp}`;
 }
 
 function routePlanSummary(strategyKey: AiStrategyKey, plans: LoadedStrategyPlans) {
@@ -2452,21 +5191,29 @@ function buildDataStream(
   runtimeStatus: RuntimeStatus,
   strategyPlans: LoadedStrategyPlans,
   actionLock: AiActionLockState,
-  fsmState: AiFsmState
+  fsmState: AiFsmState,
+  loopExit: AiLoopExitState,
+  buttons: ButtonState
 ) {
   const aiControlActive = mode !== "human" && aiStrategyWritesInput(strategyKey);
   const inputAllowed = aiControlActive
     && (side === "1P" || Boolean(ramSnapshot?.twoPlayerActive));
   const streamSnapshot = tacticalSnapshotForSide(ramSnapshot, side);
   const route = routeLineForStrategy(strategyKey, streamSnapshot, strategyPlans);
+  const scriptAction = activeStageOneScriptAction(streamSnapshot);
+  const threatPool = streamSnapshot ? buildThreatPool(streamSnapshot) : null;
+  const horizon = buildStageOneHorizon(streamSnapshot);
   const lines = [
     `${side}.mode=${mode}`,
     `${side}.strategy=${strategyKey}`,
     `${side}.lastInput=${lastInput}`,
+    `${side}.finalButtons=${activeButtonLabel(buttons)}`,
     `runtime.status=${runtimeStatus}`,
     `ai.behavior=${aiStrategyBehaviorTag(strategyKey)}`,
     `route.segment=${route.segment}`,
     `route.action=${route.action}`,
+    `script.action=${scriptAction?.id ?? "none"}`,
+    `script.mode=${scriptAction?.mode ?? "none"}`,
     `ai.write=${inputAllowed ? "enabled" : "idle"}`,
     `twoPlayer.active=${ramSnapshot?.twoPlayerActive ? "true" : "false"}`,
     `ram.schema=${ramSnapshot ? "active" : "pending"}`,
@@ -2474,35 +5221,113 @@ function buildDataStream(
     `fsm.state=${aiControlActive ? fsmState.state : "idle"}`,
     `fsm.reason=${aiControlActive ? fsmState.reason : "input-disabled"}`,
     `fsm.sinceFrame=${aiControlActive ? fsmState.sinceFrame : 0}`,
-    `action.lock=${inputAllowed ? aiActionLockLabel(actionLock) : "idle"}`
+    `action.lock=${inputAllowed ? aiActionLockLabel(actionLock) : "idle"}`,
+    `loop.exit=${aiControlActive ? aiLoopExitLabel(loopExit) : "idle"}`,
+    `loop.bias=${aiControlActive ? loopExit.forcedAdvanceBias.toFixed(2) : "0.00"}`,
+    `threat.pool=${threatPool ? `active:${threatPool.active.length}/turret:${threatPool.turrets.length}/dyn:${threatPool.dynamicThreats.length}/proj:${threatPool.projectiles.length}` : "pending"}`,
+    `threat.readiness=${threatPool?.combatReadiness ? "armed" : "idle"}`,
+    `threat.primary=${threatPool ? threatPoolTargetLabel(threatPool.primaryTurret ?? threatPool.primaryThreat) : "pending"}`,
+    `horizon.next=${horizon ? horizonTargetLabel(horizon.primary) : "pending"}`,
+    `horizon.category=${horizon?.primary ? horizonCategoryLabel(horizon.primary.category) : "none"}`,
+    `horizon.near=${horizon ? `${horizon.near.length}/${horizon.upcoming.length}` : "pending"}`
   ];
   if (ramSnapshot && streamSnapshot) {
     lines.splice(4, 0, `ram.level=${ramSnapshot.level}`);
     lines.splice(5, 0, `ram.screen=${ramSnapshot.screen}`);
-    lines.splice(6, 0, `ram.worldX=${streamSnapshot.worldX}`);
-    lines.splice(7, 0, `ram.playerX=${streamSnapshot.playerX}`);
-    lines.splice(8, 0, `ram.playerY=${streamSnapshot.playerY}`);
-    lines.splice(9, 0, `ram.enemies=${ramSnapshot.enemies.length}`);
-    lines.splice(10, 0, `ram.playerMode=${ramSnapshot.playerMode}`);
-    lines.splice(11, 0, `ram.modeAlt=${ramSnapshot.playerModeAlt}`);
-    lines.splice(12, 0, `ram.bullets=${ramSnapshot.bullets.length}`);
+    lines.splice(6, 0, `ram.frame=${streamSnapshot.frame}`);
+    lines.splice(7, 0, `ram.worldX=${streamSnapshot.worldX}`);
+    lines.splice(8, 0, `ram.playerX=${streamSnapshot.playerX}`);
+    lines.splice(9, 0, `ram.playerY=${streamSnapshot.playerY}`);
+    lines.splice(10, 0, `ram.enemies=${ramSnapshot.enemies.length}`);
+    lines.splice(11, 0, `ram.playerMode=${ramSnapshot.playerMode}`);
+    lines.splice(12, 0, `ram.modeAlt=${ramSnapshot.playerModeAlt}`);
+    lines.splice(13, 0, `ram.bullets=${ramSnapshot.bullets.length}`);
     if (side === "1P") {
-      lines.splice(13, 0, `p1.score=${ramSnapshot.p1Score}`);
-      lines.splice(14, 0, `p1.weapon=${ramSnapshot.weapon}`);
-      lines.splice(15, 0, `p1.state=${ramSnapshot.p1State}`);
-      lines.splice(16, 0, `p1.deathFlag=${ramSnapshot.deathFlag}`);
+      lines.splice(14, 0, `p1.score=${ramSnapshot.p1Score}`);
+      lines.splice(15, 0, `p1.weapon=${ramSnapshot.weapon}`);
+      lines.splice(16, 0, `p1.state=${ramSnapshot.p1State}`);
+      lines.splice(17, 0, `p1.deathFlag=${ramSnapshot.deathFlag}`);
     } else {
-      lines.splice(13, 0, `p2.score=${ramSnapshot.p2Score}`);
-      lines.splice(14, 0, `p2.weapon=${ramSnapshot.p2Weapon}`);
-      lines.splice(15, 0, `p2.state=${ramSnapshot.p2State}`);
-      lines.splice(16, 0, `p2.deathFlag=${ramSnapshot.p2DeathFlag}`);
-      lines.splice(17, 0, `p2.gameOver=${ramSnapshot.p2GameOver}`);
-      lines.splice(18, 0, `p2.xCandidate=${ramSnapshot.p2PlayerX}`);
-      lines.splice(19, 0, `p2.yCandidate=${ramSnapshot.p2PlayerY}`);
-      lines.splice(20, 0, `p2.worldXCandidate=${ramSnapshot.p2WorldX}`);
+      lines.splice(14, 0, `p2.score=${ramSnapshot.p2Score}`);
+      lines.splice(15, 0, `p2.weapon=${ramSnapshot.p2Weapon}`);
+      lines.splice(16, 0, `p2.state=${ramSnapshot.p2State}`);
+      lines.splice(17, 0, `p2.deathFlag=${ramSnapshot.p2DeathFlag}`);
+      lines.splice(18, 0, `p2.gameOver=${ramSnapshot.p2GameOver}`);
+      lines.splice(19, 0, `p2.xCandidate=${ramSnapshot.p2PlayerX}`);
+      lines.splice(20, 0, `p2.yCandidate=${ramSnapshot.p2PlayerY}`);
+      lines.splice(21, 0, `p2.worldXCandidate=${ramSnapshot.p2WorldX}`);
     }
   }
   return lines;
+}
+
+function buildSideTrainingState(
+  side: PlayerSide,
+  mode: ControlMode,
+  strategyKey: AiStrategyKey,
+  ramSnapshot: GameRamSnapshot | null,
+  tasEntry: TasRegistryEntry | null,
+  traceRecording: boolean,
+  traceSampleCount: number,
+  traceLastSummary: string,
+  playTraceReport: PlayTraceAnalysisReport | null,
+  deathTraceReports: DeathTraceReport[]
+): SideTrainingState {
+  const sideDeath = deathTraceReports.slice().reverse().find((report) => report.side === side);
+  const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
+  const sideReady = side === "1P" || twoPlayerActive;
+  const candidateCount = playTraceReport
+    ? playTraceReport.fastPasses.length + playTraceReport.stalls.length + playTraceReport.weaponPickups.total
+    : 0;
+  const sourceLabel = mode === "human" ? "人类演示" : mode === "ai" ? "AI 跑局" : "混合采集";
+  const captureStatus = traceRecording
+    ? "采集中"
+    : traceSampleCount > 0 ? "已采集" : "未采集";
+  const failureSummary = sideDeath
+    ? `死亡 W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
+    : sideReady ? "等待失败反例" : "等待双人局";
+
+  return {
+    side,
+    ownerLabel: side === "1P" ? "玩家1训练" : "玩家2训练",
+    baselineStrategy: getAiStrategyLabel(strategyKey),
+    sourceLabel,
+    tasBaseLabel: tasBaseLabel(tasEntry),
+    captureStatus,
+    windowLabel: traceRecording || traceSampleCount > 0 ? traceLastSummary : "按 WorldX 窗口采集",
+    candidateFragments: `${candidateCount} 候选`,
+    failureSummary,
+    archiveTarget: sideReady ? "trace-evidence / fragments" : "等待 2P RAM",
+    primaryAction: sideReady ? "生成候选片段" : "先进入双人模式"
+  };
+}
+
+function buildGlobalTrainingState(
+  traceRecording: boolean,
+  traceSampleCount: number,
+  traceLastSummary: string,
+  playTraceReport: PlayTraceAnalysisReport | null,
+  tasEntry: TasRegistryEntry | null,
+  botRunReport: BotRunReport
+): GlobalTrainingState {
+  const kills = playTraceReport?.kills.total ?? 0;
+  const pickups = playTraceReport?.weaponPickups.total ?? 0;
+  const fastPasses = playTraceReport?.fastPasses.length ?? 0;
+  const botStatus = botRunReport.status === "idle"
+    ? "等待跑局"
+    : `${botRunReport.status} / W${botRunReport.finalWorldX ?? "?"}`;
+
+  return {
+    modeLabel: "Offline/Base Mode",
+    optimizationLevel: "Level 0 + Level 1 候选",
+    tasBaseLabel: tasStatusLabel(tasEntry),
+    traceSummary: traceRecording ? "轨迹采集中" : traceLastSummary,
+    sampleCount: `${traceSampleCount} 帧`,
+    evidenceTarget: "strategy-packs/contra",
+    validationStatus: `击杀 ${kills} / 武器 ${pickups} / 快速 ${fastPasses}`,
+    botRunStatus: botStatus,
+    nextGate: "候选片段必须真实跑局验证"
+  };
 }
 
 function visualFilter(settings: VisualSettings) {
@@ -2638,6 +5463,57 @@ function ModeTogglePanel({
   );
 }
 
+function SideTrainingPanel({ training }: { training: SideTrainingState }) {
+  return (
+    <div className="side-training-panel" aria-label={`${training.side} 训练区`}>
+      <div className="sub-title">
+        <Database size={15} />
+        <span>{training.ownerLabel}</span>
+      </div>
+      <div className="training-stat-grid">
+        <div>
+          <span>基准策略</span>
+          <strong>{training.baselineStrategy}</strong>
+        </div>
+        <div>
+          <span>训练来源</span>
+          <strong>{training.sourceLabel}</strong>
+        </div>
+        <div>
+          <span>TAS 基座</span>
+          <strong>{training.tasBaseLabel}</strong>
+        </div>
+        <div>
+          <span>采集状态</span>
+          <strong>{training.captureStatus}</strong>
+        </div>
+        <div>
+          <span>候选片段</span>
+          <strong>{training.candidateFragments}</strong>
+        </div>
+      </div>
+      <div className="training-note-grid">
+        <div>
+          <span>窗口</span>
+          <strong>{training.windowLabel}</strong>
+        </div>
+        <div>
+          <span>问题</span>
+          <strong>{training.failureSummary}</strong>
+        </div>
+        <div>
+          <span>归档</span>
+          <strong>{training.archiveTarget}</strong>
+        </div>
+        <div>
+          <span>动作</span>
+          <strong>{training.primaryAction}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PilotPanel({
   pilot,
   onButtonDown,
@@ -2718,15 +5594,7 @@ function PilotPanel({
           <p key={line}>{line}</p>
         ))}
       </div>
-      <div className="micro-stream" aria-label={`${pilot.side} 数据流`}>
-        <div className="sub-title">
-          <Database size={15} />
-          <span>数据流</span>
-        </div>
-        {pilot.dataStream.map((line) => (
-          <code key={line}>{line}</code>
-        ))}
-      </div>
+      <SideTrainingPanel training={pilot.training} />
       <div className="input-meta">
         <div>
           <Keyboard size={15} />
@@ -2914,6 +5782,214 @@ function TelevisionView({
   );
 }
 
+function GlobalTrainingConsole({
+  training,
+  traceRecording,
+  traceSampleCount,
+  onTraceStart,
+  onTraceStop,
+  onTraceClear,
+  onTraceExport
+}: {
+  training: GlobalTrainingState;
+  traceRecording: boolean;
+  traceSampleCount: number;
+  onTraceStart: () => void;
+  onTraceStop: () => void;
+  onTraceClear: () => void;
+  onTraceExport: () => void;
+}) {
+  return (
+    <div className="training-console" aria-label="全局训练总控">
+      <div className="sub-title">
+        <Database size={15} />
+        <span>训练总控</span>
+      </div>
+      <div className="training-console-grid">
+        <div>
+          <span>模式</span>
+          <strong>{training.modeLabel}</strong>
+        </div>
+        <div>
+          <span>等级</span>
+          <strong>{training.optimizationLevel}</strong>
+        </div>
+        <div>
+          <span>TAS 基座</span>
+          <strong>{training.tasBaseLabel}</strong>
+        </div>
+        <div>
+          <span>样本</span>
+          <strong>{training.sampleCount}</strong>
+        </div>
+        <div>
+          <span>验证</span>
+          <strong>{training.validationStatus}</strong>
+        </div>
+        <div>
+          <span>跑局</span>
+          <strong>{training.botRunStatus}</strong>
+        </div>
+        <div>
+          <span>归档</span>
+          <strong>{training.evidenceTarget}</strong>
+        </div>
+      </div>
+      <div className="training-console-footer">
+        <span>{training.traceSummary}</span>
+        <span>{training.nextGate}</span>
+      </div>
+      <div className="training-actions">
+        <button disabled={traceRecording} onClick={onTraceStart} type="button">开始采集</button>
+        <button disabled={!traceRecording} onClick={onTraceStop} type="button">停止</button>
+        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">导出</button>
+        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">清空</button>
+      </div>
+    </div>
+  );
+}
+
+function TasWindow({
+  tasEntry,
+  selectedMovieId,
+  commentaryMode,
+  playback,
+  onCommentaryModeChange,
+  onLoad,
+  onMovieSelect,
+  onPause,
+  onPlay,
+  onStop
+}: {
+  tasEntry: TasRegistryEntry | null;
+  selectedMovieId: string;
+  commentaryMode: TasCommentaryMode;
+  playback: TasPlaybackUiState;
+  onCommentaryModeChange: (mode: TasCommentaryMode) => void;
+  onLoad: () => void;
+  onMovieSelect: (movieId: string) => void;
+  onPause: () => void;
+  onPlay: () => void;
+  onStop: () => void;
+}) {
+  const movies = tasMoviesForEntry(tasEntry);
+  const selectedMovie = movies.find((movie) => movie.id === selectedMovieId) ?? selectDefaultTasMovie(tasEntry);
+  const modes = selectedMovie?.commentaryModes ?? [];
+  const progress = playback.totalFrames > 0
+    ? `${playback.frameIndex}/${playback.totalFrames}`
+    : "未载入";
+  const commentary = selectedMovie
+    ? buildTasCommentary(selectedMovie, commentaryMode)
+    : "当前 ROM 没有匹配 TAS。";
+  const canUseMovie = Boolean(tasEntry && selectedMovie);
+
+  return (
+    <div className="tas-window" aria-label="TAS 观赏与训练基座">
+      <div className="sub-title">
+        <Radio size={15} />
+        <span>TAS 观赏 / 训练基座</span>
+      </div>
+      <div className="tas-window-body">
+        <div className="tas-movie-list" aria-label="TAS 文件列表">
+          {movies.length > 0 ? movies.map((movie) => (
+            <button
+              className={movie.id === selectedMovie?.id ? "tas-movie-item active" : "tas-movie-item"}
+              key={movie.id}
+              onClick={() => onMovieSelect(movie.id)}
+              type="button"
+            >
+              <strong>{movie.title.zh}</strong>
+              <small>{movie.title.en}</small>
+            </button>
+          )) : (
+            <div className="tas-empty">无匹配 TAS</div>
+          )}
+        </div>
+        <div className="tas-detail">
+          {selectedMovie ? (
+            <>
+              <div className="tas-title-row">
+                <strong>{selectedMovie.title.zh}</strong>
+                <span>{selectedMovie.players} / {selectedMovie.category}</span>
+              </div>
+              <p>{selectedMovie.summaryZh}</p>
+              <div className="tas-info-grid">
+                <div>
+                  <span>来源</span>
+                  <b>{selectedMovie.sourceNote}</b>
+                </div>
+                <div>
+                  <span>关键点</span>
+                  <b>{selectedMovie.keyMoments.slice(0, 2).join(" / ")}</b>
+                </div>
+                <div>
+                  <span>风险</span>
+                  <b>{selectedMovie.riskNotes[0]}</b>
+                </div>
+              </div>
+              <div className="tas-meta-grid">
+                <div>
+                  <span>训练基准</span>
+                  <b>{recommendationLabel(selectedMovie)}</b>
+                </div>
+                <div>
+                  <span>校验</span>
+                  <b>{playback.checksumStatus}</b>
+                </div>
+                <div>
+                  <span>进度</span>
+                  <b>{progress}</b>
+                </div>
+                <div>
+                  <span>阶段</span>
+                  <b>{tasPhaseLabel(playback.phase)}</b>
+                </div>
+                <div>
+                  <span>当前输入</span>
+                  <b>{playback.currentInput}</b>
+                </div>
+              </div>
+              <div className="tas-mode-strip" aria-label="TAS 解说模式">
+                {modes.map((mode) => (
+                  <button
+                    className={mode === commentaryMode ? "active" : ""}
+                    key={mode}
+                    onClick={() => onCommentaryModeChange(mode)}
+                    type="button"
+                  >
+                    {commentaryModeLabel(mode)}
+                  </button>
+                ))}
+              </div>
+              <div className="tas-commentary">{commentary}</div>
+            </>
+          ) : (
+            <p>当前卡带没有匹配的 TAS 原始档。可继续用人工演示和实机 trace 训练策略。</p>
+          )}
+        </div>
+      </div>
+      <div className="tas-control-row">
+        <button disabled={!canUseMovie || playback.status === "loading"} onClick={onLoad} type="button">
+          <Database size={14} /> 载入
+        </button>
+        <button disabled={!canUseMovie || playback.status === "loading" || playback.status === "playing"} onClick={onPlay} type="button">
+          <Play size={14} /> 回放
+        </button>
+        <button disabled={playback.status !== "playing"} onClick={onPause} type="button">
+          <Pause size={14} /> 暂停
+        </button>
+        <button disabled={playback.status === "idle" || playback.status === "loading"} onClick={onStop} type="button">
+          <Square size={14} /> 停止
+        </button>
+      </div>
+      <div className="tas-status-line">
+        <span>{playback.status}</span>
+        <strong>{playback.message}</strong>
+      </div>
+    </div>
+  );
+}
+
 function ConsoleDeck({
   status,
   romMetadata,
@@ -2921,12 +5997,28 @@ function ConsoleDeck({
   romLibraryDirLabel,
   romLibraryStatus,
   selectedRomEntry,
+  selectedTasMovieId,
+  tasCommentaryMode,
+  tasPlaybackState,
+  globalTraining,
+  traceRecording,
+  traceSampleCount,
   onDirectoryFiles,
   onLoadLocalRom,
   onSelectRom,
+  onTasCommentaryModeChange,
+  onTasLoad,
+  onTasMovieSelect,
+  onTasPause,
+  onTasPlay,
+  onTasStop,
   onRun,
   onPause,
-  onReset
+  onReset,
+  onTraceStart,
+  onTraceStop,
+  onTraceClear,
+  onTraceExport
 }: {
   status: RuntimeStatus;
   romMetadata: RomMetadata | null;
@@ -2934,12 +6026,28 @@ function ConsoleDeck({
   romLibraryDirLabel: string;
   romLibraryStatus: string;
   selectedRomEntry: RomLibraryEntry | null;
+  selectedTasMovieId: string;
+  tasCommentaryMode: TasCommentaryMode;
+  tasPlaybackState: TasPlaybackUiState;
+  globalTraining: GlobalTrainingState;
+  traceRecording: boolean;
+  traceSampleCount: number;
   onDirectoryFiles: (files: FileList | null) => void;
   onLoadLocalRom: () => void;
   onSelectRom: (id: string) => void;
+  onTasCommentaryModeChange: (mode: TasCommentaryMode) => void;
+  onTasLoad: () => void;
+  onTasMovieSelect: (movieId: string) => void;
+  onTasPause: () => void;
+  onTasPlay: () => void;
+  onTasStop: () => void;
   onRun: () => void;
   onPause: () => void;
   onReset: () => void;
+  onTraceStart: () => void;
+  onTraceStop: () => void;
+  onTraceClear: () => void;
+  onTraceExport: () => void;
 }) {
   const directoryInputRef = useRef<HTMLInputElement | null>(null);
   const isRunning = status === "running";
@@ -2947,6 +6055,8 @@ function ConsoleDeck({
   const selectedMetadata = selectedRomEntry?.metadata ?? null;
   const selectedUiStatus = cartridgeUiStatus(selectedMetadata);
   const loadedUiStatus = cartridgeUiStatus(romMetadata);
+  const selectedTas = identifyTasForRom(selectedMetadata);
+  const loadedTas = identifyTasForRom(romMetadata);
   const directoryInputProps = { webkitdirectory: "", directory: "" } as Record<string, string>;
 
   return (
@@ -3016,6 +6126,10 @@ function ConsoleDeck({
                       <b>{selectedUiStatus.strategyStatus}</b>
                     </div>
                     <div>
+                      <span>TAS</span>
+                      <b>{tasStatusLabel(selectedTas)}</b>
+                    </div>
+                    <div>
                       <span>版本</span>
                       <b>{selectedMetadata.versionLabel}</b>
                     </div>
@@ -3063,7 +6177,7 @@ function ConsoleDeck({
             {romMetadata ? (
               <>
                 <strong>{loadedUiStatus.chineseName} · {romMetadata.displayTitle}</strong>
-                <small>{romMetadata.romProfileId} / {loadedUiStatus.strategyStatus} / {romMetadata.romSupportLabel}</small>
+                <small>{romMetadata.romProfileId} / {loadedUiStatus.strategyStatus} / {romMetadata.romSupportLabel} / {tasStatusLabel(loadedTas)}</small>
               </>
             ) : (
               <>
@@ -3082,6 +6196,27 @@ function ConsoleDeck({
         </button>
         <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
       </div>
+      <GlobalTrainingConsole
+        training={globalTraining}
+        onTraceClear={onTraceClear}
+        onTraceExport={onTraceExport}
+        onTraceStart={onTraceStart}
+        onTraceStop={onTraceStop}
+        traceRecording={traceRecording}
+        traceSampleCount={traceSampleCount}
+      />
+      <TasWindow
+        commentaryMode={tasCommentaryMode}
+        onCommentaryModeChange={onTasCommentaryModeChange}
+        onLoad={onTasLoad}
+        onMovieSelect={onTasMovieSelect}
+        onPause={onTasPause}
+        onPlay={onTasPlay}
+        onStop={onTasStop}
+        playback={tasPlaybackState}
+        selectedMovieId={selectedTasMovieId}
+        tasEntry={loadedTas}
+      />
     </section>
   );
 }
@@ -3101,9 +6236,11 @@ function TacticalPanel({
 }) {
   const threatCount = ramSnapshot?.enemies.filter((enemy) => enemy.threat).length ?? 0;
   const route = routeLineForStrategy(strategyKey, ramSnapshot, strategyPlans);
+  const horizon = buildStageOneHorizon(ramSnapshot);
   const stackRows = [
     { label: "生存", value: gameplayActive ? "可操作" : ramSnapshot ? "待入局" : "等待 RAM", icon: Shield },
     { label: "路线", value: ramSnapshot ? `${route.segment} / ${route.action}` : "等待 WorldX", icon: MapIcon },
+    { label: "预判", value: horizon?.primary ? horizon.primary.label : "等待目标", icon: Gauge },
     { label: "协作", value: "排队中", icon: HeartPulse },
     { label: "战斗", value: ramSnapshot ? `${threatCount} 威胁` : "仅输入测试", icon: Target },
     { label: "推进", value: ramSnapshot ? `屏幕 ${ramSnapshot.screen}` : "受控", icon: Activity }
@@ -3196,6 +6333,7 @@ function DataDashboard({
   strategyModels,
   strategyPlans,
   playerMetrics,
+  deathTraceReports,
   traceRecording,
   traceSampleCount,
   traceLastSummary,
@@ -3214,6 +6352,7 @@ function DataDashboard({
   strategyModels: Record<PlayerSide, AiStrategyKey>;
   strategyPlans: LoadedStrategyPlans;
   playerMetrics: PlayerMetricStates;
+  deathTraceReports: DeathTraceReport[];
   traceRecording: boolean;
   traceSampleCount: number;
   traceLastSummary: string;
@@ -3228,6 +6367,7 @@ function DataDashboard({
   const bullets = ramSnapshot?.bullets ?? [];
   const threatCount = enemies.filter((enemy) => enemy.threat).length;
   const fixedCount = enemies.filter((enemy) => enemy.fixed).length;
+  const horizon = buildStageOneHorizon(ramSnapshot);
   const topEnemies = enemies
     .slice()
     .sort((a, b) => b.priority - a.priority)
@@ -3295,6 +6435,10 @@ function DataDashboard({
         { label: "威胁", value: `${threatCount}`, status: ramSnapshot ? "derived" : "pending" },
         { label: "固定火力", value: `${fixedCount}`, status: ramSnapshot ? "derived" : "pending" },
         { label: "奖励目标", value: `${rewardCount(enemies)}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: "视界目标", value: horizon?.primary ? horizon.primary.label : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
+        { label: "视界类别", value: horizon?.primary ? horizonCategoryLabel(horizon.primary.category) : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
+        { label: "视界距离", value: horizon?.primary ? `${horizon.primary.distance}` : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
+        { label: "视界事件", value: horizon ? `${horizon.near.length} / ${horizon.upcoming.length}` : "等待 WorldX", status: horizon ? "derived" : "pending" },
         { label: "子弹槽", value: `${bullets.length}`, status: ramSnapshot ? "real" : "pending" },
         { label: "1P子弹", value: `${countBulletsForOwner(bullets, 0)}`, status: ramSnapshot ? "derived" : "pending" },
         { label: "2P子弹", value: `${countBulletsForOwner(bullets, 1)}`, status: ramSnapshot ? "derived" : "pending" },
@@ -3330,6 +6474,7 @@ function DataDashboard({
           <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">导出</button>
           <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">清空</button>
         </div>
+        <output data-testid="death-trace-json" hidden>{JSON.stringify(deathTraceReports)}</output>
       </div>
       <div className="data-groups">
         {groups.map((group) => <DataGroupView key={group.title} title={group.title} items={group.items} />)}
@@ -3469,6 +6614,9 @@ function App() {
   const autoLoadStartedRef = useRef(false);
   const autoRunStartedRef = useRef(false);
   const autoSmokeStartedRef = useRef(false);
+  const autoRecordStartedRef = useRef(false);
+  const botRunStartedRef = useRef(false);
+  const romSelectionTouchedRef = useRef(false);
   const audioBlockedLoggedRef = useRef(false);
   const audioOnLoggedRef = useRef(false);
   const gameplayActiveRef = useRef(false);
@@ -3477,11 +6625,27 @@ function App() {
   const finalButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
   const playerMetricsRef = useRef<PlayerMetricStates>(createPlayerMetricStates());
   const sourceButtonsRef = useRef(createSourceInputStates());
+  const tasMovieRef = useRef<Fm2Movie | null>(null);
+  const tasPlaybackGuardRef = useRef<TasPlaybackGuardState>(createTasPlaybackGuardState());
+  const tasPlaybackRef = useRef({
+    active: false,
+    movieId: "",
+    frameIndex: 0
+  });
   const traceRecordingRef = useRef(false);
   const traceSamplesRef = useRef<PlayTraceSample[]>([]);
+  const traceCaptureConfigRef = useRef<TraceCaptureConfig | null>(null);
+  const traceCaptureEnteredRef = useRef(false);
+  const recentTraceSamplesRef = useRef<PlayTraceSample[]>([]);
+  const lastDeathTraceRef = useRef<DeathTraceReport | null>(null);
+  const deathTraceLatchedRef = useRef<Record<PlayerSide, boolean>>({ "1P": false, "2P": false });
   const strategyPlansRef = useRef<LoadedStrategyPlans>(defaultStrategyPlans);
   const aiActionLocksRef = useRef<Record<PlayerSide, AiActionLockState>>(createAiActionLockStates());
   const aiFsmStatesRef = useRef<Record<PlayerSide, AiFsmState>>(createAiFsmStates());
+  const aiLoopExitStatesRef = useRef<Record<PlayerSide, AiLoopExitState>>(createAiLoopExitStates());
+  const bossWallPhaseStatesRef = useRef<Record<PlayerSide, BossWallPhaseState>>(createBossWallPhaseStates());
+  const lastRawAiButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
+  const lastLockedAiButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
   const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
   const strategyModelsRef = useRef<Record<PlayerSide, AiStrategyKey>>({
     "1P": defaultAiStrategyForSide("1P"),
@@ -3511,6 +6675,13 @@ function App() {
   const [traceRecording, setTraceRecording] = useState(false);
   const [traceSampleCount, setTraceSampleCount] = useState(0);
   const [traceLastSummary, setTraceLastSummary] = useState("轨迹未记录");
+  const [deathTraceReports, setDeathTraceReports] = useState<DeathTraceReport[]>([]);
+  const [playTraceReport, setPlayTraceReport] = useState<PlayTraceAnalysisReport | null>(null);
+  const [traceSampleSnapshot, setTraceSampleSnapshot] = useState<PlayTraceSample[]>([]);
+  const [botRunReport, setBotRunReport] = useState<BotRunReport>(createIdleBotRunReport);
+  const [selectedTasMovieId, setSelectedTasMovieId] = useState("");
+  const [tasCommentaryMode, setTasCommentaryMode] = useState<TasCommentaryMode>("strategy-analysis");
+  const [tasPlaybackState, setTasPlaybackState] = useState<TasPlaybackUiState>(createIdleTasPlaybackState);
   const [controlModes, setControlModes] = useState<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
   const [strategyModels, setStrategyModels] = useState<Record<PlayerSide, AiStrategyKey>>({
     "1P": defaultAiStrategyForSide("1P"),
@@ -3545,6 +6716,18 @@ function App() {
   }, []);
 
   const selectedRomEntry = romLibraryEntries.find((entry) => entry.id === selectedRomId) ?? null;
+
+  useEffect(() => {
+    const nextSelectedId = resolveSelectedRomIdAfterLoadedSync(
+      romLibraryEntries,
+      romMetadata,
+      selectedRomId,
+      romSelectionTouchedRef.current
+    );
+    if (nextSelectedId && nextSelectedId !== selectedRomId) {
+      setSelectedRomId(nextSelectedId);
+    }
+  }, [romLibraryEntries, romMetadata, selectedRomId]);
 
   const refreshDefaultRomLibrary = useCallback(async () => {
     try {
@@ -3584,6 +6767,7 @@ function App() {
   }, []);
 
   const selectRomEntry = useCallback((id: string) => {
+    romSelectionTouchedRef.current = true;
     setSelectedRomId(id);
     const entry = romLibraryEntries.find((item) => item.id === id);
     if (entry?.source === "browser" && !entry.bytes) {
@@ -3621,29 +6805,45 @@ function App() {
     void refreshDefaultRomLibrary();
   }, [refreshDefaultRomLibrary]);
 
-  const startTraceRecording = useCallback(() => {
+  const startTraceRecording = useCallback((config?: TraceCaptureConfig | null) => {
     traceSamplesRef.current = [];
+    traceCaptureConfigRef.current = config ?? null;
+    traceCaptureEnteredRef.current = false;
     traceRecordingRef.current = true;
     setTraceRecording(true);
     setTraceSampleCount(0);
-    setTraceLastSummary("轨迹记录中");
-    appendLog("Trace：开始记录人类/AI 轨迹");
+    setPlayTraceReport(null);
+    setTraceSampleSnapshot([]);
+    const windowLabel = config
+      ? ` / ${config.startWorldX ?? "起点"}-${config.endWorldX ?? "终点"}`
+      : "";
+    setTraceLastSummary(`轨迹记录中${windowLabel}`);
+    appendLog(`Trace：开始记录人类/AI 轨迹${windowLabel}`);
   }, [appendLog]);
 
   const stopTraceRecording = useCallback(() => {
     traceRecordingRef.current = false;
+    traceCaptureConfigRef.current = null;
+    traceCaptureEnteredRef.current = false;
     setTraceRecording(false);
     const count = traceSamplesRef.current.length;
+    const report = count > 0 ? analyzePlayTrace(traceSamplesRef.current, "1P") : null;
+    setPlayTraceReport(report);
+    setTraceSampleSnapshot(traceSamplesRef.current.slice());
     setTraceSampleCount(count);
-    setTraceLastSummary(count > 0 ? `已记录 ${count} 帧` : "轨迹未记录");
+    setTraceLastSummary(report ? `已记录 ${count} 帧 / 击杀 ${report.kills.total} / 武器 ${report.weaponPickups.total} / 快速 ${report.fastPasses.length}` : "轨迹未记录");
     appendLog(`Trace：停止记录（${count} 帧）`);
   }, [appendLog]);
 
   const clearTraceRecording = useCallback(() => {
     traceSamplesRef.current = [];
+    traceCaptureConfigRef.current = null;
+    traceCaptureEnteredRef.current = false;
     traceRecordingRef.current = false;
     setTraceRecording(false);
     setTraceSampleCount(0);
+    setPlayTraceReport(null);
+    setTraceSampleSnapshot([]);
     setTraceLastSummary("轨迹已清空");
     appendLog("Trace：轨迹已清空");
   }, [appendLog]);
@@ -3751,13 +6951,21 @@ function App() {
     gameplayActiveRef.current = false;
     ramSnapshotRef.current = null;
     deathLatchedRef.current = { "1P": false, "2P": false };
+    deathTraceLatchedRef.current = { "1P": false, "2P": false };
+    recentTraceSamplesRef.current = [];
+    lastDeathTraceRef.current = null;
+    bossWallPhaseStatesRef.current = createBossWallPhaseStates();
+    delete (window as unknown as { __fcAiLastDeathTrace?: DeathTraceReport }).__fcAiLastDeathTrace;
+    setDeathTraceReports([]);
     setGameplayActive(false);
     setRamSnapshot(null);
   }, []);
 
   const isSourceAllowed = useCallback((side: PlayerSide, source: InputSource) => {
     const mode = controlModesRef.current[side];
+    if (tasPlaybackRef.current.active) return source === "tas";
     if (source === "system") return true;
+    if (source === "tas") return false;
     if (humanSources.includes(source)) return mode === "human" || mode === "hybrid";
     if (source === "ai") return mode === "ai" || mode === "hybrid";
     return false;
@@ -3815,7 +7023,7 @@ function App() {
     sourceButtonsRef.current[side][source] = next;
     recomputeSide(side);
     if (source !== "system" && hasPressedButton(next)) {
-      const sourceLabel = source === "keyboard" ? "键盘" : source === "gamepad" ? "游戏手柄" : source === "panel" ? "屏幕按钮" : "AI";
+      const sourceLabel = source === "keyboard" ? "键盘" : source === "gamepad" ? "游戏手柄" : source === "panel" ? "屏幕按钮" : source === "tas" ? "TAS" : "AI";
       setLastInputs((current) => ({
         ...current,
         [side]: `${sourceLabel} 输入`
@@ -3853,6 +7061,8 @@ function App() {
     finalButtonsRef.current = createPlayerButtonStates();
     aiActionLocksRef.current = createAiActionLockStates();
     aiFsmStatesRef.current = createAiFsmStates();
+    aiLoopExitStatesRef.current = createAiLoopExitStates();
+    bossWallPhaseStatesRef.current = createBossWallPhaseStates();
     setButtonStates(createPlayerButtonStates());
     setLastInputs({ "1P": "等待输入", "2P": "等待输入" });
   }, []);
@@ -3878,6 +7088,8 @@ function App() {
     if (mode === "hybrid") recomputeSide(side);
     aiActionLocksRef.current[side] = createAiActionLockState();
     aiFsmStatesRef.current[side] = createAiFsmState();
+    aiLoopExitStatesRef.current[side] = createAiLoopExitState();
+    bossWallPhaseStatesRef.current[side] = createBossWallPhaseState();
 
     if (mode !== "human" && (strategyModelsRef.current[side] === "off" || strategyModelsRef.current[side] === "placeholder")) {
       const nextStrategy = defaultAiStrategyForSide(side);
@@ -4000,7 +7212,7 @@ function App() {
   const createNes = useCallback(() => {
     const nes = new NES({
       onFrame: renderFrame,
-      onAudioSample: (left, right) => audioRef.current?.pushSample(left, right),
+      onAudioSample: (left: number, right: number) => audioRef.current?.pushSample(left, right),
       emulateSound: true,
       sampleRate: AUDIO_SAMPLE_RATE
     });
@@ -4111,6 +7323,20 @@ function App() {
       });
       const fsmState = transitionAiFsmState(aiFsmStatesRef.current[side], nextFsm, frameRef.current);
       aiFsmStatesRef.current[side] = fsmState;
+      const loopExitState = updateAiLoopExitState(
+        aiLoopExitStatesRef.current[side],
+        side,
+        actorSnapshot,
+        active,
+        fsmState
+      );
+      aiLoopExitStatesRef.current[side] = loopExitState;
+      const bossWallPhaseState = updateBossWallPhaseState(
+        bossWallPhaseStatesRef.current[side],
+        actorSnapshot,
+        frameRef.current
+      );
+      bossWallPhaseStatesRef.current[side] = bossWallPhaseState;
       const rawAiButtons = decideAiButtons({
         side,
         mode,
@@ -4124,13 +7350,101 @@ function App() {
         mirrorButtons: finalButtonsRef.current[mirrorSide],
         frame: frameRef.current,
         fsmState,
-        teamSnapshot: snapshot
+        teamSnapshot: snapshot,
+        loopExit: loopExitState,
+        bossWallPhaseState
       });
-      const locked = applyAiActionLock(rawAiButtons, aiActionLocksRef.current[side], actorSnapshot, strategyKey);
+      const bypassActionLock = shouldBypassAiActionLockForBossWallPhase(actorSnapshot, bossWallPhaseState);
+      const previousLock = loopExitState.forcedAdvanceBias > 0.5 || bossWallPhaseState.phase !== "idle" || bypassActionLock
+        ? createAiActionLockState()
+        : aiActionLocksRef.current[side];
+      const locked = bypassActionLock
+        ? {
+            ...createAiActionLockState(),
+            buttons: sanitizeButtonState(rawAiButtons)
+          }
+        : applyAiActionLock(rawAiButtons, previousLock, actorSnapshot, strategyKey);
+      lastRawAiButtonsRef.current[side] = rawAiButtons;
+      lastLockedAiButtonsRef.current[side] = locked.buttons;
       aiActionLocksRef.current[side] = locked;
       setSourceButtons(side, "ai", locked.buttons);
     }
   }, [hasHumanInputForSide, setSourceButtons]);
+
+  const applyTasPlaybackInputs = useCallback(() => {
+    const playback = tasPlaybackRef.current;
+    const movie = tasMovieRef.current;
+    if (!playback.active || !movie) return false;
+
+    const frame = movie.frames[playback.frameIndex];
+    if (!frame) {
+      tasPlaybackRef.current = {
+        ...playback,
+        active: false
+      };
+      setSourceButtons("1P", "tas", createButtonState());
+      setSourceButtons("2P", "tas", createButtonState());
+      runningRef.current = false;
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setStatus("paused");
+      setTasPlaybackState((current) => ({
+        ...current,
+        status: "finished",
+        frameIndex: movie.frames.length,
+        currentInput: "-",
+        message: "TAS 回放结束"
+      }));
+      appendLog("TAS：回放结束，已释放手柄输入");
+      return false;
+    }
+
+    setSourceButtons("1P", "tas", fm2ButtonsToButtonState(frame.p1));
+    setSourceButtons("2P", "tas", fm2ButtonsToButtonState(frame.p2));
+    const nextFrameIndex = playback.frameIndex + 1;
+    tasPlaybackRef.current = {
+      ...playback,
+      frameIndex: nextFrameIndex
+    };
+
+    if (nextFrameIndex % 10 === 0 || nextFrameIndex === 1) {
+      setTasPlaybackState((current) => ({
+        ...current,
+        status: "playing",
+        frameIndex: nextFrameIndex,
+        currentInput: `1P ${fm2ButtonsToLabels(frame.p1)} / 2P ${fm2ButtonsToLabels(frame.p2)}`,
+        message: "TAS 正在按帧回放"
+      }));
+    }
+
+    return true;
+  }, [appendLog, setSourceButtons]);
+
+  const stopTasPlaybackAsDesynced = useCallback((message: string) => {
+    const playback = tasPlaybackRef.current;
+    tasPlaybackRef.current = {
+      ...playback,
+      active: false
+    };
+    setSourceButtons("1P", "tas", createButtonState());
+    setSourceButtons("2P", "tas", createButtonState());
+    runningRef.current = false;
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setStatus("paused");
+    setTasPlaybackState((current) => ({
+      ...current,
+      status: "desynced",
+      phase: "desynced",
+      frameIndex: playback.frameIndex,
+      message
+    }));
+    appendLog(`TAS：${message}`);
+  }, [appendLog, setSourceButtons]);
 
   const tickFrame = useCallback(() => {
     if (!runningRef.current) return;
@@ -4138,10 +7452,15 @@ function App() {
     if (nes) {
       const beforeSnapshot = readGameRamSnapshot(nes, frameRef.current);
       ramSnapshotRef.current = beforeSnapshot;
-      gameplayActiveRef.current = isGameplayActive(beforeSnapshot);
+      gameplayActiveRef.current = isGameplayActive(beforeSnapshot, frameRef.current);
 
-      applyGamepads();
-      applyAiInputs(beforeSnapshot, gameplayActiveRef.current);
+      if (tasPlaybackRef.current.active) {
+        const tasFrameApplied = applyTasPlaybackInputs();
+        if (!tasFrameApplied) return;
+      } else {
+        applyGamepads();
+        applyAiInputs(beforeSnapshot, gameplayActiveRef.current);
+      }
       nes.frame();
       frameRef.current += 1;
 
@@ -4204,19 +7523,70 @@ function App() {
       }
 
       ramSnapshotRef.current = afterSnapshot;
-      gameplayActiveRef.current = isGameplayActive(afterSnapshot);
+      gameplayActiveRef.current = isGameplayActive(afterSnapshot, frameRef.current);
+      const traceSample = buildPlayTraceSample({
+        frame: frameRef.current,
+        runtimeStatus: "running",
+        gameplayActive: gameplayActiveRef.current,
+        strategyKey: strategyModelsRef.current["1P"],
+        strategyPlans: strategyPlansRef.current,
+        ramSnapshot: afterSnapshot,
+        finalButtons: finalButtonsRef.current,
+        bossWallPhaseStates: bossWallPhaseStatesRef.current
+      });
+      recentTraceSamplesRef.current.push(traceSample);
+      if (recentTraceSamplesRef.current.length > recentTraceSampleLimit) {
+        recentTraceSamplesRef.current.splice(0, recentTraceSamplesRef.current.length - recentTraceSampleLimit);
+      }
+      for (const side of playerSides) {
+        const inDeathTraceState = playerIsDeathOrRespawn(side, afterSnapshot);
+        if (deathsDelta[side] <= 0 && (!inDeathTraceState || deathTraceLatchedRef.current[side])) continue;
+        const report = createDeathTraceReport(side, recentTraceSamplesRef.current);
+        if (!report) continue;
+        lastDeathTraceRef.current = report;
+        deathTraceLatchedRef.current[side] = true;
+        (window as unknown as { __fcAiLastDeathTrace?: DeathTraceReport }).__fcAiLastDeathTrace = report;
+        setTraceLastSummary(deathTraceReportSummary(report));
+        setDeathTraceReports((current) => [...current.slice(-3), report]);
+      }
+      for (const side of playerSides) {
+        if (shouldReleaseDeathLatch(side, afterSnapshot)) deathTraceLatchedRef.current[side] = false;
+      }
       if (traceRecordingRef.current) {
-        traceSamplesRef.current.push(buildPlayTraceSample({
-          frame: frameRef.current,
-          runtimeStatus: "running",
-          gameplayActive: gameplayActiveRef.current,
-          strategyKey: strategyModelsRef.current["1P"],
-          strategyPlans: strategyPlansRef.current,
-          ramSnapshot: afterSnapshot,
-          finalButtons: finalButtonsRef.current
-        }));
-        if (frameRef.current % 30 === 0) {
+        const captureConfig = traceCaptureConfigRef.current;
+        const keepTraceSample = shouldKeepTraceSample(traceSample, captureConfig);
+        if (keepTraceSample) {
+          traceSamplesRef.current.push(traceSample);
+          traceCaptureEnteredRef.current = true;
+        }
+        if (frameRef.current % 30 === 0 || keepTraceSample) {
           setTraceSampleCount(traceSamplesRef.current.length);
+        }
+        if (shouldStopTraceCapture(traceSample, captureConfig, traceCaptureEnteredRef.current)) {
+          stopTraceRecording();
+        }
+      }
+
+      if (tasPlaybackRef.current.active) {
+        const guardResult = evaluateTasPlaybackGuard(
+          afterSnapshot,
+          tasPlaybackGuardRef.current,
+          tasPlaybackRef.current.frameIndex
+        );
+        tasPlaybackGuardRef.current = guardResult.state;
+        setTasPlaybackState((current) => ({
+          ...current,
+          phase: guardResult.phase,
+          message: guardResult.ok
+            ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"}：FM2 行 ${tasPlaybackRef.current.frameIndex}，RAM 校验中`
+            : guardResult.message
+        }));
+        if (!guardResult.ok) {
+          stopTasPlaybackAsDesynced(guardResult.message);
+          setFrameCount(frameRef.current);
+          setRamSnapshot(afterSnapshot);
+          setGameplayActive(gameplayActiveRef.current);
+          return;
         }
       }
 
@@ -4226,7 +7596,7 @@ function App() {
         setGameplayActive(gameplayActiveRef.current);
       }
     }
-  }, [addPlayerMetricDeltas, applyAiInputs, applyGamepads]);
+  }, [addPlayerMetricDeltas, applyAiInputs, applyGamepads, applyTasPlaybackInputs, stopTasPlaybackAsDesynced, stopTraceRecording]);
 
   const setRunning = useCallback((running: boolean, forceRestart = false) => {
     runningRef.current = running;
@@ -4250,6 +7620,378 @@ function App() {
     }
   }, [enableAudio, tickFrame]);
 
+  const loadSelectedTasMovie = useCallback(async () => {
+    const entry = identifyTasForRom(romMetadata);
+    const movie = tasMoviesForEntry(entry).find((item) => item.id === selectedTasMovieId)
+      ?? selectDefaultTasMovie(entry);
+    if (!entry || !movie) {
+      setTasPlaybackState({
+        ...createIdleTasPlaybackState(),
+        status: "error",
+        message: "当前 ROM 没有匹配 TAS"
+      });
+      return null;
+    }
+
+    try {
+      setTasPlaybackState((current) => ({
+        ...current,
+        status: "loading",
+        movieId: movie.id,
+        message: "正在载入 TAS FM2 文件"
+      }));
+      const query = new URLSearchParams({
+        gameId: entry.gameId,
+        romProfileId: entry.romProfileId,
+        file: movie.fileName
+      });
+      const response = await fetch(`/api/local-tas-file?${query.toString()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`TAS endpoint returned ${response.status}`);
+      const parsed = parseFm2Movie(await response.text());
+      const movieChecksum = (parsed.header.romChecksum ?? "").replace(/^base64:/, "");
+      if (movieChecksum !== entry.romChecksum.fm2Base64) {
+        throw new Error(`TAS romChecksum mismatch: ${parsed.header.romChecksum ?? "missing"}`);
+      }
+      const summary = summarizeFm2Movie(parsed);
+      const playbackStartFrame = resolveFm2PlaybackStartFrame(parsed, movie.playbackStartFrame);
+      tasMovieRef.current = parsed;
+      tasPlaybackRef.current = {
+        active: false,
+        movieId: movie.id,
+        frameIndex: playbackStartFrame
+      };
+      tasPlaybackGuardRef.current = createTasPlaybackGuardState(playbackStartFrame);
+      setSelectedTasMovieId(movie.id);
+      setTasPlaybackState({
+        status: "ready",
+        movieId: movie.id,
+        frameIndex: playbackStartFrame,
+        playbackStartFrame,
+        totalFrames: summary.inputFrames,
+        phase: "init",
+        currentInput: "-",
+        checksumStatus: "ROM 校验匹配",
+        message: `${movie.title.zh} 已载入 / 入口帧 ${playbackStartFrame} / ${summary.inputFrames} 帧`
+      });
+      appendLog(`TAS：已载入 ${movie.title.zh}（入口帧 ${playbackStartFrame} / ${summary.inputFrames} 帧）`);
+      return { entry, movie, parsed, playbackStartFrame };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      tasMovieRef.current = null;
+      tasPlaybackRef.current = {
+        active: false,
+        movieId: movie.id,
+        frameIndex: 0
+      };
+      tasPlaybackGuardRef.current = createTasPlaybackGuardState();
+      setTasPlaybackState({
+        status: "error",
+        movieId: movie.id,
+        frameIndex: 0,
+        playbackStartFrame: 0,
+        totalFrames: 0,
+        phase: "init",
+        currentInput: "-",
+        checksumStatus: "校验失败",
+        message: detail
+      });
+      appendLog(`TAS：载入失败（${detail}）`);
+      return null;
+    }
+  }, [appendLog, romMetadata, selectedTasMovieId]);
+
+  const selectTasMovie = useCallback((movieId: string) => {
+    setRunning(false);
+    tasMovieRef.current = null;
+    tasPlaybackRef.current = {
+      active: false,
+      movieId,
+      frameIndex: 0
+    };
+    tasPlaybackGuardRef.current = createTasPlaybackGuardState();
+    setSelectedTasMovieId(movieId);
+    setSourceButtons("1P", "tas", createButtonState());
+    setSourceButtons("2P", "tas", createButtonState());
+    setTasPlaybackState({
+      ...createIdleTasPlaybackState(),
+      movieId,
+      message: "已选择 TAS，等待载入"
+    });
+  }, [setRunning, setSourceButtons]);
+
+  const stopTasReplay = useCallback(() => {
+    setRunning(false);
+    setSourceButtons("1P", "tas", createButtonState());
+    setSourceButtons("2P", "tas", createButtonState());
+    setTasPlaybackState((current) => {
+      tasPlaybackRef.current = {
+        ...tasPlaybackRef.current,
+        active: false,
+        frameIndex: current.playbackStartFrame
+      };
+      tasPlaybackGuardRef.current = createTasPlaybackGuardState(current.playbackStartFrame);
+      return {
+        ...current,
+        status: current.totalFrames > 0 ? "ready" : "idle",
+        phase: "init",
+        frameIndex: current.playbackStartFrame,
+        currentInput: "-",
+        message: current.totalFrames > 0 ? "TAS 已停止，可重新从入口帧回放" : "等待选择 TAS"
+      };
+    });
+    appendLog("TAS：已停止并释放输入");
+  }, [appendLog, setRunning, setSourceButtons]);
+
+  const pauseTasReplay = useCallback(() => {
+    setRunning(false);
+    tasPlaybackRef.current = {
+      ...tasPlaybackRef.current,
+      active: false
+    };
+    setSourceButtons("1P", "tas", createButtonState());
+    setSourceButtons("2P", "tas", createButtonState());
+    setTasPlaybackState((current) => ({
+      ...current,
+      status: current.status === "playing" ? "paused" : current.status,
+      message: "TAS 已暂停"
+    }));
+    appendLog("TAS：已暂停");
+  }, [appendLog, setRunning, setSourceButtons]);
+
+  const startTasReplay = useCallback(async () => {
+    const currentRom = romBytesRef.current;
+    if (!currentRom || !romMetadata) {
+      setTasPlaybackState({
+        ...createIdleTasPlaybackState(),
+        status: "error",
+        message: "请先更换卡带并载入匹配 ROM"
+      });
+      return;
+    }
+
+    setRunning(false);
+    const preloadedMovieId = tasPlaybackRef.current.movieId || selectedTasMovieId;
+    let movieEntry = tasMoviesForEntry(identifyTasForRom(romMetadata)).find((item) => item.id === preloadedMovieId)
+      ?? selectDefaultTasMovie(identifyTasForRom(romMetadata));
+    let parsed = tasMovieRef.current && tasPlaybackRef.current.movieId === selectedTasMovieId
+      ? tasMovieRef.current
+      : null;
+    let movieId = preloadedMovieId;
+    if (!parsed) {
+      const loaded = await loadSelectedTasMovie();
+      parsed = loaded?.parsed ?? null;
+      movieId = loaded?.movie.id ?? movieId;
+      movieEntry = loaded?.movie ?? movieEntry;
+    }
+    if (!parsed || !movieEntry) return;
+
+    clearAllInputs();
+    resetPlayerMetrics();
+    resetRamTracking();
+    const nes = createNes();
+    nes.loadROM(currentRom);
+    const playbackStartFrame = fastForwardTasMovie(nes, parsed, movieEntry.playbackStartFrame);
+    frameRef.current = playbackStartFrame;
+    const snapshot = readGameRamSnapshot(nes, frameRef.current);
+    ramSnapshotRef.current = snapshot;
+    gameplayActiveRef.current = isGameplayActive(snapshot, frameRef.current);
+    const guardResult = evaluateTasPlaybackGuard(
+      snapshot,
+      createTasPlaybackGuardState(playbackStartFrame),
+      playbackStartFrame
+    );
+    tasPlaybackGuardRef.current = guardResult.state;
+    setFrameCount(playbackStartFrame);
+    setRamSnapshot(snapshot);
+    setGameplayActive(gameplayActiveRef.current);
+    tasPlaybackRef.current = {
+      active: true,
+      movieId,
+      frameIndex: playbackStartFrame
+    };
+    setTasPlaybackState((current) => ({
+      ...current,
+      status: "playing",
+      frameIndex: playbackStartFrame,
+      playbackStartFrame,
+      message: `TAS 已后台快进开场 ${playbackStartFrame} 帧，从实战入口回放`
+    }));
+    appendLog(`TAS：已同步开场 ${playbackStartFrame} 帧，普通输入和 AI 输入已临时屏蔽`);
+    setRunning(true, true);
+  }, [
+    appendLog,
+    clearAllInputs,
+    createNes,
+    loadSelectedTasMovie,
+    resetPlayerMetrics,
+    resetRamTracking,
+    romMetadata,
+    selectedTasMovieId,
+    setRunning
+  ]);
+
+  const runBotFrameBatch = useCallback(async (maxFrames: number) => {
+    const nes = nesRef.current;
+    const startedAt = new Date().toISOString();
+    if (!nes) {
+      setBotRunReport({
+        ...createIdleBotRunReport(),
+        status: "error",
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        maxFrames,
+        reason: "nes-not-ready"
+      });
+      return;
+    }
+
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    clearAllInputs();
+    controlModesRef.current = { "1P": "ai", "2P": "human" };
+    setControlModes({ "1P": "ai", "2P": "human" });
+    strategyModelsRef.current = {
+      ...strategyModelsRef.current,
+      "1P": "survival-v0"
+    };
+    setStrategyModels((current) => ({
+      ...current,
+      "1P": "survival-v0"
+    }));
+    aiActionLocksRef.current = createAiActionLockStates();
+    aiFsmStatesRef.current = createAiFsmStates();
+    aiLoopExitStatesRef.current = createAiLoopExitStates();
+    bossWallPhaseStatesRef.current = createBossWallPhaseStates();
+    setLastInputs((current) => ({
+      ...current,
+      "1P": "AI batch test",
+      "2P": "waiting"
+    }));
+
+    runningRef.current = true;
+    setStatus("running");
+    const initialDeaths = playerMetricsRef.current["1P"].deaths;
+    let reason = "max-frames";
+    let statusValue: BotRunReport["status"] = "stopped";
+    let lastRuntime: RuntimeDebugSnapshot | null = null;
+    setBotRunReport({
+      ...createIdleBotRunReport(),
+      status: "running",
+      startedAt,
+      maxFrames,
+      initialDeaths,
+      reason: "running"
+    });
+
+    try {
+      const targetFrame = frameRef.current + maxFrames;
+      while (frameRef.current < targetFrame) {
+        const batchEnd = Math.min(targetFrame, frameRef.current + 120);
+        while (frameRef.current < batchEnd) {
+          tickFrame();
+          const snapshot = ramSnapshotRef.current;
+          if (playerMetricsRef.current["1P"].deaths > initialDeaths) {
+            reason = "death-count";
+            statusValue = "death";
+            break;
+          }
+          const terminalState = isPlausibleRamSnapshot(snapshot)
+            ? classifyBotRunTerminalState(snapshot, gameplayActiveRef.current)
+            : null;
+          if (terminalState) {
+            reason = terminalState.reason;
+            statusValue = terminalState.status;
+            break;
+          }
+        }
+
+        const snapshot = ramSnapshotRef.current;
+        lastRuntime = buildRuntimeDebugSnapshot({
+          side: "1P",
+          mode: controlModesRef.current["1P"],
+          strategyKey: strategyModelsRef.current["1P"],
+          strategyPlans: strategyPlansRef.current,
+          ramSnapshot: snapshot,
+          frameCount: frameRef.current,
+          gameplayActive: gameplayActiveRef.current,
+          runtimeStatus: "running",
+          actionLock: aiActionLocksRef.current["1P"],
+          fsmState: aiFsmStatesRef.current["1P"],
+          loopExit: aiLoopExitStatesRef.current["1P"],
+          buttons: finalButtonsRef.current["1P"],
+          rawAiButtons: lastRawAiButtonsRef.current["1P"],
+          lockedAiButtons: lastLockedAiButtonsRef.current["1P"],
+          bossWallPhaseState: bossWallPhaseStatesRef.current["1P"]
+        });
+        if (statusValue === "death" || statusValue === "complete") break;
+        await Promise.resolve();
+      }
+    } catch (error) {
+      reason = error instanceof Error ? error.message : String(error);
+      statusValue = "error";
+    }
+
+    runningRef.current = false;
+    setStatus((current) => current === "running" ? "paused" : current);
+    setFrameCount(frameRef.current);
+    setRamSnapshot(ramSnapshotRef.current);
+    setGameplayActive(gameplayActiveRef.current);
+    const finalSnapshot = ramSnapshotRef.current;
+    const finalRuntime = lastRuntime ?? buildRuntimeDebugSnapshot({
+      side: "1P",
+      mode: controlModesRef.current["1P"],
+      strategyKey: strategyModelsRef.current["1P"],
+      strategyPlans: strategyPlansRef.current,
+      ramSnapshot: finalSnapshot,
+      frameCount: frameRef.current,
+      gameplayActive: gameplayActiveRef.current,
+      runtimeStatus: statusValue === "error" ? "error" : "paused",
+      actionLock: aiActionLocksRef.current["1P"],
+      fsmState: aiFsmStatesRef.current["1P"],
+      loopExit: aiLoopExitStatesRef.current["1P"],
+      buttons: finalButtonsRef.current["1P"],
+      rawAiButtons: lastRawAiButtonsRef.current["1P"],
+      lockedAiButtons: lastLockedAiButtonsRef.current["1P"],
+      bossWallPhaseState: bossWallPhaseStatesRef.current["1P"]
+    });
+    setBotRunReport({
+      schema: "fc-ai-bot-run-v1",
+      status: statusValue,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      maxFrames,
+      frameCount: frameRef.current,
+      initialDeaths,
+      deaths: playerMetricsRef.current["1P"].deaths - initialDeaths,
+      finalWorldX: finalSnapshot?.worldX ?? null,
+      finalPlayerX: finalSnapshot?.playerX ?? null,
+      finalPlayerY: finalSnapshot?.playerY ?? null,
+      finalScore: finalSnapshot?.p1Score ?? null,
+      finalWeapon: finalSnapshot?.weapon ?? null,
+      bossDefeated: finalSnapshot?.bossDefeated ?? null,
+      gameplayActive: gameplayActiveRef.current,
+      reason,
+      lastInput: traceInput(finalButtonsRef.current["1P"]),
+      finalEnemies: finalSnapshot?.enemies.map((enemy) => ({
+        slot: enemy.slot,
+        type: enemy.type,
+        hp: enemy.hp,
+        x: enemy.x,
+        y: enemy.y,
+        routine: enemy.routine,
+        kind: enemy.kind,
+        threat: enemy.threat,
+        fixed: enemy.fixed,
+        priority: enemy.priority
+      })) ?? [],
+      runtime: finalRuntime,
+      deathTrace: lastDeathTraceRef.current
+    });
+  }, [clearAllInputs, tickFrame]);
+
   const installRom = useCallback((data: Uint8Array, metadata: RomMetadata) => {
     const nes = nesRef.current || createNes();
     nes.loadROM(data);
@@ -4261,6 +8003,7 @@ function App() {
     resetRamTracking();
     setRomMetadata(metadata);
     setStatus("loaded");
+    romSelectionTouchedRef.current = false;
     setMessage(`本地 ROM 已加载：${metadata.displayTitle} / ${metadata.versionLabel} / ${metadata.romSupportLabel}。`);
     appendLog(`运行时：本地 ROM 已加载（${metadata.displayTitle}，${metadata.sizeLabel}，${metadata.romProfileId}）`);
   }, [appendLog, clearAllInputs, createNes, resetPlayerMetrics, resetRamTracking]);
@@ -4390,6 +8133,11 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const hasRom = status === "loaded" || status === "paused" || status === "running";
     if (!hasRom || autoSmokeStartedRef.current) return;
+    const traceConfig = parseTraceCaptureConfig(params);
+    if (traceConfig && !autoRecordStartedRef.current) {
+      autoRecordStartedRef.current = true;
+      startTraceRecording(traceConfig);
+    }
     if (params.get("autorun") === "1" && !autoRunStartedRef.current) {
       autoRunStartedRef.current = true;
       setRunning(true);
@@ -4398,7 +8146,38 @@ function App() {
       autoSmokeStartedRef.current = true;
       runInputSmoke("1P");
     }
-  }, [runInputSmoke, setRunning, status]);
+  }, [runInputSmoke, setRunning, startTraceRecording, status]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("botrun") !== "1" || botRunStartedRef.current || status !== "loaded") return;
+    botRunStartedRef.current = true;
+    const traceConfig = parseTraceCaptureConfig(params);
+    if (traceConfig && !autoRecordStartedRef.current) {
+      autoRecordStartedRef.current = true;
+      startTraceRecording(traceConfig);
+    }
+    const requestedFrames = Number.parseInt(params.get("botframes") ?? "8000", 10);
+    const maxFrames = Number.isFinite(requestedFrames) ? clamp(requestedFrames, 600, 20000) : 8000;
+    void runBotFrameBatch(maxFrames);
+  }, [runBotFrameBatch, startTraceRecording, status]);
+
+  useEffect(() => {
+    const entry = identifyTasForRom(romMetadata);
+    const defaultMovie = selectDefaultTasMovie(entry);
+    tasMovieRef.current = null;
+    tasPlaybackRef.current = {
+      active: false,
+      movieId: defaultMovie?.id ?? "",
+      frameIndex: 0
+    };
+    setSelectedTasMovieId(defaultMovie?.id ?? "");
+    setTasPlaybackState({
+      ...createIdleTasPlaybackState(),
+      movieId: defaultMovie?.id ?? "",
+      message: defaultMovie ? "已自动选择匹配 TAS" : "当前 ROM 无匹配 TAS"
+    });
+  }, [romMetadata?.md5, romMetadata?.romProfileId]);
 
   useEffect(() => {
     return () => {
@@ -4409,6 +8188,12 @@ function App() {
   }, []);
 
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
+  const loadedTasEntry = identifyTasForRom(romMetadata);
+  const sideTrainingStates: Record<PlayerSide, SideTrainingState> = {
+    "1P": buildSideTrainingState("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
+    "2P": buildSideTrainingState("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
+  };
+  const globalTraining = buildGlobalTrainingState(traceRecording, traceSampleCount, traceLastSummary, playTraceReport, loadedTasEntry, botRunReport);
   const pilots: Pilot[] = [
     {
       side: "1P",
@@ -4426,7 +8211,8 @@ function App() {
       authority: getAuthorityLabel(controlModes["1P"]),
       metricGroups: buildPilotMetricGroups("1P", controlModes["1P"], buttonStates["1P"], playerMetrics["1P"], ramSnapshot, gameplayActive, status),
       dialogue: buildPilotDialogue("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot),
-      dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["1P"], aiFsmStatesRef.current["1P"])
+      dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["1P"], aiFsmStatesRef.current["1P"], aiLoopExitStatesRef.current["1P"], buttonStates["1P"]),
+      training: sideTrainingStates["1P"]
     },
     {
       side: "2P",
@@ -4444,9 +8230,46 @@ function App() {
       authority: getAuthorityLabel(controlModes["2P"]),
       metricGroups: buildPilotMetricGroups("2P", controlModes["2P"], buttonStates["2P"], playerMetrics["2P"], ramSnapshot, gameplayActive, status),
       dialogue: buildPilotDialogue("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot),
-      dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["2P"], aiFsmStatesRef.current["2P"])
+      dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["2P"], aiFsmStatesRef.current["2P"], aiLoopExitStatesRef.current["2P"], buttonStates["2P"]),
+      training: sideTrainingStates["2P"]
     }
   ];
+  const runtimeDebugSnapshots = {
+    "1P": buildRuntimeDebugSnapshot({
+      side: "1P",
+      mode: controlModes["1P"],
+      strategyKey: strategyModels["1P"],
+      strategyPlans,
+      ramSnapshot,
+      frameCount,
+      gameplayActive,
+      runtimeStatus: status,
+      actionLock: aiActionLocksRef.current["1P"],
+      fsmState: aiFsmStatesRef.current["1P"],
+      loopExit: aiLoopExitStatesRef.current["1P"],
+      buttons: buttonStates["1P"],
+      rawAiButtons: lastRawAiButtonsRef.current["1P"],
+      lockedAiButtons: lastLockedAiButtonsRef.current["1P"],
+      bossWallPhaseState: bossWallPhaseStatesRef.current["1P"]
+    }),
+    "2P": buildRuntimeDebugSnapshot({
+      side: "2P",
+      mode: controlModes["2P"],
+      strategyKey: strategyModels["2P"],
+      strategyPlans,
+      ramSnapshot,
+      frameCount,
+      gameplayActive,
+      runtimeStatus: status,
+      actionLock: aiActionLocksRef.current["2P"],
+      fsmState: aiFsmStatesRef.current["2P"],
+      loopExit: aiLoopExitStatesRef.current["2P"],
+      buttons: buttonStates["2P"],
+      rawAiButtons: lastRawAiButtonsRef.current["2P"],
+      lockedAiButtons: lastLockedAiButtonsRef.current["2P"],
+      bossWallPhaseState: bossWallPhaseStatesRef.current["2P"]
+    })
+  };
 
   return (
     <main className="cockpit">
@@ -4490,18 +8313,34 @@ function App() {
             volume={volume}
           />
           <ConsoleDeck
+            globalTraining={globalTraining}
             onDirectoryFiles={handleRomDirectoryFiles}
             onLoadLocalRom={loadLocalRom}
             onPause={() => setRunning(false)}
             onReset={resetRuntime}
             onRun={() => setRunning(true)}
             onSelectRom={selectRomEntry}
+            onTasCommentaryModeChange={setTasCommentaryMode}
+            onTasLoad={() => { void loadSelectedTasMovie(); }}
+            onTasMovieSelect={selectTasMovie}
+            onTasPause={pauseTasReplay}
+            onTasPlay={() => { void startTasReplay(); }}
+            onTasStop={stopTasReplay}
+            onTraceClear={clearTraceRecording}
+            onTraceExport={exportTraceRecording}
+            onTraceStart={startTraceRecording}
+            onTraceStop={stopTraceRecording}
             romLibraryDirLabel={romLibraryDirLabel}
             romLibraryEntries={romLibraryEntries}
             romLibraryStatus={romLibraryStatus}
             romMetadata={romMetadata}
+            selectedTasMovieId={selectedTasMovieId}
             selectedRomEntry={selectedRomEntry}
             status={status}
+            tasCommentaryMode={tasCommentaryMode}
+            tasPlaybackState={tasPlaybackState}
+            traceRecording={traceRecording}
+            traceSampleCount={traceSampleCount}
           />
         </div>
         <PilotPanel
@@ -4529,6 +8368,7 @@ function App() {
         audioStatus={audioStatus}
         buttonStates={buttonStates}
         controlModes={controlModes}
+        deathTraceReports={deathTraceReports}
         frameCount={frameCount}
         gameplayActive={gameplayActive}
         onTraceClear={clearTraceRecording}
@@ -4544,6 +8384,10 @@ function App() {
         traceRecording={traceRecording}
         traceSampleCount={traceSampleCount}
       />
+      <output data-testid="runtime-debug-json" hidden>{JSON.stringify(runtimeDebugSnapshots)}</output>
+      <output data-testid="bot-run-report-json" hidden>{JSON.stringify(botRunReport)}</output>
+      <output data-testid="play-trace-report-json" hidden>{JSON.stringify(playTraceReport)}</output>
+      <output data-testid="play-trace-samples-json" hidden>{JSON.stringify(traceSampleSnapshot)}</output>
       <StrategyDesignerPanel
         draft={strategyDraft}
         onApply1P={() => saveStrategyDraft("1P")}
@@ -4559,4 +8403,18 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+declare global {
+  interface Window {
+    __fcAiBrowserCockpitRoot?: Root;
+  }
+}
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Missing browser cockpit root element.");
+}
+
+const root = window.__fcAiBrowserCockpitRoot ?? createRoot(rootElement);
+window.__fcAiBrowserCockpitRoot = root;
+root.render(<App />);

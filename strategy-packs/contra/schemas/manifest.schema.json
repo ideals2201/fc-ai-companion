@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fc-ai.local/schemas/strategy-pack-manifest-1.0.0.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "packId",
+    "packVersion",
+    "gameProfileId",
+    "romProfileIds",
+    "strategyKeys",
+    "supportedModes",
+    "status",
+    "standards",
+    "files",
+    "quality"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "packId": { "type": "string", "minLength": 1 },
+    "packVersion": { "type": "string", "minLength": 1 },
+    "gameProfileId": { "type": "string", "minLength": 1 },
+    "romProfileIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "strategyKeys": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "supportedModes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "status": {
+      "enum": [
+        "draft",
+        "candidate",
+        "validated-single-ai",
+        "validated-human-ai",
+        "validated-dual-ai",
+        "retired"
+      ]
+    },
+    "standards": { "type": "object" },
+    "files": { "type": "object" },
+    "quality": { "type": "object" }
+  },
+  "additionalProperties": true
+}

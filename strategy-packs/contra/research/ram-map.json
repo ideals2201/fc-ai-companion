@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-us-good",
+  "source": "browser-cockpit-jsnes-ram-read",
+  "readMode": "state.nes.cpu.mem[addr & 0x7ff]",
+  "addresses": {
+    "stage.id": {
+      "address": "0x0030",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.lives": {
+      "address": "0x0032",
+      "type": "byte",
+      "verified": true
+    },
+    "game.gameOver": {
+      "address": "0x0038",
+      "type": "byte",
+      "verified": true
+    },
+    "objective.barrierCleared": {
+      "address": "0x003B",
+      "type": "byte",
+      "verified": true
+    },
+    "ram.levelScreenNumber": {
+      "address": "0x0064",
+      "type": "byte",
+      "verified": true
+    },
+    "ram.levelScreenScrollOffset": {
+      "address": "0x0065",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.state": {
+      "address": "0x0090",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.jumpState": {
+      "address": "0x00A0",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.weapon": {
+      "address": "0x00AA",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.deathFlag": {
+      "address": "0x00B4",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.screenY": {
+      "address": "0x031A",
+      "type": "byte",
+      "verified": true
+    },
+    "player.1.screenX": {
+      "address": "0x0334",
+      "type": "byte",
+      "verified": true
+    }
+  },
+  "entitySlots": {
+    "count": 16,
+    "fields": {
+      "y": "0x0324 + slot",
+      "x": "0x033E + slot",
+      "routine": "0x04B8 + slot",
+      "ySpeed": "0x04E8 + slot",
+      "xSpeed": "0x0508 + slot",
+      "type": "0x0528 + slot",
+      "attackDelay": "0x0558 + slot",
+      "animation": "0x0568 + slot",
+      "hp": "0x0578 + slot",
+      "attribute": "0x05A8 + slot"
+    },
+    "verified": true
+  },
+  "unverified": [
+    "player.2.screenX",
+    "player.2.screenY",
+    "player.2.lives",
+    "player.2.weapon",
+    "player.2.jumpState"
+  ]
+}

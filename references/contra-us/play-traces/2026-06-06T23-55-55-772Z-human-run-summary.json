@@ -1,0 +1,1997 @@
+{
+  "createdAt": "2026-06-06T23:55:55.768Z",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&autorun=1&record=human-run-1780789487047",
+  "summary": {
+    "sampleCount": 33010,
+    "gameplaySampleCount": 26235,
+    "startFrame": 1251,
+    "endFrame": 32944,
+    "startWorldX": 401,
+    "endWorldX": 112,
+    "maxWorldX": 3321,
+    "startScore": 0,
+    "endScore": 22900,
+    "startWeapon": 1,
+    "endWeapon": 0,
+    "kills": 205,
+    "killsByKind": {
+      "infantry": 126,
+      "turret": 23,
+      "flying": 35,
+      "boss": 3,
+      "unknown": 18
+    },
+    "weapons": 29,
+    "fastPasses": 10,
+    "stalls": 3,
+    "deaths": 0,
+    "routeSegments": 37,
+    "finalRuntime": {
+      "level": 1,
+      "worldX": 82,
+      "score": 22900,
+      "weapon": 0,
+      "gameplayActive": false,
+      "routeSegment": "none"
+    }
+  },
+  "attempts": [
+    {
+      "index": 1,
+      "startFrame": 1251,
+      "endFrame": 2323,
+      "startWorldX": 401,
+      "endWorldX": 1312,
+      "maxWorldX": 1312,
+      "frames": 1070,
+      "distance": 909,
+      "scoreDelta": 0,
+      "kills": 9,
+      "weapons": 1,
+      "fastPasses": 2,
+      "stalls": 0,
+      "deaths": 0,
+      "turretKills": 1,
+      "bossKills": 0,
+      "lastEvents": [
+        {
+          "kind": "weapon",
+          "frame": 1324,
+          "worldX": 442,
+          "routeSegment": "start-survive",
+          "label": "weapon 1->17"
+        },
+        {
+          "kind": "kill",
+          "frame": 1433,
+          "worldX": 511,
+          "routeSegment": "start-survive",
+          "label": "infantry slot4 type0x5"
+        },
+        {
+          "kind": "fast-pass",
+          "frame": 1442,
+          "worldX": 520,
+          "routeSegment": "bridge-survive",
+          "label": "fast 409/427"
+        },
+        {
+          "kind": "kill",
+          "frame": 1476,
+          "worldX": 554,
+          "routeSegment": "bridge-survive",
+          "label": "infantry slot14 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 1674,
+          "worldX": 751,
+          "routeSegment": "bridge-survive",
+          "label": "infantry slot4 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 1678,
+          "worldX": 755,
+          "routeSegment": "bridge-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 1686,
+          "worldX": 762,
+          "routeSegment": "bridge-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "fast-pass",
+          "frame": 1870,
+          "worldX": 930,
+          "routeSegment": "mid-survive",
+          "label": "fast 382/453"
+        },
+        {
+          "kind": "kill",
+          "frame": 2085,
+          "worldX": 1145,
+          "routeSegment": "mid-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 2137,
+          "worldX": 1197,
+          "routeSegment": "mid-survive",
+          "label": "infantry slot13 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 2235,
+          "worldX": 1262,
+          "routeSegment": "mid-survive",
+          "label": "turret slot11 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 2293,
+          "worldX": 1301,
+          "routeSegment": "mid-survive",
+          "label": "flying slot14 type0x3"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 1324,
+          "worldX": 442,
+          "routeSegment": "start-survive",
+          "fromCode": 1,
+          "toCode": 17
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "startFrame": 3018,
+      "endFrame": 8577,
+      "startWorldX": 112,
+      "endWorldX": 2341,
+      "maxWorldX": 2341,
+      "frames": 4865,
+      "distance": 2641,
+      "scoreDelta": 10700,
+      "kills": 49,
+      "weapons": 5,
+      "fastPasses": 1,
+      "stalls": 0,
+      "deaths": 0,
+      "turretKills": 3,
+      "bossKills": 2,
+      "lastEvents": [
+        {
+          "kind": "kill",
+          "frame": 7376,
+          "worldX": 1545,
+          "routeSegment": "mid-survive",
+          "label": "infantry slot4 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 7384,
+          "worldX": 1553,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot3 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 7385,
+          "worldX": 1554,
+          "routeSegment": "danger-survive",
+          "label": "flying slot14 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 7688,
+          "worldX": 1696,
+          "routeSegment": "danger-survive",
+          "label": "turret slot12 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 7722,
+          "worldX": 1709,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 7787,
+          "worldX": 1712,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 7876,
+          "worldX": 1772,
+          "routeSegment": "danger-survive",
+          "label": "turret slot15 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 8209,
+          "worldX": 2067,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot4 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 8214,
+          "worldX": 2071,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 8223,
+          "worldX": 2080,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 8329,
+          "worldX": 2127,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot14 type0x7"
+        },
+        {
+          "kind": "kill",
+          "frame": 8567,
+          "worldX": 2331,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot14 type0x6"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 3018,
+          "worldX": 112,
+          "routeSegment": "none",
+          "fromCode": 17,
+          "toCode": 0
+        },
+        {
+          "frame": 5562,
+          "worldX": 363,
+          "routeSegment": "start-survive",
+          "fromCode": 0,
+          "toCode": 1
+        },
+        {
+          "frame": 5873,
+          "worldX": 562,
+          "routeSegment": "bridge-survive",
+          "fromCode": 1,
+          "toCode": 17
+        },
+        {
+          "frame": 6017,
+          "worldX": 508,
+          "routeSegment": "start-survive",
+          "fromCode": 17,
+          "toCode": 0
+        },
+        {
+          "frame": 7280,
+          "worldX": 1452,
+          "routeSegment": "mid-survive",
+          "fromCode": 0,
+          "toCode": 3
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "startFrame": 9073,
+      "endFrame": 13651,
+      "startWorldX": 48,
+      "endWorldX": 2621,
+      "maxWorldX": 2621,
+      "frames": 4574,
+      "distance": 2569,
+      "scoreDelta": 10800,
+      "kills": 32,
+      "weapons": 6,
+      "fastPasses": 2,
+      "stalls": 0,
+      "deaths": 0,
+      "turretKills": 5,
+      "bossKills": 0,
+      "lastEvents": [
+        {
+          "kind": "kill",
+          "frame": 11767,
+          "worldX": 1774,
+          "routeSegment": "danger-survive",
+          "label": "turret slot15 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 11803,
+          "worldX": 1774,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 11877,
+          "worldX": 1795,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 11911,
+          "worldX": 1829,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 12094,
+          "worldX": 2009,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "weapon",
+          "frame": 12241,
+          "worldX": 1951,
+          "routeSegment": "danger-survive",
+          "label": "weapon 2->0"
+        },
+        {
+          "kind": "kill",
+          "frame": 12494,
+          "worldX": 2032,
+          "routeSegment": "danger-survive",
+          "label": "turret slot15 type0x7"
+        },
+        {
+          "kind": "kill",
+          "frame": 12603,
+          "worldX": 2037,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 12871,
+          "worldX": 2191,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot15 type0x7"
+        },
+        {
+          "kind": "kill",
+          "frame": 13025,
+          "worldX": 2323,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot15 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 13186,
+          "worldX": 2359,
+          "routeSegment": "boss-approach-survive",
+          "label": "flying slot12 type0x2"
+        },
+        {
+          "kind": "weapon",
+          "frame": 13292,
+          "worldX": 2349,
+          "routeSegment": "boss-approach-survive",
+          "label": "weapon 0->3"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 9073,
+          "worldX": 48,
+          "routeSegment": "start-survive",
+          "fromCode": 3,
+          "toCode": 0
+        },
+        {
+          "frame": 9427,
+          "worldX": 363,
+          "routeSegment": "start-survive",
+          "fromCode": 0,
+          "toCode": 1
+        },
+        {
+          "frame": 10559,
+          "worldX": 1185,
+          "routeSegment": "mid-survive",
+          "fromCode": 1,
+          "toCode": 0
+        },
+        {
+          "frame": 11513,
+          "worldX": 1619,
+          "routeSegment": "danger-survive",
+          "fromCode": 0,
+          "toCode": 2
+        },
+        {
+          "frame": 12241,
+          "worldX": 1951,
+          "routeSegment": "danger-survive",
+          "fromCode": 2,
+          "toCode": 0
+        },
+        {
+          "frame": 13292,
+          "worldX": 2349,
+          "routeSegment": "boss-approach-survive",
+          "fromCode": 0,
+          "toCode": 3
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "startFrame": 14166,
+      "endFrame": 17805,
+      "startWorldX": 48,
+      "endWorldX": 2328,
+      "maxWorldX": 2328,
+      "frames": 3527,
+      "distance": 2355,
+      "scoreDelta": 9400,
+      "kills": 25,
+      "weapons": 5,
+      "fastPasses": 2,
+      "stalls": 0,
+      "deaths": 0,
+      "turretKills": 3,
+      "bossKills": 0,
+      "lastEvents": [
+        {
+          "kind": "weapon",
+          "frame": 15720,
+          "worldX": 1232,
+          "routeSegment": "mid-survive",
+          "label": "weapon 17->0"
+        },
+        {
+          "kind": "kill",
+          "frame": 15762,
+          "worldX": 1229,
+          "routeSegment": "mid-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 16089,
+          "worldX": 1505,
+          "routeSegment": "mid-survive",
+          "label": "infantry slot14 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 16248,
+          "worldX": 1605,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 16592,
+          "worldX": 1525,
+          "routeSegment": "mid-survive",
+          "label": "flying slot13 type0x2"
+        },
+        {
+          "kind": "weapon",
+          "frame": 16707,
+          "worldX": 1599,
+          "routeSegment": "danger-survive",
+          "label": "weapon 0->2"
+        },
+        {
+          "kind": "kill",
+          "frame": 16749,
+          "worldX": 1605,
+          "routeSegment": "danger-survive",
+          "label": "turret slot12 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 16911,
+          "worldX": 1714,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 17045,
+          "worldX": 1779,
+          "routeSegment": "danger-survive",
+          "label": "turret slot15 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 17258,
+          "worldX": 1966,
+          "routeSegment": "danger-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 17444,
+          "worldX": 2121,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 17486,
+          "worldX": 2121,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot14 type0x7"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 14166,
+          "worldX": 48,
+          "routeSegment": "start-survive",
+          "fromCode": 3,
+          "toCode": 0
+        },
+        {
+          "frame": 14481,
+          "worldX": 363,
+          "routeSegment": "start-survive",
+          "fromCode": 0,
+          "toCode": 1
+        },
+        {
+          "frame": 14570,
+          "worldX": 381,
+          "routeSegment": "start-survive",
+          "fromCode": 1,
+          "toCode": 17
+        },
+        {
+          "frame": 15720,
+          "worldX": 1232,
+          "routeSegment": "mid-survive",
+          "fromCode": 17,
+          "toCode": 0
+        },
+        {
+          "frame": 16707,
+          "worldX": 1599,
+          "routeSegment": "danger-survive",
+          "fromCode": 0,
+          "toCode": 2
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "startFrame": 18309,
+      "endFrame": 23682,
+      "startWorldX": 48,
+      "endWorldX": 2880,
+      "maxWorldX": 2880,
+      "frames": 5369,
+      "distance": 2828,
+      "scoreDelta": 12800,
+      "kills": 39,
+      "weapons": 7,
+      "fastPasses": 1,
+      "stalls": 0,
+      "deaths": 0,
+      "turretKills": 5,
+      "bossKills": 0,
+      "lastEvents": [
+        {
+          "kind": "kill",
+          "frame": 21856,
+          "worldX": 2277,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot14 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 22062,
+          "worldX": 2345,
+          "routeSegment": "boss-approach-survive",
+          "label": "flying slot15 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 22115,
+          "worldX": 2359,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "weapon",
+          "frame": 22256,
+          "worldX": 2272,
+          "routeSegment": "boss-approach-survive",
+          "label": "weapon 2->0"
+        },
+        {
+          "kind": "weapon",
+          "frame": 22433,
+          "worldX": 2345,
+          "routeSegment": "boss-approach-survive",
+          "label": "weapon 0->3"
+        },
+        {
+          "kind": "kill",
+          "frame": 22510,
+          "worldX": 2405,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 23064,
+          "worldX": 2706,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot15 type0x7"
+        },
+        {
+          "kind": "kill",
+          "frame": 23236,
+          "worldX": 2750,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 23308,
+          "worldX": 2804,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 23453,
+          "worldX": 2878,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 23658,
+          "worldX": 2887,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot15 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 23661,
+          "worldX": 2887,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot5 type0x5"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 18309,
+          "worldX": 48,
+          "routeSegment": "start-survive",
+          "fromCode": 2,
+          "toCode": 0
+        },
+        {
+          "frame": 18641,
+          "worldX": 363,
+          "routeSegment": "start-survive",
+          "fromCode": 0,
+          "toCode": 1
+        },
+        {
+          "frame": 19088,
+          "worldX": 588,
+          "routeSegment": "bridge-survive",
+          "fromCode": 1,
+          "toCode": 17
+        },
+        {
+          "frame": 19503,
+          "worldX": 783,
+          "routeSegment": "bridge-survive",
+          "fromCode": 17,
+          "toCode": 0
+        },
+        {
+          "frame": 20623,
+          "worldX": 1606,
+          "routeSegment": "danger-survive",
+          "fromCode": 0,
+          "toCode": 2
+        },
+        {
+          "frame": 22256,
+          "worldX": 2272,
+          "routeSegment": "boss-approach-survive",
+          "fromCode": 2,
+          "toCode": 0
+        },
+        {
+          "frame": 22433,
+          "worldX": 2345,
+          "routeSegment": "boss-approach-survive",
+          "fromCode": 0,
+          "toCode": 3
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "startFrame": 24789,
+      "endFrame": 32171,
+      "startWorldX": 48,
+      "endWorldX": 3321,
+      "maxWorldX": 3321,
+      "frames": 7375,
+      "distance": 3268,
+      "scoreDelta": 22900,
+      "kills": 42,
+      "weapons": 5,
+      "fastPasses": 2,
+      "stalls": 2,
+      "deaths": 0,
+      "turretKills": 6,
+      "bossKills": 1,
+      "lastEvents": [
+        {
+          "kind": "kill",
+          "frame": 28408,
+          "worldX": 2267,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot15 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 28679,
+          "worldX": 2344,
+          "routeSegment": "boss-approach-survive",
+          "label": "flying slot12 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 28820,
+          "worldX": 2350,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "weapon",
+          "frame": 28822,
+          "worldX": 2349,
+          "routeSegment": "boss-approach-survive",
+          "label": "weapon 17->3"
+        },
+        {
+          "kind": "kill",
+          "frame": 28899,
+          "worldX": 2351,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot5 type0x5"
+        },
+        {
+          "kind": "weapon",
+          "frame": 29357,
+          "worldX": 2542,
+          "routeSegment": "boss-approach-survive",
+          "label": "weapon 3->0"
+        },
+        {
+          "kind": "kill",
+          "frame": 29664,
+          "worldX": 2694,
+          "routeSegment": "boss-approach-survive",
+          "label": "turret slot15 type0x7"
+        },
+        {
+          "kind": "kill",
+          "frame": 29971,
+          "worldX": 2884,
+          "routeSegment": "boss-approach-survive",
+          "label": "infantry slot6 type0x5"
+        },
+        {
+          "kind": "kill",
+          "frame": 30827,
+          "worldX": 3023,
+          "routeSegment": "boss-wall-survive",
+          "label": "turret slot15 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 30911,
+          "worldX": 3032,
+          "routeSegment": "boss-wall-survive",
+          "label": "turret slot14 type0x4"
+        },
+        {
+          "kind": "kill",
+          "frame": 31616,
+          "worldX": 3189,
+          "routeSegment": "boss-wall-survive",
+          "label": "infantry slot13 type0x6"
+        },
+        {
+          "kind": "kill",
+          "frame": 31707,
+          "worldX": 3208,
+          "routeSegment": "boss-wall-survive",
+          "label": "boss slot14 type0x11"
+        }
+      ],
+      "weaponEvents": [
+        {
+          "frame": 24789,
+          "worldX": 48,
+          "routeSegment": "start-survive",
+          "fromCode": 3,
+          "toCode": 0
+        },
+        {
+          "frame": 25104,
+          "worldX": 363,
+          "routeSegment": "start-survive",
+          "fromCode": 0,
+          "toCode": 1
+        },
+        {
+          "frame": 25349,
+          "worldX": 477,
+          "routeSegment": "start-survive",
+          "fromCode": 1,
+          "toCode": 17
+        },
+        {
+          "frame": 28822,
+          "worldX": 2349,
+          "routeSegment": "boss-approach-survive",
+          "fromCode": 17,
+          "toCode": 3
+        },
+        {
+          "frame": 29357,
+          "worldX": 2542,
+          "routeSegment": "boss-approach-survive",
+          "fromCode": 3,
+          "toCode": 0
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "startFrame": 32416,
+      "endFrame": 32944,
+      "startWorldX": 112,
+      "endWorldX": 112,
+      "maxWorldX": 112,
+      "frames": 528,
+      "distance": 0,
+      "scoreDelta": 0,
+      "kills": 9,
+      "weapons": 0,
+      "fastPasses": 0,
+      "stalls": 1,
+      "deaths": 0,
+      "turretKills": 0,
+      "bossKills": 0,
+      "lastEvents": [
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "infantry slot5 type0x1"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "infantry slot6 type0x1"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "infantry slot7 type0x1"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "infantry slot8 type0x1"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "flying slot9 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "flying slot10 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "flying slot11 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "flying slot12 type0x2"
+        },
+        {
+          "kind": "kill",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "flying slot13 type0x2"
+        },
+        {
+          "kind": "stall",
+          "frame": 32416,
+          "worldX": 112,
+          "routeSegment": "none",
+          "label": "stall 0/528"
+        }
+      ],
+      "weaponEvents": []
+    }
+  ],
+  "fastPasses": [
+    {
+      "startFrame": 1442,
+      "endFrame": 1869,
+      "startWorldX": 520,
+      "endWorldX": 929,
+      "routeSegment": "bridge-survive",
+      "frames": 427,
+      "distance": 409,
+      "averageWorldXPerFrame": 0.9578454332552693
+    },
+    {
+      "startFrame": 1870,
+      "endFrame": 2323,
+      "startWorldX": 930,
+      "endWorldX": 1312,
+      "routeSegment": "mid-survive",
+      "frames": 453,
+      "distance": 382,
+      "averageWorldXPerFrame": 0.8432671081677704
+    },
+    {
+      "startFrame": 6062,
+      "endFrame": 6474,
+      "startWorldX": 520,
+      "endWorldX": 929,
+      "routeSegment": "bridge-survive",
+      "frames": 412,
+      "distance": 409,
+      "averageWorldXPerFrame": 0.9927184466019418
+    },
+    {
+      "startFrame": 9073,
+      "endFrame": 9583,
+      "startWorldX": 48,
+      "endWorldX": 519,
+      "routeSegment": "start-survive",
+      "frames": 510,
+      "distance": 471,
+      "averageWorldXPerFrame": 0.9235294117647059
+    },
+    {
+      "startFrame": 9584,
+      "endFrame": 10041,
+      "startWorldX": 520,
+      "endWorldX": 929,
+      "routeSegment": "bridge-survive",
+      "frames": 457,
+      "distance": 409,
+      "averageWorldXPerFrame": 0.8949671772428884
+    },
+    {
+      "startFrame": 14166,
+      "endFrame": 14713,
+      "startWorldX": 48,
+      "endWorldX": 519,
+      "routeSegment": "start-survive",
+      "frames": 547,
+      "distance": 471,
+      "averageWorldXPerFrame": 0.8610603290676416
+    },
+    {
+      "startFrame": 14714,
+      "endFrame": 15126,
+      "startWorldX": 520,
+      "endWorldX": 929,
+      "routeSegment": "bridge-survive",
+      "frames": 412,
+      "distance": 409,
+      "averageWorldXPerFrame": 0.9927184466019418
+    },
+    {
+      "startFrame": 18309,
+      "endFrame": 18840,
+      "startWorldX": 48,
+      "endWorldX": 519,
+      "routeSegment": "start-survive",
+      "frames": 531,
+      "distance": 471,
+      "averageWorldXPerFrame": 0.8870056497175142
+    },
+    {
+      "startFrame": 25392,
+      "endFrame": 25804,
+      "startWorldX": 520,
+      "endWorldX": 929,
+      "routeSegment": "bridge-survive",
+      "frames": 412,
+      "distance": 409,
+      "averageWorldXPerFrame": 0.9927184466019418
+    },
+    {
+      "startFrame": 25805,
+      "endFrame": 26559,
+      "startWorldX": 930,
+      "endWorldX": 1549,
+      "routeSegment": "mid-survive",
+      "frames": 754,
+      "distance": 619,
+      "averageWorldXPerFrame": 0.8209549071618037
+    }
+  ],
+  "stalls": [
+    {
+      "startFrame": 26560,
+      "endFrame": 26621,
+      "startWorldX": 1550,
+      "endWorldX": 1550,
+      "routeSegment": "danger-survive",
+      "frames": 61,
+      "distance": 0,
+      "averageWorldXPerFrame": 0
+    },
+    {
+      "startFrame": 26622,
+      "endFrame": 26922,
+      "startWorldX": 1549,
+      "endWorldX": 1549,
+      "routeSegment": "mid-survive",
+      "frames": 300,
+      "distance": 0,
+      "averageWorldXPerFrame": 0
+    },
+    {
+      "startFrame": 32416,
+      "endFrame": 32944,
+      "startWorldX": 112,
+      "endWorldX": 112,
+      "routeSegment": "none",
+      "frames": 528,
+      "distance": 0,
+      "averageWorldXPerFrame": 0
+    }
+  ],
+  "weaponEvents": [
+    {
+      "frame": 1324,
+      "worldX": 442,
+      "routeSegment": "start-survive",
+      "fromCode": 1,
+      "toCode": 17
+    },
+    {
+      "frame": 3018,
+      "worldX": 112,
+      "routeSegment": "none",
+      "fromCode": 17,
+      "toCode": 0
+    },
+    {
+      "frame": 5562,
+      "worldX": 363,
+      "routeSegment": "start-survive",
+      "fromCode": 0,
+      "toCode": 1
+    },
+    {
+      "frame": 5873,
+      "worldX": 562,
+      "routeSegment": "bridge-survive",
+      "fromCode": 1,
+      "toCode": 17
+    },
+    {
+      "frame": 6017,
+      "worldX": 508,
+      "routeSegment": "start-survive",
+      "fromCode": 17,
+      "toCode": 0
+    },
+    {
+      "frame": 7280,
+      "worldX": 1452,
+      "routeSegment": "mid-survive",
+      "fromCode": 0,
+      "toCode": 3
+    },
+    {
+      "frame": 9073,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "fromCode": 3,
+      "toCode": 0
+    },
+    {
+      "frame": 9427,
+      "worldX": 363,
+      "routeSegment": "start-survive",
+      "fromCode": 0,
+      "toCode": 1
+    },
+    {
+      "frame": 10559,
+      "worldX": 1185,
+      "routeSegment": "mid-survive",
+      "fromCode": 1,
+      "toCode": 0
+    },
+    {
+      "frame": 11513,
+      "worldX": 1619,
+      "routeSegment": "danger-survive",
+      "fromCode": 0,
+      "toCode": 2
+    },
+    {
+      "frame": 12241,
+      "worldX": 1951,
+      "routeSegment": "danger-survive",
+      "fromCode": 2,
+      "toCode": 0
+    },
+    {
+      "frame": 13292,
+      "worldX": 2349,
+      "routeSegment": "boss-approach-survive",
+      "fromCode": 0,
+      "toCode": 3
+    },
+    {
+      "frame": 14166,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "fromCode": 3,
+      "toCode": 0
+    },
+    {
+      "frame": 14481,
+      "worldX": 363,
+      "routeSegment": "start-survive",
+      "fromCode": 0,
+      "toCode": 1
+    },
+    {
+      "frame": 14570,
+      "worldX": 381,
+      "routeSegment": "start-survive",
+      "fromCode": 1,
+      "toCode": 17
+    },
+    {
+      "frame": 15720,
+      "worldX": 1232,
+      "routeSegment": "mid-survive",
+      "fromCode": 17,
+      "toCode": 0
+    },
+    {
+      "frame": 16707,
+      "worldX": 1599,
+      "routeSegment": "danger-survive",
+      "fromCode": 0,
+      "toCode": 2
+    },
+    {
+      "frame": 18309,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "fromCode": 2,
+      "toCode": 0
+    },
+    {
+      "frame": 18641,
+      "worldX": 363,
+      "routeSegment": "start-survive",
+      "fromCode": 0,
+      "toCode": 1
+    },
+    {
+      "frame": 19088,
+      "worldX": 588,
+      "routeSegment": "bridge-survive",
+      "fromCode": 1,
+      "toCode": 17
+    },
+    {
+      "frame": 19503,
+      "worldX": 783,
+      "routeSegment": "bridge-survive",
+      "fromCode": 17,
+      "toCode": 0
+    },
+    {
+      "frame": 20623,
+      "worldX": 1606,
+      "routeSegment": "danger-survive",
+      "fromCode": 0,
+      "toCode": 2
+    },
+    {
+      "frame": 22256,
+      "worldX": 2272,
+      "routeSegment": "boss-approach-survive",
+      "fromCode": 2,
+      "toCode": 0
+    },
+    {
+      "frame": 22433,
+      "worldX": 2345,
+      "routeSegment": "boss-approach-survive",
+      "fromCode": 0,
+      "toCode": 3
+    },
+    {
+      "frame": 24789,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "fromCode": 3,
+      "toCode": 0
+    },
+    {
+      "frame": 25104,
+      "worldX": 363,
+      "routeSegment": "start-survive",
+      "fromCode": 0,
+      "toCode": 1
+    },
+    {
+      "frame": 25349,
+      "worldX": 477,
+      "routeSegment": "start-survive",
+      "fromCode": 1,
+      "toCode": 17
+    },
+    {
+      "frame": 28822,
+      "worldX": 2349,
+      "routeSegment": "boss-approach-survive",
+      "fromCode": 17,
+      "toCode": 3
+    },
+    {
+      "frame": 29357,
+      "worldX": 2542,
+      "routeSegment": "boss-approach-survive",
+      "fromCode": 3,
+      "toCode": 0
+    }
+  ],
+  "importantKills": [
+    {
+      "frame": 2235,
+      "worldX": 1262,
+      "routeSegment": "mid-survive",
+      "slot": 11,
+      "type": 4,
+      "hp": 1,
+      "x": 169,
+      "y": 160,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 5192,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "slot": 14,
+      "type": 20,
+      "hp": 8,
+      "x": 104,
+      "y": 104,
+      "kind": "boss",
+      "reason": "disappeared"
+    },
+    {
+      "frame": 5192,
+      "worldX": 48,
+      "routeSegment": "start-survive",
+      "slot": 15,
+      "type": 25,
+      "hp": 241,
+      "x": 24,
+      "y": 16,
+      "kind": "boss",
+      "reason": "disappeared"
+    },
+    {
+      "frame": 7688,
+      "worldX": 1696,
+      "routeSegment": "danger-survive",
+      "slot": 12,
+      "type": 4,
+      "hp": 1,
+      "x": 61,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 7876,
+      "worldX": 1772,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 196,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 8329,
+      "worldX": 2127,
+      "routeSegment": "boss-approach-survive",
+      "slot": 14,
+      "type": 7,
+      "hp": 1,
+      "x": 192,
+      "y": 64,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 10440,
+      "worldX": 1265,
+      "routeSegment": "mid-survive",
+      "slot": 13,
+      "type": 4,
+      "hp": 1,
+      "x": 127,
+      "y": 160,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 11280,
+      "worldX": 1676,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 98,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 11767,
+      "worldX": 1774,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 194,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 12494,
+      "worldX": 2032,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 159,
+      "y": 160,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 12871,
+      "worldX": 2191,
+      "routeSegment": "boss-approach-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 128,
+      "y": 64,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 16749,
+      "worldX": 1605,
+      "routeSegment": "danger-survive",
+      "slot": 12,
+      "type": 4,
+      "hp": 1,
+      "x": 171,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 17045,
+      "worldX": 1779,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 189,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 17486,
+      "worldX": 2121,
+      "routeSegment": "boss-approach-survive",
+      "slot": 14,
+      "type": 7,
+      "hp": 1,
+      "x": 198,
+      "y": 64,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 20733,
+      "worldX": 1608,
+      "routeSegment": "danger-survive",
+      "slot": 14,
+      "type": 4,
+      "hp": 1,
+      "x": 168,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 21056,
+      "worldX": 1747,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 221,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 21598,
+      "worldX": 2131,
+      "routeSegment": "boss-approach-survive",
+      "slot": 14,
+      "type": 7,
+      "hp": 1,
+      "x": 188,
+      "y": 64,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 23064,
+      "worldX": 2706,
+      "routeSegment": "boss-approach-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 184,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 23658,
+      "worldX": 2887,
+      "routeSegment": "boss-approach-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 233,
+      "y": 192,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 27603,
+      "worldX": 1833,
+      "routeSegment": "danger-survive",
+      "slot": 11,
+      "type": 4,
+      "hp": 1,
+      "x": 133,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 27883,
+      "worldX": 2027,
+      "routeSegment": "danger-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 164,
+      "y": 160,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 28241,
+      "worldX": 2191,
+      "routeSegment": "boss-approach-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 128,
+      "y": 64,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 29664,
+      "worldX": 2694,
+      "routeSegment": "boss-approach-survive",
+      "slot": 15,
+      "type": 7,
+      "hp": 1,
+      "x": 201,
+      "y": 128,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 30827,
+      "worldX": 3023,
+      "routeSegment": "boss-wall-survive",
+      "slot": 15,
+      "type": 4,
+      "hp": 1,
+      "x": 90,
+      "y": 192,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 30911,
+      "worldX": 3032,
+      "routeSegment": "boss-wall-survive",
+      "slot": 14,
+      "type": 4,
+      "hp": 1,
+      "x": 216,
+      "y": 192,
+      "kind": "turret",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 31616,
+      "worldX": 3189,
+      "routeSegment": "boss-wall-survive",
+      "slot": 13,
+      "type": 6,
+      "hp": 1,
+      "x": 166,
+      "y": 70,
+      "kind": "infantry",
+      "reason": "hp-zero"
+    },
+    {
+      "frame": 31707,
+      "worldX": 3208,
+      "routeSegment": "boss-wall-survive",
+      "slot": 14,
+      "type": 17,
+      "hp": 1,
+      "x": 161,
+      "y": 176,
+      "kind": "boss",
+      "reason": "hp-zero"
+    }
+  ],
+  "deathReports": [
+    {
+      "frame": 29247,
+      "worldX": 2622,
+      "screen": 9,
+      "playerX": 128,
+      "playerY": 233,
+      "score": 11200,
+      "weapon": 3,
+      "input": "up+right",
+      "routeSegment": "boss-approach-survive",
+      "routeAction": "cautious",
+      "lastAlive": {
+        "frame": 29246,
+        "worldX": 2621,
+        "playerX": 128,
+        "playerY": 227,
+        "input": "up+right+A"
+      },
+      "topEnemies": [
+        {
+          "slot": 10,
+          "type": 1,
+          "hp": 1,
+          "x": 6,
+          "y": 62,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 13,
+          "type": 1,
+          "hp": 1,
+          "x": 7,
+          "y": 64,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 14,
+          "type": 3,
+          "hp": 1,
+          "x": 171,
+          "y": 203,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 15,
+          "type": 3,
+          "hp": 1,
+          "x": 171,
+          "y": 91,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 4,
+          "type": 5,
+          "hp": 0,
+          "x": 158,
+          "y": 37,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 5,
+          "type": 5,
+          "hp": 0,
+          "x": 167,
+          "y": 133,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "frame": 31446,
+      "worldX": 3208,
+      "screen": 12,
+      "playerX": 136,
+      "playerY": 196,
+      "score": 12400,
+      "weapon": 0,
+      "input": "up+right+B",
+      "routeSegment": "boss-wall-survive",
+      "routeAction": "hold-fire",
+      "lastAlive": {
+        "frame": 31445,
+        "worldX": 3208,
+        "playerX": 136,
+        "playerY": 196,
+        "input": "up+right+B"
+      },
+      "topEnemies": [
+        {
+          "slot": 12,
+          "type": 16,
+          "hp": 15,
+          "x": 177,
+          "y": 128,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 9
+        },
+        {
+          "slot": 15,
+          "type": 16,
+          "hp": 13,
+          "x": 153,
+          "y": 128,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 9
+        },
+        {
+          "slot": 14,
+          "type": 17,
+          "hp": 6,
+          "x": 161,
+          "y": 176,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 6
+        },
+        {
+          "slot": 5,
+          "type": 1,
+          "hp": 1,
+          "x": 48,
+          "y": 210,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 6,
+          "type": 1,
+          "hp": 1,
+          "x": 109,
+          "y": 209,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 7,
+          "type": 1,
+          "hp": 1,
+          "x": 112,
+          "y": 208,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "frame": 32620,
+      "worldX": 112,
+      "screen": 0,
+      "playerX": 112,
+      "playerY": 168,
+      "score": 22900,
+      "weapon": 0,
+      "input": "none",
+      "routeSegment": "none",
+      "routeAction": "fallback",
+      "lastAlive": {
+        "frame": 32619,
+        "worldX": 112,
+        "playerX": 112,
+        "playerY": 168,
+        "input": "none"
+      },
+      "topEnemies": [
+        {
+          "slot": 15,
+          "type": 25,
+          "hp": 241,
+          "x": 16,
+          "y": 16,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 9
+        },
+        {
+          "slot": 14,
+          "type": 20,
+          "hp": 8,
+          "x": 128,
+          "y": 104,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 8
+        },
+        {
+          "slot": 11,
+          "type": 1,
+          "hp": 1,
+          "x": 138,
+          "y": 125,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 12,
+          "type": 1,
+          "hp": 1,
+          "x": 117,
+          "y": 169,
+          "routine": 0,
+          "kind": "object",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 13,
+          "type": 22,
+          "hp": 1,
+          "x": 135,
+          "y": 101,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "frame": 32945,
+      "worldX": 112,
+      "screen": 0,
+      "playerX": 112,
+      "playerY": 168,
+      "score": 22900,
+      "weapon": 0,
+      "input": "none",
+      "routeSegment": "none",
+      "routeAction": "fallback",
+      "lastAlive": {
+        "frame": 32944,
+        "worldX": 112,
+        "playerX": 112,
+        "playerY": 168,
+        "input": "none"
+      },
+      "topEnemies": [
+        {
+          "slot": 15,
+          "type": 25,
+          "hp": 241,
+          "x": 16,
+          "y": 16,
+          "routine": 2,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 9
+        },
+        {
+          "slot": 14,
+          "type": 20,
+          "hp": 8,
+          "x": 128,
+          "y": 104,
+          "routine": 4,
+          "kind": "durable",
+          "threat": true,
+          "fixed": true,
+          "priority": 9
+        },
+        {
+          "slot": 11,
+          "type": 21,
+          "hp": 1,
+          "x": 101,
+          "y": 109,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 2
+        },
+        {
+          "slot": 12,
+          "type": 21,
+          "hp": 1,
+          "x": 156,
+          "y": 109,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": true,
+          "priority": 2
+        },
+        {
+          "slot": 3,
+          "type": 1,
+          "hp": 1,
+          "x": 101,
+          "y": 114,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        },
+        {
+          "slot": 4,
+          "type": 1,
+          "hp": 1,
+          "x": 155,
+          "y": 116,
+          "routine": 2,
+          "kind": "enemy",
+          "threat": true,
+          "fixed": false,
+          "priority": 1
+        }
+      ]
+    }
+  ]
+}

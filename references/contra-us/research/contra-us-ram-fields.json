@@ -1,0 +1,491 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-06-07",
+  "game": "Contra",
+  "rom": {
+    "region": "US",
+    "md5": "7BDAD8B4A7A56A634C9649D20BD3011B",
+    "confirmation_sources": [
+      {
+        "name": "vermiceli/nes-contra-us README",
+        "url": "https://github.com/vermiceli/nes-contra-us",
+        "section": "Building / Prerequisites"
+      }
+    ]
+  },
+  "source_refs": [
+    {
+      "id": "vermiceli_ram_asm",
+      "url": "https://github.com/vermiceli/nes-contra-us/blob/main/src/ram.asm",
+      "use": "Primary symbolic RAM labels and comments"
+    },
+    {
+      "id": "data_crystal_ram_map",
+      "url": "https://datacrystal.tcrf.net/wiki/Contra_(NES)/RAM_map",
+      "use": "External RAM-map cross-check"
+    },
+    {
+      "id": "speedrunning_technical_details",
+      "url": "https://contra-speedrunning.fandom.com/wiki/Technical_Details_Contra",
+      "use": "Explains screen-space coordinate model and random spawn behavior"
+    }
+  ],
+  "world_x": {
+    "status": "recommended_but_runtime_alignment_unverified",
+    "horizontal_candidate_formula": "LEVEL_SCREEN_NUMBER * 256 + LEVEL_SCREEN_SCROLL_OFFSET + SPRITE_X_POS[player_index]",
+    "notes": [
+      "Contra stores player, enemy, and bullet positions in screen space; WorldX must combine camera progress and player screen X.",
+      "The project memory baseline uses WorldX = CameraX + PlayerX; map CameraX from LEVEL_SCREEN_NUMBER and LEVEL_SCREEN_SCROLL_OFFSET for horizontal stages.",
+      "Verify whether static level_1_enemy_screen_00 aligns with runtime screen 0 or screen 1 before freezing route windows."
+    ],
+    "camera_fields": [
+      "LEVEL_SCREEN_NUMBER",
+      "LEVEL_SCREEN_SCROLL_OFFSET",
+      "FRAME_SCROLL",
+      "LEVEL_SCROLLING_TYPE"
+    ],
+    "player_screen_x_field": "SPRITE_X_POS[0..1]"
+  },
+  "fields": [
+    {
+      "name": "GAME_ROUTINE_INDEX",
+      "address_hex": "0x0018",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "GAME_ROUTINE_INDEX",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Gate strategy logic to active gameplay routines; avoid running route policy during menus/transitions.",
+      "priority": "later"
+    },
+    {
+      "name": "FRAME_COUNTER",
+      "address_hex": "0x001a",
+      "size": 1,
+      "type": "uint8_wrapping",
+      "source_label": "FRAME_COUNTER",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Timing and random-soldier behavior correlation.",
+      "priority": "high"
+    },
+    {
+      "name": "PLAYER_WEAPON_STRENGTH",
+      "address_hex": "0x002f",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "PLAYER_WEAPON_STRENGTH",
+      "source": "vermiceli_ram_asm",
+      "strategy_use": "Random soldier timer adjustment and boss/enemy HP formulas.",
+      "priority": "medium"
+    },
+    {
+      "name": "CURRENT_LEVEL",
+      "address_hex": "0x0030",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "CURRENT_LEVEL",
+      "source": "vermiceli_ram_asm",
+      "strategy_use": "Level identity; source uses 0x00-0x07 for levels 1-8.",
+      "priority": "high"
+    },
+    {
+      "name": "GAME_COMPLETION_COUNT",
+      "address_hex": "0x0031",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "GAME_COMPLETION_COUNT",
+      "source": "vermiceli_ram_asm",
+      "strategy_use": "Loop count affects random soldier generation and some HP formulas.",
+      "priority": "medium"
+    },
+    {
+      "name": "LEVEL_LOCATION_TYPE",
+      "address_hex": "0x0040",
+      "size": 1,
+      "type": "bitfield",
+      "source_label": "LEVEL_LOCATION_TYPE",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "known_values": {
+        "0x00": "outdoor",
+        "0x01": "indoor_base",
+        "0x80": "indoor boss/advance state"
+      },
+      "strategy_use": "Select outdoor, vertical, or base-level parser and policy.",
+      "priority": "high"
+    },
+    {
+      "name": "LEVEL_SCROLLING_TYPE",
+      "address_hex": "0x0041",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "LEVEL_SCROLLING_TYPE",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "known_values": {
+        "0x00": "horizontal_or_indoor",
+        "0x01": "vertical"
+      },
+      "strategy_use": "Choose WorldX formula for horizontal levels or separate vertical handling.",
+      "priority": "high"
+    },
+    {
+      "name": "LEVEL_SCREEN_NUMBER",
+      "address_hex": "0x0064",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "LEVEL_SCREEN_NUMBER",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Camera screen index; core WorldX input.",
+      "priority": "critical"
+    },
+    {
+      "name": "LEVEL_SCREEN_SCROLL_OFFSET",
+      "address_hex": "0x0065",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "LEVEL_SCREEN_SCROLL_OFFSET",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Pixels into current screen; core WorldX input.",
+      "priority": "critical"
+    },
+    {
+      "name": "FRAME_SCROLL",
+      "address_hex": "0x0068",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "FRAME_SCROLL",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Detect active scrolling and movement progress.",
+      "priority": "critical"
+    },
+    {
+      "name": "SOLDIER_GENERATION_ROUTINE",
+      "address_hex": "0x0079",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "SOLDIER_GENERATION_ROUTINE",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Dynamic random-soldier hazard state.",
+      "priority": "high"
+    },
+    {
+      "name": "SOLDIER_GENERATION_TIMER",
+      "address_hex": "0x007a",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "SOLDIER_GENERATION_TIMER",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Predict imminent random soldier generation.",
+      "priority": "high"
+    },
+    {
+      "name": "SOLDIER_GENERATION_X_POS",
+      "address_hex": "0x007b",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "SOLDIER_GENERATION_X_POS",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Spawn-side dynamic hazard position.",
+      "priority": "medium"
+    },
+    {
+      "name": "SOLDIER_GENERATION_Y_POS",
+      "address_hex": "0x007c",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "SOLDIER_GENERATION_Y_POS",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Generated soldier vertical hazard position.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_SCREEN_READ_OFFSET",
+      "address_hex": "0x0082",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "ENEMY_SCREEN_READ_OFFSET",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Debug/static-spawn ingestion progress; useful for validating source-table alignment.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_CURRENT_SLOT",
+      "address_hex": "0x0083",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "ENEMY_CURRENT_SLOT",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Debug only; do not rely on it as stable policy input unless tracing routines.",
+      "priority": "later"
+    },
+    {
+      "name": "ENEMY_ATTACK_FLAG",
+      "address_hex": "0x008e",
+      "size": 1,
+      "type": "uint8",
+      "source_label": "ENEMY_ATTACK_FLAG",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Whether enemies can attack and whether random enemies can generate.",
+      "priority": "high"
+    },
+    {
+      "name": "PLAYER_X_VELOCITY",
+      "address_hex": "0x0098",
+      "size": 2,
+      "stride": 1,
+      "type": "int8_per_player",
+      "source_label": "PLAYER_X_VELOCITY",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Confirm horizontal movement intent/effect.",
+      "priority": "high"
+    },
+    {
+      "name": "PLAYER_JUMP_STATUS",
+      "address_hex": "0x00a0",
+      "size": 2,
+      "stride": 1,
+      "type": "bitfield_per_player",
+      "source_label": "PLAYER_JUMP_STATUS",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Jump/facing state for route fragments and hazard avoidance.",
+      "priority": "high"
+    },
+    {
+      "name": "EDGE_FALL_CODE",
+      "address_hex": "0x00a4",
+      "size": 2,
+      "stride": 1,
+      "type": "bitfield_per_player",
+      "source_label": "EDGE_FALL_CODE",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Detect ledge fall and fall-through-platform state.",
+      "priority": "high"
+    },
+    {
+      "name": "PLAYER_WATER_STATE",
+      "address_hex": "0x00b2",
+      "size": 2,
+      "stride": 1,
+      "type": "bitfield_per_player",
+      "source_label": "PLAYER_WATER_STATE",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Stage 1 water movement and collision policy.",
+      "priority": "high"
+    },
+    {
+      "name": "PLAYER_DEATH_FLAG",
+      "address_hex": "0x00b4",
+      "size": 2,
+      "stride": 1,
+      "type": "bitfield_per_player",
+      "source_label": "PLAYER_DEATH_FLAG",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Hard abort condition and verification metric.",
+      "priority": "critical"
+    },
+    {
+      "name": "PLAYER_AIM_DIR",
+      "address_hex": "0x00c2",
+      "size": 2,
+      "stride": 1,
+      "type": "uint8_per_player",
+      "source_label": "PLAYER_AIM_DIR",
+      "source": "vermiceli_ram_asm,data_crystal_ram_map",
+      "strategy_use": "Aim-state validation for combat fragments.",
+      "priority": "medium"
+    }
+  ],
+  "arrays": [
+    {
+      "name": "SPRITE_Y_POS",
+      "address_hex": "0x031a",
+      "slots": 10,
+      "stride": 1,
+      "slot_semantics": "first 2 bytes are player sprites, remaining entries are player bullets",
+      "source_label": "SPRITE_Y_POS",
+      "strategy_use": "Player screen Y and bullet debug positions.",
+      "priority": "critical"
+    },
+    {
+      "name": "SPRITE_X_POS",
+      "address_hex": "0x0334",
+      "slots": 10,
+      "stride": 1,
+      "slot_semantics": "first 2 bytes are player sprites, remaining entries are player bullets",
+      "source_label": "SPRITE_X_POS",
+      "strategy_use": "Player screen X for WorldX.",
+      "priority": "critical"
+    },
+    {
+      "name": "ENEMY_SPRITES",
+      "address_hex": "0x030a",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_SPRITES",
+      "strategy_use": "Renderable active enemy indicator.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_Y_POS",
+      "address_hex": "0x0324",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_Y_POS",
+      "strategy_use": "Active enemy screen-space Y.",
+      "priority": "critical"
+    },
+    {
+      "name": "ENEMY_X_POS",
+      "address_hex": "0x033e",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_X_POS",
+      "strategy_use": "Active enemy screen-space X.",
+      "priority": "critical"
+    },
+    {
+      "name": "ENEMY_ROUTINE",
+      "address_hex": "0x04b8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_ROUTINE",
+      "strategy_use": "Enemy lifecycle/routine index; 0 means no loaded enemy in slot.",
+      "priority": "high"
+    },
+    {
+      "name": "ENEMY_Y_VELOCITY_FAST",
+      "address_hex": "0x04e8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_Y_VELOCITY_FAST",
+      "strategy_use": "Hazard motion prediction.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_X_VELOCITY_FAST",
+      "address_hex": "0x0508",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_X_VELOCITY_FAST",
+      "strategy_use": "Hazard motion prediction.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_TYPE",
+      "address_hex": "0x0528",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_TYPE",
+      "strategy_use": "Join runtime slots to entity taxonomy.",
+      "priority": "critical"
+    },
+    {
+      "name": "ENEMY_ANIMATION_DELAY",
+      "address_hex": "0x0538",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_ANIMATION_DELAY",
+      "strategy_use": "Enemy-specific timing; useful after taxonomy is stable.",
+      "priority": "later"
+    },
+    {
+      "name": "ENEMY_ATTACK_DELAY",
+      "address_hex": "0x0558",
+      "slots": 16,
+      "stride": 1,
+      "alias": "ENEMY_VAR_B",
+      "source_label": "ENEMY_ATTACK_DELAY",
+      "strategy_use": "Enemy attack timing for selected entity types.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_FRAME",
+      "address_hex": "0x0568",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_FRAME",
+      "strategy_use": "Animation-state detail; later tactical refinement.",
+      "priority": "later"
+    },
+    {
+      "name": "ENEMY_HP",
+      "address_hex": "0x0578",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_HP",
+      "strategy_use": "Combat state and kill verification, with per-entity override caveats.",
+      "priority": "high"
+    },
+    {
+      "name": "ENEMY_SCORE_COLLISION",
+      "address_hex": "0x0588",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_SCORE_COLLISION",
+      "decoded_fields": {
+        "high_nibble": "score_code",
+        "low_nibble": "collision/explosion code"
+      },
+      "strategy_use": "Risk/reward classification and collision-box family.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_STATE_WIDTH",
+      "address_hex": "0x0598",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_STATE_WIDTH",
+      "strategy_use": "Collision flags, bullet passthrough, landable enemy state.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_ATTRIBUTES",
+      "address_hex": "0x05a8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_ATTRIBUTES",
+      "strategy_use": "Entity-specific behavior configuration.",
+      "priority": "critical"
+    },
+    {
+      "name": "ENEMY_VAR_1",
+      "address_hex": "0x05b8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_VAR_1",
+      "strategy_use": "Entity-specific state; some enemies store real HP or collision parameters here.",
+      "priority": "medium"
+    },
+    {
+      "name": "ENEMY_VAR_2",
+      "address_hex": "0x05c8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_VAR_2",
+      "strategy_use": "Entity-specific state.",
+      "priority": "later"
+    },
+    {
+      "name": "ENEMY_VAR_3",
+      "address_hex": "0x05d8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_VAR_3",
+      "strategy_use": "Entity-specific state.",
+      "priority": "later"
+    },
+    {
+      "name": "ENEMY_VAR_4",
+      "address_hex": "0x05e8",
+      "slots": 16,
+      "stride": 1,
+      "source_label": "ENEMY_VAR_4",
+      "strategy_use": "Entity-specific state; relevant to some bosses.",
+      "priority": "later"
+    }
+  ],
+  "validation_needed": [
+    "Confirm WorldX alignment between level_1_enemy_screen_00 and runtime LEVEL_SCREEN_NUMBER with logs.",
+    "Confirm jsnes CPU memory exposes these addresses without mapper-side translation.",
+    "Record per-frame sample rows: frame, current_level, screen_number, scroll_offset, player_x, player_y, enemy slot type/x/y/routine/hp/attr.",
+    "Do not mark a strategy fragment as RAM-verified until the route window and enemy spawn are observed in emulator RAM logs."
+  ]
+}

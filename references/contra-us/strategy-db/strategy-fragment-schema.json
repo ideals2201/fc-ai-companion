@@ -1,0 +1,434 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fc-ai-companion.local/schemas/contra-us/strategy-fragment-schema.json",
+  "title": "FC AI Companion Contra US strategy fragment database draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "gameId",
+    "romProfileId",
+    "compatibilityGroup",
+    "stage",
+    "fragments"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "gameId": {
+      "type": "string",
+      "const": "contra"
+    },
+    "romProfileId": {
+      "type": "string",
+      "const": "contra-us-good"
+    },
+    "compatibilityGroup": {
+      "type": "string",
+      "const": "contra-us"
+    },
+    "stage": {
+      "type": "integer",
+      "const": 1
+    },
+    "notes": {
+      "type": "string"
+    },
+    "fragments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/fragment"
+      }
+    }
+  },
+  "$defs": {
+    "fragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "status",
+        "strategyTypes",
+        "worldWindow",
+        "trigger",
+        "ramConditions",
+        "actionAdvice",
+        "safetyOverrides",
+        "exitConditions",
+        "failureCounterexamples",
+        "telemetry"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "candidate",
+            "validated",
+            "retired"
+          ]
+        },
+        "strategyTypes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "speedrun",
+              "combat",
+              "loot",
+              "survival",
+              "guard"
+            ]
+          }
+        },
+        "worldWindow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "strictEnd": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "trigger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "conditions"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "all",
+                "any"
+              ]
+            },
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        "ramConditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "actionAdvice": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "intent",
+            "priority",
+            "buttons"
+          ],
+          "properties": {
+            "intent": {
+              "type": "string",
+              "enum": [
+                "advance",
+                "clear-threat",
+                "collect-reward",
+                "survive",
+                "guard-teammate",
+                "hold-position",
+                "escape-loop"
+              ]
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "buttons": {
+              "$ref": "#/$defs/buttonAdvice"
+            },
+            "aim": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "level",
+                "up",
+                "down",
+                "target"
+              ]
+            },
+            "fireMode": {
+              "type": "string",
+              "enum": [
+                "none",
+                "pulse",
+                "hold",
+                "threat",
+                "target"
+              ]
+            },
+            "movementPolicy": {
+              "type": "string",
+              "enum": [
+                "push-right",
+                "pause-right",
+                "hold-ground",
+                "backstep",
+                "jump-commit",
+                "follow-teammate",
+                "formation"
+              ]
+            },
+            "lockFrames": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 180
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "safetyOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/safetyOverride"
+          }
+        },
+        "exitConditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "failureCounterexamples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/failureCounterexample"
+          }
+        },
+        "telemetry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requiredFields",
+            "successSignals"
+          ],
+          "properties": {
+            "requiredFields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "successSignals": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            },
+            "debugTags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "buttonAdvice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "up": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "down": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "left": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "right": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "a": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "b": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "start": {
+          "$ref": "#/$defs/buttonValue"
+        },
+        "select": {
+          "$ref": "#/$defs/buttonValue"
+        }
+      }
+    },
+    "buttonValue": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "pulse",
+            "release",
+            "target"
+          ]
+        }
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "op": {
+          "type": "string",
+          "enum": [
+            "eq",
+            "neq",
+            "lt",
+            "lte",
+            "gt",
+            "gte",
+            "between",
+            "in",
+            "exists",
+            "count-gte",
+            "count-lte"
+          ]
+        },
+        "value": {},
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "safetyOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "priority",
+        "when",
+        "override"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "when": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "override": {
+          "$ref": "#/$defs/buttonAdvice"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "failureCounterexample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "observedAt",
+        "description",
+        "avoid"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "observedAt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "worldX"
+          ],
+          "properties": {
+            "worldX": {
+              "type": "integer"
+            },
+            "playerX": {
+              "type": "integer"
+            },
+            "playerY": {
+              "type": "integer"
+            },
+            "frame": {
+              "type": "integer"
+            }
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "avoid": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

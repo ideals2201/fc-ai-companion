@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0.0",
+  "packId": "contra-stage1-strategy-v0",
+  "packVersion": "0.1.0",
+  "gameProfileId": "contra",
+  "romProfileIds": [
+    "contra-us-good",
+    "contra-j-good"
+  ],
+  "strategyKeys": [
+    "survival-v0",
+    "speedrun-v0",
+    "combat-v0",
+    "loot-v0",
+    "guard-v0"
+  ],
+  "supportedModes": [
+    "single-ai",
+    "human-ai",
+    "dual-ai"
+  ],
+  "status": "candidate",
+  "standards": {
+    "strategyProtocol": "1.0.0",
+    "jsonSchema": "2020-12",
+    "versioning": "semver-2.0.0",
+    "licenseIdentifiers": "spdx"
+  },
+  "files": {
+    "gameProfile": "game-profile.json",
+    "romProfiles": [
+      "rom-profiles/contra-us-good.json",
+      "rom-profiles/contra-j-good.json"
+    ],
+    "ramMap": "research/ram-map.json",
+    "conditionRegistry": "research/condition-registry.json",
+    "entityTaxonomy": "research/entity-taxonomy.json",
+    "actionMap": "research/action-map.json",
+    "strategyTypes": "research/strategy-types.json",
+    "stages": [
+      "stages/stage-1/stage-plan.json"
+    ],
+    "fragments": [
+      "stages/stage-1/fragments.json"
+    ]
+  },
+  "quality": {
+    "confidence": 0.35,
+    "evidenceCount": 1,
+    "validatedModes": [],
+    "knownFailures": [
+      "stage1-w2622-progression-barrier-jump-failure",
+      "stage1-w3208-barrier-node-station-failure",
+      "stage1-bridge-reward-missed",
+      "stage1-fixed-threat-no-fire"
+    ]
+  },
+  "license": {
+    "spdxLicenseId": "LicenseRef-InternalResearch",
+    "romFileNotIncluded": true,
+    "userMustProvideOwnRom": true
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-us-good",
+  "stageId": "stage-1",
+  "strategyPackVersion": "0.1.0",
+  "stageName": "Jungle",
+  "primaryMetric": "progression.primary",
+  "strategyKeys": [
+    "survival-v0",
+    "speedrun-v0",
+    "combat-v0",
+    "loot-v0",
+    "guard-v0"
+  ],
+  "segments": [
+    {
+      "id": "stage1-opening",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 0,
+        "end": 520,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "advance+fire_target",
+      "notes": "Opening progression with low-risk firing."
+    },
+    {
+      "id": "stage1-first-bridge",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 520,
+        "end": 930,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "jump+fire_target",
+      "notes": "Bridge window. Jump timing must be controlled by action lock and safety override."
+    },
+    {
+      "id": "stage1-middle",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 930,
+        "end": 1550,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "advance+fire_target",
+      "notes": "Middle route with constant threat processing."
+    },
+    {
+      "id": "stage1-bridge-danger",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 1550,
+        "end": 2048,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "evade+advance",
+      "notes": "Exploding bridge and pit handling."
+    },
+    {
+      "id": "stage1-mandatory-weapon-gate",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2048,
+        "end": 2366,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "collect_pickup+advance+fire_target",
+      "notes": "Survival prerequisite window. Pursue the validated Stage 1 weapon upgrade once, then exit forward without looping."
+    },
+    {
+      "id": "stage1-boss-approach",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2366,
+        "end": 2960,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "advance+clear_fixed_threat",
+      "notes": "Approach stage barrier while clearing fixed threats."
+    },
+    {
+      "id": "stage1-barrier",
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2960,
+        "end": 9999,
+        "unit": "ContraWorldPixels"
+      },
+      "intent": "clear_fixed_threat",
+      "notes": "Hold stable fire until stage barrier is cleared."
+    }
+  ],
+  "runtimeExports": [
+    {
+      "strategyKey": "survival-v0",
+      "file": "stage1-survival.json",
+      "description": "Stage 1 survival route script V0. Prioritizes danger avoidance, fixed threat clearing, and low-risk advance.",
+      "segments": [
+        { "id": "start-survive", "label": "Opening survival", "start": 0, "end": 520, "action": "survive", "fire": "threat", "jumpEvery": 190 },
+        { "id": "bridge-survive", "label": "Bridge survival", "start": 520, "end": 930, "action": "survive", "fire": "threat", "jumpEvery": 130 },
+        { "id": "mid-survive", "label": "Middle survival", "start": 930, "end": 1550, "action": "survive", "fire": "always", "jumpEvery": 120 },
+        { "id": "danger-survive", "label": "Exploding bridge survival", "start": 1550, "end": 2048, "action": "survive", "fire": "always", "jumpEvery": 72 },
+        { "id": "weapon-gate-survive", "label": "Mandatory weapon gate", "start": 2048, "end": 2366, "action": "loot", "fire": "always", "jumpEvery": 0 },
+        { "id": "boss-approach-survive", "label": "Barrier approach", "start": 2366, "end": 2960, "action": "cautious", "fire": "always", "jumpEvery": 0 },
+        { "id": "boss-wall-survive", "label": "Barrier hold fire", "start": 2960, "end": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 0 }
+      ]
+    },
+    {
+      "strategyKey": "speedrun-v0",
+      "file": "stage1-speedrun.json",
+      "description": "Stage 1 speed route script V0. Advances aggressively while preserving safety overrides.",
+      "segments": [
+        { "id": "start-run", "label": "Opening advance", "start": 0, "end": 520, "action": "advance", "fire": "pulse", "jumpEvery": 150 },
+        { "id": "first-bridge", "label": "First bridge", "start": 520, "end": 930, "action": "advance", "fire": "always", "jumpEvery": 95 },
+        { "id": "mid-jungle", "label": "Middle jungle", "start": 930, "end": 1550, "action": "cautious", "fire": "always", "jumpEvery": 70 },
+        { "id": "bridge-danger", "label": "Exploding bridge", "start": 1550, "end": 2050, "action": "cautious", "fire": "always", "jumpEvery": 60 },
+        { "id": "boss-approach", "label": "Barrier approach", "start": 2050, "end": 2960, "action": "cautious", "fire": "always", "jumpEvery": 80 },
+        { "id": "boss-wall", "label": "Barrier hold fire", "start": 2960, "end": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+      ]
+    },
+    {
+      "strategyKey": "combat-v0",
+      "file": "stage1-combat.json",
+      "description": "Stage 1 combat-first route script V0. Slows down when the screen is crowded.",
+      "segments": [
+        { "id": "start-clear", "label": "Opening clear", "start": 0, "end": 520, "action": "advance", "fire": "always", "jumpEvery": 160 },
+        { "id": "bridge-clear", "label": "Bridge clear", "start": 520, "end": 930, "action": "cautious", "fire": "always", "jumpEvery": 130 },
+        { "id": "mid-clear", "label": "Middle control", "start": 930, "end": 1550, "action": "cautious", "fire": "always", "jumpEvery": 140 },
+        { "id": "danger-clear", "label": "Exploding bridge control", "start": 1550, "end": 2050, "action": "cautious", "fire": "always", "jumpEvery": 95 },
+        { "id": "boss-approach-clear", "label": "Barrier clear", "start": 2050, "end": 2960, "action": "cautious", "fire": "always", "jumpEvery": 80 },
+        { "id": "boss-wall-clear", "label": "Barrier break", "start": 2960, "end": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+      ]
+    },
+    {
+      "strategyKey": "loot-v0",
+      "file": "stage1-loot.json",
+      "description": "Stage 1 reward-first route script V0. Prioritizes weapon boxes and capsules when survival permits.",
+      "segments": [
+        { "id": "start-loot", "label": "Opening loot", "start": 0, "end": 520, "action": "loot", "fire": "threat", "jumpEvery": 150 },
+        { "id": "bridge-loot", "label": "Bridge loot", "start": 520, "end": 930, "action": "loot", "fire": "threat", "jumpEvery": 120 },
+        { "id": "mid-loot", "label": "Middle loot", "start": 930, "end": 1550, "action": "loot", "fire": "always", "jumpEvery": 80 },
+        { "id": "danger-loot", "label": "Exploding bridge loot guard", "start": 1550, "end": 2050, "action": "cautious", "fire": "always", "jumpEvery": 60 },
+        { "id": "boss-approach-loot", "label": "Barrier approach", "start": 2050, "end": 2960, "action": "cautious", "fire": "always", "jumpEvery": 80 },
+        { "id": "boss-wall-loot", "label": "Barrier break", "start": 2960, "end": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+      ]
+    },
+    {
+      "strategyKey": "guard-v0",
+      "file": "stage1-guard.json",
+      "description": "Stage 1 companion guard route script V0. Keeps firing around 1P and advances conservatively.",
+      "segments": [
+        { "id": "start-guard", "label": "Opening guard", "start": 0, "end": 520, "action": "guard", "fire": "threat", "jumpEvery": 170 },
+        { "id": "bridge-guard", "label": "Bridge guard", "start": 520, "end": 930, "action": "guard", "fire": "always", "jumpEvery": 140 },
+        { "id": "mid-guard", "label": "Middle guard", "start": 930, "end": 1550, "action": "guard", "fire": "always", "jumpEvery": 150 },
+        { "id": "danger-guard", "label": "Exploding bridge guard", "start": 1550, "end": 2050, "action": "cautious", "fire": "always", "jumpEvery": 80 },
+        { "id": "boss-approach-guard", "label": "Barrier guard", "start": 2050, "end": 2960, "action": "guard", "fire": "always", "jumpEvery": 80 },
+        { "id": "boss-wall-guard", "label": "Barrier crossfire", "start": 2960, "end": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+      ]
+    }
+  ]
+}

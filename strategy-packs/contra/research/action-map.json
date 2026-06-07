@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "controller": "nes-standard-8-button",
+  "intents": {
+    "advance": {
+      "description": "Move right along the primary progression direction.",
+      "defaultInput": {
+        "right": true
+      }
+    },
+    "hold_position": {
+      "description": "Stop progression while preserving tactical aim or fire.",
+      "defaultInput": {}
+    },
+    "jump": {
+      "description": "Jump while keeping the requested movement vector.",
+      "defaultInput": {
+        "a": true
+      }
+    },
+    "evade": {
+      "description": "Avoid immediate danger using jump, crouch, stop, or retreat.",
+      "requiresSafetyOverride": true
+    },
+    "fire_target": {
+      "description": "Fire at the selected target. Direction is supplied by target solver.",
+      "requiresTarget": true,
+      "defaultInput": {
+        "b": true
+      }
+    },
+    "clear_fixed_threat": {
+      "description": "Lock position and fire until a fixed threat is removed or attack is ineffective.",
+      "requiresTarget": true,
+      "requiresHpMonitor": true,
+      "defaultInput": {
+        "b": true
+      }
+    },
+    "collect_pickup": {
+      "description": "Open and collect a pickup when survival permits.",
+      "requiresTarget": true
+    },
+    "guard_teammate": {
+      "description": "Follow, cover, and avoid pushing the human player into danger.",
+      "requiresTeammate": true
+    },
+    "recover_from_stuck": {
+      "description": "Apply forward bias while keeping immediate evasion active.",
+      "usesLoopExit": true
+    },
+    "wait": {
+      "description": "Hold current state for timing or safety.",
+      "defaultInput": {}
+    }
+  },
+  "intentCombinations": [
+    "advance+fire_target",
+    "jump+fire_target",
+    "advance+guard_teammate",
+    "recover_from_stuck+evade"
+  ]
+}

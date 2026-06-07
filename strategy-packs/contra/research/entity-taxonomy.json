@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "categories": {
+    "fixed-threat-target": {
+      "description": "Stationary or semi-stationary targets that must be cleared or suppressed.",
+      "examples": [
+        "turret",
+        "wall gun",
+        "stage barrier part"
+      ],
+      "priority": 1,
+      "requiresHpMonitor": true
+    },
+    "dynamic-threat": {
+      "description": "Moving enemies that can collide with or shoot the player.",
+      "examples": [
+        "runner",
+        "jumper",
+        "crawler"
+      ],
+      "priority": 2,
+      "requiresPredictionCone": true
+    },
+    "projectile": {
+      "description": "Enemy bullets or flying hazards.",
+      "priority": 2,
+      "requiresPredictionCone": true
+    },
+    "pickup": {
+      "description": "Weapon or reward item. It must not trigger avoidance by itself.",
+      "priority": 0,
+      "requiresCollectionPolicy": true
+    },
+    "progression-barrier-node": {
+      "description": "Object that blocks stage completion until destroyed or bypassed.",
+      "priority": 1,
+      "requiresHpMonitor": true
+    },
+    "high-value-component": {
+      "description": "Boss or defense part with higher tactical value.",
+      "priority": 1,
+      "requiresHpMonitor": true
+    },
+    "environment-hazard": {
+      "description": "Terrain or stage hazard such as pit, water, bridge, or explosion zone.",
+      "priority": 1,
+      "requiresSafetyOverride": true
+    },
+    "non-combat-visual": {
+      "description": "Explosion, animation, empty slot, or other non-hostile object.",
+      "priority": 0,
+      "ignoreForDanger": true
+    }
+  },
+  "typeMapStatus": "partial",
+  "notes": [
+    "Concrete type values are still under verification and must not be treated as final validation data.",
+    "Danger detection must classify entity slots before avoidance decisions."
+  ]
+}

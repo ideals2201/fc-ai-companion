@@ -5,6 +5,7 @@ export type LocalRomFileInfo = {
   fileName?: string;
   filePath?: string;
   md5?: string;
+  headerlessMd5?: string;
   sha1?: string;
   sha256?: string;
   sizeBytes?: number;
@@ -18,6 +19,7 @@ export type RomProfile = {
   label: string;
   region: string;
   md5: string;
+  headerlessMd5?: string;
   sha1: string;
   sha256?: string;
   compatibilityGroup: string;
@@ -33,6 +35,8 @@ export type RomMetadata = {
   sizeLabel: string;
   md5: string;
   md5Short: string;
+  headerlessMd5: string;
+  headerlessMd5Short: string;
   sha1: string;
   sha1Short: string;
   sha256: string;
@@ -73,25 +77,16 @@ export const knownRomProfiles: RomProfile[] = [
   },
   {
     gameId: "contra",
-    romProfileId: "contra-japan-good-a",
+    romProfileId: "contra-j-good",
     label: "魂斗罗 (J) [!]",
     region: "Japan",
     md5: "0e40bc1b049c16c5d7246cc28399cb5d",
+    headerlessMd5: "d306c54ccfdf5cb4f8ec588f19b3e33d",
     sha1: "376836361f404c815d404e1d5903d5d11f4eff0e",
+    sha256: "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe",
     compatibilityGroup: "contra-japan",
     support: "reference",
-    supportLabel: "资料参考"
-  },
-  {
-    gameId: "contra",
-    romProfileId: "contra-japan-good-b",
-    label: "Contra (J) [!]",
-    region: "Japan",
-    md5: "d306c54ccfdf5cb4f8ec588f19b3e33d",
-    sha1: "be9dd65be8db897978dd34533dd3a037784a8ee9",
-    compatibilityGroup: "contra-japan",
-    support: "reference",
-    supportLabel: "资料参考"
+    supportLabel: "TAS 匹配 / 策略待迁移"
   },
   {
     gameId: "contra",
@@ -152,6 +147,7 @@ export function readRomMetadataHeaders(headers: Headers): LocalRomFileInfo {
     fileName: decodeRomHeaderValue(headers.get("x-rom-file-name")),
     filePath: decodeRomHeaderValue(headers.get("x-rom-file-path")),
     md5: normalizeHash(headers.get("x-rom-md5") ?? ""),
+    headerlessMd5: normalizeHash(headers.get("x-rom-headerless-md5") ?? ""),
     sha1: normalizeHash(headers.get("x-rom-sha1") ?? ""),
     sha256: normalizeHash(headers.get("x-rom-sha256") ?? ""),
     sizeBytes: Number.isFinite(sizeBytes) ? sizeBytes : undefined
@@ -162,12 +158,14 @@ function normalizeHash(value: string | undefined) {
   return (value ?? "").trim().toLowerCase();
 }
 
-export function identifyRomProfile(fileInfo: Pick<LocalRomFileInfo, "md5" | "sha1" | "sha256">) {
+export function identifyRomProfile(fileInfo: Pick<LocalRomFileInfo, "md5" | "headerlessMd5" | "sha1" | "sha256">) {
   const md5 = normalizeHash(fileInfo.md5);
+  const headerlessMd5 = normalizeHash(fileInfo.headerlessMd5);
   const sha1 = normalizeHash(fileInfo.sha1);
   const sha256 = normalizeHash(fileInfo.sha256);
   return knownRomProfiles.find((profile) => (
     (md5 && profile.md5 === md5)
+    || (headerlessMd5 && profile.headerlessMd5 === headerlessMd5)
     || (sha1 && profile.sha1 === sha1)
     || (sha256 && profile.sha256 === sha256)
   )) ?? null;
@@ -213,9 +211,10 @@ export function parseNesRomMetadata(bytes: Uint8Array, fileInfo: LocalRomFileInf
   const mapper = detectMapper(bytes, format);
   const flags6 = bytes[6] ?? 0;
   const md5 = normalizeHash(fileInfo.md5);
+  const headerlessMd5 = normalizeHash(fileInfo.headerlessMd5);
   const sha1 = normalizeHash(fileInfo.sha1);
   const sha256 = normalizeHash(fileInfo.sha256);
-  const profile = identifyRomProfile({ md5, sha1, sha256 });
+  const profile = identifyRomProfile({ md5, headerlessMd5, sha1, sha256 });
 
   return {
     displayTitle: stripExtension(fileName),
@@ -225,6 +224,8 @@ export function parseNesRomMetadata(bytes: Uint8Array, fileInfo: LocalRomFileInf
     sizeLabel: formatRomSize(sizeBytes),
     md5,
     md5Short: md5.slice(0, 12),
+    headerlessMd5,
+    headerlessMd5Short: headerlessMd5.slice(0, 12),
     sha1,
     sha1Short: sha1.slice(0, 12),
     sha256,

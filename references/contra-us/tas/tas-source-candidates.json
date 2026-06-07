@@ -1,0 +1,228 @@
+{
+  "last_checked": "2026-06-07",
+  "scope": "Public TAS source index for Contra route research. This file records source metadata only and does not include ROMs, TAS input files, full input logs, or direct replay data.",
+  "target_rom": {
+    "name": "Contra (U) [!].nes",
+    "region": "U",
+    "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+    "sha1": "c9ea66bb7cb30ad5343f1721b1d4d3219859319b",
+    "source": "https://tasvideos.org/Games/18/Versions/View/2884?returnUrl=%2F675M",
+    "match_conclusion": "This matches the project Contra USA ROM hash. It is not the same ROM version as the current fastest published FCEUX FM2 movies, which mostly target Japan-region ROMs."
+  },
+  "source_pages": [
+    {
+      "name": "TASVideos Contra game page",
+      "url": "https://tasvideos.org/18G",
+      "notes": "Lists Contra game versions, publications, submissions, user files, and watch files. Confirms the USA MD5 and Japan MD5 values."
+    },
+    {
+      "name": "TASVideos Contra game resources",
+      "url": "https://tasvideos.org/GameResources/NES/Contra",
+      "notes": "Documents Contra TAS tricks, current publications, RAM watch links, boss and RNG notes, and external technical resources."
+    },
+    {
+      "name": "FCEUX FM2 format",
+      "url": "https://fceux.com/web/FM2.html",
+      "notes": "Primary format reference for parsing FCEUX FM2 movie headers and input logs."
+    },
+    {
+      "name": "TASVideos BizHawk BK2 format",
+      "url": "https://tasvideos.org/BizHawk/BK2Format",
+      "notes": "Primary format reference for parsing BizHawk BK2 archives and input logs."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "tasvideos-movie-4623",
+      "title": "NES Contra \"1 player\" by Mars608 & aiqiyou in 08:48.21",
+      "url": "https://tasvideos.org/4623M",
+      "format": "fm2",
+      "emulator": "FCEUX 2.2.2",
+      "game_version": "Contra (Japan).nes",
+      "region_match_to_target": "mismatch",
+      "quality": "current_published_high_quality",
+      "players": 1,
+      "goal": "1 player fastest published route",
+      "frame_count": 31745,
+      "use_for": [
+        "route landmarks",
+        "horizontal movement windows",
+        "jump and firing phase patterns",
+        "boss approach and damage cadence"
+      ],
+      "do_not_use_for": [
+        "direct replay on USA ROM",
+        "exact frame numbers in browser runtime",
+        "RNG assumptions without USA trace verification"
+      ],
+      "notes": "Useful as a high-quality route reference, but version mismatch requires RAM trace alignment and US validation."
+    },
+    {
+      "id": "tasvideos-movie-current-2p-2022",
+      "title": "NES Contra \"2 players\" by Mars608 & aiqiyou in 08:36.57",
+      "url": "https://tasvideos.org/GameResources/NES/Contra",
+      "format": "fm2",
+      "emulator": "FCEUX 2.2.2",
+      "game_version": "Contra (Japan).nes",
+      "region_match_to_target": "mismatch",
+      "quality": "current_published_high_quality",
+      "players": 2,
+      "goal": "2 players fastest published route",
+      "use_for": [
+        "2P cooperation patterns",
+        "intentional death and revive concepts",
+        "screen control",
+        "boss damage coverage"
+      ],
+      "do_not_use_for": [
+        "direct 2P controller playback",
+        "US exact revive timing without local validation"
+      ],
+      "notes": "Valuable for companion behavior design because it exposes cooperative route concepts."
+    },
+    {
+      "id": "tasvideos-movie-6496",
+      "title": "NES Contra \"2 players, low%\" by Mars608 & aiqiyou in 08:49.36",
+      "url": "https://tasvideos.org/6496M",
+      "format": "fm2",
+      "emulator": "FCEUX 2.3.0",
+      "game_version": "Contra (J).nes",
+      "region_match_to_target": "mismatch",
+      "quality": "current_published_category",
+      "players": 2,
+      "goal": "2 players low percent using starting pea shooter",
+      "use_for": [
+        "low-power fallback tactics",
+        "survival-first route segments",
+        "boss strategies without relying on spread gun"
+      ],
+      "do_not_use_for": [
+        "default fastest route",
+        "direct input replay"
+      ],
+      "notes": "Useful when designing fallback behaviors for weak weapon states."
+    },
+    {
+      "id": "tasvideos-userfile-637847199071568188",
+      "title": "Contra 1P improvement / contra-1P-31745.fm2",
+      "url": "https://tasvideos.org/UserFiles/Info/637847199071568188",
+      "format": "fm2",
+      "emulator": "FCEUX family, exact version not listed on user-file page",
+      "game_version": "Contra, likely Japan route lineage; verify header before use",
+      "region_match_to_target": "unknown_until_header_checked",
+      "quality": "user_file_candidate",
+      "players": 1,
+      "frame_count": 31745,
+      "use_for": [
+        "candidate source for published 1P route lineage",
+        "header inspection if local analysis is later authorized"
+      ],
+      "do_not_use_for": [
+        "assuming USA compatibility before header/hash check",
+        "committing downloaded movie file to repo"
+      ],
+      "notes": "Record only as a candidate. Do not download into project references."
+    },
+    {
+      "id": "tasvideos-submission-7286",
+      "title": "Sam_Underscore's NES Contra \"Obliteration, single player\" in 13:45.26",
+      "url": "https://tasvideos.org/7286S",
+      "format": "bk2",
+      "emulator": "BizHawk 2.7.0",
+      "game_version": "Contra (U) [!].nes / submitted as Contra (USA).nes USA",
+      "region_match_to_target": "match",
+      "quality": "rejected_submission_reference_only",
+      "players": 1,
+      "frame_count": 49597,
+      "framerate": 60.0988138974405,
+      "start_type": "PowerOn",
+      "use_for": [
+        "USA-version sync and RAM alignment experiments",
+        "BK2 parser smoke reference",
+        "non-optimal but version-matched behavior examples"
+      ],
+      "do_not_use_for": [
+        "best-route source",
+        "strategy quality benchmark",
+        "direct replay"
+      ],
+      "notes": "Rejected for goal and quality issues. Useful mainly because it targets the same USA ROM version."
+    },
+    {
+      "id": "tasvideos-userfile-637779334293682349",
+      "title": "Contra all targets - test improvement / Contra all targets_ThunderAxe31_test.bk2",
+      "url": "https://tasvideos.org/UserFiles/Info/637779334293682349",
+      "format": "bk2",
+      "emulator": "BizHawk family, exact version not listed on user-file page",
+      "game_version": "Contra, verify header before use",
+      "region_match_to_target": "unknown_until_header_checked",
+      "quality": "short_user_file_candidate",
+      "players": 1,
+      "frame_count": 1747,
+      "use_for": [
+        "short BK2 parsing sample if later authorized",
+        "early-game all-target behavior comparison"
+      ],
+      "do_not_use_for": [
+        "whole-game route extraction",
+        "assuming target ROM compatibility before header/hash check"
+      ],
+      "notes": "Only 29 seconds. Keep as metadata candidate."
+    },
+    {
+      "id": "tasvideos-old-us-movie-114",
+      "title": "NES Contra \"1 player\" by Genisto in 09:34.117",
+      "url": "https://tasvideos.org/114M",
+      "format": "fmv",
+      "emulator": "Famtasia 5.1",
+      "game_version": "Contra (U) [!].nes",
+      "region_match_to_target": "match",
+      "quality": "obsolete_historical_publication",
+      "players": 1,
+      "use_for": [
+        "historical USA route comparison",
+        "coarse route landmarks if converted or visually inspected later"
+      ],
+      "do_not_use_for": [
+        "FM2 parser validation",
+        "modern best route",
+        "browser direct input"
+      ],
+      "notes": "Version matched but old Famtasia FMV format makes it less useful for the FM2/BK2 pipeline."
+    },
+    {
+      "id": "tasvideos-old-us-movie-151",
+      "title": "NES Contra (USA) \"pacifist\" by krieg747 in 10:33.33",
+      "url": "https://tasvideos.org/151M",
+      "format": "fmv",
+      "emulator": "Famtasia 5.1",
+      "game_version": "Contra (U) [!].nes",
+      "region_match_to_target": "match",
+      "quality": "obsolete_historical_publication",
+      "players": 1,
+      "goal": "pacifist",
+      "use_for": [
+        "historical USA pacifist route ideas",
+        "avoidance and no-kill tactic comparison"
+      ],
+      "do_not_use_for": [
+        "FM2 parser validation",
+        "current fastest-route source"
+      ],
+      "notes": "Version matched but old format and obsolete status make it secondary."
+    }
+  ],
+  "version_match_summary": {
+    "best_current_fm2_sources": "Mostly Japan ROM variants, especially Contra (Japan).nes and Contra (J).nes.",
+    "target_rom_sources": "USA-matched sources exist, but public high-quality current routes are not primarily USA FM2. USA-matched items include old Famtasia FMV publications and at least one rejected BizHawk BK2 submission.",
+    "decision": "Use Japan FM2 movies as route knowledge and timing hypotheses. Use USA-matched sources and browser RAM logs to validate or reject each derived WorldX segment."
+  },
+  "policy": {
+    "download_tas_files_into_repo": false,
+    "download_roms": false,
+    "store_full_input_logs": false,
+    "store_source_metadata": true,
+    "store_derived_worldx_segments_after_validation": true
+  }
+}
+

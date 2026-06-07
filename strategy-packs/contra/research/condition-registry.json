@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "refs": {
+    "stage.id": {
+      "type": "integer",
+      "source": "ram-map",
+      "verified": true
+    },
+    "progression.primary": {
+      "type": "number",
+      "source": "computed",
+      "unit": "ContraWorldPixels",
+      "verified": true
+    },
+    "player.1.alive": {
+      "type": "boolean",
+      "source": "state-adapter",
+      "verified": true
+    },
+    "player.1.position": {
+      "type": "object",
+      "source": "ram-map",
+      "verified": true
+    },
+    "player.1.weapon": {
+      "type": "integer",
+      "source": "ram-map",
+      "verified": true
+    },
+    "threat.fixed.count": {
+      "type": "integer",
+      "source": "entity-taxonomy",
+      "verified": false
+    },
+    "threat.dynamic.count": {
+      "type": "integer",
+      "source": "entity-taxonomy",
+      "verified": false
+    },
+    "pickup.visible.count": {
+      "type": "integer",
+      "source": "entity-taxonomy",
+      "verified": false
+    },
+    "danger.immediate": {
+      "type": "boolean",
+      "source": "danger-detector",
+      "verified": false
+    },
+    "objective.barrier.active": {
+      "type": "boolean",
+      "source": "state-adapter",
+      "verified": false
+    },
+    "runtime.finalInput": {
+      "type": "object",
+      "source": "runtime-api",
+      "verified": true
+    },
+    "loop.stuck": {
+      "type": "boolean",
+      "source": "loop-detector",
+      "verified": false
+    }
+  }
+}

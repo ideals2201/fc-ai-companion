@@ -56,6 +56,7 @@
 - 验证护卫队友策略在 2P 坐标接入前的边界是否符合玩家直觉。
 - 验证第一关 Route Script V0 的三类通关：单 AI、人类 + AI、双 AI。
 - 标定第一关 WorldX 路线段、Boss 停位点和危险跳跃点。
+- 将 Contra US 第一关 Boss 墙从局部阈值补丁升级为阶段控制器：进入站位、清贴身兵、固定目标输出、脱身重进、击破确认。
 - 基于人类实战轨迹，把个人策略窗口升级为“观察 -> 生成候选策略 -> 保存”。
 - 用人类模式打一局并导出轨迹 JSON，标定第一关关键跳跃、停位、开火和死亡点。
 - 基于 RAM Reader V0 实现 Danger Detector V0。
@@ -82,3 +83,334 @@
 - 计算机视觉主路线。
 - 截图 / OCR 驱动 Bot 逻辑。
 - LLM 控制快脑。
+## 2026-06-07 StrategyPack 1.0 Migration
+
+Current:
+- Contra Stage 1 has a Protocol 1.0 source pack under `strategy-packs/contra/`.
+- Browser runtime route files under `apps/browser-cockpit/public/strategies/contra/stage1/` are generated compatibility outputs.
+- `npm run sync:strategies` exports the current standard pack to the browser runtime route format.
+- `tests/strategyPackStandard.test.mjs` protects the required 1.0 directory structure and generated runtime metadata.
+
+Next:
+- Future Contra tactical fixes must edit `strategy-packs/contra/` first.
+- After each tactical change, run `npm run sync:strategies`, then `npm test`, then the relevant browser/ROM runtime test.
+- Do not mark `single-ai`, `human-ai`, or `dual-ai` validated until real trace evidence is recorded.
+
+## 2026-06-07 Strategy Standard 2.0 Reference
+
+Current:
+- Added `docs/17_STRATEGY_STANDARD_V2_REFERENCE.md` as the holding document for Strategy Standard 2.0 candidate ideas.
+- The first candidate topic is strategy artifact productization and dual-mode optimization:
+  - Offline/Base Mode: local trace analysis and deterministic patch suggestions without external API dependency.
+  - Online/Expert Mode: optional AI-assisted analysis over play traces, known failures, and candidate fragments.
+  - Optimization levels: Level 0 Manual, Level 1 Automated, Level 2 Augmented.
+
+Rule:
+- Do not modify the published 1.0 standard from this candidate note alone.
+- Promote this into 2.0 only after schema design, sample pack migration, and real validation evidence.
+
+## 2026-06-07 Training Cockpit V0
+
+Current:
+- Replaced each controller bay's per-side data stream surface with a side-owned training panel.
+- 1P and 2P now show their own baseline strategy, training source, capture status, candidate fragment count, failure summary, and archive target.
+- Added the global training console to the bottom of the host console, not between the TV and host.
+- Global training console owns shared trace capture controls and shows Offline/Base Mode, optimization level, sample count, validation summary, botrun status, and strategy-pack evidence target.
+
+Rule:
+- Per-side panels describe ownership and side-specific training state.
+- Global training remains system-level evidence control and does not directly mark any strategy as validated.
+- Training V0 is Offline/Base Mode only; Online/Expert Mode remains a future Strategy Standard 2.0 candidate.
+
+## 2026-06-07 Contra Japan TAS Matching
+
+Current:
+- Added local ROM library copy: `D:\Ai-Play\ROM\contra-j\Contra (J).nes`.
+- Added `contra-j-good` as a Contra ROMProfile for Japanese Contra research.
+- Added TAS registry matching by ROMProfile, full MD5, headerless MD5 and SHA1.
+- Browser cockpit should show matched TAS status after selecting or loading the Japanese ROM.
+
+Rule:
+- ROM files remain outside the strategy pack and repository.
+- TAS data is a training baseline and route knowledge source, not a live controller.
+- Current Stage 1 strategy remains validated only for `contra-us-good` until `contra-j-good` gets separate trace validation.
+
+## 2026-06-07 Contra US Survival Priority
+
+Current evidence:
+- `survival-v0` still fails Stage 1 at the Boss wall on real botrun.
+- Local Boss wall anti-loop fixes are implemented and covered by tests:
+  - low-lane bailout
+  - airborne low-lane bailout
+  - upper-lane swarm bailout
+  - overextended fixed-station retreat
+  - Action Lock bailout override
+- `npm run check` passes with 83 tests and a production build.
+
+Active priority:
+- Stop same-point Boss wall threshold patching.
+- Implement pre-entry fixed-target suppression before `WorldX 3200`.
+- Add fixed-target HP delta monitoring for turret/core damage validation.
+- Re-evaluate whether Spread or another weapon reward is mandatory for the stable survival route.
+
+Validation rule:
+- Do not advance to AI+AI dual mode or all-stage claims until single-AI Stage 1 has a real `bossDefeated` or stage-clear trace.
+
+## 2026-06-07 Contra US Boss Wall Stop Rule
+
+Current evidence:
+- Additional real botruns still die in the Boss wall entry class:
+  - `20260607-core-forecast-focused`: death at frame `5649`, `WorldX 3196`, `x124/y162`, input `left+B`.
+  - `20260607-falling-convergence-focused`: death at frame `5649`, `WorldX 3196`, `x124/y162`, input `left+B`.
+  - `20260607-hp-gate-focused`: death at frame `5700`, `WorldX 3208`, `x136/y196`, input `up+B`.
+  - `20260607-lowlane-retreat-gate`: death at frame `5653`, `WorldX 3198`, `x126/y171`, input `left+B`.
+- In all runs, Boss wall fixed targets remain full HP or effectively undamaged.
+- `node --test tests/contraBossWall.test.mjs` currently passes `56/56`, so unit coverage exists for the local micro rules, but real clearance is still blocked.
+
+Stop rule:
+- Do not add more same-area Boss wall micro-threshold patches.
+- The next implementation must be a route/phase controller with fixed-target HP-delta verification.
+
+Next required task:
+- Implement `survival-v0` Boss wall phase controller:
+  - pre-entry station
+  - fixed-target damage loop
+  - HP-delta check
+  - bounded reposition
+  - entry only after fixed-target HP drops or barrier state changes
+- Re-evaluate mandatory weapon route for survival mode before claiming Stage 1 single-AI progress.
+
+## 2026-06-07 Contra US Boss Wall Phase Controller Status
+
+Current:
+- Boss wall phase controller exists and is wired into `survival-v0`.
+- Focused tests pass:
+  - `node --test tests/contraBossWallPhase.test.mjs`: `7/7`.
+  - `node --test tests/contraBossWall.test.mjs`: `56/56`.
+- Real botruns after the phase controller still fail Stage 1:
+  - `20260607-phase-controller-focused`: death at `WorldX 3159`, input `down+right+B`, fixed HP full.
+  - `20260607-phase-safety-focused`: death at `WorldX 3198`, input `left+B`, fixed HP full.
+  - `20260607-phase-containment-focused`: death at `WorldX 3153`, input `B`, fixed HP full, low-lane body contact.
+
+Active stop rule:
+- Do not continue same Boss wall local input threshold patching.
+- Do not run repeated botruns at the same Boss wall failure class without a new route-level hypothesis.
+
+Next:
+- Add runtime phase telemetry: phase, fixed HP total, no-damage frames, safety override reason, containment clamp reason.
+- Move Boss wall handling into an upper-lane pre-entry station plan before `WorldX 3150-3200` failure states.
+- Gate deeper Boss wall entry on fixed-target HP delta.
+- Re-evaluate whether `survival-v0` must route to a better weapon before the Boss wall.
+
+## 2026-06-07 Contra US Boss Wall Telemetry And Recovery
+
+Current:
+- Boss wall phase telemetry is now available in runtime debug and death trace samples.
+- Phase recovery now stops indefinite left retreat once the AI is left of the station.
+- Real botrun `20260607-boss-recovery-check` changed the failure class:
+  - Previous failure: low-lane death at `WorldX 3153`, fixed HP `72`.
+  - Current failure: upper-lane recovery death at `WorldX 3172`, fixed HP `70`.
+- This proves two things:
+  - Fixed-target HP damage is now happening.
+  - Station recovery still enters a crowded infantry lane unsafely.
+
+Next:
+- Implement Boss wall `station-crowd-gate`.
+- Add close dynamic threat telemetry to Boss wall phase reports.
+- Before station entry, clear or wait out nearby infantry instead of using raw `A+B` recovery.
+- Do not tune the `WorldX 3172` death frame directly.
+
+## 2026-06-07 Contra US Boss Wall Station Crowd Gate Status
+
+Current:
+- Station crowd telemetry and gate behavior are implemented.
+- Gate output now bypasses generic Action Lock and runs before Boss wall micro overrides.
+- Contact jump is covered for narrow overhead/body pressure.
+- Focused verification:
+  - `node --test tests/contraBossWallPhase.test.mjs`: `14/14`.
+  - `node --test tests/contraBossWall.test.mjs`: `56/56`.
+  - `npm run build --workspace @fc-ai/browser-cockpit`: passed.
+
+Real botrun evidence:
+- `20260607-station-crowd-gate-check`: death at `WorldX 3176`; gate active but Action Lock still produced `up+right+B`.
+- `20260607-crowd-gate-bypass-lock-check`: Action Lock fixed, but raw micro still produced `up+right+B`.
+- `20260607-phase-gate-before-micro-check`: phase gate owns control; death moved to `WorldX 3183`, input `B`, fixed HP `72`.
+- `20260607-crowd-contact-jump-check`: contact jump triggered, but death remains `WorldX 3183`, fixed HP `72`.
+
+Active stop rule:
+- Do not add more local Boss wall contact or aim thresholds for `WorldX 3176-3183`.
+- Do not rerun repeated botruns at this same station unless the route-level station hypothesis changes.
+
+Next:
+- Redesign the Boss wall station as a route-level fixed-target damage station.
+- Require fixed-target HP delta before allowing station entry/deeper commitment.
+- Decide whether `survival-v0` must route through Spread or another weapon before Boss wall.
+
+## 2026-06-07 Contra US Default-Weapon Boss Wall Branch Stop
+
+Current:
+- Boss wall phase controller now pulses B for default weapon fire.
+- Station crowd gate includes the `playerX=112` station boundary.
+- Close lower station-crowd threats trigger down-fire.
+- Focused verification:
+  - `node --test tests/contraBossWallPhase.test.mjs`: `18/18`.
+  - `node --test tests/contraBossWall.test.mjs`: `56/56`.
+  - `npm run build --workspace @fc-ai/browser-cockpit`: passed.
+
+Real botrun evidence:
+- `20260607-boss-phase-pulse-fire-check`: fixed HP dropped to `69`, proving pulse fire works, but death remained at Boss wall.
+- `20260607-boss-phase-downfire-check`: death at `WorldX 3183`, fixed HP `71`.
+- `20260607-boss-station-boundary-gate-check`: boundary gate active, death at `WorldX 3184`, fixed HP `71`.
+
+Active stop rule:
+- Stop further default-weapon Boss wall station threshold work.
+- Do not add more local contact/aim/boundary patches for `WorldX 3159-3184`.
+
+Next:
+- Make weapon acquisition a `survival-v0` route requirement before Boss wall.
+- Rework the Stage 1 route so the AI reaches Boss wall with Spread or another validated stronger weapon.
+- Keep Boss-wall pulse fire and HP telemetry for the later weapon-equipped run.
+
+## 2026-06-07 TAS Replay Window And Commentary Candidate
+
+Current decision:
+- The next TAS window should serve two goals:
+  - player viewing: let users watch interesting TAS runs for games they care about.
+  - AI strategy support: convert TAS timing, route and action windows into strategy baseline evidence.
+- Add an AI commentary layer for TAS viewing, but keep it separate from fast-brain controller logic.
+
+Required first version:
+- TAS list by matched ROMProfile.
+- TAS Chinese/English metadata: filename, title, author, category, ROM checksum and short Chinese summary.
+- Strategy baseline recommendation for each TAS:
+  - survival
+  - speedrun
+  - combat
+  - loot
+  - guard
+  - special/reference-only
+- Replay controls:
+  - play
+  - pause
+  - restart
+  - step frame
+  - speed
+  - key event jump points
+- Commentary modes:
+  - expert viewing
+  - teaching
+  - companion/emotional
+  - strategy analysis
+  - casual entertainment
+
+Rules:
+- TAS replay and commentary are product/experience features, not AI fast-brain control.
+- AI-generated commentary must be grounded in TAS metadata, input logs, RAM traces, WorldX windows or verified strategy fragments.
+- Commentary must not claim unverified clear ability.
+- Commentary output may propose candidate StrategyFragments, but cannot mark them as validated without real ROM trace evidence.
+
+## 2026-06-07 Contra US Mandatory Weapon Route Status
+
+Current:
+- Mandatory weapon gate is implemented for Stage 1 `survival-v0`.
+- Runtime route now includes `weapon-gate-survive` before Boss approach.
+- Focused and full verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: passed.
+  - `npm test`: `115/115`.
+  - `npm run build`: passed.
+
+Real botrun evidence:
+- `20260607-mandatory-spread-gate-check`: reached Boss approach with non-default weapon `4`, then died at `WorldX 2809`.
+- `20260607-boss-approach-close-body-check`: previous `WorldX 2809` close-body death moved to `WorldX 2839`.
+- `20260607-boss-platform-jump-check`: early platform-jump patch did not move the failure; still death at `WorldX 2839`, `x128/y234`.
+
+Active stop rule:
+- Do not keep widening the `WorldX 2798-2828` jump window.
+- Do not repeat botruns at the same `WorldX 2839` fall unless the route-level pre-Boss platform rhythm has changed.
+
+Next:
+- Rebuild the pre-Boss platform rhythm before `WorldX 2788`.
+- Treat `WorldX 2788-2839` as a route-state transition with stable ground/jump ownership.
+- Keep mandatory weapon acquisition as the current survival route direction.
+
+## 2026-06-07 Contra US Pre-Boss High-Platform Branch Stop
+
+Current:
+- High-platform edge jump and high-air carry patches are implemented and tested.
+- Verification:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: passed.
+  - `npm test`: `117/117`.
+  - `npm run build`: passed.
+
+Real botrun evidence:
+- `20260607-boss-high-edge-jump-check`: death moved to `WorldX 2854/y236`; the high jump changed the arc but did not land safely.
+- `20260607-boss-high-air-carry-check`: right carry stayed active, but death remained `WorldX 2854/y236`.
+
+Active stop rule:
+- Stop high-platform local tuning around `WorldX 2776-2864`.
+- Do not add more jump-window, right-carry, or aim-threshold patches for the same high arc.
+- Do not rerun this same failure class unless the route class changes.
+
+Next:
+- Replace this branch with a different route class for Boss approach.
+- Candidate route classes: lower/mid-platform capture route, or recorded human route fragment converted into a standard state-action patch.
+- Preserve mandatory weapon gate and Boss-wall fixed HP telemetry.
+
+## 2026-06-07 Strategy Learning Pipeline Switch
+
+Current:
+- Strategy learning method changed from repeated coordinate patching to trace evidence plus fragment extraction.
+- Added pure trace-evidence module and tests.
+- Current `WorldX 2854/y236` high-platform failure is now stored as machine-readable evidence:
+  - `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-boss-high-air-carry-failure.json`
+- Strategy-pack standard test now validates trace-evidence files.
+
+Verification:
+- `node --test tests/strategyTraceEvidence.test.mjs`: `2/2`.
+- `node --test tests/strategyPackStandard.test.mjs`: `5/5`.
+
+Active stop rule:
+- Do not continue the `high-platform-jump-carry` branch.
+- Do not run another botrun at `WorldX 2854/y236` unless the runtime route class has changed.
+
+Next:
+- Build the Stage 1 pre-Boss `mid/low-platform-capture` route class from evidence.
+- Then run exactly one real botrun for that new route class.
+
+## 2026-06-07 Contra US Mid-Platform Capture Branch Stop
+
+Current:
+- `stage-one-boss-approach-mid-platform-capture` was implemented and tested as a distinct route class.
+- Real botrun `20260607-mid-platform-capture-check` still died.
+- Death moved to `WorldX 2836/y236`, proving the branch changes the route but does not solve safe capture.
+- Evidence stored:
+  - `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-mid-platform-capture-failure.json`
+
+Verification:
+- `node --test tests/contraStage1RewardTactics.test.mjs`: passed.
+- `npm test`: `122/122`.
+- `npm run build`: passed.
+
+Active stop rule:
+- Do not keep tuning left/right correction in the `WorldX 2835-2854` fall.
+- Do not rerun this route class unless the source becomes a human frame trace or a lower-route state fragment.
+
+Next:
+- Add a short-segment trace recording workflow for `WorldX 2600-2960`.
+- Ask the owner to demonstrate only that segment once the recorder is ready.
+
+## 2026-06-07 Contra US Lower-Platform Edge Trigger Branch Stop
+
+Current:
+- The lower-platform A-edge experiment was implemented and tested.
+- Real botrun `lower-platform-edge-trigger-1780817803410` still died at `WorldX 2839/y234`.
+- Evidence stored:
+  - `strategy-packs/contra/stages/stage-1/trace-evidence/2026-06-07-lower-platform-edge-trigger-failure.json`
+
+Stop rule:
+- Do not keep tuning the `WorldX 2814-2828` lower-platform A-edge window.
+- Do not rerun the same pre-Boss platform route unless the source changes to a frame-level human trace, a different route class, or a verified spawn/table-derived segment.
+
+Next:
+- Collect/export a full frame trace for the owner's `WorldX 2600-2960` demonstration.
+- Use that trace to generate a state-action Strategy Fragment instead of another local coordinate patch.

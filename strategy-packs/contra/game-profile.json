@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "displayName": "Contra",
+  "platform": "fc-nes",
+  "supportedModes": [
+    "single-ai",
+    "human-ai",
+    "dual-ai"
+  ],
+  "progressionMetrics": [
+    {
+      "id": "progression.primary",
+      "displayName": "WorldX",
+      "unit": "ContraWorldPixels",
+      "formula": {
+        "type": "expression",
+        "inputs": [
+          "ram.levelScreenNumber",
+          "ram.levelScreenScrollOffset",
+          "player.1.screenX"
+        ],
+        "expression": "(levelScreenNumber * 256 + levelScreenScrollOffset) + player1ScreenX"
+      },
+      "monotonic": "mostly",
+      "resetScope": "stage",
+      "verified": true
+    }
+  ],
+  "conditionRegistry": "research/condition-registry.json",
+  "entityTaxonomy": "research/entity-taxonomy.json",
+  "actionMapping": "research/action-map.json",
+  "strategyTypes": "research/strategy-types.json",
+  "rng": {
+    "status": "unknown",
+    "rngSensitivity": "unknown",
+    "rngControlStrategy": "none",
+    "stateRefs": [],
+    "recordPolicy": "record-if-known"
+  },
+  "rngSensitivity": "unknown",
+  "rngControlStrategy": "none",
+  "runtimePriority": [
+    "human-emergency-override",
+    "death-menu-recovery-guard",
+    "immediate-lethal-danger",
+    "safety-override",
+    "action-lock",
+    "strategy-fragment",
+    "threat-pool",
+    "route-knowledge",
+    "default-progression",
+    "loop-exit"
+  ],
+  "inputSamplingDelay": 0
+}

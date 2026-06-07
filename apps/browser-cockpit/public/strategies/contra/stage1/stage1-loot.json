@@ -6,13 +6,63 @@
   "stage": 1,
   "strategy": "loot-v0",
   "version": 1,
-  "description": "Stage 1 reward-first route script V0. Prioritizes weapon boxes and capsules when visible.",
+  "generatedFrom": "strategy-packs/contra",
+  "sourceVersion": "contra:contra-us-good:0.1.0",
+  "description": "Stage 1 reward-first route script V0. Prioritizes weapon boxes and capsules when survival permits.",
   "segments": [
-    { "id": "start-loot", "label": "开局拿奖励", "worldStart": 0, "worldEnd": 520, "action": "loot", "fire": "threat", "jumpEvery": 150 },
-    { "id": "bridge-loot", "label": "桥段奖励", "worldStart": 520, "worldEnd": 930, "action": "loot", "fire": "threat", "jumpEvery": 120 },
-    { "id": "mid-loot", "label": "中段奖励", "worldStart": 930, "worldEnd": 1550, "action": "loot", "fire": "always", "jumpEvery": 80 },
-    { "id": "danger-loot", "label": "爆桥奖励保守", "worldStart": 1550, "worldEnd": 2050, "action": "cautious", "fire": "always", "jumpEvery": 60 },
-    { "id": "boss-approach-loot", "label": "关底放弃奖励", "worldStart": 2050, "worldEnd": 2180, "action": "cautious", "fire": "always", "jumpEvery": 80 },
-    { "id": "boss-wall-loot", "label": "Boss 破坏", "worldStart": 2180, "worldEnd": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+    {
+      "id": "start-loot",
+      "label": "Opening loot",
+      "worldStart": 0,
+      "worldEnd": 520,
+      "action": "loot",
+      "fire": "threat",
+      "jumpEvery": 150
+    },
+    {
+      "id": "bridge-loot",
+      "label": "Bridge loot",
+      "worldStart": 520,
+      "worldEnd": 930,
+      "action": "loot",
+      "fire": "threat",
+      "jumpEvery": 120
+    },
+    {
+      "id": "mid-loot",
+      "label": "Middle loot",
+      "worldStart": 930,
+      "worldEnd": 1550,
+      "action": "loot",
+      "fire": "always",
+      "jumpEvery": 80
+    },
+    {
+      "id": "danger-loot",
+      "label": "Exploding bridge loot guard",
+      "worldStart": 1550,
+      "worldEnd": 2050,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 60
+    },
+    {
+      "id": "boss-approach-loot",
+      "label": "Barrier approach",
+      "worldStart": 2050,
+      "worldEnd": 2960,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 80
+    },
+    {
+      "id": "boss-wall-loot",
+      "label": "Barrier break",
+      "worldStart": 2960,
+      "worldEnd": 9999,
+      "action": "hold-fire",
+      "fire": "always",
+      "jumpEvery": 45
+    }
   ]
 }

@@ -6,13 +6,63 @@
   "stage": 1,
   "strategy": "combat-v0",
   "version": 1,
+  "generatedFrom": "strategy-packs/contra",
+  "sourceVersion": "contra:contra-us-good:0.1.0",
   "description": "Stage 1 combat-first route script V0. Slows down when the screen is crowded.",
   "segments": [
-    { "id": "start-clear", "label": "开局清敌", "worldStart": 0, "worldEnd": 520, "action": "advance", "fire": "always", "jumpEvery": 160 },
-    { "id": "bridge-clear", "label": "桥段清敌", "worldStart": 520, "worldEnd": 930, "action": "cautious", "fire": "always", "jumpEvery": 130 },
-    { "id": "mid-clear", "label": "中段控屏", "worldStart": 930, "worldEnd": 1550, "action": "cautious", "fire": "always", "jumpEvery": 140 },
-    { "id": "danger-clear", "label": "爆桥控屏", "worldStart": 1550, "worldEnd": 2050, "action": "cautious", "fire": "always", "jumpEvery": 95 },
-    { "id": "boss-approach-clear", "label": "关底清场", "worldStart": 2050, "worldEnd": 2180, "action": "hold-fire", "fire": "always", "jumpEvery": 80 },
-    { "id": "boss-wall-clear", "label": "Boss 破坏", "worldStart": 2180, "worldEnd": 9999, "action": "hold-fire", "fire": "always", "jumpEvery": 45 }
+    {
+      "id": "start-clear",
+      "label": "Opening clear",
+      "worldStart": 0,
+      "worldEnd": 520,
+      "action": "advance",
+      "fire": "always",
+      "jumpEvery": 160
+    },
+    {
+      "id": "bridge-clear",
+      "label": "Bridge clear",
+      "worldStart": 520,
+      "worldEnd": 930,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 130
+    },
+    {
+      "id": "mid-clear",
+      "label": "Middle control",
+      "worldStart": 930,
+      "worldEnd": 1550,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 140
+    },
+    {
+      "id": "danger-clear",
+      "label": "Exploding bridge control",
+      "worldStart": 1550,
+      "worldEnd": 2050,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 95
+    },
+    {
+      "id": "boss-approach-clear",
+      "label": "Barrier clear",
+      "worldStart": 2050,
+      "worldEnd": 2960,
+      "action": "cautious",
+      "fire": "always",
+      "jumpEvery": 80
+    },
+    {
+      "id": "boss-wall-clear",
+      "label": "Barrier break",
+      "worldStart": 2960,
+      "worldEnd": 9999,
+      "action": "hold-fire",
+      "fire": "always",
+      "jumpEvery": 45
+    }
   ]
 }

@@ -6,11 +6,13 @@
   "stage": 1,
   "strategy": "survival-v0",
   "version": 1,
-  "description": "Stage 1 survival route script V0. Prioritizes danger avoidance, short pauses, and low-risk advance.",
+  "generatedFrom": "strategy-packs/contra",
+  "sourceVersion": "contra:contra-us-good:0.1.0",
+  "description": "Stage 1 survival route script V0. Prioritizes danger avoidance, fixed threat clearing, and low-risk advance.",
   "segments": [
     {
       "id": "start-survive",
-      "label": "开局稳健",
+      "label": "Opening survival",
       "worldStart": 0,
       "worldEnd": 520,
       "action": "survive",
@@ -19,7 +21,7 @@
     },
     {
       "id": "bridge-survive",
-      "label": "桥段稳健",
+      "label": "Bridge survival",
       "worldStart": 520,
       "worldEnd": 930,
       "action": "survive",
@@ -28,7 +30,7 @@
     },
     {
       "id": "mid-survive",
-      "label": "中段稳健",
+      "label": "Middle survival",
       "worldStart": 930,
       "worldEnd": 1550,
       "action": "survive",
@@ -37,30 +39,39 @@
     },
     {
       "id": "danger-survive",
-      "label": "爆桥避险",
+      "label": "Exploding bridge survival",
       "worldStart": 1550,
-      "worldEnd": 2050,
+      "worldEnd": 2048,
       "action": "survive",
       "fire": "always",
       "jumpEvery": 72
     },
     {
+      "id": "weapon-gate-survive",
+      "label": "Mandatory weapon gate",
+      "worldStart": 2048,
+      "worldEnd": 2366,
+      "action": "loot",
+      "fire": "always",
+      "jumpEvery": 0
+    },
+    {
       "id": "boss-approach-survive",
-      "label": "关底稳进",
-      "worldStart": 2050,
-      "worldEnd": 2180,
+      "label": "Barrier approach",
+      "worldStart": 2366,
+      "worldEnd": 2960,
       "action": "cautious",
       "fire": "always",
-      "jumpEvery": 86
+      "jumpEvery": 0
     },
     {
       "id": "boss-wall-survive",
-      "label": "Boss 稳定合火",
-      "worldStart": 2180,
+      "label": "Barrier hold fire",
+      "worldStart": 2960,
       "worldEnd": 9999,
       "action": "hold-fire",
       "fire": "always",
-      "jumpEvery": 48
+      "jumpEvery": 0
     }
   ]
 }

@@ -123,6 +123,7 @@ test("reads checksum headers from the local ROM endpoint", () => {
     "x-rom-file-path": "D%3A%5CAi-Play%5CROM%5Ccontra_us_test.nes",
     "x-rom-size": "131088",
     "x-rom-md5": "7BDAD8B4A7A56A634C9649D20BD3011B",
+    "x-rom-headerless-md5": "5A5C2F4F1CAFB1F55A8DC0D5AD4550E5",
     "x-rom-sha1": "C9EA66BB7CB30AD5343F1721B1D4D3219859319B",
     "x-rom-sha256": "26541A5550EE22DEEB3D5484E4A96130219B58CFF74D068FB1EB6567FA5E5519"
   });
@@ -132,6 +133,7 @@ test("reads checksum headers from the local ROM endpoint", () => {
   assert.equal(fileInfo.filePath, "D:\\Ai-Play\\ROM\\contra_us_test.nes");
   assert.equal(fileInfo.sizeBytes, 131088);
   assert.equal(fileInfo.md5, "7bdad8b4a7a56a634c9649d20bd3011b");
+  assert.equal(fileInfo.headerlessMd5, "5a5c2f4f1cafb1f55a8dc0d5ad4550e5");
   assert.equal(fileInfo.sha1, "c9ea66bb7cb30ad5343f1721b1d4d3219859319b");
   assert.equal(fileInfo.sha256, "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519");
 });
@@ -158,6 +160,33 @@ test("identifies the current Contra US strategy target ROM profile", () => {
   assert.equal(metadata.romProfileId, "contra-us-good");
   assert.equal(metadata.romSupportLabel, "正式适配");
   assert.equal(metadata.compatibilityGroup, "contra-us");
+});
+
+test("identifies the Contra Japan ROM profile and exposes TAS-compatible headerless checksum", () => {
+  const profile = identifyRomProfile({
+    md5: "0e40bc1b049c16c5d7246cc28399cb5d",
+    headerlessMd5: "d306c54ccfdf5cb4f8ec588f19b3e33d",
+    sha1: "376836361f404c815d404e1d5903d5d11f4eff0e"
+  });
+
+  assert.equal(profile?.gameId, "contra");
+  assert.equal(profile?.romProfileId, "contra-j-good");
+  assert.equal(profile?.support, "reference");
+
+  const metadata = parseNesRomMetadata(makeHeader({ 4: 8, 5: 16 }), {
+    fileName: "Contra (J).nes",
+    filePath: "D:\\Ai-Play\\ROM\\contra-j\\Contra (J).nes",
+    md5: "0e40bc1b049c16c5d7246cc28399cb5d",
+    headerlessMd5: "d306c54ccfdf5cb4f8ec588f19b3e33d",
+    sha1: "376836361f404c815d404e1d5903d5d11f4eff0e",
+    sizeBytes: 262160
+  });
+
+  assert.equal(metadata.versionLabel, "魂斗罗 (J) [!]");
+  assert.equal(metadata.romProfileId, "contra-j-good");
+  assert.equal(metadata.romSupportLabel, "TAS 匹配 / 策略待迁移");
+  assert.equal(metadata.headerlessMd5Short, "d306c54ccfdf");
+  assert.equal(metadata.compatibilityGroup, "contra-japan");
 });
 
 test("bundled Contra stage 1 strategy files are valid and ROM-bound", () => {

@@ -6,11 +6,13 @@
   "stage": 1,
   "strategy": "speedrun-v0",
   "version": 1,
-  "description": "Stage 1 route script V0. Player-editable knowledge base for fast solo AI and co-op AI.",
+  "generatedFrom": "strategy-packs/contra",
+  "sourceVersion": "contra:contra-us-good:0.1.0",
+  "description": "Stage 1 speed route script V0. Advances aggressively while preserving safety overrides.",
   "segments": [
     {
       "id": "start-run",
-      "label": "开局推进",
+      "label": "Opening advance",
       "worldStart": 0,
       "worldEnd": 520,
       "action": "advance",
@@ -19,7 +21,7 @@
     },
     {
       "id": "first-bridge",
-      "label": "第一桥段",
+      "label": "First bridge",
       "worldStart": 520,
       "worldEnd": 930,
       "action": "advance",
@@ -28,7 +30,7 @@
     },
     {
       "id": "mid-jungle",
-      "label": "中段丛林",
+      "label": "Middle jungle",
       "worldStart": 930,
       "worldEnd": 1550,
       "action": "cautious",
@@ -37,7 +39,7 @@
     },
     {
       "id": "bridge-danger",
-      "label": "爆桥危险段",
+      "label": "Exploding bridge",
       "worldStart": 1550,
       "worldEnd": 2050,
       "action": "cautious",
@@ -46,17 +48,17 @@
     },
     {
       "id": "boss-approach",
-      "label": "关底前压速",
+      "label": "Barrier approach",
       "worldStart": 2050,
-      "worldEnd": 2180,
+      "worldEnd": 2960,
       "action": "cautious",
       "fire": "always",
       "jumpEvery": 80
     },
     {
       "id": "boss-wall",
-      "label": "Boss 停位射击",
-      "worldStart": 2180,
+      "label": "Barrier hold fire",
+      "worldStart": 2960,
       "worldEnd": 9999,
       "action": "hold-fire",
       "fire": "always",

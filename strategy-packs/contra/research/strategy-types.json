@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "genericTypes": [
+    "survival",
+    "speed",
+    "combat",
+    "loot",
+    "guard",
+    "objective",
+    "recovery",
+    "training"
+  ],
+  "customTypes": [
+    {
+      "id": "bridge-jump-window",
+      "baseType": "survival",
+      "description": "A jump action window tied to stage progression and movement speed."
+    },
+    {
+      "id": "fixed-threat-hp-lock",
+      "baseType": "objective",
+      "description": "A lock that keeps firing while fixed target HP decreases."
+    },
+    {
+      "id": "weapon-route",
+      "baseType": "loot",
+      "description": "A route segment that prioritizes weapon spawn and pickup."
+    }
+  ]
+}

@@ -1,0 +1,612 @@
+{
+  "schemaVersion": 1,
+  "gameId": "contra",
+  "romProfileId": "contra-us-good",
+  "compatibilityGroup": "contra-us",
+  "stage": 1,
+  "notes": "Draft strategy fragment database for Contra US stage 1. TAS-derived knowledge is represented only as WorldX landmarks and tactical hints, not as replayed controller input.",
+  "fragments": [
+    {
+      "id": "stage1-w1110-1160-reward-station-falling-soldier",
+      "label": "WorldX 1110-1160 reward station falling soldier survival",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "combat",
+        "loot",
+        "guard"
+      ],
+      "worldWindow": {
+        "start": 1110,
+        "end": 1160,
+        "strictEnd": true
+      },
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          {
+            "field": "ram.level",
+            "op": "eq",
+            "value": 0,
+            "note": "Contra stage 1 in current runtime uses level index 0."
+          },
+          {
+            "field": "ram.worldX",
+            "op": "between",
+            "value": [
+              1110,
+              1160
+            ],
+            "note": "Local failure was observed around WorldX 1132."
+          },
+          {
+            "field": "ram.playerY",
+            "op": "gte",
+            "value": 188,
+            "note": "Low route posture; the documented death was in the lower lane."
+          }
+        ]
+      },
+      "ramConditions": [
+        {
+          "field": "threatPool.dynamicThreats",
+          "op": "count-gte",
+          "value": 1,
+          "note": "At least one non-fixed active enemy threat is near the player."
+        },
+        {
+          "field": "enemy.nearestDynamic.dx",
+          "op": "between",
+          "value": [
+            -8,
+            48
+          ],
+          "note": "Equivalent to the current falling-threat detector around playerX."
+        },
+        {
+          "field": "enemy.nearestDynamic.dy",
+          "op": "between",
+          "value": [
+            -112,
+            -16
+          ],
+          "note": "Falling or upper-body enemy descending into contact range."
+        },
+        {
+          "field": "horizon.rewardAhead.category",
+          "op": "eq",
+          "value": "reward",
+          "note": "Reward intent is present, but survival must dominate collection."
+        }
+      ],
+      "actionAdvice": {
+        "intent": "survive",
+        "priority": 130,
+        "buttons": {
+          "a": false,
+          "b": "pulse",
+          "up": "target",
+          "down": false,
+          "left": false,
+          "right": "preserve"
+        },
+        "aim": "target",
+        "fireMode": "target",
+        "movementPolicy": "hold-ground",
+        "lockFrames": 10,
+        "notes": "Do not convert this into a blind jump. Keep firing at the falling soldier, pause or slow horizontal progress if current fire cannot neutralize the threat."
+      },
+      "safetyOverrides": [
+        {
+          "id": "falling-soldier-contact-guard",
+          "priority": 210,
+          "when": [
+            {
+              "field": "enemy.nearestDynamic.dx",
+              "op": "between",
+              "value": [
+                -4,
+                28
+              ],
+              "note": "Body contact corridor."
+            },
+            {
+              "field": "enemy.nearestDynamic.dy",
+              "op": "between",
+              "value": [
+                -44,
+                6
+              ],
+              "note": "Enemy is about to overlap the player."
+            }
+          ],
+          "override": {
+            "a": false,
+            "b": true,
+            "right": false,
+            "left": false
+          },
+          "reason": "Near body contact is more important than reward aim or route speed."
+        },
+        {
+          "id": "projectile-emergency-keeps-existing-danger-layer",
+          "priority": 240,
+          "when": [
+            {
+              "field": "threatPool.projectiles",
+              "op": "count-gte",
+              "value": 1,
+              "note": "Runtime Danger Layer remains higher priority than this fragment."
+            }
+          ],
+          "override": {
+            "a": "preserve",
+            "b": "preserve",
+            "left": "preserve",
+            "right": "preserve"
+          },
+          "reason": "Fragment data must not mask immediate projectile survival."
+        }
+      ],
+      "exitConditions": [
+        {
+          "field": "ram.worldX",
+          "op": "gt",
+          "value": 1160,
+          "note": "Normal progress out of local fragment."
+        },
+        {
+          "field": "enemy.nearestDynamic.exists",
+          "op": "eq",
+          "value": false,
+          "note": "Falling body threat no longer exists."
+        },
+        {
+          "field": "ram.deathFlag",
+          "op": "neq",
+          "value": 0,
+          "note": "Failure exit for death trace capture."
+        }
+      ],
+      "failureCounterexamples": [
+        {
+          "id": "w1132-falling-soldier-death",
+          "observedAt": {
+            "worldX": 1132,
+            "playerX": 119,
+            "playerY": 212
+          },
+          "description": "AI died to a falling or upper-lane soldier while reward and fixed-fire logic were active.",
+          "avoid": [
+            "Do not keep pure rightward advance when a falling soldier is within body-contact corridor.",
+            "Do not prefer reward collection over same-lane survival.",
+            "Do not add blind jump patches in this low-route window without proof; prior low-route micro patches became worse."
+          ],
+          "evidence": [
+            "Existing test covers findRewardStationFallingThreat at worldX 1132 with playerX 119 and playerY 212.",
+            "Strategy requirements doc records the first bridge after-death zone around WorldX 1180-1240 and states the issue is route selection before the low-route death zone."
+          ]
+        }
+      ],
+      "telemetry": {
+        "requiredFields": [
+          "frame",
+          "ram.worldX",
+          "ram.playerX",
+          "ram.playerY",
+          "ram.jumpState",
+          "ram.weapon",
+          "enemySlots",
+          "threatPool",
+          "horizon.primary",
+          "routeSegment",
+          "rawAiInput",
+          "lockedAiInput",
+          "deathTrace"
+        ],
+        "successSignals": [
+          {
+            "field": "ram.worldX",
+            "op": "gt",
+            "value": 1160,
+            "note": "Fragment cleared without death."
+          },
+          {
+            "field": "metrics.deathsDelta",
+            "op": "eq",
+            "value": 0,
+            "note": "No death during or immediately after the fragment."
+          }
+        ],
+        "debugTags": [
+          "fragment:w1110-1160",
+          "threat:falling-soldier",
+          "objective:survival-over-reward"
+        ]
+      }
+    },
+    {
+      "id": "stage1-w1320-1410-weapon-box-rotating-turret-stall",
+      "label": "WorldX 1320-1410 weapon box plus rotating turret loop breaker",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "combat",
+        "loot",
+        "speedrun"
+      ],
+      "worldWindow": {
+        "start": 1320,
+        "end": 1410,
+        "strictEnd": true
+      },
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          {
+            "field": "ram.level",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "field": "ram.worldX",
+            "op": "between",
+            "value": [
+              1320,
+              1410
+            ],
+            "note": "Local stall was observed around WorldX 1321."
+          },
+          {
+            "field": "ram.playerY",
+            "op": "gte",
+            "value": 188,
+            "note": "Only applies to lower route where the weapon box and turret conflict is active."
+          }
+        ]
+      },
+      "ramConditions": [
+        {
+          "field": "ram.weapon",
+          "op": "eq",
+          "value": 0,
+          "note": "Current detector only treats default weapon as needing reward pursuit here."
+        },
+        {
+          "field": "horizon.rewardAhead.category",
+          "op": "eq",
+          "value": "reward"
+        },
+        {
+          "field": "horizon.rewardAhead.distance",
+          "op": "between",
+          "value": [
+            -8,
+            58
+          ]
+        },
+        {
+          "field": "horizon.fixedAhead.category",
+          "op": "in",
+          "value": [
+            "fixed",
+            "boss"
+          ]
+        },
+        {
+          "field": "horizon.fixedAhead.distance",
+          "op": "between",
+          "value": [
+            32,
+            150
+          ]
+        }
+      ],
+      "actionAdvice": {
+        "intent": "escape-loop",
+        "priority": 150,
+        "buttons": {
+          "a": false,
+          "b": "pulse",
+          "up": false,
+          "down": true,
+          "left": false,
+          "right": "pulse"
+        },
+        "aim": "down",
+        "fireMode": "pulse",
+        "movementPolicy": "pause-right",
+        "lockFrames": 18,
+        "notes": "Resolve the reward-turret conflict by short down-fire or controlled right pulses. Do not let loot intent and fixed-fire intent alternate forever."
+      },
+      "safetyOverrides": [
+        {
+          "id": "turret-visible-takes-aim-control",
+          "priority": 220,
+          "when": [
+            {
+              "field": "threatPool.primaryTurret.exists",
+              "op": "eq",
+              "value": true
+            },
+            {
+              "field": "threatPool.primaryTurret.hp",
+              "op": "gt",
+              "value": 0
+            }
+          ],
+          "override": {
+            "a": false,
+            "b": "pulse",
+            "up": "target",
+            "down": "target",
+            "left": false,
+            "right": "preserve"
+          },
+          "reason": "Once the actual RAM turret is active, dynamic Threat Pool should override static horizon reward chasing."
+        },
+        {
+          "id": "loop-exit-after-no-progress",
+          "priority": 205,
+          "when": [
+            {
+              "field": "loopExit.stagnantFrames",
+              "op": "gte",
+              "value": 90
+            },
+            {
+              "field": "metrics.scoreDelta",
+              "op": "eq",
+              "value": 0
+            }
+          ],
+          "override": {
+            "a": false,
+            "b": "pulse",
+            "left": false,
+            "right": true
+          },
+          "reason": "If neither score nor WorldX improves, abandon the reward/turret stall and cross the local window."
+        }
+      ],
+      "exitConditions": [
+        {
+          "field": "ram.worldX",
+          "op": "gt",
+          "value": 1410,
+          "note": "Local window cleared."
+        },
+        {
+          "field": "ram.weapon",
+          "op": "neq",
+          "value": 0,
+          "note": "Reward objective succeeded; return to normal route."
+        },
+        {
+          "field": "horizon.fixedAhead.distance",
+          "op": "lt",
+          "value": 0,
+          "note": "Fixed target is behind player; route should resume."
+        },
+        {
+          "field": "loopExit.forcedAdvanceBias",
+          "op": "gt",
+          "value": 0.5,
+          "note": "Runtime loop exit owns the next frames."
+        }
+      ],
+      "failureCounterexamples": [
+        {
+          "id": "w1321-weapon-turret-loop",
+          "observedAt": {
+            "worldX": 1321,
+            "playerY": 212
+          },
+          "description": "Weapon box pursuit and rotating turret handling alternated without progress.",
+          "avoid": [
+            "Do not keep switching between reward chase and turret aim every frame.",
+            "Do not treat the route JSON segment as enough context; this is a local tactical fragment.",
+            "Do not pursue the reward indefinitely when score, weapon, threat count, and WorldX do not improve."
+          ],
+          "evidence": [
+            "Existing test covers findMidWeaponTurretStallTarget at worldX 1321 with reward distance 23 and fixed distance 87.",
+            "Existing runtime already has Loop Exit V0; this fragment should feed it instead of replacing it."
+          ]
+        }
+      ],
+      "telemetry": {
+        "requiredFields": [
+          "frame",
+          "ram.worldX",
+          "ram.playerY",
+          "ram.weapon",
+          "ram.score",
+          "horizon.rewardAhead",
+          "horizon.fixedAhead",
+          "threatPool.primaryTurret",
+          "loopExit.stagnantFrames",
+          "loopExit.forcedAdvanceBias",
+          "rawAiInput",
+          "lockedAiInput"
+        ],
+        "successSignals": [
+          {
+            "field": "ram.worldX",
+            "op": "gt",
+            "value": 1410
+          },
+          {
+            "field": "metrics.deathsDelta",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "field": "loopExit.stagnantFrames",
+            "op": "lt",
+            "value": 90
+          }
+        ],
+        "debugTags": [
+          "fragment:w1320-1410",
+          "objective:weapon-turret-stall",
+          "loop-exit:candidate"
+        ]
+      }
+    },
+    {
+      "id": "stage1-w1040-1240-bridge-after-upper-route-recovery",
+      "label": "Bridge after-route recovery before lower-route death zone",
+      "status": "draft",
+      "strategyTypes": [
+        "survival",
+        "speedrun",
+        "combat"
+      ],
+      "worldWindow": {
+        "start": 1040,
+        "end": 1240,
+        "strictEnd": true
+      },
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          {
+            "field": "ram.level",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "field": "ram.worldX",
+            "op": "between",
+            "value": [
+              1040,
+              1240
+            ]
+          },
+          {
+            "field": "ram.playerY",
+            "op": "gte",
+            "value": 188,
+            "note": "Player is on the lower route that has been identified as unsafe."
+          }
+        ]
+      },
+      "ramConditions": [
+        {
+          "field": "horizon.fixedAhead.category",
+          "op": "eq",
+          "value": "fixed"
+        },
+        {
+          "field": "threatPool.dynamicThreats",
+          "op": "count-gte",
+          "value": 1
+        }
+      ],
+      "actionAdvice": {
+        "intent": "survive",
+        "priority": 120,
+        "buttons": {
+          "a": "pulse",
+          "b": "pulse",
+          "up": false,
+          "down": false,
+          "left": false,
+          "right": true
+        },
+        "aim": "target",
+        "fireMode": "threat",
+        "movementPolicy": "jump-commit",
+        "lockFrames": 16,
+        "notes": "Draft route-recovery fragment. The preferred long-term fix is entering this area on the upper route, not piling more low-route micro patches into WorldX 1180-1240."
+      },
+      "safetyOverrides": [
+        {
+          "id": "same-lane-contact-over-route-recovery",
+          "priority": 230,
+          "when": [
+            {
+              "field": "enemy.nearestDynamic.dx",
+              "op": "between",
+              "value": [
+                -6,
+                32
+              ]
+            },
+            {
+              "field": "enemy.nearestDynamic.dy",
+              "op": "between",
+              "value": [
+                -24,
+                24
+              ]
+            }
+          ],
+          "override": {
+            "a": false,
+            "b": true,
+            "right": false
+          },
+          "reason": "Immediate contact still outranks route recovery."
+        }
+      ],
+      "exitConditions": [
+        {
+          "field": "ram.worldX",
+          "op": "gt",
+          "value": 1240
+        },
+        {
+          "field": "ram.playerY",
+          "op": "lt",
+          "value": 188,
+          "note": "Back on safer upper/mid route."
+        }
+      ],
+      "failureCounterexamples": [
+        {
+          "id": "low-route-micro-patches-made-worse",
+          "observedAt": {
+            "worldX": 1180
+          },
+          "description": "Local low-route turret micro changes such as no-jump, horizontal sweep, retreat, and forced B were reported to make the outcome worse.",
+          "avoid": [
+            "Do not use this as a blind local override without route-entry validation.",
+            "Do not hide repeated failure behind Loop Exit success labels."
+          ],
+          "evidence": [
+            "Strategy requirements doc says the next direction is bridge-after route correction, not more low-route micro patches."
+          ]
+        }
+      ],
+      "telemetry": {
+        "requiredFields": [
+          "frame",
+          "ram.worldX",
+          "ram.playerY",
+          "ram.jumpState",
+          "routeSegment",
+          "enemySlots",
+          "deathTrace"
+        ],
+        "successSignals": [
+          {
+            "field": "ram.worldX",
+            "op": "gt",
+            "value": 1240
+          },
+          {
+            "field": "metrics.deathsDelta",
+            "op": "eq",
+            "value": 0
+          }
+        ],
+        "debugTags": [
+          "fragment:w1040-1240",
+          "route:upper-recovery",
+          "risk:needs-real-run-validation"
+        ]
+      }
+    }
+  ]
+}

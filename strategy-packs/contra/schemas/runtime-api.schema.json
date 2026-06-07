@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fc-ai.local/schemas/runtime-api-1.0.0.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "frame",
+        "mode",
+        "gameProfileId",
+        "romProfileId",
+        "strategyKey",
+        "conditionState",
+        "inputSamplingDelay"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "frame": { "type": "integer", "minimum": 0 },
+        "mode": { "type": "string" },
+        "gameProfileId": { "type": "string" },
+        "romProfileId": { "type": "string" },
+        "strategyKey": { "type": "string" },
+        "conditionState": { "type": "object" },
+        "inputSamplingDelay": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "frame",
+        "intent",
+        "intentCombination",
+        "latencyCompensationFrames",
+        "finalInput"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "frame": { "type": "integer", "minimum": 0 },
+        "intent": { "type": "string" },
+        "intentCombination": { "type": "array" },
+        "latencyCompensationFrames": { "type": "number" },
+        "finalInput": {
+          "type": "object",
+          "required": ["up", "down", "left", "right", "a", "b", "start", "select"],
+          "properties": {
+            "up": { "type": "boolean" },
+            "down": { "type": "boolean" },
+            "left": { "type": "boolean" },
+            "right": { "type": "boolean" },
+            "a": { "type": "boolean" },
+            "b": { "type": "boolean" },
+            "start": { "type": "boolean" },
+            "select": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "compatibilityGroup": "contra-japan",
+  "displayName": "Contra (Japan)",
+  "region": "Japan",
+  "hashes": {
+    "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+    "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+    "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+    "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+  },
+  "tasCompatibility": {
+    "status": "exact-match",
+    "romChecksum": "base64:0wbFTM/fXLT47FiPGbPjPQ==",
+    "sourcePath": "data/tas/contra/contra-j-good",
+    "trainingBasePath": "data/training/contra/tas_bases/contra-j-good"
+  },
+  "compatibilityStatus": "reference",
+  "sourcePolicy": {
+    "romFileNotIncluded": true,
+    "userMustProvideOwnRom": true
+  },
+  "notes": [
+    "This ROM profile is added for Japanese Contra TAS research and training-base extraction.",
+    "The current Stage 1 runtime strategy remains validated only against contra-us-good until separate Japan traces pass.",
+    "TAS data is route knowledge and training evidence, not the live controller."
+  ]
+}

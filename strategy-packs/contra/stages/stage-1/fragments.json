@@ -1,0 +1,413 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-us-good",
+  "stageId": "stage-1",
+  "fragments": [
+    {
+      "id": "stage1-opening-survival",
+      "label": "Opening survival advance",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "combat"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 0,
+        "end": 520,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "advance",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.8 },
+          { "intent": "fire_target", "weight": 0.6 }
+        ],
+        "priority": 60,
+        "parameters": {
+          "firePolicy": "threat",
+          "advanceBias": 0.7
+        },
+        "lockFrames": 0
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "pit-or-water-edge",
+        "stuck-forward-bias-decay"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 520 },
+        { "ref": "player.1.alive", "op": "eq", "value": false }
+      ],
+      "failureCounterexamples": [],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "danger.immediate",
+          "runtime.finalInput"
+        ]
+      }
+    },
+    {
+      "id": "stage1-first-bridge-survival",
+      "label": "First bridge jump window",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "bridge-jump-window"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 520,
+        "end": 930,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "jump",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.75 },
+          { "intent": "jump", "weight": 0.9 },
+          { "intent": "fire_target", "weight": 0.5 }
+        ],
+        "priority": 80,
+        "parameters": {
+          "preloadFrames": 10,
+          "firePolicy": "air-sweep",
+          "doNotStopForMinorThreats": true
+        },
+        "lockFrames": 36
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "bad-landing-projection",
+        "bridge-edge"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 930 },
+        { "ref": "loop.stuck", "op": "eq", "value": true }
+      ],
+      "failureCounterexamples": [
+        "stage1-bridge-reward-missed"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "danger.immediate",
+          "runtime.finalInput"
+        ]
+      }
+    },
+    {
+      "id": "stage1-middle-fire-advance",
+      "label": "Middle advance with fire",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "combat"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 930,
+        "end": 1550,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "fire_target",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.6 },
+          { "intent": "fire_target", "weight": 0.8 }
+        ],
+        "priority": 65,
+        "parameters": {
+          "firePolicy": "always",
+          "fixedThreatPriority": true,
+          "dynamicThreatPredictionFrames": 30
+        },
+        "lockFrames": 0
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "pit-or-water-edge",
+        "enemy-collision-cone"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 1550 }
+      ],
+      "failureCounterexamples": [
+        "stage1-fixed-threat-no-fire"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "threat.fixed.count",
+          "threat.dynamic.count",
+          "runtime.finalInput"
+        ]
+      }
+    },
+    {
+      "id": "stage1-exploding-bridge-danger",
+      "label": "Exploding bridge danger window",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "recovery",
+        "bridge-jump-window"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 1550,
+        "end": 2050,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "evade",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.55 },
+          { "intent": "jump", "weight": 0.85 },
+          { "intent": "fire_target", "weight": 0.45 }
+        ],
+        "priority": 90,
+        "parameters": {
+          "jumpPolicy": "precomputed-window",
+          "minorThreatStopPolicy": "disabled",
+          "loopExitBiasAllowed": true
+        },
+        "lockFrames": 42
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "bad-landing-projection",
+        "pit-or-water-edge"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 2050 },
+        { "ref": "player.1.alive", "op": "eq", "value": false }
+      ],
+      "failureCounterexamples": [
+        "stage1-w2622-progression-barrier-jump-failure"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "danger.immediate",
+          "loop.stuck",
+          "runtime.finalInput"
+        ]
+      }
+    },
+    {
+      "id": "stage1-barrier-approach",
+      "label": "Barrier approach and fixed threat priority",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "objective",
+        "fixed-threat-hp-lock"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2050,
+        "end": 2960,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "clear_fixed_threat",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.45 },
+          { "intent": "clear_fixed_threat", "weight": 0.9 }
+        ],
+        "priority": 95,
+        "parameters": {
+          "targetPriority": "fixed-threat-target",
+          "hpMonitor": true,
+          "ineffectiveFireFrames": 60,
+          "fallbackIntent": "recover_from_stuck"
+        },
+        "lockFrames": 0
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "bad-landing-projection",
+        "enemy-collision-cone"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 2960 }
+      ],
+      "failureCounterexamples": [
+        "stage1-fixed-threat-no-fire"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "threat.fixed.count",
+          "runtime.finalInput"
+        ]
+      }
+    },
+    {
+      "id": "stage1-preboss-platform-capture",
+      "label": "Pre-boss mid-platform capture route",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "recovery",
+        "platform-capture"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2600,
+        "end": 2960,
+        "unit": "ContraWorldPixels",
+        "strictEnd": true
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true },
+        { "ref": "player.1.weaponTier", "op": "gte", "value": 1 }
+      ],
+      "actionAdvice": {
+        "intent": "capture_platform",
+        "intentCombination": [
+          { "intent": "advance", "weight": 0.55 },
+          { "intent": "jump", "weight": 0.55 },
+          { "intent": "hold_position", "weight": 0.35 },
+          { "intent": "fire_target", "weight": 0.8 }
+        ],
+        "priority": 98,
+        "parameters": {
+          "routeClass": "mid-platform-capture",
+          "blockedRouteClass": "high-platform-jump-carry",
+          "doNotTuneWindow": "WorldX 2776-2864",
+          "targetEvidence": [
+            "human-attempt-5: turret kill at WorldX 2706, infantry kills at WorldX 2804 and 2878",
+            "human-attempt-6: turret kill at WorldX 2694, infantry kill at WorldX 2884, boss-wall entry after WorldX 2959"
+          ],
+          "counterEvidence": [
+            "20260607-boss-high-edge-jump-check: death WorldX 2854/y236",
+            "20260607-boss-high-air-carry-check: death WorldX 2854/y236 with right carry preserved",
+            "20260607-mid-platform-capture-check: death WorldX 2836/y236 after left correction",
+            "lower-platform-edge-trigger-1780817803410: A release/re-trigger route still died at WorldX 2839/y234"
+          ]
+        },
+        "lockFrames": 0
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "bad-landing-projection",
+        "pit-or-water-edge",
+        "route-class-failure-unlock"
+      ],
+      "exitConditions": [
+        { "ref": "progression.primary", "op": "gte", "value": 2960 },
+        { "ref": "player.1.alive", "op": "eq", "value": false },
+        { "ref": "route.class", "op": "eq", "value": "high-platform-jump-carry" }
+      ],
+      "failureCounterexamples": [
+        "stage1-w2854-preboss-platform-capture-failure",
+        "stage1-w2836-mid-platform-capture-failure",
+        "stage1-w2839-lower-platform-edge-trigger-failure"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "player.1.jumpState",
+          "player.1.weaponTier",
+          "threat.fixed.count",
+          "runtime.finalInput",
+          "deathTrace"
+        ]
+      }
+    },
+    {
+      "id": "stage1-barrier-clear",
+      "label": "Barrier clear fixed target",
+      "status": "candidate",
+      "strategyTypes": [
+        "survival",
+        "objective",
+        "fixed-threat-hp-lock"
+      ],
+      "progressionWindow": {
+        "metric": "progression.primary",
+        "start": 2960,
+        "end": 9999,
+        "unit": "ContraWorldPixels",
+        "strictEnd": false
+      },
+      "conditions": [
+        { "ref": "stage.id", "op": "eq", "value": 0 },
+        { "ref": "player.1.alive", "op": "eq", "value": true },
+        { "ref": "objective.barrier.active", "op": "eq", "value": true }
+      ],
+      "actionAdvice": {
+        "intent": "clear_fixed_threat",
+        "intentCombination": [
+          { "intent": "hold_position", "weight": 0.65 },
+          { "intent": "clear_fixed_threat", "weight": 1 }
+        ],
+        "priority": 100,
+        "parameters": {
+          "targetPriority": "progression-barrier-node",
+          "hpMonitor": true,
+          "preferredAim": "up-right",
+          "ineffectiveFireFrames": 60,
+          "fallbackIntent": "adjust_station"
+        },
+        "lockFrames": 90
+      },
+      "safetyOverrides": [
+        "immediate-lethal-danger",
+        "enemy-collision-cone",
+        "station-failure-unlock"
+      ],
+      "exitConditions": [
+        { "ref": "objective.barrier.active", "op": "eq", "value": false },
+        { "ref": "player.1.alive", "op": "eq", "value": false }
+      ],
+      "failureCounterexamples": [
+        "stage1-w3208-barrier-node-station-failure"
+      ],
+      "telemetry": {
+        "requiredRefs": [
+          "progression.primary",
+          "player.1.position",
+          "objective.barrier.active",
+          "runtime.finalInput"
+        ]
+      }
+    }
+  ]
+}
