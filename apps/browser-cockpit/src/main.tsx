@@ -2153,6 +2153,42 @@ function localizedLastInput(label: string, language: UiLanguage) {
   return map[label] ?? label;
 }
 
+function localizedBoolText(value: boolean, language: UiLanguage) {
+  if (language === "en-US") return value ? "Yes" : "No";
+  return boolText(value);
+}
+
+function localizedPlayerStateLabel(state: number, language: UiLanguage) {
+  if (language !== "en-US") return playerStateLabel(state);
+  if (state === PLAYER_ALIVE_STATE) return "Alive";
+  if (state === PLAYER_DEAD_STATE) return "Dead";
+  if (state === 0) return "Not joined";
+  return `State ${formatByte(state)}`;
+}
+
+function localizedAiStrategyUsageLabel(mode: ControlMode, strategyKey: AiStrategyKey, language: UiLanguage) {
+  if (!aiControlIsActive(mode)) return language === "en-US" ? "AI disabled" : "AI 未启用";
+  return localizedAiStrategyLabel(strategyKey, language);
+}
+
+function localizedRoutePlanUsageLabel(mode: ControlMode, strategyKey: AiStrategyKey, plans: LoadedStrategyPlans, language: UiLanguage) {
+  if (!aiControlIsActive(mode)) return language === "en-US" ? "AI disabled" : "AI 未启用";
+  const plan = planForStrategy(strategyKey, plans);
+  if (!plan) return language === "en-US" ? "No route plan" : "无路线";
+  return `${localizedAiStrategyLabel(strategyKey, language)} / ${plan.segments.length} ${language === "en-US" ? "segments" : "段"}`;
+}
+
+function localizedHorizonCategoryLabel(category: StageOneHorizonCategory, language: UiLanguage) {
+  if (language !== "en-US") return horizonCategoryLabel(category);
+  if (category === "bridge") return "Bridge";
+  if (category === "fixed") return "Fixed";
+  if (category === "infantry") return "Infantry";
+  if (category === "sniper") return "Sniper";
+  if (category === "reward") return "Reward";
+  if (category === "boss") return "Boss";
+  return "Route";
+}
+
 function romLibraryStatusLabel(status: RomLibraryStatusState, language: UiLanguage) {
   const count = status.count ?? 0;
   const detail = status.detail ?? "";
@@ -5559,6 +5595,21 @@ function localizedTraceSummary(summary: string, traceRecording: boolean, languag
   return summary;
 }
 
+function localizedEventLogLine(line: string, language: UiLanguage) {
+  if (language !== "en-US") return line;
+  const defaultRomMatch = line.match(/^ROM库：默认目录扫描到 (\d+) 个卡带$/);
+  if (defaultRomMatch) return `ROM library: default directory found ${defaultRomMatch[1]} cartridges`;
+  const loadedMatch = line.match(/^运行时：本地 ROM 已加载（(.+)）$/);
+  if (loadedMatch) return `Runtime: local ROM loaded (${loadedMatch[1]})`;
+  if (line === "PM：2P 输入路由准备中") return "PM: 2P input routing ready";
+  if (line === "运行时：等待本地用户自有 ROM") return "Runtime: waiting for local user-owned ROM";
+  if (line === "边界：仓库不提交、不打包 ROM") return "Boundary: repository does not commit or package ROMs";
+  if (line === "BOT：AI 模式当前为安全占位") return "BOT: AI mode is currently safe placeholder";
+  if (line.startsWith("声音：浏览器等待真实点击")) return "Audio: browser is waiting for a real click";
+  if (line.startsWith("声音错误：")) return line.replace("声音错误：", "Audio error: ");
+  return line;
+}
+
 function buildGlobalTrainingState(
   traceRecording: boolean,
   traceSampleCount: number,
@@ -6535,48 +6586,50 @@ function TacticalPanel({
   gameplayActive,
   strategyKey,
   strategyPlans,
+  language,
   onOpenStrategyDesigner
 }: {
   ramSnapshot: GameRamSnapshot | null;
   gameplayActive: boolean;
   strategyKey: AiStrategyKey;
   strategyPlans: LoadedStrategyPlans;
+  language: UiLanguage;
   onOpenStrategyDesigner: () => void;
 }) {
   const threatCount = ramSnapshot?.enemies.filter((enemy) => enemy.threat).length ?? 0;
   const route = routeLineForStrategy(strategyKey, ramSnapshot, strategyPlans);
   const horizon = buildStageOneHorizon(ramSnapshot);
   const stackRows = [
-    { label: "生存", value: gameplayActive ? "可操作" : ramSnapshot ? "待入局" : "等待 RAM", icon: Shield },
-    { label: "路线", value: ramSnapshot ? `${route.segment} / ${route.action}` : "等待 WorldX", icon: MapIcon },
-    { label: "预判", value: horizon?.primary ? horizon.primary.label : "等待目标", icon: Gauge },
-    { label: "协作", value: "排队中", icon: HeartPulse },
-    { label: "战斗", value: ramSnapshot ? `${threatCount} 威胁` : "仅输入测试", icon: Target },
-    { label: "推进", value: ramSnapshot ? `屏幕 ${ramSnapshot.screen}` : "受控", icon: Activity }
+    { label: t(language, "tactical.survival"), value: gameplayActive ? t(language, "tactical.operable") : ramSnapshot ? t(language, "value.notInGame") : t(language, "value.waitingRam"), icon: Shield },
+    { label: t(language, "tactical.route"), value: ramSnapshot ? `${route.segment} / ${route.action}` : t(language, "tactical.waitingWorldX"), icon: MapIcon },
+    { label: t(language, "tactical.horizon"), value: horizon?.primary ? horizon.primary.label : t(language, "tactical.waitingTarget"), icon: Gauge },
+    { label: t(language, "tactical.coop"), value: t(language, "tactical.queued"), icon: HeartPulse },
+    { label: t(language, "tactical.combat"), value: ramSnapshot ? `${threatCount} ${t(language, "value.threatSuffix")}` : t(language, "tactical.inputOnly"), icon: Target },
+    { label: t(language, "tactical.advance"), value: ramSnapshot ? `${t(language, "tactical.screen")} ${ramSnapshot.screen}` : t(language, "tactical.controlled"), icon: Activity }
   ];
 
   return (
     <section className="tactical-panel">
       <div className="panel-title">
         <Brain size={18} />
-        <span>快脑</span>
+        <span>{t(language, "tactical.title")}</span>
       </div>
       <div className="state-strip">
         <div>
           <dt>CameraX</dt>
-          <dd>{ramSnapshot ? ramSnapshot.cameraX : "等待"}</dd>
+          <dd>{ramSnapshot ? ramSnapshot.cameraX : t(language, "tactical.waiting")}</dd>
         </div>
         <div>
           <dt>PlayerX</dt>
-          <dd>{ramSnapshot ? ramSnapshot.playerX : "等待"}</dd>
+          <dd>{ramSnapshot ? ramSnapshot.playerX : t(language, "tactical.waiting")}</dd>
         </div>
         <div>
           <dt>WorldX</dt>
-          <dd>{ramSnapshot ? ramSnapshot.worldX : "等待"}</dd>
+          <dd>{ramSnapshot ? ramSnapshot.worldX : t(language, "tactical.waiting")}</dd>
         </div>
         <div>
-          <dt>屏幕</dt>
-          <dd>{ramSnapshot ? ramSnapshot.screen : "等待"}</dd>
+          <dt>{t(language, "tactical.screen")}</dt>
+          <dd>{ramSnapshot ? ramSnapshot.screen : t(language, "tactical.waiting")}</dd>
         </div>
       </div>
       <div className="stack-list">
@@ -6593,22 +6646,22 @@ function TacticalPanel({
       </div>
       <button className="tactical-action" onClick={onOpenStrategyDesigner} type="button">
         <MapIcon size={16} />
-        策略设计
+        {t(language, "tactical.strategyDesigner")}
       </button>
     </section>
   );
 }
 
-function LogPanel({ eventLog }: { eventLog: string[] }) {
+function LogPanel({ eventLog, language }: { eventLog: string[]; language: UiLanguage }) {
   return (
     <section className="log-panel">
       <div className="panel-title">
         <Radio size={18} />
-        <span>事件流</span>
+        <span>{t(language, "log.title")}</span>
       </div>
       <div className="log-lines">
         {eventLog.map((line) => (
-          <p key={line}>{line}</p>
+          <p key={line}>{localizedEventLogLine(line, language)}</p>
         ))}
       </div>
     </section>
@@ -6646,6 +6699,7 @@ function DataDashboard({
   traceRecording,
   traceSampleCount,
   traceLastSummary,
+  language,
   onTraceStart,
   onTraceStop,
   onTraceClear,
@@ -6665,6 +6719,7 @@ function DataDashboard({
   traceRecording: boolean;
   traceSampleCount: number;
   traceLastSummary: string;
+  language: UiLanguage;
   onTraceStart: () => void;
   onTraceStop: () => void;
   onTraceClear: () => void;
@@ -6677,6 +6732,8 @@ function DataDashboard({
   const threatCount = enemies.filter((enemy) => enemy.threat).length;
   const fixedCount = enemies.filter((enemy) => enemy.fixed).length;
   const horizon = buildStageOneHorizon(ramSnapshot);
+  const waitingRam = t(language, "value.waitingRam");
+  const waitingWorldX = t(language, "tactical.waitingWorldX");
   const topEnemies = enemies
     .slice()
     .sort((a, b) => b.priority - a.priority)
@@ -6684,104 +6741,104 @@ function DataDashboard({
   const topBullets = bullets.slice(0, 8);
   const groups: MetricGroup[] = [
     {
-      title: "运行",
+      title: t(language, "data.runtime"),
       items: [
-        { label: "主机", value: statusLabel(status), status: "real" },
-        { label: "声音", value: audioLabel(audioStatus), status: "real" },
-        { label: "帧数", value: `${frameCount}`, status: "real" },
-        { label: "可操作", value: boolText(gameplayActive), status: "real" },
-        { label: "关卡", value: ramSnapshot ? `${ramSnapshot.level}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "双人局", value: ramSnapshot ? boolText(ramSnapshot.twoPlayerActive) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "模式 RAM", value: ramSnapshot ? `${formatByte(ramSnapshot.playerMode)} / ${formatByte(ramSnapshot.playerModeAlt)}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "GameOver", value: ramSnapshot ? `${ramSnapshot.gameOver} / ${ramSnapshot.p2GameOver}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" }
+        { label: t(language, "data.host"), value: runtimeStatusLabel(status, language), status: "real" },
+        { label: t(language, "data.audio"), value: runtimeAudioLabel(audioStatus, language), status: "real" },
+        { label: t(language, "data.frames"), value: `${frameCount}`, status: "real" },
+        { label: t(language, "data.operable"), value: localizedBoolText(gameplayActive, language), status: "real" },
+        { label: t(language, "data.level"), value: ramSnapshot ? `${ramSnapshot.level}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.twoPlayer"), value: ramSnapshot ? localizedBoolText(ramSnapshot.twoPlayerActive, language) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.modeRam"), value: ramSnapshot ? `${formatByte(ramSnapshot.playerMode)} / ${formatByte(ramSnapshot.playerModeAlt)}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: "GameOver", value: ramSnapshot ? `${ramSnapshot.gameOver} / ${ramSnapshot.p2GameOver}` : waitingRam, status: ramSnapshot ? "real" : "pending" }
       ]
     },
     {
-      title: "路线",
+      title: t(language, "data.route"),
       items: [
-        { label: "屏幕", value: ramSnapshot ? `${ramSnapshot.screen}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "卷轴", value: ramSnapshot ? `${ramSnapshot.scroll}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "CameraX", value: ramSnapshot ? `${ramSnapshot.cameraX}` : "等待 RAM", status: ramSnapshot ? "derived" : "pending" },
-        { label: "1P WorldX", value: ramSnapshot ? `${ramSnapshot.worldX}` : "等待 RAM", status: ramSnapshot ? "derived" : "pending" },
-        { label: "1P坐标", value: ramSnapshot ? `${ramSnapshot.playerX}, ${ramSnapshot.playerY}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "2P WorldX", value: ramSnapshot ? `${ramSnapshot.p2WorldX}` : "等待 RAM", status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" },
-        { label: "2P坐标", value: ramSnapshot ? `${ramSnapshot.p2PlayerX}, ${ramSnapshot.p2PlayerY}` : "等待 RAM", status: ramSnapshot?.twoPlayerActive ? "real" : "pending" },
-        { label: "1P路线", value: `${p1Route.segment} / ${p1Route.action}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "2P路线", value: `${p2Route.segment} / ${p2Route.action}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "Boss", value: ramSnapshot ? boolText(ramSnapshot.bossDefeated !== 0) : "等待 RAM", status: ramSnapshot ? "real" : "pending" }
+        { label: t(language, "data.screen"), value: ramSnapshot ? `${ramSnapshot.screen}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.scroll"), value: ramSnapshot ? `${ramSnapshot.scroll}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: "CameraX", value: ramSnapshot ? `${ramSnapshot.cameraX}` : waitingRam, status: ramSnapshot ? "derived" : "pending" },
+        { label: "1P WorldX", value: ramSnapshot ? `${ramSnapshot.worldX}` : waitingRam, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.p1Coord"), value: ramSnapshot ? `${ramSnapshot.playerX}, ${ramSnapshot.playerY}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: "2P WorldX", value: ramSnapshot ? `${ramSnapshot.p2WorldX}` : waitingRam, status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" },
+        { label: t(language, "data.p2Coord"), value: ramSnapshot ? `${ramSnapshot.p2PlayerX}, ${ramSnapshot.p2PlayerY}` : waitingRam, status: ramSnapshot?.twoPlayerActive ? "real" : "pending" },
+        { label: t(language, "data.p1Route"), value: `${p1Route.segment} / ${p1Route.action}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.p2Route"), value: `${p2Route.segment} / ${p2Route.action}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: "Boss", value: ramSnapshot ? localizedBoolText(ramSnapshot.bossDefeated !== 0, language) : waitingRam, status: ramSnapshot ? "real" : "pending" }
       ]
     },
     {
       title: "1P",
       items: [
-        { label: "控制", value: `${controlModeLabels[controlModes["1P"]]} / ${aiStrategyUsageLabel(controlModes["1P"], strategyModels["1P"])}`, status: "mode" },
-        { label: "路线库", value: routePlanUsageLabel(controlModes["1P"], strategyModels["1P"], strategyPlans), status: aiControlIsActive(controlModes["1P"]) ? "derived" : "pending" },
-        { label: "生命", value: ramSnapshot ? `${ramSnapshot.p1Lives}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "状态", value: ramSnapshot ? playerStateLabel(ramSnapshot.p1State) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "跳跃", value: ramSnapshot ? formatByte(ramSnapshot.jumpState) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "武器", value: ramSnapshot ? currentWeaponLabel(ramSnapshot.weapon) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "护盾", value: ramSnapshot ? `${ramSnapshot.p1BarrierTimer}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "输入", value: activeInputText(buttonStates["1P"]), status: "real" }
+        { label: t(language, "data.control"), value: `${localizedControlModeLabel(controlModes["1P"], language)} / ${localizedAiStrategyUsageLabel(controlModes["1P"], strategyModels["1P"], language)}`, status: "mode" },
+        { label: t(language, "data.routePlan"), value: localizedRoutePlanUsageLabel(controlModes["1P"], strategyModels["1P"], strategyPlans, language), status: aiControlIsActive(controlModes["1P"]) ? "derived" : "pending" },
+        { label: t(language, "data.lives"), value: ramSnapshot ? `${ramSnapshot.p1Lives}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.state"), value: ramSnapshot ? localizedPlayerStateLabel(ramSnapshot.p1State, language) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.jump"), value: ramSnapshot ? formatByte(ramSnapshot.jumpState) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.weapon"), value: ramSnapshot ? currentWeaponLabel(ramSnapshot.weapon, language) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.barrier"), value: ramSnapshot ? `${ramSnapshot.p1BarrierTimer}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.input"), value: activeInputText(buttonStates["1P"], language), status: "real" }
       ]
     },
     {
       title: "2P",
       items: [
-        { label: "控制", value: `${controlModeLabels[controlModes["2P"]]} / ${aiStrategyUsageLabel(controlModes["2P"], strategyModels["2P"])}`, status: "mode" },
-        { label: "路线库", value: routePlanUsageLabel(controlModes["2P"], strategyModels["2P"], strategyPlans), status: aiControlIsActive(controlModes["2P"]) ? "derived" : "pending" },
-        { label: "生命", value: ramSnapshot ? `${ramSnapshot.p2Lives}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "状态", value: ramSnapshot ? playerStateLabel(ramSnapshot.p2State) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "跳跃", value: ramSnapshot ? formatByte(ramSnapshot.p2JumpState) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "武器", value: ramSnapshot ? currentWeaponLabel(ramSnapshot.p2Weapon) : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "护盾", value: ramSnapshot ? `${ramSnapshot.p2BarrierTimer}` : "等待 RAM", status: ramSnapshot ? "real" : "pending" },
-        { label: "输入", value: activeInputText(buttonStates["2P"]), status: "real" }
+        { label: t(language, "data.control"), value: `${localizedControlModeLabel(controlModes["2P"], language)} / ${localizedAiStrategyUsageLabel(controlModes["2P"], strategyModels["2P"], language)}`, status: "mode" },
+        { label: t(language, "data.routePlan"), value: localizedRoutePlanUsageLabel(controlModes["2P"], strategyModels["2P"], strategyPlans, language), status: aiControlIsActive(controlModes["2P"]) ? "derived" : "pending" },
+        { label: t(language, "data.lives"), value: ramSnapshot ? `${ramSnapshot.p2Lives}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.state"), value: ramSnapshot ? localizedPlayerStateLabel(ramSnapshot.p2State, language) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.jump"), value: ramSnapshot ? formatByte(ramSnapshot.p2JumpState) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.weapon"), value: ramSnapshot ? currentWeaponLabel(ramSnapshot.p2Weapon, language) : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.barrier"), value: ramSnapshot ? `${ramSnapshot.p2BarrierTimer}` : waitingRam, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.input"), value: activeInputText(buttonStates["2P"], language), status: "real" }
       ]
     },
     {
-      title: "战斗",
+      title: t(language, "data.combat"),
       items: [
-        { label: "敌人槽", value: `${enemies.length}`, status: ramSnapshot ? "real" : "pending" },
-        { label: "威胁", value: `${threatCount}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "固定火力", value: `${fixedCount}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "奖励目标", value: `${rewardCount(enemies)}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "视界目标", value: horizon?.primary ? horizon.primary.label : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
-        { label: "视界类别", value: horizon?.primary ? horizonCategoryLabel(horizon.primary.category) : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
-        { label: "视界距离", value: horizon?.primary ? `${horizon.primary.distance}` : "等待 WorldX", status: horizon?.primary ? "derived" : "pending" },
-        { label: "视界事件", value: horizon ? `${horizon.near.length} / ${horizon.upcoming.length}` : "等待 WorldX", status: horizon ? "derived" : "pending" },
-        { label: "子弹槽", value: `${bullets.length}`, status: ramSnapshot ? "real" : "pending" },
-        { label: "1P子弹", value: `${countBulletsForOwner(bullets, 0)}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "2P子弹", value: `${countBulletsForOwner(bullets, 1)}`, status: ramSnapshot ? "derived" : "pending" },
-        { label: "最高分", value: ramSnapshot ? formatScore(ramSnapshot.highScore) : "等待 RAM", status: ramSnapshot ? "real" : "pending" }
+        { label: t(language, "data.enemySlots"), value: `${enemies.length}`, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.threats"), value: `${threatCount}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.fixedFire"), value: `${fixedCount}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.rewards"), value: `${rewardCount(enemies)}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.horizonTarget"), value: horizon?.primary ? horizon.primary.label : waitingWorldX, status: horizon?.primary ? "derived" : "pending" },
+        { label: t(language, "data.horizonCategory"), value: horizon?.primary ? localizedHorizonCategoryLabel(horizon.primary.category, language) : waitingWorldX, status: horizon?.primary ? "derived" : "pending" },
+        { label: t(language, "data.horizonDistance"), value: horizon?.primary ? `${horizon.primary.distance}` : waitingWorldX, status: horizon?.primary ? "derived" : "pending" },
+        { label: t(language, "data.horizonEvents"), value: horizon ? `${horizon.near.length} / ${horizon.upcoming.length}` : waitingWorldX, status: horizon ? "derived" : "pending" },
+        { label: t(language, "data.bulletSlots"), value: `${bullets.length}`, status: ramSnapshot ? "real" : "pending" },
+        { label: t(language, "data.p1Bullets"), value: `${countBulletsForOwner(bullets, 0)}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.p2Bullets"), value: `${countBulletsForOwner(bullets, 1)}`, status: ramSnapshot ? "derived" : "pending" },
+        { label: t(language, "data.highScore"), value: ramSnapshot ? formatScore(ramSnapshot.highScore) : waitingRam, status: ramSnapshot ? "real" : "pending" }
       ]
     },
     {
-      title: "累计",
+      title: t(language, "data.total"),
       items: [
-        { label: "1P分数", value: formatScore(playerMetrics["1P"].score), status: "real" },
-        { label: "1P死亡", value: `${playerMetrics["1P"].deaths}`, status: "real" },
-        { label: "1P发弹", value: `${playerMetrics["1P"].bulletSpawns}`, status: "derived" },
-        { label: "1P战果", value: `${playerMetrics["1P"].kills}`, status: "derived" },
-        { label: "2P分数", value: formatScore(playerMetrics["2P"].score), status: "real" },
-        { label: "2P死亡", value: `${playerMetrics["2P"].deaths}`, status: ramSnapshot?.twoPlayerActive ? "real" : "pending" },
-        { label: "2P发弹", value: `${playerMetrics["2P"].bulletSpawns}`, status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" },
-        { label: "2P战果", value: `${playerMetrics["2P"].kills}`, status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" }
+        { label: t(language, "data.p1Score"), value: formatScore(playerMetrics["1P"].score), status: "real" },
+        { label: t(language, "data.p1Deaths"), value: `${playerMetrics["1P"].deaths}`, status: "real" },
+        { label: t(language, "data.p1Shots"), value: `${playerMetrics["1P"].bulletSpawns}`, status: "derived" },
+        { label: t(language, "data.p1Kills"), value: `${playerMetrics["1P"].kills}`, status: "derived" },
+        { label: t(language, "data.p2Score"), value: formatScore(playerMetrics["2P"].score), status: "real" },
+        { label: t(language, "data.p2Deaths"), value: `${playerMetrics["2P"].deaths}`, status: ramSnapshot?.twoPlayerActive ? "real" : "pending" },
+        { label: t(language, "data.p2Shots"), value: `${playerMetrics["2P"].bulletSpawns}`, status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" },
+        { label: t(language, "data.p2Kills"), value: `${playerMetrics["2P"].kills}`, status: ramSnapshot?.twoPlayerActive ? "derived" : "pending" }
       ]
     }
   ];
 
   return (
-    <section className="data-dashboard" aria-label="全面数据显化">
+    <section className="data-dashboard" aria-label={t(language, "data.title")}>
       <div className="data-dashboard-head">
         <div className="panel-title">
           <Database size={18} />
-          <span>全面数据显化</span>
+          <span>{t(language, "data.title")}</span>
         </div>
         <div className="trace-actions">
-          <span>{traceRecording ? "轨迹记录中" : traceLastSummary}</span>
-          <button disabled={traceRecording} onClick={onTraceStart} type="button">开始记录</button>
-          <button disabled={!traceRecording} onClick={onTraceStop} type="button">停止</button>
-          <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">导出</button>
-          <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">清空</button>
+          <span>{traceRecording ? t(language, "data.recording") : localizedTraceSummary(traceLastSummary, false, language)}</span>
+          <button disabled={traceRecording} onClick={onTraceStart} type="button">{t(language, "data.startRecord")}</button>
+          <button disabled={!traceRecording} onClick={onTraceStop} type="button">{t(language, "training.stop")}</button>
+          <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">{t(language, "training.export")}</button>
+          <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">{t(language, "training.clear")}</button>
         </div>
         <output data-testid="death-trace-json" hidden>{JSON.stringify(deathTraceReports)}</output>
       </div>
@@ -6790,17 +6847,17 @@ function DataDashboard({
       </div>
       <div className="slot-tables">
         <div className="slot-table-card">
-          <div className="data-section-title">敌人槽 Top 8</div>
+          <div className="data-section-title">{t(language, "data.enemyTop")}</div>
           <table>
             <thead>
               <tr>
-                <th>槽</th>
-                <th>类型</th>
+                <th>{t(language, "data.slot")}</th>
+                <th>{t(language, "data.type")}</th>
                 <th>HP</th>
                 <th>X/Y</th>
                 <th>Routine</th>
-                <th>类别</th>
-                <th>威胁</th>
+                <th>{t(language, "data.category")}</th>
+                <th>{t(language, "data.threats")}</th>
               </tr>
             </thead>
             <tbody>
@@ -6812,21 +6869,21 @@ function DataDashboard({
                   <td>{enemy.x}/{enemy.y}</td>
                   <td>{formatByte(enemy.routine)}</td>
                   <td>{enemy.kind}</td>
-                  <td>{enemy.threat ? "是" : "否"}</td>
+                  <td>{localizedBoolText(enemy.threat, language)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={7}>等待敌人槽</td></tr>
+                <tr><td colSpan={7}>{t(language, "data.waitingEnemySlots")}</td></tr>
               )}
             </tbody>
           </table>
         </div>
         <div className="slot-table-card">
-          <div className="data-section-title">子弹槽 Top 8</div>
+          <div className="data-section-title">{t(language, "data.bulletTop")}</div>
           <table>
             <thead>
               <tr>
-                <th>槽</th>
-                <th>归属</th>
+                <th>{t(language, "data.slot")}</th>
+                <th>{t(language, "data.owner")}</th>
                 <th>X/Y</th>
                 <th>Routine</th>
                 <th>SlotCode</th>
@@ -6844,15 +6901,15 @@ function DataDashboard({
                   <td>{formatByte(bullet.spriteCode)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={6}>等待子弹槽</td></tr>
+                <tr><td colSpan={6}>{t(language, "data.waitingBulletSlots")}</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
       <div className="trace-summary">
-        <span>轨迹样本：{traceSampleCount}</span>
-        <span>记录字段：frame / RAM / WorldX / 输入 / 敌人槽 / 子弹槽 / 分数 / 死亡 / 武器</span>
+        <span>{t(language, "data.traceSamples")}: {traceSampleCount}</span>
+        <span>{t(language, "data.traceFields")}</span>
       </div>
     </section>
   );
@@ -6862,6 +6919,7 @@ function StrategyDesignerPanel({
   open,
   draft,
   status,
+  language,
   onDraftChange,
   onClose,
   onReset,
@@ -6872,6 +6930,7 @@ function StrategyDesignerPanel({
   open: boolean;
   draft: string;
   status: string;
+  language: UiLanguage;
   onDraftChange: (value: string) => void;
   onClose: () => void;
   onReset: () => void;
@@ -6881,30 +6940,30 @@ function StrategyDesignerPanel({
 }) {
   if (!open) return null;
   return (
-    <section className="strategy-designer" aria-label="策略设计窗口">
+    <section className="strategy-designer" aria-label={t(language, "designer.title")}>
       <div className="strategy-designer-head">
         <div className="panel-title">
           <MapIcon size={18} />
-          <span>策略设计窗口</span>
+          <span>{t(language, "designer.title")}</span>
         </div>
-        <button className="icon-button" onClick={onClose} type="button">关闭</button>
+        <button className="icon-button" onClick={onClose} type="button">{t(language, "designer.close")}</button>
       </div>
       <div className="strategy-designer-meta">
         <span>Contra Stage 1</span>
         <strong>{status}</strong>
       </div>
       <textarea
-        aria-label="个人策略 JSON"
+        aria-label={t(language, "designer.personalJson")}
         className="strategy-editor"
         onChange={(event) => onDraftChange(event.target.value)}
         spellCheck={false}
         value={draft}
       />
       <div className="strategy-designer-actions">
-        <button onClick={onReset} type="button">恢复模板</button>
-        <button onClick={onSave} type="button">保存个人策略</button>
-        <button onClick={onApply1P} type="button">保存并设为 1P</button>
-        <button onClick={onApply2P} type="button">保存并设为 2P</button>
+        <button onClick={onReset} type="button">{t(language, "designer.restoreTemplate")}</button>
+        <button onClick={onSave} type="button">{t(language, "designer.savePersonal")}</button>
+        <button onClick={onApply1P} type="button">{t(language, "designer.apply1P")}</button>
+        <button onClick={onApply2P} type="button">{t(language, "designer.apply2P")}</button>
       </div>
     </section>
   );
@@ -8695,12 +8754,13 @@ function App() {
       <div className="debug-floor">
         <TacticalPanel
           gameplayActive={gameplayActive}
+          language={uiLanguage}
           onOpenStrategyDesigner={openStrategyDesigner}
           ramSnapshot={ramSnapshot}
           strategyKey={strategyModels["1P"]}
           strategyPlans={strategyPlans}
         />
-        <LogPanel eventLog={eventLog} />
+        <LogPanel eventLog={eventLog} language={uiLanguage} />
       </div>
       <DataDashboard
         audioStatus={audioStatus}
@@ -8709,6 +8769,7 @@ function App() {
         deathTraceReports={deathTraceReports}
         frameCount={frameCount}
         gameplayActive={gameplayActive}
+        language={uiLanguage}
         onTraceClear={clearTraceRecording}
         onTraceExport={exportTraceRecording}
         onTraceStart={startTraceRecording}
@@ -8728,6 +8789,7 @@ function App() {
       <output data-testid="play-trace-samples-json" hidden>{JSON.stringify(traceSampleSnapshot)}</output>
       <StrategyDesignerPanel
         draft={strategyDraft}
+        language={uiLanguage}
         onApply1P={() => saveStrategyDraft("1P")}
         onApply2P={() => saveStrategyDraft("2P")}
         onClose={() => setStrategyDesignerOpen(false)}
