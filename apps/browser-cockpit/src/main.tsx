@@ -443,7 +443,38 @@ type GlobalTrainingState = {
   nextGate: string;
 };
 
+type RomLibraryStatusState = {
+  code:
+    | "scanning-default"
+    | "default-count"
+    | "default-empty"
+    | "default-error"
+    | "browser-empty"
+    | "browser-count"
+    | "browser-error";
+  count?: number;
+  detail?: string;
+};
+
 type TasPlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "finished" | "desynced" | "error";
+
+type TasPlaybackMessageKey =
+  | "waiting"
+  | "no-match"
+  | "loading-fm2"
+  | "loaded"
+  | "load-error"
+  | "selected"
+  | "finished"
+  | "playing"
+  | "guard-checking"
+  | "desynced"
+  | "stopped"
+  | "paused"
+  | "load-rom-first"
+  | "fast-forwarded"
+  | "auto-selected"
+  | "no-match-current";
 
 type TasPlaybackUiState = {
   status: TasPlaybackStatus;
@@ -453,6 +484,8 @@ type TasPlaybackUiState = {
   totalFrames: number;
   currentInput: string;
   phase: "init" | "active" | "desynced";
+  messageKey: TasPlaybackMessageKey;
+  messageDetail?: string;
   checksumStatus: string;
   message: string;
 };
@@ -709,7 +742,7 @@ const CONTRA_LEGACY_GAME_ID = "contra-us";
 const CONTRA_US_ROM_PROFILE_ID = "contra-us-good";
 const CONTRA_US_COMPATIBILITY_GROUP = "contra-us";
 const PERSONAL_STRATEGY_STORAGE_KEY = "fc-ai.personal.stage1.strategy.v1";
-const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · 控制器 2 路";
+const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · Controllers x2";
 
 const gameProfileUiStatus = {
   "contra": {
@@ -1232,8 +1265,9 @@ function createIdleTasPlaybackState(): TasPlaybackUiState {
     totalFrames: 0,
     currentInput: "-",
     phase: "init",
+    messageKey: "waiting",
     checksumStatus: "未载入",
-    message: "等待选择 TAS"
+    message: "Waiting for TAS selection"
   };
 }
 
@@ -1283,6 +1317,45 @@ function tasPhaseLabel(phase: TasPlaybackUiState["phase"]) {
   if (phase === "active") return "Active Phase";
   if (phase === "desynced") return "Desync";
   return "Init Phase";
+}
+
+function tasPlaybackMessageLabel(playback: TasPlaybackUiState, language: UiLanguage) {
+  const detail = playback.messageDetail;
+  if (language === "en-US") {
+    if (playback.messageKey === "waiting") return "Waiting for TAS selection";
+    if (playback.messageKey === "no-match") return "Current ROM has no matched TAS";
+    if (playback.messageKey === "loading-fm2") return "Loading TAS FM2 file";
+    if (playback.messageKey === "loaded") return detail ? `Loaded: ${detail}` : "TAS loaded";
+    if (playback.messageKey === "load-error") return detail ? `TAS load failed: ${detail}` : "TAS load failed";
+    if (playback.messageKey === "selected") return "TAS selected; waiting for load";
+    if (playback.messageKey === "finished") return "TAS replay finished";
+    if (playback.messageKey === "playing") return "TAS trial replay is running";
+    if (playback.messageKey === "guard-checking") return detail ? `RAM guard: ${detail}` : "RAM guard checking";
+    if (playback.messageKey === "desynced") return detail ? `TAS desynced: ${detail}` : "TAS desynced";
+    if (playback.messageKey === "stopped") return "TAS stopped; ready to replay from entry frame";
+    if (playback.messageKey === "paused") return "TAS paused";
+    if (playback.messageKey === "load-rom-first") return "Load a matched ROM before TAS replay";
+    if (playback.messageKey === "fast-forwarded") return detail ? `TAS fast-forwarded: ${detail}` : "TAS fast-forwarded to entry";
+    if (playback.messageKey === "auto-selected") return "Matched TAS selected automatically";
+    return "Current ROM has no matched TAS";
+  }
+
+  if (playback.messageKey === "waiting") return "等待选择 TAS";
+  if (playback.messageKey === "no-match") return "当前 ROM 没有匹配 TAS";
+  if (playback.messageKey === "loading-fm2") return "正在载入 TAS FM2 文件";
+  if (playback.messageKey === "loaded") return detail ? `已载入：${detail}` : "TAS 已载入";
+  if (playback.messageKey === "load-error") return detail ? `TAS 载入失败：${detail}` : "TAS 载入失败";
+  if (playback.messageKey === "selected") return "已选择 TAS，等待载入";
+  if (playback.messageKey === "finished") return "TAS 回放结束";
+  if (playback.messageKey === "playing") return "TAS 正在试播";
+  if (playback.messageKey === "guard-checking") return detail ? `RAM 校验：${detail}` : "RAM 校验中";
+  if (playback.messageKey === "desynced") return detail ? `TAS 脱同步：${detail}` : "TAS 脱同步";
+  if (playback.messageKey === "stopped") return "TAS 已停止，可重新从入口帧回放";
+  if (playback.messageKey === "paused") return "TAS 已暂停";
+  if (playback.messageKey === "load-rom-first") return "请先更换卡带并载入匹配 ROM";
+  if (playback.messageKey === "fast-forwarded") return detail ? `TAS 已快进：${detail}` : "TAS 已快进到入口";
+  if (playback.messageKey === "auto-selected") return "已自动选择匹配 TAS";
+  return "当前 ROM 无匹配 TAS";
 }
 
 function createAiActionLockState(): AiActionLockState {
@@ -2024,6 +2097,27 @@ function runtimeStatusLabel(status: RuntimeStatus, language: UiLanguage) {
   if (status === "running") return t(language, "status.running");
   if (status === "paused") return t(language, "status.paused");
   return t(language, "status.error");
+}
+
+function romLibraryStatusLabel(status: RomLibraryStatusState, language: UiLanguage) {
+  const count = status.count ?? 0;
+  const detail = status.detail ?? "";
+  if (language === "en-US") {
+    if (status.code === "scanning-default") return "Scanning default ROM library...";
+    if (status.code === "default-count") return `Default library: ${count} cartridges`;
+    if (status.code === "default-empty") return "Default library is empty";
+    if (status.code === "default-error") return `Default library scan failed: ${detail}`;
+    if (status.code === "browser-empty") return "Selected directory has no .nes cartridges";
+    if (status.code === "browser-count") return `Player directory: ${count} cartridges`;
+    return `Player directory read failed: ${detail}`;
+  }
+  if (status.code === "scanning-default") return "正在扫描默认 ROM 目录...";
+  if (status.code === "default-count") return `默认库：${count} 个卡带`;
+  if (status.code === "default-empty") return "默认库为空";
+  if (status.code === "default-error") return `默认库扫描失败：${detail}`;
+  if (status.code === "browser-empty") return "所选目录未发现 .nes 卡带";
+  if (status.code === "browser-count") return `玩家目录：${count} 个卡带`;
+  return `玩家目录读取失败：${detail}`;
 }
 
 function audioLabel(status: AudioStatus) {
@@ -5892,7 +5986,7 @@ function TasWindow({
     : t(language, "tas.notLoaded");
   const commentary = selectedMovie
     ? buildTasCommentary(selectedMovie, commentaryMode)
-    : "当前 ROM 没有匹配 TAS。";
+    : t(language, "tas.noMatch");
   const canUseMovie = Boolean(tasEntry && selectedMovie);
   const movieTitle = (movie: NonNullable<typeof selectedMovie>) => (
     language === "en-US" ? movie.title.en : movie.title.zh
@@ -6002,7 +6096,7 @@ function TasWindow({
       </div>
       <div className="tas-status-line">
         <span>{playback.status}</span>
-        <strong>{playback.message}</strong>
+        <strong>{tasPlaybackMessageLabel(playback, language)}</strong>
       </div>
     </div>
   );
@@ -6072,7 +6166,7 @@ function ConsoleDeck({
   romMetadata: RomMetadata | null;
   romLibraryEntries: RomLibraryEntry[];
   romLibraryDirLabel: string;
-  romLibraryStatus: string;
+  romLibraryStatus: RomLibraryStatusState;
   selectedRomEntry: RomLibraryEntry | null;
   selectedTasMovieId: string;
   tasCommentaryMode: TasCommentaryMode;
@@ -6140,7 +6234,7 @@ function ConsoleDeck({
               <div>
                 <span>{t(uiLanguage, "console.romDirectory")}</span>
                 <strong>{romLibraryDirLabel}</strong>
-                <small>{romLibraryStatus}</small>
+                <small>{romLibraryStatusLabel(romLibraryStatus, uiLanguage)}</small>
               </div>
               <button onClick={() => directoryInputRef.current?.click()} type="button">
                 <FolderOpen size={15} />
@@ -6714,7 +6808,7 @@ function App() {
   const [romLibraryEntries, setRomLibraryEntries] = useState<RomLibraryEntry[]>([]);
   const [selectedRomId, setSelectedRomId] = useState("");
   const [romLibraryDirLabel, setRomLibraryDirLabel] = useState("D:\\Ai-Play\\ROM");
-  const [romLibraryStatus, setRomLibraryStatus] = useState("正在扫描默认 ROM 目录...");
+  const [romLibraryStatus, setRomLibraryStatus] = useState<RomLibraryStatusState>({ code: "scanning-default" });
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>(DEFAULT_LANGUAGE);
   const [frameCount, setFrameCount] = useState(0);
   const [ramSnapshot, setRamSnapshot] = useState<GameRamSnapshot | null>(null);
@@ -6790,12 +6884,14 @@ function App() {
       const entries = (body.roms ?? []).map(createServerRomEntry);
       setRomLibraryEntries(entries);
       setRomLibraryDirLabel(body.romLibraryDir ?? "D:\\Ai-Play\\ROM");
-      setRomLibraryStatus(entries.length > 0 ? `默认库：${entries.length} 个卡带` : "默认库为空");
+      setRomLibraryStatus(entries.length > 0
+        ? { code: "default-count", count: entries.length }
+        : { code: "default-empty" });
       setSelectedRomId((current) => current || entries[0]?.id || "");
       appendLog(`ROM库：默认目录扫描到 ${entries.length} 个卡带`);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      setRomLibraryStatus(`默认库扫描失败：${detail}`);
+      setRomLibraryStatus({ code: "default-error", detail });
       appendLog(`ROM库：扫描失败（${detail}）`);
     }
   }, [appendLog]);
@@ -6834,7 +6930,7 @@ function App() {
   const handleRomDirectoryFiles = useCallback((files: FileList | null) => {
     const nesFiles = Array.from(files ?? []).filter((file) => file.name.toLowerCase().endsWith(".nes"));
     if (nesFiles.length === 0) {
-      setRomLibraryStatus("所选目录未发现 .nes 卡带");
+      setRomLibraryStatus({ code: "browser-empty" });
       appendLog("ROM库：所选目录未发现 .nes 卡带");
       return;
     }
@@ -6845,11 +6941,11 @@ function App() {
       setRomLibraryEntries(entries);
       setSelectedRomId(entries[0]?.id ?? "");
       setRomLibraryDirLabel(`玩家目录：${topFolder}`);
-      setRomLibraryStatus(`玩家目录：${entries.length} 个卡带`);
+      setRomLibraryStatus({ code: "browser-count", count: entries.length });
       appendLog(`ROM库：玩家目录导入 ${entries.length} 个卡带`);
     }).catch((error) => {
       const detail = error instanceof Error ? error.message : String(error);
-      setRomLibraryStatus(`玩家目录读取失败：${detail}`);
+      setRomLibraryStatus({ code: "browser-error", detail });
       appendLog(`ROM库：玩家目录读取失败（${detail}）`);
     });
   }, [appendLog]);
@@ -7448,7 +7544,8 @@ function App() {
         status: "finished",
         frameIndex: movie.frames.length,
         currentInput: "-",
-        message: "TAS 回放结束"
+        messageKey: "finished",
+        message: "TAS replay finished"
       }));
       appendLog("TAS：回放结束，已释放手柄输入");
       return false;
@@ -7468,7 +7565,8 @@ function App() {
         status: "playing",
         frameIndex: nextFrameIndex,
         currentInput: `1P ${fm2ButtonsToLabels(frame.p1)} / 2P ${fm2ButtonsToLabels(frame.p2)}`,
-        message: "TAS 正在按帧回放"
+        messageKey: "playing",
+        message: "TAS trial replay is running"
       }));
     }
 
@@ -7494,6 +7592,8 @@ function App() {
       status: "desynced",
       phase: "desynced",
       frameIndex: playback.frameIndex,
+      messageKey: "desynced",
+      messageDetail: message,
       message
     }));
     appendLog(`TAS：${message}`);
@@ -7630,6 +7730,10 @@ function App() {
         setTasPlaybackState((current) => ({
           ...current,
           phase: guardResult.phase,
+          messageKey: guardResult.ok ? "guard-checking" : "desynced",
+          messageDetail: guardResult.ok
+            ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"} / FM2 row ${tasPlaybackRef.current.frameIndex}`
+            : guardResult.message,
           message: guardResult.ok
             ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"}：FM2 行 ${tasPlaybackRef.current.frameIndex}，RAM 校验中`
             : guardResult.message
@@ -7681,7 +7785,8 @@ function App() {
       setTasPlaybackState({
         ...createIdleTasPlaybackState(),
         status: "error",
-        message: "当前 ROM 没有匹配 TAS"
+        messageKey: "no-match",
+        message: "Current ROM has no matched TAS"
       });
       return null;
     }
@@ -7691,7 +7796,8 @@ function App() {
         ...current,
         status: "loading",
         movieId: movie.id,
-        message: "正在载入 TAS FM2 文件"
+        messageKey: "loading-fm2",
+        message: "Loading TAS FM2 file"
       }));
       const query = new URLSearchParams({
         gameId: entry.gameId,
@@ -7723,8 +7829,10 @@ function App() {
         totalFrames: summary.inputFrames,
         phase: "init",
         currentInput: "-",
+        messageKey: "loaded",
+        messageDetail: `${movie.title.en} / entry frame ${playbackStartFrame} / ${summary.inputFrames} frames`,
         checksumStatus: "ROM 校验匹配",
-        message: `${movie.title.zh} 已载入 / 入口帧 ${playbackStartFrame} / ${summary.inputFrames} 帧`
+        message: `${movie.title.en} loaded / entry frame ${playbackStartFrame} / ${summary.inputFrames} frames`
       });
       appendLog(`TAS：已载入 ${movie.title.zh}（入口帧 ${playbackStartFrame} / ${summary.inputFrames} 帧）`);
       return { entry, movie, parsed, playbackStartFrame };
@@ -7745,6 +7853,8 @@ function App() {
         totalFrames: 0,
         phase: "init",
         currentInput: "-",
+        messageKey: "load-error",
+        messageDetail: detail,
         checksumStatus: "校验失败",
         message: detail
       });
@@ -7768,7 +7878,8 @@ function App() {
     setTasPlaybackState({
       ...createIdleTasPlaybackState(),
       movieId,
-      message: "已选择 TAS，等待载入"
+      messageKey: "selected",
+      message: "TAS selected; waiting for load"
     });
   }, [setRunning, setSourceButtons]);
 
@@ -7789,7 +7900,8 @@ function App() {
         phase: "init",
         frameIndex: current.playbackStartFrame,
         currentInput: "-",
-        message: current.totalFrames > 0 ? "TAS 已停止，可重新从入口帧回放" : "等待选择 TAS"
+        messageKey: current.totalFrames > 0 ? "stopped" : "waiting",
+        message: current.totalFrames > 0 ? "TAS stopped; ready to replay from entry frame" : "Waiting for TAS selection"
       };
     });
     appendLog("TAS：已停止并释放输入");
@@ -7806,7 +7918,8 @@ function App() {
     setTasPlaybackState((current) => ({
       ...current,
       status: current.status === "playing" ? "paused" : current.status,
-      message: "TAS 已暂停"
+      messageKey: "paused",
+      message: "TAS paused"
     }));
     appendLog("TAS：已暂停");
   }, [appendLog, setRunning, setSourceButtons]);
@@ -7817,7 +7930,8 @@ function App() {
       setTasPlaybackState({
         ...createIdleTasPlaybackState(),
         status: "error",
-        message: "请先更换卡带并载入匹配 ROM"
+        messageKey: "load-rom-first",
+        message: "Load a matched ROM before TAS replay"
       });
       return;
     }
@@ -7867,7 +7981,9 @@ function App() {
       status: "playing",
       frameIndex: playbackStartFrame,
       playbackStartFrame,
-      message: `TAS 已后台快进开场 ${playbackStartFrame} 帧，从实战入口回放`
+      messageKey: "fast-forwarded",
+      messageDetail: `entry FM2 row ${playbackStartFrame}`,
+      message: `TAS fast-forwarded to entry FM2 row ${playbackStartFrame}`
     }));
     appendLog(`TAS：已同步开场 ${playbackStartFrame} 帧，普通输入和 AI 输入已临时屏蔽`);
     setRunning(true, true);
@@ -8228,7 +8344,8 @@ function App() {
     setTasPlaybackState({
       ...createIdleTasPlaybackState(),
       movieId: defaultMovie?.id ?? "",
-      message: defaultMovie ? "已自动选择匹配 TAS" : "当前 ROM 无匹配 TAS"
+      messageKey: defaultMovie ? "auto-selected" : "no-match-current",
+      message: defaultMovie ? "Matched TAS selected automatically" : "Current ROM has no matched TAS"
     });
   }, [romMetadata?.md5, romMetadata?.romProfileId]);
 
