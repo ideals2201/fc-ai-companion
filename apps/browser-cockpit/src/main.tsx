@@ -69,7 +69,7 @@ import {
   type StageOneRewardButtonPatch
 } from "./contraStage1RewardTactics";
 import { parseNesRomMetadata, readRomMetadataHeaders, type RomMetadata } from "./romMetadata";
-import { resolveSelectedRomIdAfterLoadedSync } from "./romLibrarySelection";
+import { findRomEntryIdByRelativePath, resolveSelectedRomIdAfterLoadedSync } from "./romLibrarySelection";
 import {
   buildTasCommentary,
   commentaryModeLabel,
@@ -8078,12 +8078,16 @@ function App() {
       if (!response.ok) throw new Error(`ROM library endpoint returned ${response.status}`);
       const body = await response.json() as { romLibraryDir?: string; roms?: ServerRomFileInfo[] };
       const entries = (body.roms ?? []).map(createServerRomEntry);
+      const requestedRomId = findRomEntryIdByRelativePath(
+        entries,
+        new URLSearchParams(window.location.search).get("rom")
+      );
       setRomLibraryEntries(entries);
       setRomLibraryDirLabel(body.romLibraryDir ?? "D:\\Ai-Play\\ROM");
       setRomLibraryStatus(entries.length > 0
         ? { code: "default-count", count: entries.length }
         : { code: "default-empty" });
-      setSelectedRomId((current) => current || entries[0]?.id || "");
+      setSelectedRomId((current) => current || requestedRomId || entries[0]?.id || "");
       appendLog(`ROM库：默认目录扫描到 ${entries.length} 个卡带`);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -9670,8 +9674,12 @@ function App() {
         return;
       }
 
-      const romQuery = selectedRomEntry?.source === "server"
-        ? `?rom=${encodeURIComponent(selectedRomEntry.relativePath)}`
+      const requestedRomPath = new URLSearchParams(window.location.search).get("rom");
+      const serverRomPath = selectedRomEntry?.source === "server"
+        ? selectedRomEntry.relativePath
+        : requestedRomPath;
+      const romQuery = serverRomPath
+        ? `?rom=${encodeURIComponent(serverRomPath)}`
         : "";
       const response = await fetch(`/api/local-test-rom${romQuery}`, { cache: "no-store" });
       if (!response.ok) {

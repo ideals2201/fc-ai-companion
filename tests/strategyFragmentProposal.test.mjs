@@ -157,7 +157,7 @@ test("normalizes TAS strategy labels to declared package strategy types", () => 
     tasSideBaseline: tasBaseline({
       side: "2P",
       windowId: "coop-advance-reference",
-      strategyTypes: ["survival", "guard", "coop-spacing"],
+      strategyTypes: ["survival", "guard", "speedrun", "platform-capture", "coop-spacing"],
       promotionTarget: {
         ...tasBaseline().promotionTarget,
         side: "2P"
@@ -167,6 +167,8 @@ test("normalizes TAS strategy labels to declared package strategy types", () => 
   });
 
   assert.ok(proposal.fragment.strategyTypes.includes("guard"));
+  assert.ok(proposal.fragment.strategyTypes.includes("speed"));
+  assert.ok(proposal.fragment.strategyTypes.includes("platform-capture"));
   assert.equal(proposal.fragment.strategyTypes.includes("coop-spacing"), false);
   assert.equal(proposal.fragment.strategyTypes.includes("speedrun"), false);
 });

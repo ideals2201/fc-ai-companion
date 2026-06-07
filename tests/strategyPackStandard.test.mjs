@@ -136,6 +136,11 @@ test("contra training scenarios declare game-specific variables and terminal con
 
 test("contra stage 1 fragments use protocol 1.0 structure instead of legacy route fields", () => {
   const fragmentsFile = readJson("strategy-packs/contra/stages/stage-1/fragments.json");
+  const strategyTypesFile = readJson("strategy-packs/contra/research/strategy-types.json");
+  const declaredStrategyTypes = new Set([
+    ...strategyTypesFile.genericTypes,
+    ...strategyTypesFile.customTypes.map((type) => type.id)
+  ]);
 
   assert.equal(fragmentsFile.schemaVersion, "1.0.0");
   assert.equal(fragmentsFile.gameProfileId, "contra");
@@ -144,6 +149,9 @@ test("contra stage 1 fragments use protocol 1.0 structure instead of legacy rout
 
   for (const fragment of fragmentsFile.fragments) {
     assert.ok(fragment.progressionWindow, `${fragment.id} should define progressionWindow`);
+    for (const strategyType of fragment.strategyTypes) {
+      assert.ok(declaredStrategyTypes.has(strategyType), `${fragment.id} strategy type ${strategyType} should be declared`);
+    }
     assert.ok(Array.isArray(fragment.conditions), `${fragment.id} should define conditions`);
     assert.ok(fragment.actionAdvice?.intent, `${fragment.id} should define actionAdvice.intent`);
     assert.ok(Array.isArray(fragment.safetyOverrides), `${fragment.id} should define safetyOverrides`);

@@ -11,6 +11,7 @@ export type CandidateStrategyType =
   | "training"
   | "bridge-jump-window"
   | "fixed-threat-hp-lock"
+  | "platform-capture"
   | "weapon-route";
 
 export type TasSideBaselineForProposal = {
@@ -116,6 +117,7 @@ const DECLARED_STRATEGY_TYPES = new Set<CandidateStrategyType>([
   "training",
   "bridge-jump-window",
   "fixed-threat-hp-lock",
+  "platform-capture",
   "weapon-route"
 ]);
 

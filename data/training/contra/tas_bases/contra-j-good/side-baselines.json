@@ -66,6 +66,19 @@
       ]
     },
     {
+      "id": "boss-approach-platform-capture",
+      "label": "Boss approach platform capture",
+      "frameWindow": [
+        2500,
+        3600
+      ],
+      "strategyTypes": [
+        "survival",
+        "recovery",
+        "platform-capture"
+      ]
+    },
+    {
       "id": "coop-advance-reference",
       "label": "Cooperative advance reference",
       "frameWindow": [
@@ -507,6 +520,164 @@
         "survival",
         "combat",
         "fixed-threat-hp-lock"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "2P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "1P",
+      "windowId": "boss-approach-platform-capture",
+      "label": "Boss approach platform capture",
+      "frameWindow": [
+        2500,
+        3600
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 1100,
+      "pressedFrames": 1067,
+      "pressedRatio": 0.97,
+      "buttonPressFrames": {
+        "up": 1,
+        "down": 37,
+        "left": 5,
+        "right": 1057,
+        "a": 44,
+        "b": 125,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 876,
+          "ratio": 0.7964
+        },
+        {
+          "label": "→B",
+          "frames": 102,
+          "ratio": 0.0927
+        },
+        {
+          "label": "→A",
+          "frames": 43,
+          "ratio": 0.0391
+        },
+        {
+          "label": "→↓",
+          "frames": 18,
+          "ratio": 0.0164
+        },
+        {
+          "label": "→↓B",
+          "frames": 17,
+          "ratio": 0.0155
+        },
+        {
+          "label": "←",
+          "frames": 5,
+          "ratio": 0.0045
+        }
+      ],
+      "intentHints": [
+        "advance",
+        "jump"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "recovery",
+        "platform-capture"
+      ],
+      "promotionTarget": {
+        "gameProfileId": "contra",
+        "romProfileId": "contra-j-good",
+        "stageId": "stage-1",
+        "side": "1P",
+        "requiredValidation": "real-runtime-trace"
+      }
+    },
+    {
+      "movieId": "contra-j-2p-any-percent",
+      "sourceKind": "tas-side-split",
+      "side": "2P",
+      "windowId": "boss-approach-platform-capture",
+      "label": "Boss approach platform capture",
+      "frameWindow": [
+        2500,
+        3600
+      ],
+      "rangeSemantics": "start-inclusive-end-exclusive",
+      "totalFrames": 1100,
+      "pressedFrames": 1051,
+      "pressedRatio": 0.9555,
+      "buttonPressFrames": {
+        "up": 7,
+        "down": 81,
+        "left": 1,
+        "right": 1048,
+        "a": 47,
+        "b": 48,
+        "start": 0,
+        "select": 0
+      },
+      "topInputPatterns": [
+        {
+          "label": "→",
+          "frames": 887,
+          "ratio": 0.8064
+        },
+        {
+          "label": "→↓",
+          "frames": 68,
+          "ratio": 0.0618
+        },
+        {
+          "label": "→A",
+          "frames": 47,
+          "ratio": 0.0427
+        },
+        {
+          "label": "→B",
+          "frames": 29,
+          "ratio": 0.0264
+        },
+        {
+          "label": "→↓B",
+          "frames": 11,
+          "ratio": 0.01
+        },
+        {
+          "label": "→↑B",
+          "frames": 6,
+          "ratio": 0.0055
+        }
+      ],
+      "intentHints": [
+        "advance",
+        "jump"
+      ],
+      "acceptanceChecks": [
+        "hash-exact-match-required",
+        "real-runtime-trace-required",
+        "safety-override-required",
+        "side-owned-promotion-required"
+      ],
+      "strategyTypes": [
+        "survival",
+        "recovery",
+        "platform-capture"
       ],
       "promotionTarget": {
         "gameProfileId": "contra",

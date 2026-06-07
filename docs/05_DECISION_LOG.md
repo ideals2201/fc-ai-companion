@@ -908,3 +908,26 @@ This creates the standard pipeline the owner requested: TAS -> baseline strategy
 Required next direction:
 - Run real runtime training traces against the selected Contra ROMProfile before upgrading any candidate fragment.
 - Add a browser-visible flow for selecting a TAS-matched ROMProfile and archiving the resulting side evidence.
+
+## 2026-06-08: TAS watch windows may be archived as training TraceEvidence
+
+Decision: a TAS-matched browser watch/training window may be archived as `fc-ai-strategy-trace-evidence-v1` under `data/training/`, but it must remain training evidence until a real AI validation replay passes.
+
+Evidence:
+- `data/training/contra/tas_bases/contra-j-good/trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json` records the boss-approach platform-capture window for `contra-j-good`.
+- The artifact records `tasIsController: false`, 1P WorldX `2500-2960`, `466` samples, first frame `2914`, last frame `3379`, and death trace count `0`.
+- `data/training/contra/tas_bases/contra-j-good/training-base.json` indexes the artifact in `derivedArtifacts.traceEvidence`.
+- Verification passed:
+  - Browser CDP runtime check against the TAS record URL: TAS matched, `contra-j-good` present, `466` samples, death trace count `0`.
+  - `node --test tests/tasTrainingTraceEvidence.test.mjs`: `2/2`.
+  - `npm test`: `211/211`.
+  - `npm run build`: passed with the existing Vite chunk-size warning.
+  - ROM compliance scan with `rg --files -g "*.nes" -g "*.fds" -g "*.unf" -g "*.unif" -g "*.rom" -g "*.bin"`: no ROM-like files listed.
+
+Reason:
+TAS is a strong timing and route baseline, but it is still not the AI controller and not proof that the AI strategy can survive the same state window. Archiving the watch window gives the strategy pipeline a ROM-bound source artifact for candidate fragment generation while preserving the validation gate.
+
+Required next direction:
+- Use the archived evidence plus `side-baselines.json` to generate candidate `platform-capture` StrategyFragment material.
+- Require Safety Override review and a passing ValidationReport before package save or promotion.
+- Do not mix this `contra-j-good` evidence with `contra-us-good` strategy claims without explicit migration validation.

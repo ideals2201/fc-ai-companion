@@ -6,11 +6,16 @@ type RomHashFields = {
 
 type RomEntryLike = {
   id: string;
+  relativePath?: string;
   metadata: RomHashFields;
 };
 
 function normalizeHash(value: string | undefined) {
   return (value ?? "").trim().toLowerCase();
+}
+
+function normalizeRelativePath(value: string | null | undefined) {
+  return (value ?? "").trim().replaceAll("\\", "/").toLowerCase();
 }
 
 export function findLoadedRomEntryId(entries: RomEntryLike[], loaded: RomHashFields | null) {
@@ -27,6 +32,12 @@ export function findLoadedRomEntryId(entries: RomEntryLike[], loaded: RomHashFie
     );
   });
   return match?.id ?? null;
+}
+
+export function findRomEntryIdByRelativePath(entries: RomEntryLike[], requestedPath: string | null | undefined) {
+  const requested = normalizeRelativePath(requestedPath);
+  if (!requested) return null;
+  return entries.find((entry) => normalizeRelativePath(entry.relativePath) === requested)?.id ?? null;
 }
 
 export function resolveSelectedRomIdAfterLoadedSync(

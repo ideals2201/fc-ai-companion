@@ -17,6 +17,7 @@ async function importTypeScriptModule(path) {
 
 const {
   findLoadedRomEntryId,
+  findRomEntryIdByRelativePath,
   resolveSelectedRomIdAfterLoadedSync
 } = await importTypeScriptModule(
   new URL("../apps/browser-cockpit/src/romLibrarySelection.ts", import.meta.url)
@@ -53,6 +54,25 @@ test("finds the ROM library entry that matches the loaded cartridge checksum", (
 
 test("keeps selection unchanged when no loaded cartridge match exists", () => {
   assert.equal(findLoadedRomEntryId([], { md5: "x", headerlessMd5: "y", sha1: "z" }), null);
+});
+
+test("finds a ROM library entry requested by URL relative path", () => {
+  const entries = [
+    {
+      id: "server:contra_us_test.nes",
+      relativePath: "contra_us_test.nes",
+      metadata: {}
+    },
+    {
+      id: "server:contra-j/Contra (J).nes",
+      relativePath: "contra-j/Contra (J).nes",
+      metadata: {}
+    }
+  ];
+
+  assert.equal(findRomEntryIdByRelativePath(entries, "contra-j/Contra (J).nes"), "server:contra-j/Contra (J).nes");
+  assert.equal(findRomEntryIdByRelativePath(entries, "contra-j\\Contra (J).nes"), "server:contra-j/Contra (J).nes");
+  assert.equal(findRomEntryIdByRelativePath(entries, "missing.nes"), null);
 });
 
 test("does not override a manual ROM selection with the loaded cartridge", () => {

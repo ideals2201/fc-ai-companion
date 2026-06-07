@@ -7,6 +7,7 @@ Current state:
 - Raw FM2 TAS files are available.
 - `training-base.json` defines the first standard TAS-derived candidate fragment set.
 - `side-baselines.json` splits the verified 2P any% TAS into side-owned 1P and 2P baseline windows.
+- `trace-evidence/` stores compact standard runtime evidence captured from TAS watch/training windows.
 - The candidates are not validated StrategyPack fragments yet.
 - A candidate becomes usable for runtime AI only after schema conversion, Safety Override review, and real browser or FCEUX trace validation.
 
@@ -19,3 +20,14 @@ Current state:
 - Each side baseline records frame window, pressed-frame ratio, per-button counts, dominant input patterns, and intent hints.
 - The data is suitable for selecting a training baseline, comparing human/AI input, and proposing StrategyFragment candidates.
 - The data is not a live controller script. Promotion still requires exact ROM hash match, Safety Override, and real runtime trace evidence.
+
+## Trace Evidence
+
+Current archived evidence:
+
+- `trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json`
+
+This file is a `fc-ai-strategy-trace-evidence-v1` artifact captured from browser TAS watch-mode with `contra-j-good`.
+It covers 1P WorldX `2500-2960`, contains `466` recorded samples, and has no death trace.
+
+It is still training evidence, not validated AI strategy evidence. Promotion still requires Safety Override review, candidate StrategyFragment conversion, validation replay, and a passing ValidationReport.

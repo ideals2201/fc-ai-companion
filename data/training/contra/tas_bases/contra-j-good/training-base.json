@@ -16,7 +16,10 @@
     "note": "FM2 inputs are route knowledge and viewing material. They must not be promoted as live AI control without StrategyPack validation."
   },
   "derivedArtifacts": {
-    "sideBaselines": "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
+    "sideBaselines": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+    "traceEvidence": [
+      "data/training/contra/tas_bases/contra-j-good/trace-evidence/candidate-1p-survival-v0-tas-boss-approach-platform-capture.json"
+    ]
   },
   "runtimePolicy": {
     "tasIsController": false,

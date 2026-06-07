@@ -83,3 +83,20 @@ test("Contra Japan 2P TAS side baselines are archived as a training artifact", (
   assert.ok(artifact.baselines.every((baseline) => baseline.acceptanceChecks.includes("real-runtime-trace-required")));
   assert.ok(artifact.baselines.every((baseline) => baseline.acceptanceChecks.includes("safety-override-required")));
 });
+
+test("Contra Japan TAS side baselines include a pre-boss platform capture window", () => {
+  const artifact = JSON.parse(fs.readFileSync(sideBaselinesPath, "utf8"));
+
+  const window = artifact.windows.find((candidate) => candidate.id === "boss-approach-platform-capture");
+  assert.ok(window, "pre-boss platform capture window should exist before training that route");
+  assert.deepEqual(window.frameWindow, [2500, 3600]);
+  assert.ok(window.strategyTypes.includes("survival"));
+  assert.ok(window.strategyTypes.includes("platform-capture"));
+
+  const sideBaselines = artifact.baselines.filter((baseline) => baseline.windowId === "boss-approach-platform-capture");
+  assert.equal(sideBaselines.length, 2, "platform capture baseline should be split into 1P and 2P views");
+  assert.ok(sideBaselines.every((baseline) => baseline.promotionTarget.stageId === "stage-1"));
+  assert.ok(sideBaselines.every((baseline) => baseline.promotionTarget.romProfileId === "contra-j-good"));
+  assert.ok(sideBaselines.some((baseline) => baseline.side === "1P" && baseline.buttonPressFrames.right > 0));
+  assert.ok(sideBaselines.some((baseline) => baseline.side === "1P" && baseline.buttonPressFrames.a > 0));
+});

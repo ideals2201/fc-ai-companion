@@ -26,6 +26,11 @@
       "id": "weapon-route",
       "baseType": "loot",
       "description": "A route segment that prioritizes weapon spawn and pickup."
+    },
+    {
+      "id": "platform-capture",
+      "baseType": "survival",
+      "description": "A movement segment that prioritizes safe landing and platform ownership before advancing."
     }
   ]
 }

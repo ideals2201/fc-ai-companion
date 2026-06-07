@@ -52,6 +52,12 @@ const windows = [
     strategyTypes: ["survival", "combat", "fixed-threat-hp-lock"]
   },
   {
+    id: "boss-approach-platform-capture",
+    label: "Boss approach platform capture",
+    frameWindow: [2500, 3600],
+    strategyTypes: ["survival", "recovery", "platform-capture"]
+  },
+  {
     id: "coop-advance-reference",
     label: "Cooperative advance reference",
     frameWindow: [450, 2500],
