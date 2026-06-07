@@ -2099,6 +2099,15 @@ function runtimeStatusLabel(status: RuntimeStatus, language: UiLanguage) {
   return t(language, "status.error");
 }
 
+function runtimeAudioLabel(status: AudioStatus, language: UiLanguage) {
+  if (status === "starting") return t(language, "audio.starting");
+  if (status === "on") return t(language, "audio.on");
+  if (status === "blocked") return t(language, "audio.blocked");
+  if (status === "unsupported") return t(language, "audio.unsupported");
+  if (status === "error") return t(language, "audio.error");
+  return t(language, "audio.enable");
+}
+
 function romLibraryStatusLabel(status: RomLibraryStatusState, language: UiLanguage) {
   const count = status.count ?? 0;
   const detail = status.detail ?? "";
@@ -5726,6 +5735,7 @@ function TelevisionView({
   canvasRef,
   status,
   audioStatus,
+  uiLanguage,
   message,
   frameCount,
   ramSnapshot,
@@ -5741,6 +5751,7 @@ function TelevisionView({
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   status: RuntimeStatus;
   audioStatus: AudioStatus;
+  uiLanguage: UiLanguage;
   message: string;
   frameCount: number;
   ramSnapshot: GameRamSnapshot | null;
@@ -5765,18 +5776,18 @@ function TelevisionView({
   };
 
   return (
-    <section className="tv-station" aria-label="中间电视">
+    <section className="tv-station" aria-label={t(uiLanguage, "tv.title")}>
       <div className="tv-shell" ref={tvRef}>
         <div className="tv-top">
           <div className="panel-title">
             <Tv size={19} />
-            <span>中间电视</span>
+            <span>{t(uiLanguage, "tv.title")}</span>
           </div>
           <div className="tv-osd">
-            <span>{statusLabel(status)}</span>
-            <span>FPS 目标 60</span>
-            <span>帧数 {frameCount}</span>
-            <span>{ramSnapshot ? `屏幕 ${ramSnapshot.screen} / WorldX ${ramSnapshot.worldX}` : "屏幕数 等待 RAM"}</span>
+            <span>{runtimeStatusLabel(status, uiLanguage)}</span>
+            <span>{t(uiLanguage, "tv.fpsTarget")} 60</span>
+            <span>{t(uiLanguage, "tv.frameCount")} {frameCount}</span>
+            <span>{ramSnapshot ? `Screen ${ramSnapshot.screen} / WorldX ${ramSnapshot.worldX}` : t(uiLanguage, "tv.screenWaiting")}</span>
           </div>
         </div>
         <div className="screen-frame">
@@ -5790,16 +5801,16 @@ function TelevisionView({
             </div>
           )}
         </div>
-        <div className="tv-controls" aria-label="电视设置">
+        <div className="tv-controls" aria-label={t(uiLanguage, "tv.settings")}>
           <button className="icon-button" onClick={onToggleFullscreen} type="button">
             <Maximize2 size={15} />
-            {isFullscreen ? "退出全屏" : "电视全屏"}
+            {isFullscreen ? t(uiLanguage, "tv.exitFullscreen") : t(uiLanguage, "tv.fullscreen")}
           </button>
           <label className="range-control volume-control">
             <Volume2 size={14} />
-            <span>{volumeControlLabel(audioStatus)}</span>
+            <span>{t(uiLanguage, "tv.volume")}</span>
             <div className="range-input-row">
-              <button aria-label="降低音量" className="step-button" onClick={() => stepVolume(-0.03)} type="button">
+              <button aria-label={t(uiLanguage, "tv.volumeDown")} className="step-button" onClick={() => stepVolume(-0.03)} type="button">
                 <Minus size={13} />
               </button>
               <input
@@ -5815,16 +5826,16 @@ function TelevisionView({
                 type="range"
                 value={volume}
               />
-              <button aria-label="提高音量" className="step-button" onClick={() => stepVolume(0.03)} type="button">
+              <button aria-label={t(uiLanguage, "tv.volumeUp")} className="step-button" onClick={() => stepVolume(0.03)} type="button">
                 <Plus size={13} />
               </button>
             </div>
           </label>
           <label className="range-control">
             <SlidersHorizontal size={14} />
-            <span>亮度</span>
+            <span>{t(uiLanguage, "tv.brightness")}</span>
             <div className="range-input-row">
-              <button aria-label="降低亮度" className="step-button" onClick={() => stepVisual("brightness", -5, 70, 130)} type="button">
+              <button aria-label={t(uiLanguage, "tv.brightnessDown")} className="step-button" onClick={() => stepVisual("brightness", -5, 70, 130)} type="button">
                 <Minus size={13} />
               </button>
               <input
@@ -5835,16 +5846,16 @@ function TelevisionView({
                 type="range"
                 value={visualSettings.brightness}
               />
-              <button aria-label="提高亮度" className="step-button" onClick={() => stepVisual("brightness", 5, 70, 130)} type="button">
+              <button aria-label={t(uiLanguage, "tv.brightnessUp")} className="step-button" onClick={() => stepVisual("brightness", 5, 70, 130)} type="button">
                 <Plus size={13} />
               </button>
             </div>
           </label>
           <label className="range-control">
             <SlidersHorizontal size={14} />
-            <span>对比</span>
+            <span>{t(uiLanguage, "tv.contrast")}</span>
             <div className="range-input-row">
-              <button aria-label="降低对比" className="step-button" onClick={() => stepVisual("contrast", -5, 75, 140)} type="button">
+              <button aria-label={t(uiLanguage, "tv.contrastDown")} className="step-button" onClick={() => stepVisual("contrast", -5, 75, 140)} type="button">
                 <Minus size={13} />
               </button>
               <input
@@ -5855,16 +5866,16 @@ function TelevisionView({
                 type="range"
                 value={visualSettings.contrast}
               />
-              <button aria-label="提高对比" className="step-button" onClick={() => stepVisual("contrast", 5, 75, 140)} type="button">
+              <button aria-label={t(uiLanguage, "tv.contrastUp")} className="step-button" onClick={() => stepVisual("contrast", 5, 75, 140)} type="button">
                 <Plus size={13} />
               </button>
             </div>
           </label>
           <label className="range-control">
             <SlidersHorizontal size={14} />
-            <span>色彩</span>
+            <span>{t(uiLanguage, "tv.color")}</span>
             <div className="range-input-row">
-              <button aria-label="降低色彩" className="step-button" onClick={() => stepVisual("saturation", -5, 60, 150)} type="button">
+              <button aria-label={t(uiLanguage, "tv.colorDown")} className="step-button" onClick={() => stepVisual("saturation", -5, 60, 150)} type="button">
                 <Minus size={13} />
               </button>
               <input
@@ -5875,7 +5886,7 @@ function TelevisionView({
                 type="range"
                 value={visualSettings.saturation}
               />
-              <button aria-label="提高色彩" className="step-button" onClick={() => stepVisual("saturation", 5, 60, 150)} type="button">
+              <button aria-label={t(uiLanguage, "tv.colorUp")} className="step-button" onClick={() => stepVisual("saturation", 5, 60, 150)} type="button">
                 <Plus size={13} />
               </button>
             </div>
@@ -8445,13 +8456,13 @@ function App() {
     <main className="cockpit">
       <header className="topbar">
         <div>
-          <h1>FC AI 陪玩驾驶舱</h1>
-          <p>浏览器产品平台 / 双手柄输入路由</p>
+          <h1>{t(uiLanguage, "app.title")}</h1>
+          <p>{t(uiLanguage, "app.subtitle")}</p>
         </div>
         <div className="status-cluster">
-          <span><Gauge size={16} /> 目标 60 FPS</span>
-          <span><AlertTriangle size={16} /> {statusLabel(status)}</span>
-          <span><Radio size={16} /> {audioLabel(audioStatus)}</span>
+          <span><Gauge size={16} /> {t(uiLanguage, "top.targetFps")}</span>
+          <span><AlertTriangle size={16} /> {runtimeStatusLabel(status, uiLanguage)}</span>
+          <span><Radio size={16} /> {runtimeAudioLabel(audioStatus, uiLanguage)}</span>
         </div>
       </header>
       <div className="equipment-layout">
@@ -8479,6 +8490,7 @@ function App() {
             ramSnapshot={ramSnapshot}
             status={status}
             tvRef={tvRef}
+            uiLanguage={uiLanguage}
             visualSettings={visualSettings}
             volume={volume}
           />
