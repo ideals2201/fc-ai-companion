@@ -12,7 +12,7 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /type SideTrainingState/, "training state should be explicit and per side");
   assert.match(mainSource, /function SideTrainingPanel/, "controller bay should render a side training panel");
   assert.match(mainSource, /training: SideTrainingState/, "Pilot should carry its own training state");
-  assert.match(mainSource, /<SideTrainingPanel training=\{pilot\.training\}/, "PilotPanel should place training inside the controller bay");
+  assert.match(mainSource, /<SideTrainingPanel[\s\S]*training=\{pilot\.training\}/, "PilotPanel should place training inside the controller bay");
   assert.match(cssSource, /\.side-training-panel\s*\{/, "side training panel should have stable styling");
   assert.match(cssSource, /\.training-stat-grid\s*\{/, "side training metrics should be compact grid cards");
 });

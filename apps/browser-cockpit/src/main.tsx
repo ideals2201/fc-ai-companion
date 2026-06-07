@@ -2108,6 +2108,51 @@ function runtimeAudioLabel(status: AudioStatus, language: UiLanguage) {
   return t(language, "audio.enable");
 }
 
+function localizedControlModeLabel(mode: ControlMode, language: UiLanguage) {
+  return t(language, `mode.${mode}`);
+}
+
+function localizedAiStrategyLabel(strategy: AiStrategyKey, language: UiLanguage) {
+  const translated = t(language, `strategy.${strategy}`);
+  return translated === `strategy.${strategy}` ? getAiStrategyLabel(strategy) : translated;
+}
+
+function localizedTasStatusLabel(entry: TasRegistryEntry | null, language: UiLanguage) {
+  if (language === "en-US") return entry ? "Matched TAS" : "No matched TAS";
+  return tasStatusLabel(entry);
+}
+
+function localizedTasBaseLabel(entry: TasRegistryEntry | null, language: UiLanguage) {
+  if (language === "en-US") return entry ? "Matched TAS base" : "No matched base";
+  return tasBaseLabel(entry);
+}
+
+function localizedKeyboardHint(side: PlayerSide, language: UiLanguage) {
+  return t(language, `pilot.keyboardHint.${side}`);
+}
+
+function localizedGamepadHint(label: string, language: UiLanguage) {
+  if (language === "en-US") return label;
+  return label
+    .replace("disconnected", "未连接")
+    .replace("connected:", "已连接：");
+}
+
+function localizedLastInput(label: string, language: UiLanguage) {
+  if (language === "en-US") return label;
+  const map: Record<string, string> = {
+    "Waiting input": "等待输入",
+    "Keyboard input": "键盘输入",
+    "Gamepad input": "游戏手柄输入",
+    "Panel input": "屏幕按钮输入",
+    "TAS input": "TAS 输入",
+    "AI input": "AI 输入",
+    "AI batch test": "AI 批量测试",
+    "waiting": "等待"
+  };
+  return map[label] ?? label;
+}
+
 function romLibraryStatusLabel(status: RomLibraryStatusState, language: UiLanguage) {
   const count = status.count ?? 0;
   const detail = status.detail ?? "";
@@ -2775,7 +2820,7 @@ function buildRuntimeDebugSnapshot({
     actionLock: mode !== "human" ? aiActionLockLabel(actionLock) : "idle",
     loopExit: mode !== "human" ? aiLoopExitLabel(loopExit) : "idle",
     loopBias: mode !== "human" ? Number(loopExit.forcedAdvanceBias.toFixed(3)) : 0,
-    finalButtons: activeButtonLabel(buttons),
+    finalButtons: activeButtonLabel(buttons, "en-US"),
     finalInput: traceInput(buttons),
     rawAiInput: rawAiButtons ? traceInput(rawAiButtons) : undefined,
     lockedAiInput: lockedAiButtons ? traceInput(lockedAiButtons) : undefined,
@@ -2886,19 +2931,19 @@ function getPilotTemperament(side: PlayerSide, mode: ControlMode, strategyKey: A
   return "AI 正在写入手柄";
 }
 
-function activeButtonLabel(buttons: ButtonState) {
+function activeButtonLabel(buttons: ButtonState, language: UiLanguage = DEFAULT_LANGUAGE) {
   const labels: Record<ButtonName, string> = {
-    up: "上",
-    down: "下",
-    left: "左",
-    right: "右",
+    up: "↑",
+    down: "↓",
+    left: "←",
+    right: "→",
     a: "A",
     b: "B",
-    start: "开始",
-    select: "选择"
+    start: "START",
+    select: "SELECT"
   };
   const active = buttonNames.filter((button) => buttons[button]).map((button) => labels[button]);
-  return active.length > 0 ? active.join("") : "无";
+  return active.length > 0 ? active.join("") : t(language, "value.none");
 }
 
 function getAiStrategyLabel(strategyKey: AiStrategyKey) {
@@ -2926,6 +2971,42 @@ function getAuthorityLabel(mode: ControlMode) {
   if (mode === "human") return "人类控制";
   if (mode === "ai") return "AI 控制";
   return "人类优先";
+}
+
+function localizedPilotName(side: PlayerSide, mode: ControlMode, language: UiLanguage) {
+  if (language !== "en-US") return getPilotName(side, mode);
+  if (side === "1P") {
+    if (mode === "ai") return "AI Driver 1P";
+    if (mode === "hybrid") return "Player 1 + AI Assist";
+    return "Player 1";
+  }
+  if (mode === "ai") return "AI Companion";
+  if (mode === "hybrid") return "Player 2 + AI Companion";
+  return "Player 2";
+}
+
+function localizedPilotStatus(
+  side: PlayerSide,
+  status: RuntimeStatus,
+  mode: ControlMode,
+  strategyKey: AiStrategyKey,
+  twoPlayerActive: boolean,
+  language: UiLanguage
+) {
+  if (language !== "en-US") return getPilotStatus(side, status, mode, strategyKey, twoPlayerActive);
+  if (status !== "running") return runtimeStatusLabel(status, language);
+  if (side === "2P" && mode !== "human" && !twoPlayerActive) return "Waiting for 2P mode";
+  if (mode === "human") return "Operable";
+  if (strategyKey === "off" || strategyKey === "placeholder") return "Safe idle";
+  if (mode === "hybrid") return "AI assist";
+  return "Operating";
+}
+
+function localizedAuthorityLabel(mode: ControlMode, language: UiLanguage) {
+  if (language !== "en-US") return getAuthorityLabel(mode);
+  if (mode === "human") return "Human Control";
+  if (mode === "ai") return "AI Control";
+  return "Human Priority";
 }
 
 function aiControlIsActive(mode: ControlMode) {
@@ -5105,17 +5186,17 @@ function formatScore(score: number) {
   return score.toLocaleString("en-US");
 }
 
-function weaponNameFromCode(code: number) {
-  if (code === 0x01) return "M机枪";
-  if (code === 0x02) return "F火焰";
-  if (code === 0x03) return "S散弹";
-  if (code === 0x04) return "L激光";
-  return "普通";
+function weaponNameFromCode(code: number, language: UiLanguage = DEFAULT_LANGUAGE) {
+  if (code === 0x01) return language === "en-US" ? "M Gun" : "M机枪";
+  if (code === 0x02) return language === "en-US" ? "F Fire" : "F火焰";
+  if (code === 0x03) return language === "en-US" ? "S Spread" : "S散弹";
+  if (code === 0x04) return language === "en-US" ? "L Laser" : "L激光";
+  return language === "en-US" ? "Normal" : "普通";
 }
 
-function currentWeaponLabel(rawWeapon: number) {
-  const parts = [weaponNameFromCode(rawWeapon & 0x0f)];
-  if ((rawWeapon & 0x10) !== 0) parts.push("R速射");
+function currentWeaponLabel(rawWeapon: number, language: UiLanguage = DEFAULT_LANGUAGE) {
+  const parts = [weaponNameFromCode(rawWeapon & 0x0f, language)];
+  if ((rawWeapon & 0x10) !== 0) parts.push(language === "en-US" ? "R Rapid" : "R速射");
   return parts.join(" + ");
 }
 
@@ -5138,8 +5219,8 @@ function playerStateLabel(state: number) {
   return `状态 ${formatByte(state)}`;
 }
 
-function activeInputText(buttons: ButtonState) {
-  return activeButtonLabel(buttons);
+function activeInputText(buttons: ButtonState, language: UiLanguage = DEFAULT_LANGUAGE) {
+  return activeButtonLabel(buttons, language);
 }
 
 function bulletOwnerLabel(owner: number) {
@@ -5174,7 +5255,8 @@ function buildPilotMetricGroups(
   metrics: PlayerMetrics,
   ramSnapshot: GameRamSnapshot | null,
   gameplayActive: boolean,
-  runtimeStatus: RuntimeStatus
+  runtimeStatus: RuntimeStatus,
+  language: UiLanguage
 ): MetricGroup[] {
   const hasRam = Boolean(ramSnapshot);
   const threatCount = ramSnapshot?.enemies.filter((enemy) => enemy.threat).length ?? 0;
@@ -5182,66 +5264,111 @@ function buildPilotMetricGroups(
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const sideStatsActive = gameplayActive && (isP1 || twoPlayerActive);
   const sideStatsAvailable = isP1 || twoPlayerActive;
-  const pendingSideStats = hasRam ? "等待双人局" : "等待 RAM";
+  const pendingSideStats = hasRam ? t(language, "value.waitingTwoPlayer") : t(language, "value.waitingRam");
   const statsState = runtimeStatus === "paused"
-    ? "暂停中"
-    : sideStatsActive ? "游戏中" : side === "2P" && !twoPlayerActive ? "等待双人局" : "待入局";
+    ? t(language, "value.paused")
+    : sideStatsActive
+      ? t(language, "value.inGame")
+      : side === "2P" && !twoPlayerActive ? t(language, "value.waitingTwoPlayer") : t(language, "value.notInGame");
   const sideScore = hasRam ? scoreForSide(ramSnapshot, side) : metrics.score;
   const rawWeapon = weaponForSide(ramSnapshot, side);
   const combatValue = (key: CombatMetricKey) => sideStatsAvailable ? `${metrics.combat[key]}` : pendingSideStats;
   const weaponValue = (key: WeaponMetricKey) => sideStatsAvailable ? `${metrics.weapons[key]}` : pendingSideStats;
   const sideCoordinates = ramSnapshot ? playerCoordinateFields(side, ramSnapshot) : null;
-  const routeValue = sideCoordinates ? `WorldX ${sideCoordinates.worldX}` : "等待 RAM";
+  const routeValue = sideCoordinates ? `WorldX ${sideCoordinates.worldX}` : t(language, "value.waitingRam");
 
   return [
     {
-      title: "战果",
+      title: t(language, "metric.results"),
       items: [
-        { label: "普通敌兵", value: combatValue("infantry"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "炮台火力", value: combatValue("turret"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "飞行物", value: combatValue("flying"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "Boss部件", value: combatValue("boss"), status: sideStatsAvailable ? "derived" : "pending" }
+        { label: t(language, "metric.infantry"), value: combatValue("infantry"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.turret"), value: combatValue("turret"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.flying"), value: combatValue("flying"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.bossParts"), value: combatValue("boss"), status: sideStatsAvailable ? "derived" : "pending" }
       ]
     },
     {
-      title: "武器获得",
+      title: t(language, "metric.weaponPickups"),
       items: [
-        { label: "M机枪", value: weaponValue("m"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "S散弹", value: weaponValue("s"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "F火焰", value: weaponValue("f"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "L激光", value: weaponValue("l"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "R速射", value: weaponValue("r"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "B无敌", value: weaponValue("b"), status: sideStatsAvailable ? "derived" : "pending" },
-        { label: "当前武器", value: sideStatsAvailable && hasRam ? currentWeaponLabel(rawWeapon) : pendingSideStats, status: sideStatsAvailable && hasRam ? "real" : "pending" },
-        { label: "武器总数", value: sideStatsAvailable ? `${totalWeaponPickups(metrics.weapons)}` : pendingSideStats, status: sideStatsAvailable ? "derived" : "pending" }
+        { label: t(language, "metric.weaponM"), value: weaponValue("m"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.weaponS"), value: weaponValue("s"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.weaponF"), value: weaponValue("f"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.weaponL"), value: weaponValue("l"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.weaponR"), value: weaponValue("r"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.weaponB"), value: weaponValue("b"), status: sideStatsAvailable ? "derived" : "pending" },
+        { label: t(language, "metric.currentWeapon"), value: sideStatsAvailable && hasRam ? currentWeaponLabel(rawWeapon, language) : pendingSideStats, status: sideStatsAvailable && hasRam ? "real" : "pending" },
+        { label: t(language, "metric.weaponTotal"), value: sideStatsAvailable ? `${totalWeaponPickups(metrics.weapons)}` : pendingSideStats, status: sideStatsAvailable ? "derived" : "pending" }
       ]
     },
     {
-      title: "行为",
+      title: t(language, "metric.behavior"),
       items: [
-        { label: "移动", value: `${metrics.moves}`, status: "real" },
-        { label: "跳跃", value: `${metrics.jumps}`, status: "real" },
-        { label: "按枪", value: `${metrics.shots}`, status: "real" },
-        { label: "实际发弹", value: `${metrics.bulletSpawns}`, status: "derived" }
+        { label: t(language, "metric.move"), value: `${metrics.moves}`, status: "real" },
+        { label: t(language, "metric.jump"), value: `${metrics.jumps}`, status: "real" },
+        { label: t(language, "metric.fireHeld"), value: `${metrics.shots}`, status: "real" },
+        { label: t(language, "metric.bulletSpawn"), value: `${metrics.bulletSpawns}`, status: "derived" }
       ]
     },
     {
-      title: "状态",
+      title: t(language, "metric.state"),
       items: [
-        { label: "分数", value: hasRam ? formatScore(sideScore) : "等待 RAM", status: hasRam ? "real" : "pending" },
-        { label: "死亡", value: sideStatsAvailable ? `${metrics.deaths}` : pendingSideStats, status: sideStatsAvailable ? "real" : "pending" },
-        { label: "当前按键", value: activeButtonLabel(buttons), status: "real" },
-        { label: "统计", value: statsState, status: "mode" },
-        { label: "路线", value: sideStatsAvailable && sideCoordinates ? routeValue : pendingSideStats, status: sideStatsAvailable && hasRam ? "real" : "pending" },
-        { label: "危险", value: hasRam ? `${threatCount} 威胁` : "等待 Danger", status: hasRam ? "real" : "pending" },
-        { label: "双人局", value: twoPlayerActive ? "已检测" : "等待 1P", status: twoPlayerActive ? "real" : "pending" },
-        { label: "控制权", value: getAuthorityLabel(mode), status: "mode" }
+        { label: t(language, "metric.score"), value: hasRam ? formatScore(sideScore) : t(language, "value.waitingRam"), status: hasRam ? "real" : "pending" },
+        { label: t(language, "metric.deaths"), value: sideStatsAvailable ? `${metrics.deaths}` : pendingSideStats, status: sideStatsAvailable ? "real" : "pending" },
+        { label: t(language, "metric.currentButtons"), value: activeButtonLabel(buttons, language), status: "real" },
+        { label: t(language, "metric.stats"), value: statsState, status: "mode" },
+        { label: t(language, "metric.route"), value: sideStatsAvailable && sideCoordinates ? routeValue : pendingSideStats, status: sideStatsAvailable && hasRam ? "real" : "pending" },
+        { label: t(language, "metric.danger"), value: hasRam ? `${threatCount} ${t(language, "value.threatSuffix")}` : t(language, "value.waitingDanger"), status: hasRam ? "real" : "pending" },
+        { label: t(language, "metric.twoPlayer"), value: twoPlayerActive ? t(language, "value.detected") : t(language, "value.waiting1P"), status: twoPlayerActive ? "real" : "pending" },
+        { label: t(language, "metric.authority"), value: localizedAuthorityLabel(mode, language), status: "mode" }
       ]
     }
   ];
 }
 
-function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey) {
+function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey, language: UiLanguage) {
+  if (language === "en-US") {
+    if (mode === "human") {
+      return ["Human is controlling; I only record input.", "AI is not writing controller input until you switch modes."];
+    }
+    if (strategyKey === "off" || strategyKey === "placeholder") {
+      return [
+        `${localizedAiStrategyLabel(strategyKey, language)} selected.`,
+        "This strategy does not write actions. Switch to an active baseline when needed."
+      ];
+    }
+    if (strategyKey === "survival-v0") {
+      return ["Survival: avoid close danger first.", "When threats are dense, slow down, jump away, tap fire, then resume advance."];
+    }
+    if (strategyKey === "speedrun-v0") {
+      return ["Speedrun: prioritize rightward progress.", "Jump on close danger and fire when a threat is ahead."];
+    }
+    if (strategyKey === "combat-v0") {
+      return ["Combat: clear visible threats first.", "When enemies close in, stop advancing, keep firing, and try to jump away."];
+    }
+    if (strategyKey === "loot-v0") {
+      return ["Loot: prioritize weapon boxes and flying capsules.", "Move toward reward targets, shoot them, then resume route progress."];
+    }
+    if (strategyKey === "guard-v0") {
+      return ["Guard: protect threats around 1P first.", "2P keeps formation spacing from candidate coordinates; co-op calibration still needs real runs."];
+    }
+    if (strategyKey === "personal-v0") {
+      return ["Personal: execute the locally saved Stage 1 route script.", "Edit WorldX segments, actions, and fire style in the strategy designer."];
+    }
+    if (strategyKey === "follow-test") {
+      return ["Conservative follow: low-frequency advance and tap fire.", "Used for two-player companion input stability tests."];
+    }
+    if (mode === "ai") {
+      return [
+        `${localizedAiStrategyLabel(strategyKey, language)} selected.`,
+        "Route + danger + action lock V0 is writing controller input; full co-op FSM is pending."
+      ];
+    }
+    return [
+      "Hybrid mode: human input has priority.",
+      `${localizedAiStrategyLabel(strategyKey, language)} assists when there is no human input.`
+    ];
+  }
+
   if (mode === "human") {
     return ["人类正在控制，我只记录输入。", "AI 不写入手柄，等待你切换模式。"];
   }
@@ -5284,14 +5411,20 @@ function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey) {
   ];
 }
 
-function buildPilotDialogue(side: PlayerSide, mode: ControlMode, strategyKey: AiStrategyKey, ramSnapshot: GameRamSnapshot | null) {
+function buildPilotDialogue(side: PlayerSide, mode: ControlMode, strategyKey: AiStrategyKey, ramSnapshot: GameRamSnapshot | null, language: UiLanguage) {
   if (side === "2P" && mode !== "human" && !ramSnapshot?.twoPlayerActive) {
+    if (language === "en-US") {
+      return [
+        "2P is waiting for two-player mode.",
+        "Use 1P on the game menu to start a two-player run first."
+      ];
+    }
     return [
       "2P 等待双人模式启动。",
       "请先由 1P 在游戏菜单选择双人模式。"
     ];
   }
-  return buildDialogue(mode, strategyKey);
+  return buildDialogue(mode, strategyKey, language);
 }
 
 function buildDataStream(
@@ -5320,7 +5453,7 @@ function buildDataStream(
     `${side}.mode=${mode}`,
     `${side}.strategy=${strategyKey}`,
     `${side}.lastInput=${lastInput}`,
-    `${side}.finalButtons=${activeButtonLabel(buttons)}`,
+    `${side}.finalButtons=${activeButtonLabel(buttons, "en-US")}`,
     `runtime.status=${runtimeStatus}`,
     `ai.behavior=${aiStrategyBehaviorTag(strategyKey)}`,
     `route.segment=${route.segment}`,
@@ -5376,6 +5509,7 @@ function buildDataStream(
 
 function buildSideTrainingState(
   side: PlayerSide,
+  language: UiLanguage,
   mode: ControlMode,
   strategyKey: AiStrategyKey,
   ramSnapshot: GameRamSnapshot | null,
@@ -5389,30 +5523,40 @@ function buildSideTrainingState(
   const sideDeath = deathTraceReports.slice().reverse().find((report) => report.side === side);
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const sideReady = side === "1P" || twoPlayerActive;
+  const english = language === "en-US";
   const candidateCount = playTraceReport
     ? playTraceReport.fastPasses.length + playTraceReport.stalls.length + playTraceReport.weaponPickups.total
     : 0;
-  const sourceLabel = mode === "human" ? "人类演示" : mode === "ai" ? "AI 跑局" : "混合采集";
+  const sourceLabel = english
+    ? mode === "human" ? "Human demo" : mode === "ai" ? "AI run" : "Hybrid capture"
+    : mode === "human" ? "人类演示" : mode === "ai" ? "AI 跑局" : "混合采集";
   const captureStatus = traceRecording
-    ? "采集中"
-    : traceSampleCount > 0 ? "已采集" : "未采集";
+    ? english ? "Capturing" : "采集中"
+    : traceSampleCount > 0 ? english ? "Captured" : "已采集" : english ? "Not captured" : "未采集";
   const failureSummary = sideDeath
-    ? `死亡 W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
-    : sideReady ? "等待失败反例" : "等待双人局";
+    ? english ? `Death W${sideDeath.worldX ?? "?"} / ${sideDeath.input}` : `死亡 W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
+    : sideReady ? english ? "Waiting for failure example" : "等待失败反例" : english ? "Waiting for 2P run" : "等待双人局";
 
   return {
     side,
-    ownerLabel: side === "1P" ? "玩家1训练" : "玩家2训练",
-    baselineStrategy: getAiStrategyLabel(strategyKey),
+    ownerLabel: english ? `${side} Training` : side === "1P" ? "玩家1训练" : "玩家2训练",
+    baselineStrategy: english ? localizedAiStrategyLabel(strategyKey, language) : getAiStrategyLabel(strategyKey),
     sourceLabel,
-    tasBaseLabel: tasBaseLabel(tasEntry),
+    tasBaseLabel: localizedTasBaseLabel(tasEntry, language),
     captureStatus,
-    windowLabel: traceRecording || traceSampleCount > 0 ? traceLastSummary : "按 WorldX 窗口采集",
-    candidateFragments: `${candidateCount} 候选`,
+    windowLabel: traceRecording || traceSampleCount > 0 ? localizedTraceSummary(traceLastSummary, traceRecording, language) : english ? "Capture by WorldX window" : "按 WorldX 窗口采集",
+    candidateFragments: english ? `${candidateCount} candidates` : `${candidateCount} 候选`,
     failureSummary,
-    archiveTarget: sideReady ? "trace-evidence / fragments" : "等待 2P RAM",
-    primaryAction: sideReady ? "生成候选片段" : "先进入双人模式"
+    archiveTarget: sideReady ? "trace-evidence / fragments" : english ? "Waiting for 2P RAM" : "等待 2P RAM",
+    primaryAction: sideReady ? english ? "Generate candidate fragment" : "生成候选片段" : english ? "Enter 2P mode first" : "先进入双人模式"
   };
+}
+
+function localizedTraceSummary(summary: string, traceRecording: boolean, language: UiLanguage) {
+  if (traceRecording) return t(language, "training.traceCapturing");
+  if (summary === "轨迹未记录" || summary === "No trace recorded") return t(language, "training.noTrace");
+  if (summary === "轨迹已清空" || summary === "Trace cleared") return t(language, "training.traceCleared");
+  return summary;
 }
 
 function buildGlobalTrainingState(
@@ -5421,25 +5565,26 @@ function buildGlobalTrainingState(
   traceLastSummary: string,
   playTraceReport: PlayTraceAnalysisReport | null,
   tasEntry: TasRegistryEntry | null,
-  botRunReport: BotRunReport
+  botRunReport: BotRunReport,
+  language: UiLanguage
 ): GlobalTrainingState {
   const kills = playTraceReport?.kills.total ?? 0;
   const pickups = playTraceReport?.weaponPickups.total ?? 0;
   const fastPasses = playTraceReport?.fastPasses.length ?? 0;
   const botStatus = botRunReport.status === "idle"
-    ? "等待跑局"
+    ? t(language, "training.awaitRun")
     : `${botRunReport.status} / W${botRunReport.finalWorldX ?? "?"}`;
 
   return {
     modeLabel: "Offline/Base Mode",
-    optimizationLevel: "Level 0 + Level 1 候选",
-    tasBaseLabel: tasStatusLabel(tasEntry),
-    traceSummary: traceRecording ? "轨迹采集中" : traceLastSummary,
-    sampleCount: `${traceSampleCount} 帧`,
+    optimizationLevel: language === "en-US" ? "Level 0 + Level 1 candidates" : "Level 0 + Level 1 候选",
+    tasBaseLabel: localizedTasStatusLabel(tasEntry, language),
+    traceSummary: localizedTraceSummary(traceLastSummary, traceRecording, language),
+    sampleCount: language === "en-US" ? `${traceSampleCount} frames` : `${traceSampleCount} 帧`,
     evidenceTarget: "strategy-packs/contra",
-    validationStatus: `击杀 ${kills} / 武器 ${pickups} / 快速 ${fastPasses}`,
+    validationStatus: `${t(language, "training.validationPrefix")} ${kills} / ${t(language, "training.weaponPrefix")} ${pickups} / ${t(language, "training.fastPrefix")} ${fastPasses}`,
     botRunStatus: botStatus,
-    nextGate: "候选片段必须真实跑局验证"
+    nextGate: t(language, "training.realRunGate")
   };
 }
 
@@ -5466,9 +5611,9 @@ function mapGamepadButtons(gamepad: Gamepad | null | undefined): ButtonState {
 }
 
 function gamepadLabel(gamepad: Gamepad | null | undefined, fallbackIndex: number) {
-  if (!gamepad) return `Gamepad ${fallbackIndex} 未连接`;
+  if (!gamepad) return `Gamepad ${fallbackIndex} disconnected`;
   const name = gamepad.id.length > 28 ? `${gamepad.id.slice(0, 28)}...` : gamepad.id;
-  return `Gamepad ${fallbackIndex} 已连接：${name}`;
+  return `Gamepad ${fallbackIndex} connected: ${name}`;
 }
 
 function PadButton({
@@ -5514,16 +5659,16 @@ function ControllerView({
   return (
     <div className="controller" aria-label="实时手柄">
       <div className="dpad">
-        <PadButton label="上" active={buttons.up} onDown={() => onButtonDown?.("up")} onUp={() => onButtonUp?.("up")} />
+        <PadButton label="↑" active={buttons.up} onDown={() => onButtonDown?.("up")} onUp={() => onButtonUp?.("up")} />
         <div className="dpad-mid">
-          <PadButton label="左" active={buttons.left} onDown={() => onButtonDown?.("left")} onUp={() => onButtonUp?.("left")} />
-          <PadButton label="右" active={buttons.right} onDown={() => onButtonDown?.("right")} onUp={() => onButtonUp?.("right")} />
+          <PadButton label="←" active={buttons.left} onDown={() => onButtonDown?.("left")} onUp={() => onButtonUp?.("left")} />
+          <PadButton label="→" active={buttons.right} onDown={() => onButtonDown?.("right")} onUp={() => onButtonUp?.("right")} />
         </div>
-        <PadButton label="下" active={buttons.down} onDown={() => onButtonDown?.("down")} onUp={() => onButtonUp?.("down")} />
+        <PadButton label="↓" active={buttons.down} onDown={() => onButtonDown?.("down")} onUp={() => onButtonUp?.("down")} />
       </div>
       <div className="system-buttons">
-        <PadButton label="选择" active={buttons.select} onDown={() => onButtonDown?.("select")} onUp={() => onButtonUp?.("select")} />
-        <PadButton label="开始" active={buttons.start} onDown={() => onButtonDown?.("start")} onUp={() => onButtonUp?.("start")} />
+        <PadButton label="SELECT" active={buttons.select} onDown={() => onButtonDown?.("select")} onUp={() => onButtonUp?.("select")} />
+        <PadButton label="START" active={buttons.start} onDown={() => onButtonDown?.("start")} onUp={() => onButtonUp?.("start")} />
       </div>
       <div className="action-buttons">
         <PadButton label="B" active={buttons.b} onDown={() => onButtonDown?.("b")} onUp={() => onButtonUp?.("b")} />
@@ -5547,9 +5692,11 @@ function WarriorAvatar({ side }: { side: PlayerSide }) {
 
 function ModeTogglePanel({
   mode,
+  language,
   onModeChange
 }: {
   mode: ControlMode;
+  language: UiLanguage;
   onModeChange: (mode: ControlMode) => void;
 }) {
   const humanActive = modeToggleActive(mode, "human");
@@ -5562,7 +5709,7 @@ function ModeTogglePanel({
         onClick={() => onModeChange(nextModeFromToggle(mode, "human"))}
         type="button"
       >
-        人类
+        {localizedControlModeLabel("human", language)}
       </button>
       <button
         aria-pressed={aiActive}
@@ -5570,13 +5717,13 @@ function ModeTogglePanel({
         onClick={() => onModeChange(nextModeFromToggle(mode, "ai"))}
         type="button"
       >
-        AI
+        {localizedControlModeLabel("ai", language)}
       </button>
     </div>
   );
 }
 
-function SideTrainingPanel({ training }: { training: SideTrainingState }) {
+function SideTrainingPanel({ language, training }: { language: UiLanguage; training: SideTrainingState }) {
   return (
     <div className="side-training-panel" aria-label={`${training.side} 训练区`}>
       <div className="sub-title">
@@ -5585,41 +5732,41 @@ function SideTrainingPanel({ training }: { training: SideTrainingState }) {
       </div>
       <div className="training-stat-grid">
         <div>
-          <span>基准策略</span>
+          <span>{t(language, "training.baselineStrategy")}</span>
           <strong>{training.baselineStrategy}</strong>
         </div>
         <div>
-          <span>训练来源</span>
+          <span>{t(language, "training.source")}</span>
           <strong>{training.sourceLabel}</strong>
         </div>
         <div>
-          <span>TAS 基座</span>
+          <span>{t(language, "training.tasBase")}</span>
           <strong>{training.tasBaseLabel}</strong>
         </div>
         <div>
-          <span>采集状态</span>
+          <span>{t(language, "training.captureStatus")}</span>
           <strong>{training.captureStatus}</strong>
         </div>
         <div>
-          <span>候选片段</span>
+          <span>{t(language, "training.candidates")}</span>
           <strong>{training.candidateFragments}</strong>
         </div>
       </div>
       <div className="training-note-grid">
         <div>
-          <span>窗口</span>
+          <span>{t(language, "training.window")}</span>
           <strong>{training.windowLabel}</strong>
         </div>
         <div>
-          <span>问题</span>
+          <span>{t(language, "training.problem")}</span>
           <strong>{training.failureSummary}</strong>
         </div>
         <div>
-          <span>归档</span>
+          <span>{t(language, "training.archive")}</span>
           <strong>{training.archiveTarget}</strong>
         </div>
         <div>
-          <span>动作</span>
+          <span>{t(language, "training.action")}</span>
           <strong>{training.primaryAction}</strong>
         </div>
       </div>
@@ -5629,12 +5776,14 @@ function SideTrainingPanel({ training }: { training: SideTrainingState }) {
 
 function PilotPanel({
   pilot,
+  uiLanguage,
   onButtonDown,
   onButtonUp,
   onModeChange,
   onStrategyChange
 }: {
   pilot: Pilot;
+  uiLanguage: UiLanguage;
   onButtonDown?: (button: ButtonName) => void;
   onButtonUp?: (button: ButtonName) => void;
   onModeChange: (mode: ControlMode) => void;
@@ -5647,7 +5796,7 @@ function PilotPanel({
       <div className="controller-head">
         <div className="panel-title">
           <Icon size={18} />
-          <span>{pilot.side} 实体手柄舱</span>
+          <span>{pilot.side} {t(uiLanguage, "pilot.controllerBay")}</span>
         </div>
         <span className="authority-chip">{pilot.authority}</span>
       </div>
@@ -5658,13 +5807,13 @@ function PilotPanel({
           </div>
           <div>
             <div className="pilot-name">{pilot.name}</div>
-            <div className="pilot-role">{controlModeLabels[pilot.mode]} / {pilot.status}</div>
+            <div className="pilot-role">{localizedControlModeLabel(pilot.mode, uiLanguage)} / {pilot.status}</div>
           </div>
         </div>
-        <ModeTogglePanel mode={pilot.mode} onModeChange={onModeChange} />
+        <ModeTogglePanel language={uiLanguage} mode={pilot.mode} onModeChange={onModeChange} />
       </div>
-      <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} AI 策略`}>
-        <div className="strategy-button-title">{aiActive ? "AI 策略" : "AI 策略（未启用）"}</div>
+      <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiStrategy")}`}>
+        <div className="strategy-button-title">{aiActive ? t(uiLanguage, "pilot.aiStrategy") : t(uiLanguage, "pilot.aiStrategyDisabled")}</div>
         <div className="strategy-button-grid">
           {cockpitAiStrategyOptions.map((option) => {
             const selected = aiActive && pilot.strategyKey === option.key;
@@ -5676,7 +5825,7 @@ function PilotPanel({
                 onClick={() => onStrategyChange(option.key)}
                 type="button"
               >
-                {option.label}
+                {localizedAiStrategyLabel(option.key, uiLanguage)}
               </button>
             );
           })}
@@ -5698,16 +5847,16 @@ function PilotPanel({
           </div>
         ))}
       </div>
-      <div className="ai-dialogue" aria-label={`${pilot.side} AI 对话`}>
+      <div className="ai-dialogue" aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiDialogue")}`}>
         <div className="sub-title">
           <MessageSquareText size={15} />
-          <span>AI 对话</span>
+          <span>{t(uiLanguage, "pilot.aiDialogue")}</span>
         </div>
         {pilot.dialogue.map((line) => (
           <p key={line}>{line}</p>
         ))}
       </div>
-      <SideTrainingPanel training={pilot.training} />
+      <SideTrainingPanel language={uiLanguage} training={pilot.training} />
       <div className="input-meta">
         <div>
           <Keyboard size={15} />
@@ -5724,7 +5873,7 @@ function PilotPanel({
       </div>
       <div className="write-strip">
         <Gamepad2 size={16} />
-        <span>最终写入 {pilot.side}</span>
+        <span>{t(uiLanguage, "pilot.finalWrite")} {pilot.side}</span>
       </div>
     </section>
   );
@@ -5899,6 +6048,7 @@ function TelevisionView({
 
 function GlobalTrainingConsole({
   training,
+  language,
   traceRecording,
   traceSampleCount,
   onTraceStart,
@@ -5907,6 +6057,7 @@ function GlobalTrainingConsole({
   onTraceExport
 }: {
   training: GlobalTrainingState;
+  language: UiLanguage;
   traceRecording: boolean;
   traceSampleCount: number;
   onTraceStart: () => void;
@@ -5915,38 +6066,38 @@ function GlobalTrainingConsole({
   onTraceExport: () => void;
 }) {
   return (
-    <div className="training-console" aria-label="全局训练总控">
+    <div className="training-console" aria-label={t(language, "training.globalTitle")}>
       <div className="sub-title">
         <Database size={15} />
-        <span>训练总控</span>
+        <span>{t(language, "training.globalTitle")}</span>
       </div>
       <div className="training-console-grid">
         <div>
-          <span>模式</span>
+          <span>{t(language, "training.mode")}</span>
           <strong>{training.modeLabel}</strong>
         </div>
         <div>
-          <span>等级</span>
+          <span>{t(language, "training.level")}</span>
           <strong>{training.optimizationLevel}</strong>
         </div>
         <div>
-          <span>TAS 基座</span>
+          <span>{t(language, "training.tasBase")}</span>
           <strong>{training.tasBaseLabel}</strong>
         </div>
         <div>
-          <span>样本</span>
+          <span>{t(language, "training.samples")}</span>
           <strong>{training.sampleCount}</strong>
         </div>
         <div>
-          <span>验证</span>
+          <span>{t(language, "training.validation")}</span>
           <strong>{training.validationStatus}</strong>
         </div>
         <div>
-          <span>跑局</span>
+          <span>{t(language, "training.run")}</span>
           <strong>{training.botRunStatus}</strong>
         </div>
         <div>
-          <span>归档</span>
+          <span>{t(language, "training.archive")}</span>
           <strong>{training.evidenceTarget}</strong>
         </div>
       </div>
@@ -5955,10 +6106,10 @@ function GlobalTrainingConsole({
         <span>{training.nextGate}</span>
       </div>
       <div className="training-actions">
-        <button disabled={traceRecording} onClick={onTraceStart} type="button">开始采集</button>
-        <button disabled={!traceRecording} onClick={onTraceStop} type="button">停止</button>
-        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">导出</button>
-        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">清空</button>
+        <button disabled={traceRecording} onClick={onTraceStart} type="button">{t(language, "training.startCapture")}</button>
+        <button disabled={!traceRecording} onClick={onTraceStop} type="button">{t(language, "training.stop")}</button>
+        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">{t(language, "training.export")}</button>
+        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">{t(language, "training.clear")}</button>
       </div>
     </div>
   );
@@ -6283,7 +6434,7 @@ function ConsoleDeck({
                     </div>
                     <div>
                       <span>TAS</span>
-                      <b>{tasStatusLabel(selectedTas)}</b>
+                      <b>{localizedTasStatusLabel(selectedTas, uiLanguage)}</b>
                     </div>
                     <div>
                       <span>{t(uiLanguage, "console.version")}</span>
@@ -6333,7 +6484,7 @@ function ConsoleDeck({
             {romMetadata ? (
               <>
                 <strong>{loadedUiStatus.chineseName} · {romMetadata.displayTitle}</strong>
-                <small>{romMetadata.romProfileId} / {loadedUiStatus.strategyStatus} / {romMetadata.romSupportLabel} / {tasStatusLabel(loadedTas)}</small>
+                <small>{romMetadata.romProfileId} / {loadedUiStatus.strategyStatus} / {romMetadata.romSupportLabel} / {localizedTasStatusLabel(loadedTas, uiLanguage)}</small>
               </>
             ) : (
               <>
@@ -6353,6 +6504,7 @@ function ConsoleDeck({
         <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
       </div>
       <GlobalTrainingConsole
+        language={uiLanguage}
         training={globalTraining}
         onTraceClear={onTraceClear}
         onTraceExport={onTraceExport}
@@ -6854,8 +7006,8 @@ function App() {
   const [isTvFullscreen, setIsTvFullscreen] = useState(false);
   const [gamepadLabelsState, setGamepadLabelsState] = useState<Record<PlayerSide, string>>(gamepadLabelsRef.current);
   const [lastInputs, setLastInputs] = useState<Record<PlayerSide, string>>({
-    "1P": "等待输入",
-    "2P": "等待输入"
+    "1P": "Waiting input",
+    "2P": "Waiting input"
   });
   const [eventLog, setEventLog] = useState<string[]>([
     "PM：2P 输入路由准备中",
@@ -7183,10 +7335,10 @@ function App() {
     sourceButtonsRef.current[side][source] = next;
     recomputeSide(side);
     if (source !== "system" && hasPressedButton(next)) {
-      const sourceLabel = source === "keyboard" ? "键盘" : source === "gamepad" ? "游戏手柄" : source === "panel" ? "屏幕按钮" : source === "tas" ? "TAS" : "AI";
+      const sourceLabel = source === "keyboard" ? "Keyboard" : source === "gamepad" ? "Gamepad" : source === "panel" ? "Panel" : source === "tas" ? "TAS" : "AI";
       setLastInputs((current) => ({
         ...current,
-        [side]: `${sourceLabel} 输入`
+        [side]: `${sourceLabel} input`
       }));
     }
   }, [recomputeSide]);
@@ -7224,7 +7376,7 @@ function App() {
     aiLoopExitStatesRef.current = createAiLoopExitStates();
     bossWallPhaseStatesRef.current = createBossWallPhaseStates();
     setButtonStates(createPlayerButtonStates());
-    setLastInputs({ "1P": "等待输入", "2P": "等待输入" });
+    setLastInputs({ "1P": "Waiting input", "2P": "Waiting input" });
   }, []);
 
   const resetPlayerMetrics = useCallback(() => {
@@ -8371,46 +8523,46 @@ function App() {
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const loadedTasEntry = identifyTasForRom(romMetadata);
   const sideTrainingStates: Record<PlayerSide, SideTrainingState> = {
-    "1P": buildSideTrainingState("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
-    "2P": buildSideTrainingState("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
+    "1P": buildSideTrainingState("1P", uiLanguage, controlModes["1P"], strategyModels["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
+    "2P": buildSideTrainingState("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
   };
-  const globalTraining = buildGlobalTrainingState(traceRecording, traceSampleCount, traceLastSummary, playTraceReport, loadedTasEntry, botRunReport);
+  const globalTraining = buildGlobalTrainingState(traceRecording, traceSampleCount, traceLastSummary, playTraceReport, loadedTasEntry, botRunReport, uiLanguage);
   const pilots: Pilot[] = [
     {
       side: "1P",
-      name: getPilotName("1P", controlModes["1P"]),
-      status: getPilotStatus("1P", status, controlModes["1P"], strategyModels["1P"], twoPlayerActive),
+      name: localizedPilotName("1P", controlModes["1P"], uiLanguage),
+      status: localizedPilotStatus("1P", status, controlModes["1P"], strategyModels["1P"], twoPlayerActive, uiLanguage),
       mode: controlModes["1P"],
       strategyKey: strategyModels["1P"],
       strategy: `${getAiStrategyLabel(strategyModels["1P"])} / ${modeStrategyLabels[controlModes["1P"]]}`,
       temperament: getPilotTemperament("1P", controlModes["1P"], strategyModels["1P"], twoPlayerActive),
       buttons: buttonStates["1P"],
       accent: "blue",
-      keyboardHint: keyboardHints["1P"],
-      gamepadHint: gamepadLabelsState["1P"],
-      lastInput: lastInputs["1P"],
-      authority: getAuthorityLabel(controlModes["1P"]),
-      metricGroups: buildPilotMetricGroups("1P", controlModes["1P"], buttonStates["1P"], playerMetrics["1P"], ramSnapshot, gameplayActive, status),
-      dialogue: buildPilotDialogue("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot),
+      keyboardHint: localizedKeyboardHint("1P", uiLanguage),
+      gamepadHint: localizedGamepadHint(gamepadLabelsState["1P"], uiLanguage),
+      lastInput: localizedLastInput(lastInputs["1P"], uiLanguage),
+      authority: localizedAuthorityLabel(controlModes["1P"], uiLanguage),
+      metricGroups: buildPilotMetricGroups("1P", controlModes["1P"], buttonStates["1P"], playerMetrics["1P"], ramSnapshot, gameplayActive, status, uiLanguage),
+      dialogue: buildPilotDialogue("1P", controlModes["1P"], strategyModels["1P"], ramSnapshot, uiLanguage),
       dataStream: buildDataStream("1P", controlModes["1P"], strategyModels["1P"], lastInputs["1P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["1P"], aiFsmStatesRef.current["1P"], aiLoopExitStatesRef.current["1P"], buttonStates["1P"]),
       training: sideTrainingStates["1P"]
     },
     {
       side: "2P",
-      name: getPilotName("2P", controlModes["2P"]),
-      status: getPilotStatus("2P", status, controlModes["2P"], strategyModels["2P"], twoPlayerActive),
+      name: localizedPilotName("2P", controlModes["2P"], uiLanguage),
+      status: localizedPilotStatus("2P", status, controlModes["2P"], strategyModels["2P"], twoPlayerActive, uiLanguage),
       mode: controlModes["2P"],
       strategyKey: strategyModels["2P"],
       strategy: `${getAiStrategyLabel(strategyModels["2P"])} / ${modeStrategyLabels[controlModes["2P"]]}`,
       temperament: getPilotTemperament("2P", controlModes["2P"], strategyModels["2P"], twoPlayerActive),
       buttons: buttonStates["2P"],
       accent: "red",
-      keyboardHint: keyboardHints["2P"],
-      gamepadHint: gamepadLabelsState["2P"],
-      lastInput: lastInputs["2P"],
-      authority: getAuthorityLabel(controlModes["2P"]),
-      metricGroups: buildPilotMetricGroups("2P", controlModes["2P"], buttonStates["2P"], playerMetrics["2P"], ramSnapshot, gameplayActive, status),
-      dialogue: buildPilotDialogue("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot),
+      keyboardHint: localizedKeyboardHint("2P", uiLanguage),
+      gamepadHint: localizedGamepadHint(gamepadLabelsState["2P"], uiLanguage),
+      lastInput: localizedLastInput(lastInputs["2P"], uiLanguage),
+      authority: localizedAuthorityLabel(controlModes["2P"], uiLanguage),
+      metricGroups: buildPilotMetricGroups("2P", controlModes["2P"], buttonStates["2P"], playerMetrics["2P"], ramSnapshot, gameplayActive, status, uiLanguage),
+      dialogue: buildPilotDialogue("2P", controlModes["2P"], strategyModels["2P"], ramSnapshot, uiLanguage),
       dataStream: buildDataStream("2P", controlModes["2P"], strategyModels["2P"], lastInputs["2P"], ramSnapshot, gameplayActive, status, strategyPlans, aiActionLocksRef.current["2P"], aiFsmStatesRef.current["2P"], aiLoopExitStatesRef.current["2P"], buttonStates["2P"]),
       training: sideTrainingStates["2P"]
     }
@@ -8475,6 +8627,7 @@ function App() {
           onModeChange={(mode) => changeControlMode("1P", mode)}
           onStrategyChange={(strategy) => changeStrategyModel("1P", strategy)}
           pilot={pilots[0]}
+          uiLanguage={uiLanguage}
         />
         <div className="center-column">
           <TelevisionView
@@ -8536,6 +8689,7 @@ function App() {
           onModeChange={(mode) => changeControlMode("2P", mode)}
           onStrategyChange={(strategy) => changeStrategyModel("2P", strategy)}
           pilot={pilots[1]}
+          uiLanguage={uiLanguage}
         />
       </div>
       <div className="debug-floor">
