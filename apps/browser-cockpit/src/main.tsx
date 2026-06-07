@@ -185,6 +185,24 @@ type AiStrategyKey =
   | "personal-v0"
   | "follow-test"
   | "input-mirror";
+type SideTrainingBaselineSourceKind = "strategy-pack" | "tas-side-baseline" | "human-demo" | "ai-run";
+type SideTrainingBaselineOption = {
+  id: string;
+  side: PlayerSide | "any";
+  label: string;
+  sourceLabel: string;
+  detailLabel: string;
+  sourceKind: SideTrainingBaselineSourceKind;
+  strategyKeys: readonly AiStrategyKey[];
+  romProfileId?: string;
+  frameWindow?: readonly [number, number];
+};
+type SideTrainingMethod = "auto-patch" | "model-analysis" | "human-assist" | "manual-edit";
+type SideTrainingMethodOption = {
+  key: SideTrainingMethod;
+  label: string;
+  description: string;
+};
 
 type RouteAction = "advance" | "cautious" | "hold-fire" | "loot" | "guard" | "survive";
 type RouteFireMode = "pulse" | "threat" | "always";
@@ -425,9 +443,19 @@ type SideTrainingState = {
   side: PlayerSide;
   ownerLabel: string;
   packDisplayName: string;
+  strategyKey: AiStrategyKey;
   strategyCategoryLabel: string;
+  strategyCategoryOptions: Array<{ key: AiStrategyKey; label: string }>;
   strategyBaselineLabel: string;
+  selectedForTraining: boolean;
+  trainingSessionActive: boolean;
+  baselineOptions: SideTrainingBaselineOption[];
+  selectedBaselineId: string;
   sourceLabel: string;
+  trainingMethodOptions: SideTrainingMethodOption[];
+  selectedTrainingMethod: SideTrainingMethod;
+  trainingMethodLabel: string;
+  trainingMethodDescription: string;
   captureStatus: string;
   windowLabel: string;
   candidateFragments: string;
@@ -439,7 +467,11 @@ type SideTrainingState = {
 type SideTrainingActions = {
   traceRecording: boolean;
   traceSampleCount: number;
+  onSideTrainingFocus: (side: PlayerSide) => void;
+  onSideTrainingStrategyChange: (side: PlayerSide, strategy: AiStrategyKey) => void;
   onSideTrainingSelectBaseline: (side: PlayerSide) => void;
+  onSideTrainingBaselineChange: (side: PlayerSide, baselineId: string) => void;
+  onSideTrainingMethodChange: (side: PlayerSide, method: SideTrainingMethod) => void;
   onSideTrainingModifyStrategy: (side: PlayerSide) => void;
   onSideTrainingArchiveStrategy: (side: PlayerSide) => void;
   onSideTrainingValidateStrategy: (side: PlayerSide) => void;
@@ -480,6 +512,8 @@ type StrategyPackRevision = {
 
 type GlobalTrainingState = {
   strategyPackLabel: string;
+  trainingSessionActive: boolean;
+  trainingSessionLabel: string;
   packageSideScope: StrategyPackageSideScope;
   strategyExportName: string;
   validationReplayComplete: boolean;
@@ -774,6 +808,100 @@ const tasBaselineStrategyMap: Partial<Record<TasStrategyBaseline, AiStrategyKey>
   "guard-v0": "guard-v0"
 };
 
+const DEFAULT_SIDE_BASELINE_ID = "pack-current";
+const DEFAULT_SIDE_TRAINING_METHOD: SideTrainingMethod = "auto-patch";
+
+const SIDE_BASELINE_CATALOG = [
+  {
+    id: "human-demo-new",
+    side: "any",
+    label: "新建人类演示",
+    sourceLabel: "人类演示",
+    detailLabel: "从人类操作采集一段新的可学习样本",
+    sourceKind: "human-demo",
+    strategyKeys: ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0", "personal-v0"]
+  },
+  {
+    id: "ai-run-new",
+    side: "any",
+    label: "新建AI跑局基准",
+    sourceLabel: "AI跑局",
+    detailLabel: "用当前基础AI策略自动跑局并归档为可学习基准",
+    sourceKind: "ai-run",
+    strategyKeys: ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0", "personal-v0"]
+  }
+] as const satisfies readonly SideTrainingBaselineOption[];
+
+const TAS_SIDE_BASELINE_CATALOG = [
+  {
+    id: "tas-contra-j-good-entry-sync-1p",
+    side: "1P",
+    label: "TAS双人入局同步 1P",
+    sourceLabel: "TAS拆分",
+    detailLabel: "Contra J 双人TAS开局同步窗口，已拆为1P侧基准",
+    sourceKind: "tas-side-baseline",
+    strategyKeys: ["survival-v0", "speedrun-v0", "guard-v0"],
+    romProfileId: "contra-j-good",
+    frameWindow: [0, 420]
+  },
+  {
+    id: "tas-contra-j-good-entry-sync-2p",
+    side: "2P",
+    label: "TAS双人入局同步 2P",
+    sourceLabel: "TAS拆分",
+    detailLabel: "Contra J 双人TAS开局同步窗口，已拆为2P侧基准",
+    sourceKind: "tas-side-baseline",
+    strategyKeys: ["survival-v0", "speedrun-v0", "guard-v0"],
+    romProfileId: "contra-j-good",
+    frameWindow: [0, 420]
+  },
+  {
+    id: "tas-contra-j-good-fixed-threat-1p",
+    side: "1P",
+    label: "TAS固定威胁路线 1P",
+    sourceLabel: "TAS拆分",
+    detailLabel: "用于炮台、固定目标和桥前窗口的1P基准片段",
+    sourceKind: "tas-side-baseline",
+    strategyKeys: ["survival-v0", "combat-v0", "loot-v0"],
+    romProfileId: "contra-j-good",
+    frameWindow: [1200, 2600]
+  },
+  {
+    id: "tas-contra-j-good-fixed-threat-2p",
+    side: "2P",
+    label: "TAS固定威胁路线 2P",
+    sourceLabel: "TAS拆分",
+    detailLabel: "用于炮台、固定目标和桥前窗口的2P配合基准片段",
+    sourceKind: "tas-side-baseline",
+    strategyKeys: ["survival-v0", "combat-v0", "guard-v0"],
+    romProfileId: "contra-j-good",
+    frameWindow: [1200, 2600]
+  }
+] as const satisfies readonly SideTrainingBaselineOption[];
+
+const SIDE_TRAINING_METHOD_OPTIONS = [
+  {
+    key: "auto-patch",
+    label: "自动补丁",
+    description: "自动跑局，记录死亡、卡住和漏目标，再生成候选策略片段"
+  },
+  {
+    key: "model-analysis",
+    label: "大模型分析",
+    description: "打包轨迹、RAM快照和失败点，等待大模型给出战术修正建议"
+  },
+  {
+    key: "human-assist",
+    label: "人类辅助",
+    description: "混合模式中由人类接管关键点，系统提取AI与人类差异"
+  },
+  {
+    key: "manual-edit",
+    label: "手动编辑",
+    description: "直接打开策略设计器修改片段，再通过回放验证"
+  }
+] as const satisfies readonly SideTrainingMethodOption[];
+
 const keyboardHints: Record<PlayerSide, string> = {
   "1P": "方向键 / Z=B / X=A / Enter=开始 / Shift=选择",
   "2P": "WASD / J=B / K=A / I=开始 / U=选择"
@@ -1026,6 +1154,87 @@ function strategyResourcePackById(packId: StrategyResourcePackId) {
 function strategyResourcePackLabel(packId: StrategyResourcePackId, language: UiLanguage) {
   const pack = strategyResourcePackById(packId);
   return `${pack.displayName[language]} · ${pack.version}`;
+}
+
+function baselineAppliesToSide(option: SideTrainingBaselineOption, side: PlayerSide) {
+  return option.side === "any" || option.side === side;
+}
+
+function baselineSupportsStrategy(option: SideTrainingBaselineOption, strategyKey: AiStrategyKey) {
+  return option.strategyKeys.includes(strategyKey);
+}
+
+function buildPackBaselineOption(
+  side: PlayerSide,
+  language: UiLanguage,
+  strategyKey: AiStrategyKey,
+  resourcePackId: StrategyResourcePackId
+): SideTrainingBaselineOption {
+  const packDisplayName = strategyResourcePackById(resourcePackId).displayName[language];
+  const strategyLabel = localizedAiStrategyLabel(strategyKey, language);
+  return {
+    id: DEFAULT_SIDE_BASELINE_ID,
+    side,
+    label: `${packDisplayName} / ${strategyLabel}`,
+    sourceLabel: language === "en-US" ? "Strategy pack" : "资源包",
+    detailLabel: language === "en-US" ? "Use the selected package strategy as the starting baseline" : "使用当前资源包策略作为起点",
+    sourceKind: "strategy-pack",
+    strategyKeys: [strategyKey]
+  };
+}
+
+function tasBaselineOptionsForSide(
+  side: PlayerSide,
+  strategyKey: AiStrategyKey,
+  tasEntry: TasRegistryEntry | null,
+  language: UiLanguage
+): SideTrainingBaselineOption[] {
+  if (!tasEntry) return [];
+  return TAS_SIDE_BASELINE_CATALOG.filter((option) =>
+    baselineAppliesToSide(option, side)
+    && baselineSupportsStrategy(option, strategyKey)
+    && option.romProfileId === tasEntry.romProfileId
+  ).map((option) => ({
+    ...option,
+    label: language === "en-US" ? option.label.replace("TAS", "TAS ") : option.label
+  }));
+}
+
+function sideBaselineOptionsForSide(
+  side: PlayerSide,
+  language: UiLanguage,
+  strategyKey: AiStrategyKey,
+  resourcePackId: StrategyResourcePackId,
+  tasEntry: TasRegistryEntry | null
+): SideTrainingBaselineOption[] {
+  const packBaseline = buildPackBaselineOption(side, language, strategyKey, resourcePackId);
+  const localBaselines = SIDE_BASELINE_CATALOG.filter((option) =>
+    baselineAppliesToSide(option, side) && baselineSupportsStrategy(option, strategyKey)
+  );
+  return [
+    packBaseline,
+    ...localBaselines,
+    ...tasBaselineOptionsForSide(side, strategyKey, tasEntry, language)
+  ];
+}
+
+function findTasSideBaselineOption(
+  side: PlayerSide,
+  selectedBaselineId: string,
+  options?: readonly SideTrainingBaselineOption[]
+) {
+  const searchOptions = options ?? [...SIDE_BASELINE_CATALOG, ...TAS_SIDE_BASELINE_CATALOG];
+  return searchOptions.find((option) => option.id === selectedBaselineId && baselineAppliesToSide(option, side)) ?? null;
+}
+
+function findSideTrainingMethodOption(method: SideTrainingMethod) {
+  return SIDE_TRAINING_METHOD_OPTIONS.find((option) => option.key === method) ?? SIDE_TRAINING_METHOD_OPTIONS[0];
+}
+
+function trainingControlModeForSelection(baselineId: string, method: SideTrainingMethod): ControlMode {
+  if (baselineId === "human-demo-new") return "human";
+  if (method === "human-assist") return "hybrid";
+  return "ai";
 }
 
 function strategyResultMetricLabel(metric: StrategyResultMetric, language: UiLanguage, unit: "count" | "frames" = "count") {
@@ -5898,6 +6107,10 @@ function buildSideTrainingStateV2(
   mode: ControlMode,
   strategyKey: AiStrategyKey,
   resourcePackId: StrategyResourcePackId,
+  selectedBaselineId: string,
+  selectedTrainingMethod: SideTrainingMethod,
+  selectedForTraining: boolean,
+  trainingSessionActive: boolean,
   ramSnapshot: GameRamSnapshot | null,
   tasEntry: TasRegistryEntry | null,
   traceRecording: boolean,
@@ -5912,11 +6125,16 @@ function buildSideTrainingStateV2(
   const candidateCount = strategyTrainingCandidateCount(strategyKey, playTraceReport, sideDeath);
   const trainingProfile = trainingProfileForStrategy(side, strategyKey, candidateCount, sideReady, language);
   const strategyLabel = localizedAiStrategyLabel(strategyKey, language);
+  const strategyCategoryOptions = cockpitAiStrategyOptions.map((option) => ({
+    key: option.key,
+    label: localizedAiStrategyLabel(option.key, language)
+  }));
   const packDisplayName = strategyResourcePackById(resourcePackId).displayName[language];
-  const strategyBaselineLabel = tasEntry
-    ? `${localizedTasBaseLabel(tasEntry, language)} / ${strategyLabel}`
-    : `${packDisplayName} / ${strategyLabel}`;
-  const sourceLabel = mode === "human" ? "Human demo" : mode === "ai" ? "AI run" : "Hybrid capture";
+  const baselineOptions = sideBaselineOptionsForSide(side, language, strategyKey, resourcePackId, tasEntry);
+  const selectedBaseline = baselineOptions.find((option) => option.id === selectedBaselineId) ?? baselineOptions[0];
+  const trainingMethod = findSideTrainingMethodOption(selectedTrainingMethod);
+  const strategyBaselineLabel = selectedBaseline.label;
+  const sourceLabel = selectedBaseline.sourceLabel;
   const captureStatus = traceRecording ? t(language, "training.traceCapturing") : traceSampleCount > 0 ? "Captured" : "Not captured";
   const failureSummary = sideDeath
     ? `Death W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
@@ -5926,9 +6144,19 @@ function buildSideTrainingStateV2(
     side,
     ownerLabel: `${side} Training`,
     packDisplayName,
+    strategyKey,
     strategyCategoryLabel: strategyLabel,
+    strategyCategoryOptions,
     strategyBaselineLabel,
+    selectedForTraining,
+    trainingSessionActive,
+    baselineOptions,
+    selectedBaselineId: selectedBaseline.id,
     sourceLabel,
+    trainingMethodOptions: [...SIDE_TRAINING_METHOD_OPTIONS],
+    selectedTrainingMethod: trainingMethod.key,
+    trainingMethodLabel: trainingMethod.label,
+    trainingMethodDescription: trainingMethod.description,
     captureStatus,
     windowLabel: traceRecording || traceSampleCount > 0 ? localizedTraceSummary(traceLastSummary, traceRecording, language) : "Capture by WorldX window",
     candidateFragments: trainingProfile.candidateFragments,
@@ -5961,6 +6189,7 @@ function localizedEventLogLine(line: string, language: UiLanguage) {
 }
 
 function buildGlobalTrainingState(
+  trainingSessionActive: boolean,
   packageSideScope: StrategyPackageSideScope,
   strategyExportName: string,
   validationReplayComplete: boolean,
@@ -5972,6 +6201,10 @@ function buildGlobalTrainingState(
 ): GlobalTrainingState {
   return {
     strategyPackLabel: activeStrategyPackLabel(language),
+    trainingSessionActive,
+    trainingSessionLabel: trainingSessionActive
+      ? language === "en-US" ? "Training active" : "训练中"
+      : language === "en-US" ? "Training idle" : "待训练",
     packageSideScope,
     strategyExportName,
     validationReplayComplete,
@@ -6088,34 +6321,45 @@ function ModeTogglePanel({
   mode,
   language,
   onModeChange,
-  tasLocked = false
+  tasLocked = false,
+  trainingLocked = false
 }: {
   mode: ControlMode;
   language: UiLanguage;
   onModeChange: (mode: ControlMode) => void;
   tasLocked?: boolean;
+  trainingLocked?: boolean;
 }) {
+  const locked = tasLocked || trainingLocked;
   const humanActive = tasLocked ? false : modeToggleActive(mode, "human");
   const aiActive = tasLocked ? true : modeToggleActive(mode, "ai");
+  const humanLabel = trainingLocked && humanActive
+    ? `${localizedControlModeLabel("human", language)} / 训练`
+    : localizedControlModeLabel("human", language);
+  const aiLabel = tasLocked
+    ? `${localizedControlModeLabel("ai", language)} / TAS`
+    : trainingLocked && aiActive
+      ? `${localizedControlModeLabel("ai", language)} / 训练`
+      : localizedControlModeLabel("ai", language);
   return (
     <div className="mode-toggle-panel" role="group" aria-label="控制模式开关">
       <button
         aria-pressed={humanActive}
         className={humanActive ? "mode-toggle active human-toggle" : "mode-toggle human-toggle"}
-        disabled={tasLocked}
+        disabled={locked}
         onClick={() => onModeChange(nextModeFromToggle(mode, "human"))}
         type="button"
       >
-        {localizedControlModeLabel("human", language)}
+        {humanLabel}
       </button>
       <button
         aria-pressed={aiActive}
         className={aiActive ? "mode-toggle active ai-toggle" : "mode-toggle ai-toggle"}
-        disabled={tasLocked}
+        disabled={locked}
         onClick={() => onModeChange(nextModeFromToggle(mode, "ai"))}
         type="button"
       >
-        {tasLocked ? `${localizedControlModeLabel("ai", language)} / TAS` : localizedControlModeLabel("ai", language)}
+        {aiLabel}
       </button>
     </div>
   );
@@ -6130,62 +6374,98 @@ function SideTrainingPanel({
   training: SideTrainingState;
   actions: SideTrainingActions;
 }) {
+  const captureStartLabel = training.selectedBaselineId === "human-demo-new"
+    ? t(language, "training.startCapture")
+    : training.selectedTrainingMethod === "human-assist"
+      ? "开始混合采集"
+      : t(language, "training.startCapture");
+  const archiveLabel = training.selectedBaselineId === "human-demo-new" ? "归档演示" : t(language, "training.archiveStrategy");
+  const showCaptureActions = training.selectedBaselineId === "human-demo-new" || training.selectedTrainingMethod === "human-assist";
+  const autoPatchArchiveLabel = training.selectedBaselineId === "ai-run-new" ? "归档AI跑局" : "生成补丁";
+
   return (
-    <div className="side-training-panel" aria-label={`${training.side} 训练区`}>
-      <div className="sub-title">
+    <div className={training.selectedForTraining ? "side-training-panel selected-training-side" : "side-training-panel"} aria-label={`${training.side} 训练区`}>
+      <button
+        aria-pressed={training.selectedForTraining}
+        className={training.selectedForTraining ? "side-training-title-button active" : "side-training-title-button"}
+        onClick={() => actions.onSideTrainingFocus(training.side)}
+        type="button"
+      >
         <Database size={15} />
         <span>{training.ownerLabel}</span>
-      </div>
+      </button>
       <div className="side-training-pack-identity">
         <strong>{training.packDisplayName} ({training.strategyCategoryLabel})</strong>
       </div>
-      <div className="training-stat-grid">
+      <div className="side-strategy-category-selector" aria-label="训练策略种类">
+        <span>策略种类</span>
         <div>
-          <span>{t(language, "training.source")}</span>
-          <strong>{training.sourceLabel}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.strategyBaseline")}</span>
-          <strong>{training.strategyBaselineLabel}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.captureStatus")}</span>
-          <strong>{training.captureStatus}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.candidates")}</span>
-          <strong>{training.candidateFragments}</strong>
-        </div>
-      </div>
-      <div className="training-note-grid">
-        <div>
-          <span>{t(language, "training.window")}</span>
-          <strong>{training.windowLabel}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.problem")}</span>
-          <strong>{training.failureSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.archive")}</span>
-          <strong>{training.archiveTarget}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.action")}</span>
-          <strong>{training.primaryAction}</strong>
+          {training.strategyCategoryOptions.map((option) => (
+            <button
+              aria-pressed={training.strategyKey === option.key}
+              className={training.strategyKey === option.key ? "active" : ""}
+              disabled={!training.trainingSessionActive || !training.selectedForTraining}
+              key={option.key}
+              onClick={() => actions.onSideTrainingStrategyChange(training.side, option.key)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="side-training-workflow-actions">
-        <button onClick={() => actions.onSideTrainingSelectBaseline(training.side)} type="button">{t(language, "training.selectBaseline")}</button>
-        <button onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">{t(language, "training.modifyStrategy")}</button>
-        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{t(language, "training.archiveStrategy")}</button>
-        <button disabled={actions.traceRecording} onClick={() => actions.onSideTrainingValidateStrategy(training.side)} type="button">{t(language, "training.validateStrategy")}</button>
+      <label className="side-baseline-selector">
+        <span>{t(language, "training.strategyBaseline")}</span>
+        <select
+          onChange={(event) => actions.onSideTrainingBaselineChange(training.side, event.currentTarget.value)}
+          value={training.selectedBaselineId}
+        >
+          {training.baselineOptions.map((option) => (
+            <option key={option.id} value={option.id}>{option.label}</option>
+          ))}
+        </select>
+        <small>{training.sourceLabel} / {training.strategyBaselineLabel}</small>
+      </label>
+      <div className="side-training-method-selector" aria-label="训练方法">
+        <span>训练方法</span>
+        <div>
+          {training.trainingMethodOptions.map((option) => (
+            <button
+              aria-pressed={training.selectedTrainingMethod === option.key}
+              className={training.selectedTrainingMethod === option.key ? "active" : ""}
+              key={option.key}
+              onClick={() => actions.onSideTrainingMethodChange(training.side, option.key)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <small>{training.trainingMethodDescription}</small>
       </div>
-      <div className="side-training-capture-actions">
-        <button disabled={actions.traceRecording} onClick={() => actions.onSideTraceStart(training.side)} type="button">{t(language, "training.startCapture")}</button>
-        <button disabled={!actions.traceRecording} onClick={() => actions.onSideTraceStop(training.side)} type="button">{t(language, "training.stop")}</button>
-        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceExport(training.side)} type="button">{t(language, "training.export")}</button>
-        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceClear(training.side)} type="button">{t(language, "training.clear")}</button>
+      <div className="side-training-context-actions">
+        {showCaptureActions ? (
+          <>
+            <button disabled={actions.traceRecording} onClick={() => actions.onSideTraceStart(training.side)} type="button">{captureStartLabel}</button>
+            <button disabled={!actions.traceRecording} onClick={() => actions.onSideTraceStop(training.side)} type="button">{t(language, "training.stop")}</button>
+            <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{archiveLabel}</button>
+          </>
+        ) : training.selectedTrainingMethod === "manual-edit" ? (
+          <>
+            <button onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">{t(language, "training.modifyStrategy")}</button>
+            <button disabled={actions.traceRecording} onClick={() => actions.onSideTrainingValidateStrategy(training.side)} type="button">{t(language, "training.validateStrategy")}</button>
+          </>
+        ) : training.selectedTrainingMethod === "model-analysis" ? (
+          <>
+            <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceExport(training.side)} type="button">打包数据</button>
+            <button onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">导入建议</button>
+          </>
+        ) : (
+          <>
+            <button disabled={actions.traceRecording} onClick={() => actions.onSideTrainingValidateStrategy(training.side)} type="button">开始跑局</button>
+            <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{autoPatchArchiveLabel}</button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -6199,7 +6479,8 @@ function PilotPanel({
   onModeChange,
   onStrategyChange,
   trainingActions,
-  tasLocked
+  tasLocked,
+  trainingLocked
 }: {
   pilot: Pilot;
   uiLanguage: UiLanguage;
@@ -6209,15 +6490,20 @@ function PilotPanel({
   onStrategyChange: (strategy: AiStrategyKey) => void;
   trainingActions: SideTrainingActions;
   tasLocked: boolean;
+  trainingLocked: boolean;
 }) {
-  const Icon = tasLocked ? Radio : pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
+  const Icon = tasLocked ? Radio : trainingLocked ? Database : pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
   const aiActive = tasLocked || aiControlIsActive(pilot.mode);
-  const authorityLabel = tasLocked ? t(uiLanguage, "tas.controllerLock") : pilot.authority;
+  const authorityLabel = tasLocked ? t(uiLanguage, "tas.controllerLock") : trainingLocked ? "训练接管" : pilot.authority;
   const roleLabel = tasLocked
     ? `${localizedControlModeLabel("ai", uiLanguage)} / TAS / ${t(uiLanguage, "tas.inputLocked")}`
-    : `${localizedControlModeLabel(pilot.mode, uiLanguage)} / ${pilot.status}`;
+    : trainingLocked
+      ? `${localizedControlModeLabel(pilot.mode, uiLanguage)} / 训练接管`
+      : `${localizedControlModeLabel(pilot.mode, uiLanguage)} / ${pilot.status}`;
+  const inputLocked = tasLocked || trainingLocked;
+  const strategyControlsLocked = tasLocked || trainingLocked;
   return (
-    <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"} ${tasLocked ? "tas-locked" : ""}`}>
+    <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"} ${tasLocked ? "tas-locked" : ""} ${trainingLocked ? "training-locked" : ""}`}>
       <div className="controller-head">
         <div className="panel-title">
           <Icon size={18} />
@@ -6235,12 +6521,18 @@ function PilotPanel({
             <div className="pilot-role">{roleLabel}</div>
           </div>
         </div>
-        <ModeTogglePanel language={uiLanguage} mode={pilot.mode} onModeChange={onModeChange} tasLocked={tasLocked} />
+        <ModeTogglePanel language={uiLanguage} mode={pilot.mode} onModeChange={onModeChange} tasLocked={tasLocked} trainingLocked={trainingLocked} />
       </div>
       {tasLocked && (
         <div className="tas-input-lock">
           <Radio size={14} />
           <span>{t(uiLanguage, "tas.inputLocked")}</span>
+        </div>
+      )}
+      {trainingLocked && !tasLocked && (
+        <div className="training-input-lock">
+          <Database size={14} />
+          <span>训练接管中</span>
         </div>
       )}
       <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiStrategy")}`}>
@@ -6252,6 +6544,7 @@ function PilotPanel({
               <button
                 aria-pressed={selected}
                 className={selected ? "strategy-button active" : "strategy-button"}
+                disabled={strategyControlsLocked}
                 key={option.key}
                 onClick={() => onStrategyChange(option.key)}
                 type="button"
@@ -6262,7 +6555,7 @@ function PilotPanel({
           })}
         </div>
       </div>
-      <ControllerView buttons={pilot.buttons} onButtonDown={tasLocked ? undefined : onButtonDown} onButtonUp={tasLocked ? undefined : onButtonUp} />
+      <ControllerView buttons={pilot.buttons} onButtonDown={inputLocked ? undefined : onButtonDown} onButtonUp={inputLocked ? undefined : onButtonUp} />
       <div className="metric-stack" aria-label={`${pilot.side} 数据面板`}>
         {pilot.metricGroups.map((group) => (
           <div className="metric-group" key={group.title}>
@@ -6485,6 +6778,8 @@ function OperationStrategyControl({
   onTrainingSavePathSelected,
   onTrainingValidateStrategy,
   onTrainingVersionHistory,
+  onTrainingSessionStart,
+  onTrainingSessionStop,
   onPackageSideScopeToggle,
   onStrategyResourcePackChange,
   onStrategyExportNameChange,
@@ -6497,6 +6792,8 @@ function OperationStrategyControl({
   onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
   onTrainingVersionHistory: () => void;
+  onTrainingSessionStart: () => void;
+  onTrainingSessionStop: () => void;
   onPackageSideScopeToggle: (side: PlayerSide) => void;
   onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
   onStrategyExportNameChange: (name: string) => void;
@@ -6525,7 +6822,7 @@ function OperationStrategyControl({
   };
 
   return (
-    <div className="operation-strategy-control" aria-label={t(language, "training.globalTitle")}>
+    <div className={training.trainingSessionActive ? "operation-strategy-control training-active" : "operation-strategy-control"} aria-label={t(language, "training.globalTitle")}>
       <div className="sub-title">
         <Database size={15} />
         <span>{t(language, "training.globalTitle")}</span>
@@ -6533,6 +6830,11 @@ function OperationStrategyControl({
       <div className="training-pack-banner">
         <strong>{training.strategyPackLabel}</strong>
         <span>{ACTIVE_STRATEGY_PACK.packId}</span>
+      </div>
+      <div className="training-session-control" aria-label="训练会话">
+        <strong>{training.trainingSessionLabel}</strong>
+        <button disabled={training.trainingSessionActive} onClick={onTrainingSessionStart} type="button">启动训练</button>
+        <button disabled={!training.trainingSessionActive} onClick={onTrainingSessionStop} type="button">停止训练</button>
       </div>
       <div className="strategy-resource-routing">
         {(["1P", "2P"] as PlayerSide[]).map((side) => {
@@ -6911,7 +7213,9 @@ function ConsoleDeck({
   onPackageSideScopeToggle,
   onStrategyResourcePackChange,
   onStrategyExportNameChange,
-  onSync2PResourceTo1P
+  onSync2PResourceTo1P,
+  onTrainingSessionStart,
+  onTrainingSessionStop
 }: {
   status: RuntimeStatus;
   romMetadata: RomMetadata | null;
@@ -6947,6 +7251,8 @@ function ConsoleDeck({
   onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
   onStrategyExportNameChange: (name: string) => void;
   onSync2PResourceTo1P: () => void;
+  onTrainingSessionStart: () => void;
+  onTrainingSessionStop: () => void;
 }) {
   const directoryInputRef = useRef<HTMLInputElement | null>(null);
   const isRunning = status === "running";
@@ -7117,6 +7423,8 @@ function ConsoleDeck({
         onTrainingSavePathSelected={onTrainingSavePathSelected}
         onTrainingValidateStrategy={onTrainingValidateStrategy}
         onTrainingVersionHistory={onTrainingVersionHistory}
+        onTrainingSessionStart={onTrainingSessionStart}
+        onTrainingSessionStop={onTrainingSessionStop}
         onPackageSideScopeToggle={onPackageSideScopeToggle}
         onStrategyResourcePackChange={onStrategyResourcePackChange}
         onStrategyExportNameChange={onStrategyExportNameChange}
@@ -7603,6 +7911,16 @@ function App() {
     "1P": "contra-stage1-strategy-v0",
     "2P": "contra-stage1-strategy-v0"
   });
+  const [selectedSideBaselineIds, setSelectedSideBaselineIds] = useState<Record<PlayerSide, string>>({
+    "1P": DEFAULT_SIDE_BASELINE_ID,
+    "2P": DEFAULT_SIDE_BASELINE_ID
+  });
+  const [selectedSideTrainingMethods, setSelectedSideTrainingMethods] = useState<Record<PlayerSide, SideTrainingMethod>>({
+    "1P": DEFAULT_SIDE_TRAINING_METHOD,
+    "2P": DEFAULT_SIDE_TRAINING_METHOD
+  });
+  const [trainingSessionActive, setTrainingSessionActive] = useState(false);
+  const [selectedTrainingSide, setSelectedTrainingSide] = useState<PlayerSide>("1P");
   const [p2StrategyResourceOverridden, setP2StrategyResourceOverridden] = useState(false);
   const [selectedTasMovieId, setSelectedTasMovieId] = useState("");
   const [tasCommentaryMode, setTasCommentaryMode] = useState<TasCommentaryMode>("strategy-analysis");
@@ -8788,8 +9106,61 @@ function App() {
   ]);
 
   const onSideTrainingSelectBaseline = useCallback((side: PlayerSide) => {
+    const selectedOption = findTasSideBaselineOption(side, selectedSideBaselineIds[side]);
+    appendLog(`Training ${side}: selected baseline ${selectedOption ? `${selectedOption.sourceLabel} / ${selectedOption.label}` : "Current strategy package baseline"}`);
     appendLog(`Training ${side}: baseline selection requested`);
     appendLog("训练：基准候选来自当前资源包；TAS 基准必须先在 TAS 观赏窗口完成分离抽取并归档后才会加入候选列表末尾");
+  }, [appendLog, selectedSideBaselineIds, uiLanguage]);
+
+  const onSideTrainingFocus = useCallback((side: PlayerSide) => {
+    setSelectedTrainingSide(side);
+    setPackageSideScope(side === "1P" ? "1p-only" : "2p-only");
+    if (trainingSessionActive) {
+      changeControlMode(side, trainingControlModeForSelection(selectedSideBaselineIds[side], selectedSideTrainingMethods[side]));
+    }
+    appendLog(`Training ${side}: focused training side`);
+  }, [appendLog, changeControlMode, selectedSideBaselineIds, selectedSideTrainingMethods, trainingSessionActive]);
+
+  const onSideTrainingStrategyChange = useCallback((side: PlayerSide, strategy: AiStrategyKey) => {
+    if (!trainingSessionActive || side !== selectedTrainingSide) {
+      appendLog(`Training ${side}: strategy category is read-only until this side owns an active training session`);
+      return;
+    }
+    changeStrategyModel(side, strategy);
+    appendLog(`Training ${side}: strategy category ${getAiStrategyLabel(strategy)}`);
+  }, [appendLog, changeStrategyModel, selectedTrainingSide, trainingSessionActive]);
+
+  const onSideTrainingBaselineChange = useCallback((side: PlayerSide, baselineId: string) => {
+    setSelectedSideBaselineIds((current) => ({ ...current, [side]: baselineId }));
+    const selectedOption = findTasSideBaselineOption(side, baselineId);
+    if (trainingSessionActive && side === selectedTrainingSide) {
+      changeControlMode(side, trainingControlModeForSelection(baselineId, selectedSideTrainingMethods[side]));
+    }
+    appendLog(`Training ${side}: baseline changed to ${selectedOption ? selectedOption.label : "current strategy package"}`);
+  }, [appendLog, changeControlMode, selectedSideTrainingMethods, selectedTrainingSide, trainingSessionActive]);
+
+  const onSideTrainingMethodChange = useCallback((side: PlayerSide, method: SideTrainingMethod) => {
+    const option = findSideTrainingMethodOption(method);
+    setSelectedSideTrainingMethods((current) => ({ ...current, [side]: option.key }));
+    if (trainingSessionActive && side === selectedTrainingSide) {
+      changeControlMode(side, trainingControlModeForSelection(selectedSideBaselineIds[side], option.key));
+    }
+    appendLog(`Training ${side}: method ${option.label}`);
+  }, [appendLog, changeControlMode, selectedSideBaselineIds, selectedTrainingSide, trainingSessionActive]);
+
+  const onTrainingSessionStart = useCallback(() => {
+    setTrainingSessionActive(true);
+    const mode = trainingControlModeForSelection(
+      selectedSideBaselineIds[selectedTrainingSide],
+      selectedSideTrainingMethods[selectedTrainingSide]
+    );
+    changeControlMode(selectedTrainingSide, mode);
+    appendLog(`Training: started ${selectedTrainingSide} / ${controlModeLabels[mode]}`);
+  }, [appendLog, changeControlMode, selectedSideBaselineIds, selectedSideTrainingMethods, selectedTrainingSide]);
+
+  const onTrainingSessionStop = useCallback(() => {
+    setTrainingSessionActive(false);
+    appendLog("Training: stopped; game controls unlocked");
   }, [appendLog]);
 
   const onSideTrainingModifyStrategy = useCallback((side: PlayerSide) => {
@@ -9263,13 +9634,17 @@ function App() {
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const loadedTasEntry = identifyTasForRom(romMetadata);
   const sideTrainingStates: Record<PlayerSide, SideTrainingState> = {
-    "1P": buildSideTrainingStateV2("1P", uiLanguage, controlModes["1P"], strategyModels["1P"], strategyResourcePacksBySide["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
-    "2P": buildSideTrainingStateV2("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], strategyResourcePacksBySide["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
+    "1P": buildSideTrainingStateV2("1P", uiLanguage, controlModes["1P"], strategyModels["1P"], strategyResourcePacksBySide["1P"], selectedSideBaselineIds["1P"], selectedSideTrainingMethods["1P"], selectedTrainingSide === "1P", trainingSessionActive, ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
+    "2P": buildSideTrainingStateV2("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], strategyResourcePacksBySide["2P"], selectedSideBaselineIds["2P"], selectedSideTrainingMethods["2P"], selectedTrainingSide === "2P", trainingSessionActive, ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
   };
   const sideTrainingActions: SideTrainingActions = {
     traceRecording,
     traceSampleCount,
+    onSideTrainingFocus,
+    onSideTrainingStrategyChange,
     onSideTrainingSelectBaseline,
+    onSideTrainingBaselineChange,
+    onSideTrainingMethodChange,
     onSideTrainingModifyStrategy,
     onSideTrainingArchiveStrategy,
     onSideTrainingValidateStrategy,
@@ -9279,6 +9654,7 @@ function App() {
     onSideTraceClear
   };
   const globalTraining = buildGlobalTrainingState(
+    trainingSessionActive,
     packageSideScope,
     strategyExportName,
     validationReplayComplete,
@@ -9390,6 +9766,7 @@ function App() {
           onStrategyChange={(strategy) => changeStrategyModel("1P", strategy)}
           pilot={pilots[0]}
           tasLocked={tasPlaybackLocked}
+          trainingLocked={trainingSessionActive}
           trainingActions={sideTrainingActions}
           uiLanguage={uiLanguage}
         />
@@ -9428,10 +9805,12 @@ function App() {
             onTasStop={stopTasReplay}
             onTasApplyBaseline={applyTasBaselineToSide}
             onTrainingSaveStrategy={onTrainingSaveStrategy}
-            onTrainingSavePathSelected={onTrainingSavePathSelected}
-            onTrainingValidateStrategy={onTrainingValidateStrategy}
-            onTrainingVersionHistory={onTrainingVersionHistory}
-            onPackageSideScopeToggle={togglePackageSideScope}
+          onTrainingSavePathSelected={onTrainingSavePathSelected}
+          onTrainingValidateStrategy={onTrainingValidateStrategy}
+          onTrainingVersionHistory={onTrainingVersionHistory}
+          onTrainingSessionStart={onTrainingSessionStart}
+          onTrainingSessionStop={onTrainingSessionStop}
+          onPackageSideScopeToggle={togglePackageSideScope}
             onStrategyResourcePackChange={changeStrategyResourcePack}
             onStrategyExportNameChange={changeStrategyExportName}
             onSync2PResourceTo1P={sync2PResourceTo1P}
@@ -9458,6 +9837,7 @@ function App() {
           onStrategyChange={(strategy) => changeStrategyModel("2P", strategy)}
           pilot={pilots[1]}
           tasLocked={tasPlaybackLocked}
+          trainingLocked={trainingSessionActive}
           trainingActions={sideTrainingActions}
           uiLanguage={uiLanguage}
         />

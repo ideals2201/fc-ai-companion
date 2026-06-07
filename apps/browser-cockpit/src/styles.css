@@ -346,6 +346,20 @@ button:disabled {
   color: #6c7784;
 }
 
+.training-locked .mode-toggle-panel,
+.training-locked .strategy-button-grid {
+  opacity: 0.58;
+  filter: grayscale(0.45);
+}
+
+.mode-toggle:disabled,
+.strategy-button:disabled,
+.side-strategy-category-selector button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  filter: grayscale(0.5) blur(0.15px);
+}
+
 .tas-input-lock {
   display: inline-flex;
   align-items: center;
@@ -356,6 +370,21 @@ button:disabled {
   border-radius: 6px;
   background: #071522;
   color: #bce5ff;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.training-input-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  margin: 0 0 8px;
+  border: 1px solid rgba(104, 227, 145, 0.34);
+  border-radius: 6px;
+  background: #07160d;
+  color: #c8ffda;
   padding: 0 8px;
   font-size: 11px;
   font-weight: 850;
@@ -670,6 +699,31 @@ dd {
   padding: 8px;
 }
 
+.side-training-panel.selected-training-side {
+  border-color: rgba(104, 227, 145, 0.82);
+  box-shadow: 0 0 0 1px rgba(104, 227, 145, 0.22), 0 0 18px rgba(104, 227, 145, 0.08);
+}
+
+.side-training-title-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  border-radius: 6px;
+  background: #070b10;
+  color: #dce9f5;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.side-training-title-button.active {
+  border-color: rgba(104, 227, 145, 0.72);
+  background: #0d2315;
+  color: #eafff0;
+}
+
 .side-training-pack-identity {
   display: grid;
   align-items: center;
@@ -703,68 +757,123 @@ dd {
   white-space: nowrap;
 }
 
-.training-stat-grid {
+.side-baseline-selector {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
-}
-
-.training-note-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.side-training-workflow-actions {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.side-training-capture-actions {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.training-stat-grid div,
-.training-note-grid div {
   min-width: 0;
-  border: 1px solid rgba(255,255,255,0.09);
+  border: 1px solid rgba(126, 200, 255, 0.18);
   border-radius: 6px;
   background: #070a0e;
-  padding: 5px 6px;
+  padding: 6px;
 }
 
-.training-stat-grid span,
-.training-note-grid span {
-  display: block;
+.side-strategy-category-selector {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  border-radius: 6px;
+  background: #070a0e;
+  padding: 6px;
+}
+
+.side-training-method-selector {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  border-radius: 6px;
+  background: #070a0e;
+  padding: 6px;
+}
+
+.side-baseline-selector span,
+.side-strategy-category-selector > span,
+.side-training-method-selector > span {
   color: #92a1b2;
   font-size: 10px;
-  line-height: 1.15;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
-.training-stat-grid strong,
-.training-note-grid strong {
-  display: block;
+.side-strategy-category-selector div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.side-strategy-category-selector button {
+  min-height: 25px;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  border-radius: 5px;
+  background: #0a1118;
+  color: #dff3ff;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.1;
+  padding: 3px;
+}
+
+.side-strategy-category-selector button.active:not(:disabled) {
+  border-color: rgba(104, 227, 145, 0.7);
+  background: #11331f;
+  color: #e4ffed;
+}
+
+.side-baseline-selector select {
+  width: 100%;
   min-width: 0;
-  color: #edf5ff;
+  border: 1px solid rgba(126, 200, 255, 0.3);
+  border-radius: 5px;
+  background: #0d141d;
+  color: #eaf7ff;
   font-size: 11px;
   font-weight: 850;
-  line-height: 1.25;
+  padding: 5px 7px;
+}
+
+.side-baseline-selector small,
+.side-training-method-selector small {
+  min-width: 0;
+  color: #8ee7ff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
-.training-stat-grid strong {
-  color: #8ee7ff;
+.side-training-method-selector div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
 }
 
-.training-note-grid strong {
-  color: #ffe17a;
+.side-training-method-selector button {
+  min-height: 26px;
+  border-color: rgba(126, 200, 255, 0.18);
+  background: #0a1118;
+  color: #dff3ff;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.1;
+  padding: 4px;
 }
 
-.side-training-workflow-actions button,
-.side-training-capture-actions button {
+.side-training-method-selector button.active {
+  border-color: rgba(104, 227, 145, 0.55);
+  background: #11331f;
+  color: #e4ffed;
+}
+
+.side-training-context-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.side-training-context-actions button {
+  display: grid;
+  min-width: 0;
   min-height: 28px;
   border-color: rgba(104, 227, 145, 0.22);
   background: #0d1711;
@@ -773,12 +882,6 @@ dd {
   font-weight: 850;
   line-height: 1.1;
   padding: 5px 4px;
-}
-
-.side-training-capture-actions button {
-  border-color: rgba(126, 200, 255, 0.18);
-  background: #0a1118;
-  color: #dff3ff;
 }
 
 .input-meta {
@@ -1288,6 +1391,11 @@ dd {
   padding: 10px;
 }
 
+.operation-strategy-control.training-active {
+  border-color: rgba(104, 227, 145, 0.78);
+  box-shadow: 0 0 0 1px rgba(104, 227, 145, 0.2), 0 0 22px rgba(104, 227, 145, 0.08);
+}
+
 .training-pack-banner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1298,6 +1406,40 @@ dd {
   border-radius: 6px;
   background: linear-gradient(90deg, rgba(12, 32, 48, 0.95), rgba(7, 12, 18, 0.95));
   padding: 5px 8px;
+}
+
+.training-session-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(96px, auto));
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid rgba(104, 227, 145, 0.18);
+  border-radius: 6px;
+  background: #070b10;
+  padding: 6px 8px;
+}
+
+.training-session-control strong {
+  color: #e9fff1;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.training-session-control button {
+  min-height: 28px;
+  border: 1px solid rgba(104, 227, 145, 0.26);
+  border-radius: 5px;
+  background: #0d1711;
+  color: #dfffe9;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.training-session-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(0.5);
 }
 
 .strategy-resource-routing {

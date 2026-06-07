@@ -36,7 +36,8 @@ test("pilot controller bays enter a visible locked TAS replay state", () => {
   assert.match(mainSource, /tasLocked: boolean/, "PilotPanel should receive an explicit TAS lock state");
   assert.match(mainSource, /tasPlaybackState\.status === "playing"/, "runtime should derive TAS lock from active playback");
   assert.match(mainSource, /controller-bay[\s\S]*tas-locked/, "controller bay should expose a TAS locked CSS class");
-  assert.match(mainSource, /disabled=\{tasLocked\}/, "mode buttons should be disabled while TAS owns input");
+  assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode buttons should use a unified controller-lock source");
+  assert.match(mainSource, /disabled=\{locked\}/, "mode buttons should be disabled while TAS or training owns input");
   assert.match(mainSource, /tas\.controllerLock/, "pilot bay should show a TAS ownership label");
   assert.match(mainSource, /tas\.inputLocked/, "pilot bay should explain that human input is locked");
   assert.match(cssSource, /\.controller-bay\.tas-locked\s*\{/, "TAS locked bays should have visible styling");
