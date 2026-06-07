@@ -950,3 +950,24 @@ The boss-approach `platform-capture` candidate cannot be validated until the AI 
 Required next direction:
 - Add runtime regression tests for the J-version fixed-threat failure window before changing AI behavior.
 - Keep the generated proposal `candidate` until browser validation proves no death/desync.
+
+## 2026-06-08: Contra Japan mid fixed-threat recovery is progress, not clearance
+
+Decision: keep the `stage-one-mid-fixed-threat-recovery` runtime patch as an evidence-backed improvement, but do not promote the route or strategy package because the real `contra-j-good` run still dies.
+
+Evidence:
+- Regression tests were added before the runtime behavior was accepted.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `40/40`.
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `3/3`.
+- Browser botrun `mid-fixed-recovery-check-20260608` changed the failure from the old crouch-fire death at `WorldX 2068` to a later death at `WorldX 2087`.
+- The final input changed from `down+B` to `right+A+B`, proving the old crouch-lock behavior was removed.
+- New standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json`.
+
+Reason:
+The patch improves route progress but exposes a new high/forward fixed-threat counterexample. A strategy pack cannot be saved or upgraded as validated while the validation replay still has `deaths=1` and no Stage 1 clear.
+
+Required next direction:
+- Treat `WorldX 2087` as the next counterexample.
+- Add tests for high/forward fixed-threat handling before changing runtime behavior again.
+- Keep TAS-derived material as baseline/training evidence only; it is not a controller and cannot bypass runtime validation.

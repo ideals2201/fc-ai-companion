@@ -28,6 +28,7 @@ const {
   stageOneBossApproachPlatformJumpPatch,
   stageOneCloseBodyThreatPatch,
   stageOneMandatorySpreadGatePatch,
+  stageOneMidFixedThreatRecoveryPatch,
   stageOneRedTurretLowThreatPatch,
   stageOneSpreadExitJumpPatch,
   stageOneSpreadJumpEdgePatch,
@@ -35,6 +36,8 @@ const {
   stageOneSpreadTurretSuppressionPatch,
   midFixedScriptRewardOverride
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/contraStage1RewardTactics.ts", import.meta.url));
+
+const mainSource = fs.readFileSync(new URL("../apps/browser-cockpit/src/main.tsx", import.meta.url), "utf8");
 
 test("mid fixed script prioritizes a close stage reward target", () => {
   const target = midFixedScriptRewardOverride({
@@ -173,6 +176,43 @@ test("mid weapon turret breakout stays active after the weapon box is barely mis
   assert.equal(patch?.right, true);
   assert.equal(patch?.down, false);
   assert.equal(patch?.a, true);
+});
+
+test("stage one mid fixed threat recovery prevents the Contra Japan WorldX 2068 crouch-fire death", () => {
+  const patch = stageOneMidFixedThreatRecoveryPatch({
+    level: 0,
+    worldX: 2068,
+    playerX: 123,
+    playerY: 134,
+    enemies: [
+      { fixed: true, hp: 6, kind: "durable", routine: 4, threat: true, type: 7, x: 118, y: 160 }
+    ]
+  }, false, 3986);
+
+  assert.equal(patch?.reason, "stage-one-mid-fixed-threat-recovery");
+  assert.equal(patch?.right, true);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.down, false);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.a, true);
+  assert.equal(patch?.b, true);
+});
+
+test("stage one mid fixed threat recovery ignores the window without a close fixed threat", () => {
+  const patch = stageOneMidFixedThreatRecoveryPatch({
+    level: 0,
+    worldX: 2068,
+    playerX: 123,
+    playerY: 134,
+    enemies: []
+  }, false, 3986);
+
+  assert.equal(patch, null);
+});
+
+test("mid fixed script applies the Contra Japan fixed-threat recovery patch", () => {
+  assert.match(mainSource, /stageOneMidFixedThreatRecoveryPatch/, "runtime should import the recovery patch");
+  assert.match(mainSource, /midFixedThreatRecoveryPatch/, "fixed-hp script should evaluate the recovery patch");
 });
 
 test("stage one close body threat patch air-strafes away from same-lane soldier", () => {

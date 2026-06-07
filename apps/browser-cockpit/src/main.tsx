@@ -61,6 +61,7 @@ import {
   stageOneBossApproachPlatformJumpPatch,
   stageOneCloseBodyThreatPatch,
   stageOneMandatorySpreadGatePatch,
+  stageOneMidFixedThreatRecoveryPatch,
   stageOneRedTurretLowThreatPatch,
   stageOneSpreadExitJumpPatch,
   stageOneSpreadJumpEdgePatch,
@@ -5083,6 +5084,12 @@ function applyMidFixedHpPoint(
   }
 
   const horizon = buildStageOneHorizon(snapshot);
+  const midFixedThreatRecoveryPatch = stageOneMidFixedThreatRecoveryPatch(snapshot, grounded, frame);
+  if (midFixedThreatRecoveryPatch) {
+    applyStageOneRewardTacticsPatch(next, midFixedThreatRecoveryPatch);
+    return;
+  }
+
   const mandatorySpreadGatePatch = stageOneMandatorySpreadGatePatch({
     ...snapshot,
     horizon

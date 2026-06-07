@@ -527,3 +527,21 @@ Verification:
 Next:
 - Review the generated `fixed-threat-hp-lock` candidate and convert it into an executable runtime strategy change only after adding regression tests for the `WorldX 1444-2073` failure window.
 - Do not claim Stage 1 pass or full clear; current verified pass amount remains `0` stages.
+
+## 2026-06-08 Contra Japan Mid Fixed-Threat Recovery Patch
+
+Current:
+- Added executable runtime recovery behavior `stage-one-mid-fixed-threat-recovery` for the `contra-j-good` mid fixed-threat failure window.
+- The patch is wired into `p03-mid-fixed-threat` before the mandatory spread gate and clears the old crouch-fire lock by advancing with jump/fire when a close fixed threat is present.
+- Real browser botrun `mid-fixed-recovery-check-20260608` still ended in death, but moved the failure from `WorldX 2068` to `WorldX 2087`.
+- The new death evidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json`.
+- Final observed state: `status=death`, `frameCount=3991`, `deaths=1`, `finalWorldX=2087`, `finalPlayerX=128`, `finalPlayerY=121`, `finalScore=2300`, `finalWeapon=0`, `bossDefeated=0`, `lastInput=right+A+B`, primary threat `slot14:type0x07@232,64/hp8`.
+
+Verification:
+- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `3/3`.
+- `node --test tests/contraStage1RewardTactics.test.mjs`: `40/40`.
+
+Rule:
+- This is progress evidence, not a pass.
+- Do not mark `contra-j-good` Stage 1 or full-game clearance as validated; current verified pass amount remains `0` stages.
+- The next route hypothesis must handle the new high/forward fixed-threat counterexample at `WorldX 2087`, not repeat the old `WorldX 2068` crouch-fire patch.
