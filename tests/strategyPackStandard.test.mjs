@@ -66,6 +66,15 @@ test("contra manifest binds the pack to standard 1.0 and candidate status", () =
   assert.equal(manifest.packId, "contra-stage1-strategy-v0");
   assert.equal(manifest.displayName.zh, "魂斗罗第一关策略包 V0");
   assert.equal(manifest.displayName.en, "Contra Stage 1 Strategy Pack V0");
+  assert.equal(manifest.author.displayName, "理想");
+  assert.equal(manifest.provenance.creator.displayName, "理想");
+  assert.equal(manifest.provenance.latestModifier.displayName, "00号游戏管家");
+  assert.ok(manifest.provenance.revisions.length >= 2, "manifest should retain revision history");
+  assert.equal(manifest.provenance.revisions[0].revisionId, "contra-stage1-strategy-v0-r001");
+  assert.equal(manifest.provenance.revisions.at(-1).validationStatus, "candidate");
+  assert.equal(manifest.provenance.revisions.at(-1).snapshotPath, null, "candidate metadata-only revision should not pretend to be rollback-ready");
+  assert.equal(manifest.identity.avatarAsset.kind, "preset");
+  assert.equal(manifest.identity.avatarAsset.preset, "blue-warrior");
   assert.equal(manifest.gameProfileId, "contra");
   assert.deepEqual(manifest.romProfileIds, ["contra-us-good", "contra-j-good"]);
   assert.equal(manifest.sideScope, "shared");
@@ -81,6 +90,26 @@ test("contra manifest binds the pack to standard 1.0 and candidate status", () =
   assert.deepEqual(manifest.files.tasSideBaselines, [
     "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
   ]);
+});
+
+test("contra manifest exposes per-strategy battle result placeholders without pretending validation", () => {
+  const manifest = readJson("strategy-packs/contra/manifest.json");
+
+  assert.ok(manifest.quality.strategyResults, "manifest should expose per-strategy battle result data");
+
+  for (const strategyKey of manifest.strategyKeys) {
+    const result = manifest.quality.strategyResults[strategyKey];
+    assert.ok(result, `${strategyKey} should have a result record`);
+    assert.equal(result.status, "candidate", `${strategyKey} should stay candidate until verified`);
+    assert.equal(result.metrics.kills.value, null, `${strategyKey} kills should not be faked`);
+    assert.equal(result.metrics.fixedTargetsDestroyed.value, null, `${strategyKey} fixed-target count should not be faked`);
+    assert.equal(result.metrics.rewardsCollected.value, null, `${strategyKey} reward count should not be faked`);
+    assert.equal(result.metrics.clearTimeFrames.value, null, `${strategyKey} clear time should not be faked`);
+    assert.equal(result.metrics.kills.status, "unverified");
+    assert.equal(result.metrics.fixedTargetsDestroyed.status, "unverified");
+    assert.equal(result.metrics.rewardsCollected.status, "unverified");
+    assert.equal(result.metrics.clearTimeFrames.status, "unverified");
+  }
 });
 
 test("contra training scenarios declare game-specific variables and terminal conditions", () => {

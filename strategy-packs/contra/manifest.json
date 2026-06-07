@@ -5,6 +5,58 @@
     "zh": "魂斗罗第一关策略包 V0",
     "en": "Contra Stage 1 Strategy Pack V0"
   },
+  "author": {
+    "displayName": "理想"
+  },
+  "provenance": {
+    "creator": {
+      "displayName": "理想",
+      "role": "owner"
+    },
+    "latestModifier": {
+      "displayName": "00号游戏管家",
+      "role": "system"
+    },
+    "revisions": [
+      {
+        "revisionId": "contra-stage1-strategy-v0-r001",
+        "version": "0.1.0",
+        "modifiedBy": {
+          "displayName": "理想",
+          "role": "owner"
+        },
+        "modifiedAt": "2026-06-07",
+        "summary": "Initial Contra Stage 1 strategy pack candidate.",
+        "changeType": "initial",
+        "validationStatus": "candidate",
+        "hash": null,
+        "parentHash": null,
+        "snapshotPath": null
+      },
+      {
+        "revisionId": "contra-stage1-strategy-v0-r002",
+        "version": "0.1.0",
+        "modifiedBy": {
+          "displayName": "00号游戏管家",
+          "role": "system"
+        },
+        "modifiedAt": "2026-06-07",
+        "summary": "Added provenance metadata, strategy result placeholders, and validation-gated save workflow support.",
+        "changeType": "metadata-and-ui-contract",
+        "validationStatus": "candidate",
+        "hash": null,
+        "parentHash": null,
+        "snapshotPath": null
+      }
+    ]
+  },
+  "identity": {
+    "trainingWindowName": "Contra Stage 1 Strategy Pack V0",
+    "avatarAsset": {
+      "kind": "preset",
+      "preset": "blue-warrior"
+    }
+  },
   "packVersion": "0.1.0",
   "gameProfileId": "contra",
   "romProfileIds": [
@@ -60,6 +112,58 @@
     "confidence": 0.35,
     "evidenceCount": 1,
     "validatedModes": [],
+    "strategyResults": {
+      "survival-v0": {
+        "status": "candidate",
+        "metrics": {
+          "kills": { "value": null, "status": "unverified" },
+          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
+          "rewardsCollected": { "value": null, "status": "unverified" },
+          "clearTimeFrames": { "value": null, "status": "unverified" }
+        },
+        "evidence": "需要完成第一关稳健生存真实跑局验证后写入。"
+      },
+      "speedrun-v0": {
+        "status": "candidate",
+        "metrics": {
+          "kills": { "value": null, "status": "unverified" },
+          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
+          "rewardsCollected": { "value": null, "status": "unverified" },
+          "clearTimeFrames": { "value": null, "status": "unverified" }
+        },
+        "evidence": "需要完成快速推进真实跑局验证后写入。"
+      },
+      "combat-v0": {
+        "status": "candidate",
+        "metrics": {
+          "kills": { "value": null, "status": "unverified" },
+          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
+          "rewardsCollected": { "value": null, "status": "unverified" },
+          "clearTimeFrames": { "value": null, "status": "unverified" }
+        },
+        "evidence": "需要完成清敌优先真实跑局验证后写入。"
+      },
+      "loot-v0": {
+        "status": "candidate",
+        "metrics": {
+          "kills": { "value": null, "status": "unverified" },
+          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
+          "rewardsCollected": { "value": null, "status": "unverified" },
+          "clearTimeFrames": { "value": null, "status": "unverified" }
+        },
+        "evidence": "需要完成奖励优先真实跑局验证后写入。"
+      },
+      "guard-v0": {
+        "status": "candidate",
+        "metrics": {
+          "kills": { "value": null, "status": "unverified" },
+          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
+          "rewardsCollected": { "value": null, "status": "unverified" },
+          "clearTimeFrames": { "value": null, "status": "unverified" }
+        },
+        "evidence": "需要完成人类+AI 或双 AI 护卫协作真实跑局验证后写入。"
+      }
+    },
     "knownFailures": [
       "stage1-w2622-progression-barrier-jump-failure",
       "stage1-w3208-barrier-node-station-failure",

@@ -85,6 +85,41 @@ human emergency override
 
 具体游戏可以调整优先级，但必须在 GameProfile 中声明，且不得让奖励、速度、清敌或目标节点策略覆盖立即生存。
 
+### 2.4.1 Negative Constraints
+
+Negative Constraints 是负面约束协议。它定义“无论策略目标是什么，都绝对不能做”的死线条件。
+
+用途：
+
+- 阻止奖励、速通、清敌或自动补丁覆盖立即生存。
+- 让 Shadow Validator、Lua/FCEUX 验证器、浏览器验证器和未来 AI 增强分析在入库前扫描片段风险。
+- 在运行时作为 Safety Override 的硬门禁。
+
+示例结构：
+
+```json
+{
+  "id": "no-low-health-turret-entry",
+  "description": "When survivability is low, do not enter fixed-threat range.",
+  "refs": ["player.health", "threat.fixed.range"],
+  "condition": {
+    "all": [
+      { "ref": "player.health", "op": "lt", "value": 0.05 },
+      { "ref": "threat.fixed.range", "op": "eq", "value": true }
+    ]
+  },
+  "effect": "block-fragment",
+  "fallback_fragment_id": "survival-recover-safe"
+}
+```
+
+规则：
+
+- Negative Constraints 必须引用 Condition Registry。
+- 如果游戏没有血量概念，应使用等价生存变量，例如生命、受击状态、无敌倒计时、危险地形、弹道交汇或复活脆弱期。
+- Negative Constraints 的优先级高于 StrategyFragment、Behavior Primitives、TAS 基准和训练补丁。
+- 触发负面约束必须进入 TraceEvidence。
+
 ### 2.5 正例和反例都要入库
 
 成功片段用于告诉 AI 什么有效。失败反例用于阻止 AI 重复错误。
@@ -352,14 +387,18 @@ StagePlan 描述目标区域的粗路线或任务流。它不直接写按键。
 StrategyFragment 是可执行策略的核心数据单元。
 
 它必须引用抽象变量，不得直接引用 RAM 地址。
+它必须表达语义意图，不得把可迁移策略退化为直接按键脚本。
 
 最低字段：
 
 ```json
 {
   "id": "fragment-id",
+  "parentFragmentId": null,
+  "fallback_fragment_id": null,
   "label": "Human readable label",
   "status": "draft",
+  "taxonomy": ["survival", "movement"],
   "strategyTypes": ["survival"],
   "progressionWindow": {
     "metric": "primaryProgress",
@@ -368,6 +407,26 @@ StrategyFragment 是可执行策略的核心数据单元。
     "unit": "ProgressionUnits",
     "strictEnd": true
   },
+  "safety_tolerance": {
+    "frameOffset": 2,
+    "positionOffset": 4,
+    "rngSensitivity": "unknown"
+  },
+  "preconditions_snapshot": {
+    "requiredRefs": ["player.alive", "progression.primary"],
+    "optionalRefs": [],
+    "memoryTemplate": {}
+  },
+  "deterministic_context": {
+    "rngSeedRange": "unknown",
+    "timingWindow": {
+      "startOffsetFrames": -2,
+      "endOffsetFrames": 2
+    },
+    "interruptWindow": "unknown",
+    "savestateRollbackAllowed": false
+  },
+  "negativeConstraints": [],
   "conditions": [
     {
       "ref": "player.alive",
@@ -394,6 +453,16 @@ StrategyFragment 是可执行策略的核心数据单元。
 }
 ```
 
+新增字段职责：
+
+- `parentFragmentId`：策略版本树中的父片段。用于追踪片段从哪个版本演化而来。
+- `fallback_fragment_id`：当前片段校验失败、微扰失败或运行时失败时可回退的保底片段。
+- `taxonomy`：片段的战术分类，例如 `survival`、`combat`、`movement`、`loot`、`guard`、`boss`、`recovery`。
+- `safety_tolerance`：片段对帧偏移、坐标偏移、RNG 或状态差异的容忍阈值。
+- `preconditions_snapshot`：执行片段前必须匹配的抽象状态模板。它引用 Condition Registry，不直接写物理 RAM 地址。
+- `deterministic_context`：Deterministic-Context，声明片段依赖的 RNG、时序窗口、中断窗口和可否回滚。
+- `negativeConstraints`：片段执行前必须强制检查的死线条件。
+
 `strategyTypes` 允许扩展。通用类型包括：
 
 - `survival`
@@ -406,6 +475,36 @@ StrategyFragment 是可执行策略的核心数据单元。
 - `training`
 
 游戏可以在 GameProfile 中增加自定义类型，但必须写入 `strategy-types.json` 并说明验收目标。
+
+### 3.5.1 Strategy Versioning Tree
+
+Strategy Versioning Tree 记录策略片段的演进路径。
+
+它必须与 Provenance Graph 配合使用。Strategy Versioning Tree 记录父子关系，Provenance Graph 记录来源、证据、哈希和变更路径。
+
+策略快照建议结构：
+
+```json
+{
+  "fragmentId": "fragment-id",
+  "hash": "sha256:...",
+  "parent_hash": "sha256:...",
+  "parentFragmentId": "previous-fragment-id",
+  "sourceRefs": [],
+  "evidenceRefs": [],
+  "changedBy": "manual-or-tool",
+  "changedAt": "2026-06-07T00:00:00Z"
+}
+```
+
+规则：
+
+- 新片段从旧片段修正而来时，必须写入 `parentFragmentId`。
+- 新片段必须生成内容哈希；从旧快照修改而来时，必须写入 `parent_hash`。
+- 如果旧片段仍可作为保底策略，必须写入 `fallback_fragment_id`。
+- Validation Report 必须说明新旧片段差异、适用窗口、通过证据和已知反例。
+- 运行时发现新片段不满足 `preconditions_snapshot`、Safety Override、微扰测试或真实跑局证据时，可以回退到 `fallback_fragment_id`。
+- 回退不是静默失败，必须进入 TraceEvidence，便于后续判断新片段是否应该降级或废弃。
 
 ### 3.6 TraceEvidence
 
@@ -653,6 +752,82 @@ Action Mapping 把 intent 转换为候选输入。
 
 最终输出仍然必须包含标准 `finalInput`。语义动作是策略层接口，`finalInput` 是模拟器写入接口。
 
+### 4.4.1 Intention-to-Input Mapping
+
+Intention-to-Input Mapping 是 Action Mapping 的增强层。它把可迁移的“执行意图”映射为具体游戏、具体 ROM、具体模拟器环境下的输入候选。
+
+策略片段应记录意图，例如：
+
+```json
+{
+  "actionAdvice": {
+    "intent": "JUMP_OVER_PIT",
+    "priority": 120,
+    "parameters": {
+      "pitWidth": "medium",
+      "landingPolicy": "safe-first"
+    }
+  }
+}
+```
+
+禁止在可迁移 StrategyFragment 中把主要动作写成：
+
+```json
+{
+  "button": "A"
+}
+```
+
+允许在低层 `finalInput` 或短窗口动作锁中出现具体按键，但必须满足：
+
+- 它由 Intention-to-Input Mapping 生成，或被明确标注为 ROM/模拟器专用动作锁。
+- 它有 `exitConditions` 和 Safety Override。
+- 它不能成为跨游戏、跨 ROM 策略的唯一表达。
+
+映射表应声明：
+
+- `intentId`：例如 `JUMP_OVER_PIT`、`FIRE_FIXED_TARGET`、`COLLECT_HIGH_VALUE_PICKUP`。
+- `requiredRefs`：需要读取的 Condition Registry 变量。
+- `timingPolicy`：输入采样延迟、提前量、最小保持帧。
+- `candidateInputs`：该游戏的候选输入组合。
+- `failureFallback`：失败时调用的 `fallback_fragment_id` 或恢复意图。
+
+这让不同 ROM 或不同模拟器可以共享相同战术意图，同时把具体按键时机留给 GameProfile 和适配器处理。
+
+### 4.4.2 Behavior Primitives
+
+Behavior Primitives 是跨游戏行为原语层。它位于 StrategyFragment 的战术意图和具体游戏 Action Mapping 之间。
+
+通用原语示例：
+
+- `AVOID_PROJECTILE`：避开弹体或危险轨迹。
+- `INTERCEPT_TARGET`：拦截或攻击指定目标。
+- `COLLECT_RESOURCE`：获取奖励、武器、补给或关键道具。
+- `GUARD_TEAMMATE`：护卫队友或避免拖屏。
+- `RECOVER_FROM_STUCK`：从卡死、循环或错误站位中恢复。
+
+每个游戏必须在 Action Mapping 中声明原语如何 `MAPS_TO` 该游戏的具体 intent 和输入候选。
+
+示例：
+
+```json
+{
+  "primitive": "AVOID_PROJECTILE",
+  "MAPS_TO": {
+    "intent": "evade",
+    "requiredRefs": ["danger.immediate", "player.position"],
+    "candidateInputs": ["jump", "duck", "retreat"]
+  }
+}
+```
+
+设计目的：
+
+- 让不同 FC 游戏共享避弹、拦截、护卫、恢复等通用策略经验。
+- 让游戏专用差异停留在 GameProfile 和 Action Mapping。
+- 防止把某个游戏的按键习惯伪装成通用策略。
+
 ### 4.5 TrainingScenario Registry
 
 TrainingScenario Registry 是每个游戏的训练与验收目标表。它借鉴成熟训练环境的做法：游戏集成层声明变量映射、评分规则和结束条件，通用运行层只读取这些声明，不硬编码具体游戏逻辑。
@@ -676,6 +851,47 @@ TrainingScenario Registry 是每个游戏的训练与验收目标表。它借鉴
 
 ## 5. Runtime API Contract
 
+### 5.0 Memory Mirroring Proxy
+
+Memory Mirroring Proxy 是状态读取、版本适配和影子回放的统一代理层。
+
+协议要求：
+
+- StrategyFragment 不得直接读写物理 RAM 地址。
+- 平台适配器可以读取模拟器 RAM，但必须先转换为 `rawState`、`conditionState`、`progressionState`、`entityState` 和 `contextualState`。
+- 物理地址、ROM 差异、Mapper 差异和模拟器差异必须由 GameProfile、ROMProfile、RAM map 和 Memory Mirroring Proxy 处理。
+- 代理层应维护 shadow memory，用于预测、回放对齐、微扰测试和失败复盘。
+- 影子内存只能作为预测和验证辅助，不能覆盖真实模拟器状态。
+
+推荐输入：
+
+```json
+{
+  "romProfileId": "game-region-version",
+  "frame": 0,
+  "rawMemory": {},
+  "addressMap": "research/ram-map.json",
+  "conditionRegistry": "research/condition-registry.json"
+}
+```
+
+推荐输出：
+
+```json
+{
+  "conditionState": {},
+  "progressionState": {},
+  "entityState": {},
+  "shadowState": {
+    "confidence": 0.5,
+    "predictedFrames": 0,
+    "desyncRisk": "unknown"
+  }
+}
+```
+
+这不是要求浏览器运行时立刻取消底层 RAM 读取，而是要求所有可分发策略和 Runtime API 只接触代理后的抽象状态。
+
 ### 5.1 每帧输入
 
 ```json
@@ -694,6 +910,7 @@ TrainingScenario Registry 是每个游戏的训练与验收目标表。它借鉴
   "entityState": {},
   "threatPool": {},
   "horizon": {},
+  "shadowState": {},
   "rngState": {
     "status": "unknown",
     "values": {}
@@ -873,9 +1090,44 @@ LICENSE_UNDECLARED
 - Schema 无效，必须拒绝加载。
 - Condition ref 未注册，必须拒绝该片段。
 
-## 9. 验收标准
+## 9. 鲁棒性验证
 
-### 9.1 片段验收
+### 9.1 Perturbation Testing
+
+Perturbation Testing 用于验证策略对微小环境偏差的容忍度。它不是替代真实跑局，而是增加抗干扰测试。
+
+必须测试的扰动类型：
+
+- `frame-offset`：提前或延后 1-2 帧触发片段。
+- `position-offset`：对玩家或目标坐标施加小范围偏移。
+- `input-delay`：模拟输入采样延迟。
+- `entity-noise`：忽略或延迟一个非关键实体槽。
+- `rng-observed-drift`：当 RNG 已知时记录轻微漂移；未知时只能标记风险。
+
+验证规则：
+
+- 每个正式 StrategyFragment 必须声明 `safety_tolerance`。
+- 每个 TrainingScenario 可以声明扰动矩阵。
+- 微扰后如果 Safety Override 能恢复路线，记录为 `recovered`。
+- 微扰后如果进入死亡、卡死、循环或目标丢失，记录为 `failed-perturbation`。
+- 片段未通过微扰测试时，不能标记为 `production`。
+
+### 9.2 回归套件要求
+
+Regression Test Suite 应覆盖：
+
+- 原始成功窗口。
+- 已知失败反例。
+- `fallback_fragment_id` 回退路径。
+- `preconditions_snapshot` 不匹配时的拒绝执行。
+- 1P、2P、1P+2P 的模式差异。
+- 至少一个微扰测试窗口，尤其是跳跃、固定目标、奖励路线和 Boss 节点。
+
+微扰测试的目标不是让策略硬扛所有变化，而是确保它在真实玩家操作的小误差面前不会立刻死循环或无条件送死。
+
+## 10. 验收标准
+
+### 10.1 片段验收
 
 片段从 `candidate` 升级到 `validated`，必须满足：
 
@@ -885,8 +1137,9 @@ LICENSE_UNDECLARED
 - Runtime API 输入输出校验通过。
 - 至少一次真实运行证据。
 - 失败反例已记录。
+- 通过必要的 Perturbation Testing，或在 Validation Report 中标记为微扰未验证。
 
-### 9.2 策略验收
+### 10.2 策略验收
 
 一个策略完成，必须满足：
 
@@ -899,7 +1152,7 @@ LICENSE_UNDECLARED
 - 完成该策略声明的目标。
 - 已知失败点有修正或降级说明。
 
-### 9.3 模式验收
+### 10.3 模式验收
 
 单 AI、人类 + AI、双 AI 必须分开验收。
 
@@ -908,7 +1161,7 @@ single-ai validated != human-ai validated
 human-ai validated != dual-ai validated
 ```
 
-## 10. 禁止事项
+## 11. 禁止事项
 
 - 禁止在核心协议里写入具体游戏数值。
 - 禁止 StrategyFragment 直接引用 RAM 地址。
@@ -921,7 +1174,7 @@ human-ai validated != dual-ai validated
 - 禁止让奖励、速度、清敌目标覆盖立即生存。
 - 禁止无条件 Loop Exit 猛冲。
 
-## 11. 与游戏实现手册的关系
+## 12. 与游戏实现手册的关系
 
 本协议只定义通用接口和约束。
 

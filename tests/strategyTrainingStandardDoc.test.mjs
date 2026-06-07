@@ -32,6 +32,10 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /Package Strategy/, "training standard should define one-click strategy packaging");
   assert.match(source, /current training context/i, "training standard should define packaging default scope");
   assert.match(source, /Validate Replay/, "training standard should define validation replay");
+  assert.match(source, /side controller bay/i, "training standard should place side-owned controls in each controller bay");
+  assert.match(source, /Operation Strategy Control/, "training standard should reserve operation strategy control for cross-side work");
+  assert.match(source, /1P Resource Pack/, "training standard should define the 1P resource-pack slot");
+  assert.match(source, /2P Resource Pack/, "training standard should define the 2P resource-pack slot");
   assert.match(source, /side-baselines\.json/, "training standard should cover TAS side baselines");
   assert.match(source, /real runtime trace/i, "training standard should require real runtime traces");
   assert.match(source, /training-scenarios\.json/, "training standard should define scenario files");
@@ -39,4 +43,12 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /rewardRules/, "training standard should define scoring rules");
   assert.match(source, /terminalConditions/, "training standard should define terminal success rules");
   assert.match(source, /failureConditions/, "training standard should define terminal failure rules");
+  assert.match(source, /Environment-Aware Validation/, "training standard should define environment-aware validation");
+  assert.match(source, /Provenance Graph/, "training standard should define provenance graph training evidence");
+  assert.match(source, /Negative Constraints/, "training standard should enforce negative constraints before packaging");
+  assert.match(source, /训练资产自动化分级检查表/, "training standard should include the automated training asset checklist");
+  assert.match(source, /Level 0/, "training standard should define Level 0 asset quality");
+  assert.match(source, /Level 1/, "training standard should define Level 1 asset quality");
+  assert.match(source, /Level 2/, "training standard should define Level 2 asset quality");
+  assert.match(source, /将策略视为代码，将 TAS 轨迹视为测试用例/, "training standard should preserve the engineering directive");
 });

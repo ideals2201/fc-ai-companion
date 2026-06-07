@@ -142,6 +142,8 @@ type AiLoopExitState = {
 type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "error";
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
 type ControlMode = "human" | "ai" | "hybrid";
+type StrategyPackageSideScope = "none" | "1p-only" | "2p-only" | "1p-2p";
+type StrategyResourcePackId = "contra-stage1-strategy-v0" | "personal-contra-draft";
 
 type RomLibrarySource = "server" | "browser";
 
@@ -422,9 +424,10 @@ type BotRunReport = {
 type SideTrainingState = {
   side: PlayerSide;
   ownerLabel: string;
-  baselineStrategy: string;
+  packDisplayName: string;
+  strategyCategoryLabel: string;
+  strategyBaselineLabel: string;
   sourceLabel: string;
-  tasBaseLabel: string;
   captureStatus: string;
   windowLabel: string;
   candidateFragments: string;
@@ -433,17 +436,57 @@ type SideTrainingState = {
   primaryAction: string;
 };
 
+type SideTrainingActions = {
+  traceRecording: boolean;
+  traceSampleCount: number;
+  onSideTrainingSelectBaseline: (side: PlayerSide) => void;
+  onSideTrainingModifyStrategy: (side: PlayerSide) => void;
+  onSideTrainingArchiveStrategy: (side: PlayerSide) => void;
+  onSideTrainingValidateStrategy: (side: PlayerSide) => void;
+  onSideTraceStart: (side: PlayerSide) => void;
+  onSideTraceStop: (side: PlayerSide) => void;
+  onSideTraceExport: (side: PlayerSide) => void;
+  onSideTraceClear: (side: PlayerSide) => void;
+};
+
+type StrategyResultMetric = {
+  value: number | null;
+  status: "unverified" | "measured" | "validated";
+};
+
+type StrategyResultRecord = {
+  status: string;
+  metrics: {
+    kills: StrategyResultMetric;
+    fixedTargetsDestroyed: StrategyResultMetric;
+    rewardsCollected: StrategyResultMetric;
+    clearTimeFrames: StrategyResultMetric;
+  };
+  evidence?: string;
+};
+
+type StrategyPackContributor = {
+  displayName: string;
+  role?: string;
+};
+
+type StrategyPackRevision = {
+  version: string;
+  modifiedBy: StrategyPackContributor;
+  modifiedAt: string;
+  summary: string;
+  validationStatus: string;
+};
+
 type GlobalTrainingState = {
   strategyPackLabel: string;
-  modeLabel: string;
-  optimizationLevel: string;
-  tasBaseLabel: string;
-  traceSummary: string;
-  sampleCount: string;
-  evidenceTarget: string;
-  validationStatus: string;
-  botRunStatus: string;
-  nextGate: string;
+  packageSideScope: StrategyPackageSideScope;
+  strategyExportName: string;
+  validationReplayComplete: boolean;
+  savePathLabel: string;
+  versionStatusLabel: string;
+  resourcePacksBySide: Record<PlayerSide, StrategyResourcePackId>;
+  p2ResourceSynced: boolean;
 };
 
 type RomLibraryStatusState = {
@@ -754,15 +797,122 @@ const CONTRA_US_ROM_PROFILE_ID = "contra-us-good";
 const CONTRA_US_COMPATIBILITY_GROUP = "contra-us";
 const PERSONAL_STRATEGY_STORAGE_KEY = "fc-ai.personal.stage1.strategy.v1";
 const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · Controllers x2";
+
+const strategyResultKeys = ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"] as const satisfies readonly AiStrategyKey[];
+
+function unverifiedStrategyResult(evidence: string): StrategyResultRecord {
+  return {
+    status: "candidate",
+    metrics: {
+      kills: { value: null, status: "unverified" },
+      fixedTargetsDestroyed: { value: null, status: "unverified" },
+      rewardsCollected: { value: null, status: "unverified" },
+      clearTimeFrames: { value: null, status: "unverified" }
+    },
+    evidence
+  };
+}
+
+const CONTRA_STAGE1_STRATEGY_RESULTS: Record<(typeof strategyResultKeys)[number], StrategyResultRecord> = {
+  "survival-v0": unverifiedStrategyResult("Awaiting Stage 1 robust survival runtime validation."),
+  "speedrun-v0": unverifiedStrategyResult("Awaiting Stage 1 fast-pass runtime validation."),
+  "combat-v0": unverifiedStrategyResult("Awaiting Stage 1 combat-clear runtime validation."),
+  "loot-v0": unverifiedStrategyResult("Awaiting Stage 1 reward-route runtime validation."),
+  "guard-v0": unverifiedStrategyResult("Awaiting human-AI or dual-AI guard validation.")
+};
+
 const ACTIVE_STRATEGY_PACK = {
   packId: "contra-stage1-strategy-v0",
   version: "0.1.0",
   status: "candidate",
+  author: "理想",
+  creator: { displayName: "理想", role: "owner" },
+  latestModifier: { displayName: "00号游戏管家", role: "system" },
+  revisionHistory: [
+    {
+      version: "0.1.0",
+      modifiedBy: { displayName: "理想", role: "owner" },
+      modifiedAt: "2026-06-07",
+      summary: "Initial Contra Stage 1 strategy pack candidate.",
+      validationStatus: "candidate"
+    },
+    {
+      version: "0.1.0",
+      modifiedBy: { displayName: "00号游戏管家", role: "system" },
+      modifiedAt: "2026-06-07",
+      summary: "Added provenance metadata, strategy result placeholders, and validation-gated save workflow support.",
+      validationStatus: "candidate"
+    }
+  ],
+  protocolVersion: "1.0.0",
+  archivePath: "strategy-packs/contra",
+  sideScope: "shared",
+  romProfileIds: ["contra-us-good", "contra-j-good"],
   displayName: {
     "zh-CN": "魂斗罗第一关策略包 V0",
     "en-US": "Contra Stage 1 Strategy Pack V0"
-  }
+  },
+  strategyResults: CONTRA_STAGE1_STRATEGY_RESULTS
 } as const;
+
+const STRATEGY_RESOURCE_PACKS = [
+  ACTIVE_STRATEGY_PACK,
+  {
+    packId: "personal-contra-draft",
+    version: "0.0.1",
+    status: "draft",
+    author: "理想",
+    creator: { displayName: "理想", role: "owner" },
+    latestModifier: { displayName: "理想", role: "owner" },
+    revisionHistory: [
+      {
+        version: "0.0.1",
+        modifiedBy: { displayName: "理想", role: "owner" },
+        modifiedAt: "2026-06-07",
+        summary: "Local personal training draft.",
+        validationStatus: "draft"
+      }
+    ],
+    protocolVersion: "1.0.0",
+    archivePath: "strategy-packs/contra/community-drafts/local",
+    sideScope: "side-owned",
+    romProfileIds: ["contra-us-good", "contra-j-good"],
+    displayName: {
+      "zh-CN": "个人魂斗罗训练草稿",
+      "en-US": "Personal Contra Training Draft"
+    },
+    strategyResults: CONTRA_STAGE1_STRATEGY_RESULTS
+  }
+] as const satisfies ReadonlyArray<{
+  packId: StrategyResourcePackId;
+  version: string;
+  status: string;
+  author: string;
+  creator: StrategyPackContributor;
+  latestModifier: StrategyPackContributor;
+  revisionHistory: readonly StrategyPackRevision[];
+  protocolVersion: string;
+  archivePath: string;
+  sideScope: string;
+  romProfileIds: readonly string[];
+  displayName: Record<UiLanguage, string>;
+  strategyResults: Partial<Record<AiStrategyKey, StrategyResultRecord>>;
+}>;
+
+function packageScopeHasSide(scope: StrategyPackageSideScope, side: PlayerSide) {
+  if (scope === "1p-2p") return true;
+  if (side === "1P") return scope === "1p-only";
+  return scope === "2p-only";
+}
+
+function nextPackageSideScope(scope: StrategyPackageSideScope, side: PlayerSide): StrategyPackageSideScope {
+  const next1P = side === "1P" ? !packageScopeHasSide(scope, "1P") : packageScopeHasSide(scope, "1P");
+  const next2P = side === "2P" ? !packageScopeHasSide(scope, "2P") : packageScopeHasSide(scope, "2P");
+  if (next1P && next2P) return "1p-2p";
+  if (next1P) return "1p-only";
+  if (next2P) return "2p-only";
+  return "none";
+}
 
 const gameProfileUiStatus = {
   "contra": {
@@ -867,6 +1017,34 @@ function pendingHashLabel(language: UiLanguage) {
 
 function activeStrategyPackLabel(language: UiLanguage) {
   return `${ACTIVE_STRATEGY_PACK.displayName[language]} · ${ACTIVE_STRATEGY_PACK.version} · ${ACTIVE_STRATEGY_PACK.status}`;
+}
+
+function strategyResourcePackById(packId: StrategyResourcePackId) {
+  return STRATEGY_RESOURCE_PACKS.find((pack) => pack.packId === packId) ?? ACTIVE_STRATEGY_PACK;
+}
+
+function strategyResourcePackLabel(packId: StrategyResourcePackId, language: UiLanguage) {
+  const pack = strategyResourcePackById(packId);
+  return `${pack.displayName[language]} · ${pack.version}`;
+}
+
+function strategyResultMetricLabel(metric: StrategyResultMetric, language: UiLanguage, unit: "count" | "frames" = "count") {
+  if (metric.value === null || metric.status === "unverified") return t(language, "training.resultUnverified");
+  if (unit === "frames") return `${metric.value}f`;
+  return String(metric.value);
+}
+
+function strategyResultStatusLabel(record: StrategyResultRecord, language: UiLanguage) {
+  if (record.status === "candidate") return language === "en-US" ? "candidate" : "候选";
+  if (record.status === "validated") return language === "en-US" ? "validated" : "已验证";
+  return record.status;
+}
+
+function strategyPackageSideScopeLabel(scope: StrategyPackageSideScope, language: UiLanguage) {
+  if (scope === "none") return language === "en-US" ? "No side" : "未选择";
+  if (scope === "1p-only") return language === "en-US" ? "1P only" : "仅 1P";
+  if (scope === "2p-only") return language === "en-US" ? "2P only" : "仅 2P";
+  return "1P+2P";
 }
 
 function createServerRomEntry(info: ServerRomFileInfo): RomLibraryEntry {
@@ -5595,6 +5773,81 @@ function buildDataStream(
   return lines;
 }
 
+function strategyTrainingCandidateCount(
+  strategyKey: AiStrategyKey,
+  playTraceReport: PlayTraceAnalysisReport | null,
+  sideDeath: DeathTraceReport | undefined
+) {
+  const deathCandidate = sideDeath ? 1 : 0;
+  if (!playTraceReport) return deathCandidate;
+
+  switch (strategyKey) {
+    case "survival-v0":
+      return playTraceReport.stalls.length + deathCandidate;
+    case "speedrun-v0":
+      return playTraceReport.fastPasses.length;
+    case "combat-v0":
+      return playTraceReport.kills.total + playTraceReport.stalls.length;
+    case "loot-v0":
+      return playTraceReport.weaponPickups.total;
+    case "guard-v0":
+      return playTraceReport.stalls.length + deathCandidate;
+    default:
+      return playTraceReport.fastPasses.length + playTraceReport.stalls.length + playTraceReport.weaponPickups.total + deathCandidate;
+  }
+}
+
+function trainingProfileForStrategy(
+  side: PlayerSide,
+  strategyKey: AiStrategyKey,
+  candidateCount: number,
+  sideReady: boolean,
+  language: UiLanguage
+) {
+  const english = language === "en-US";
+  const strategyLabel = english ? localizedAiStrategyLabel(strategyKey, language) : getAiStrategyLabel(strategyKey);
+  if (!sideReady) {
+    return {
+      candidateFragments: "Waiting for 2P run",
+      archiveTarget: "Waiting for 2P RAM",
+      primaryAction: "Enter 2P mode first"
+    };
+  }
+
+  let candidateLabel = "Candidate fragments";
+  let primaryAction = "Tune candidate fragment";
+  switch (strategyKey) {
+    case "survival-v0":
+      candidateLabel = "Survival fixes";
+      primaryAction = "Tune survival fragment";
+      break;
+    case "speedrun-v0":
+      candidateLabel = "Fast windows";
+      primaryAction = "Tune fast-pass fragment";
+      break;
+    case "combat-v0":
+      candidateLabel = "Combat targets";
+      primaryAction = "Tune target-clear fragment";
+      break;
+    case "loot-v0":
+      candidateLabel = "Reward routes";
+      primaryAction = "Tune reward-route fragment";
+      break;
+    case "guard-v0":
+      candidateLabel = "Guard handoffs";
+      primaryAction = "Tune follow/guard fragment";
+      break;
+    default:
+      break;
+  }
+
+  return {
+    candidateFragments: `${strategyLabel} / ${candidateLabel}: ${candidateCount}`,
+    archiveTarget: `trace-evidence/${side.toLowerCase()}/${strategyKey}`,
+    primaryAction
+  };
+}
+
 function buildSideTrainingState(
   side: PlayerSide,
   language: UiLanguage,
@@ -5607,14 +5860,13 @@ function buildSideTrainingState(
   traceLastSummary: string,
   playTraceReport: PlayTraceAnalysisReport | null,
   deathTraceReports: DeathTraceReport[]
-): SideTrainingState {
+) {
   const sideDeath = deathTraceReports.slice().reverse().find((report) => report.side === side);
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const sideReady = side === "1P" || twoPlayerActive;
   const english = language === "en-US";
-  const candidateCount = playTraceReport
-    ? playTraceReport.fastPasses.length + playTraceReport.stalls.length + playTraceReport.weaponPickups.total
-    : 0;
+  const candidateCount = strategyTrainingCandidateCount(strategyKey, playTraceReport, sideDeath);
+  const trainingProfile = trainingProfileForStrategy(side, strategyKey, candidateCount, sideReady, language);
   const sourceLabel = english
     ? mode === "human" ? "Human demo" : mode === "ai" ? "AI run" : "Hybrid capture"
     : mode === "human" ? "人类演示" : mode === "ai" ? "AI 跑局" : "混合采集";
@@ -5637,6 +5889,52 @@ function buildSideTrainingState(
     failureSummary,
     archiveTarget: sideReady ? "trace-evidence / fragments" : english ? "Waiting for 2P RAM" : "等待 2P RAM",
     primaryAction: sideReady ? english ? "Generate candidate fragment" : "生成候选片段" : english ? "Enter 2P mode first" : "先进入双人模式"
+  };
+}
+
+function buildSideTrainingStateV2(
+  side: PlayerSide,
+  language: UiLanguage,
+  mode: ControlMode,
+  strategyKey: AiStrategyKey,
+  resourcePackId: StrategyResourcePackId,
+  ramSnapshot: GameRamSnapshot | null,
+  tasEntry: TasRegistryEntry | null,
+  traceRecording: boolean,
+  traceSampleCount: number,
+  traceLastSummary: string,
+  playTraceReport: PlayTraceAnalysisReport | null,
+  deathTraceReports: DeathTraceReport[]
+): SideTrainingState {
+  const sideDeath = deathTraceReports.slice().reverse().find((report) => report.side === side);
+  const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
+  const sideReady = side === "1P" || twoPlayerActive;
+  const candidateCount = strategyTrainingCandidateCount(strategyKey, playTraceReport, sideDeath);
+  const trainingProfile = trainingProfileForStrategy(side, strategyKey, candidateCount, sideReady, language);
+  const strategyLabel = localizedAiStrategyLabel(strategyKey, language);
+  const packDisplayName = strategyResourcePackById(resourcePackId).displayName[language];
+  const strategyBaselineLabel = tasEntry
+    ? `${localizedTasBaseLabel(tasEntry, language)} / ${strategyLabel}`
+    : `${packDisplayName} / ${strategyLabel}`;
+  const sourceLabel = mode === "human" ? "Human demo" : mode === "ai" ? "AI run" : "Hybrid capture";
+  const captureStatus = traceRecording ? t(language, "training.traceCapturing") : traceSampleCount > 0 ? "Captured" : "Not captured";
+  const failureSummary = sideDeath
+    ? `Death W${sideDeath.worldX ?? "?"} / ${sideDeath.input}`
+    : sideReady ? "Waiting for failure example" : "Waiting for 2P run";
+
+  return {
+    side,
+    ownerLabel: `${side} Training`,
+    packDisplayName,
+    strategyCategoryLabel: strategyLabel,
+    strategyBaselineLabel,
+    sourceLabel,
+    captureStatus,
+    windowLabel: traceRecording || traceSampleCount > 0 ? localizedTraceSummary(traceLastSummary, traceRecording, language) : "Capture by WorldX window",
+    candidateFragments: trainingProfile.candidateFragments,
+    failureSummary,
+    archiveTarget: trainingProfile.archiveTarget,
+    primaryAction: trainingProfile.primaryAction
   };
 }
 
@@ -5663,32 +5961,24 @@ function localizedEventLogLine(line: string, language: UiLanguage) {
 }
 
 function buildGlobalTrainingState(
-  traceRecording: boolean,
-  traceSampleCount: number,
-  traceLastSummary: string,
-  playTraceReport: PlayTraceAnalysisReport | null,
-  tasEntry: TasRegistryEntry | null,
-  botRunReport: BotRunReport,
+  packageSideScope: StrategyPackageSideScope,
+  strategyExportName: string,
+  validationReplayComplete: boolean,
+  savePathLabel: string,
+  versionStatusLabel: string,
+  resourcePacksBySide: Record<PlayerSide, StrategyResourcePackId>,
+  p2ResourceSynced: boolean,
   language: UiLanguage
 ): GlobalTrainingState {
-  const kills = playTraceReport?.kills.total ?? 0;
-  const pickups = playTraceReport?.weaponPickups.total ?? 0;
-  const fastPasses = playTraceReport?.fastPasses.length ?? 0;
-  const botStatus = botRunReport.status === "idle"
-    ? t(language, "training.awaitRun")
-    : `${botRunReport.status} / W${botRunReport.finalWorldX ?? "?"}`;
-
   return {
     strategyPackLabel: activeStrategyPackLabel(language),
-    modeLabel: "Offline/Base Mode",
-    optimizationLevel: language === "en-US" ? "Level 0 + Level 1 candidates" : "Level 0 + Level 1 候选",
-    tasBaseLabel: localizedTasStatusLabel(tasEntry, language),
-    traceSummary: localizedTraceSummary(traceLastSummary, traceRecording, language),
-    sampleCount: language === "en-US" ? `${traceSampleCount} frames` : `${traceSampleCount} 帧`,
-    evidenceTarget: "strategy-packs/contra",
-    validationStatus: `${t(language, "training.validationPrefix")} ${kills} / ${t(language, "training.weaponPrefix")} ${pickups} / ${t(language, "training.fastPrefix")} ${fastPasses}`,
-    botRunStatus: botStatus,
-    nextGate: t(language, "training.realRunGate")
+    packageSideScope,
+    strategyExportName,
+    validationReplayComplete,
+    savePathLabel,
+    versionStatusLabel,
+    resourcePacksBySide,
+    p2ResourceSynced
   };
 }
 
@@ -5831,25 +6121,32 @@ function ModeTogglePanel({
   );
 }
 
-function SideTrainingPanel({ language, training }: { language: UiLanguage; training: SideTrainingState }) {
+function SideTrainingPanel({
+  language,
+  training,
+  actions
+}: {
+  language: UiLanguage;
+  training: SideTrainingState;
+  actions: SideTrainingActions;
+}) {
   return (
     <div className="side-training-panel" aria-label={`${training.side} 训练区`}>
       <div className="sub-title">
         <Database size={15} />
         <span>{training.ownerLabel}</span>
       </div>
+      <div className="side-training-pack-identity">
+        <strong>{training.packDisplayName} ({training.strategyCategoryLabel})</strong>
+      </div>
       <div className="training-stat-grid">
-        <div>
-          <span>{t(language, "training.baselineStrategy")}</span>
-          <strong>{training.baselineStrategy}</strong>
-        </div>
         <div>
           <span>{t(language, "training.source")}</span>
           <strong>{training.sourceLabel}</strong>
         </div>
         <div>
-          <span>{t(language, "training.tasBase")}</span>
-          <strong>{training.tasBaseLabel}</strong>
+          <span>{t(language, "training.strategyBaseline")}</span>
+          <strong>{training.strategyBaselineLabel}</strong>
         </div>
         <div>
           <span>{t(language, "training.captureStatus")}</span>
@@ -5878,6 +6175,18 @@ function SideTrainingPanel({ language, training }: { language: UiLanguage; train
           <strong>{training.primaryAction}</strong>
         </div>
       </div>
+      <div className="side-training-workflow-actions">
+        <button onClick={() => actions.onSideTrainingSelectBaseline(training.side)} type="button">{t(language, "training.selectBaseline")}</button>
+        <button onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">{t(language, "training.modifyStrategy")}</button>
+        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{t(language, "training.archiveStrategy")}</button>
+        <button disabled={actions.traceRecording} onClick={() => actions.onSideTrainingValidateStrategy(training.side)} type="button">{t(language, "training.validateStrategy")}</button>
+      </div>
+      <div className="side-training-capture-actions">
+        <button disabled={actions.traceRecording} onClick={() => actions.onSideTraceStart(training.side)} type="button">{t(language, "training.startCapture")}</button>
+        <button disabled={!actions.traceRecording} onClick={() => actions.onSideTraceStop(training.side)} type="button">{t(language, "training.stop")}</button>
+        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceExport(training.side)} type="button">{t(language, "training.export")}</button>
+        <button disabled={actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceClear(training.side)} type="button">{t(language, "training.clear")}</button>
+      </div>
     </div>
   );
 }
@@ -5889,6 +6198,7 @@ function PilotPanel({
   onButtonUp,
   onModeChange,
   onStrategyChange,
+  trainingActions,
   tasLocked
 }: {
   pilot: Pilot;
@@ -5897,6 +6207,7 @@ function PilotPanel({
   onButtonUp?: (button: ButtonName) => void;
   onModeChange: (mode: ControlMode) => void;
   onStrategyChange: (strategy: AiStrategyKey) => void;
+  trainingActions: SideTrainingActions;
   tasLocked: boolean;
 }) {
   const Icon = tasLocked ? Radio : pilot.mode === "ai" ? Bot : pilot.mode === "hybrid" ? HeartPulse : UserRound;
@@ -5976,7 +6287,7 @@ function PilotPanel({
           <p key={line}>{line}</p>
         ))}
       </div>
-      <SideTrainingPanel language={uiLanguage} training={pilot.training} />
+      <SideTrainingPanel actions={trainingActions} language={uiLanguage} training={pilot.training} />
       <div className="input-meta">
         <div>
           <Keyboard size={15} />
@@ -6166,35 +6477,55 @@ function TelevisionView({
   );
 }
 
-function GlobalTrainingConsole({
+function OperationStrategyControl({
   training,
   language,
   traceRecording,
-  traceSampleCount,
-  onTraceStart,
-  onTraceStop,
-  onTraceClear,
-  onTraceExport,
-  onTrainingSelectBaseline,
-  onTrainingModifyStrategy,
-  onTrainingArchiveStrategy,
-  onTrainingValidateStrategy
+  onTrainingSaveStrategy,
+  onTrainingSavePathSelected,
+  onTrainingValidateStrategy,
+  onTrainingVersionHistory,
+  onPackageSideScopeToggle,
+  onStrategyResourcePackChange,
+  onStrategyExportNameChange,
+  onSync2PResourceTo1P
 }: {
   training: GlobalTrainingState;
   language: UiLanguage;
   traceRecording: boolean;
-  traceSampleCount: number;
-  onTraceStart: () => void;
-  onTraceStop: () => void;
-  onTraceClear: () => void;
-  onTraceExport: () => void;
-  onTrainingSelectBaseline: () => void;
-  onTrainingModifyStrategy: () => void;
-  onTrainingArchiveStrategy: () => void;
+  onTrainingSaveStrategy: () => void;
+  onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
+  onTrainingVersionHistory: () => void;
+  onPackageSideScopeToggle: (side: PlayerSide) => void;
+  onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
+  onStrategyExportNameChange: (name: string) => void;
+  onSync2PResourceTo1P: () => void;
 }) {
+  const saveDirectoryInputRef = useRef<HTMLInputElement | null>(null);
+  const saveDirectoryInputProps = { webkitdirectory: "", directory: "" } as Record<string, string>;
+  const selectedPackIds = Array.from(new Set(Object.values(training.resourcePacksBySide)));
+  const resourceSummary = selectedPackIds
+    .map((packId) => {
+      const pack = strategyResourcePackById(packId);
+      return `${pack.displayName[language]} · ${pack.status}`;
+    })
+    .join(" / ");
+  const authorSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).author))).join(" / ");
+  const creatorSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).creator.displayName))).join(" / ");
+  const latestModifierSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).latestModifier.displayName))).join(" / ");
+  const revisionSummary = selectedPackIds
+    .map((packId) => `${strategyResourcePackById(packId).revisionHistory.length}`)
+    .join(" / ");
+  const archiveSummary = selectedPackIds.map((packId) => strategyResourcePackById(packId).archivePath).join(" / ");
+  const resultPack = strategyResourcePackById(training.resourcePacksBySide["1P"]);
+  const handleSaveStrategy = () => {
+    onTrainingSaveStrategy();
+    if (training.packageSideScope !== "none") saveDirectoryInputRef.current?.click();
+  };
+
   return (
-    <div className="training-console" aria-label={t(language, "training.globalTitle")}>
+    <div className="operation-strategy-control" aria-label={t(language, "training.globalTitle")}>
       <div className="sub-title">
         <Database size={15} />
         <span>{t(language, "training.globalTitle")}</span>
@@ -6203,51 +6534,136 @@ function GlobalTrainingConsole({
         <strong>{training.strategyPackLabel}</strong>
         <span>{ACTIVE_STRATEGY_PACK.packId}</span>
       </div>
-      <div className="training-console-grid">
+      <div className="strategy-resource-routing">
+        {(["1P", "2P"] as PlayerSide[]).map((side) => {
+          const packId = training.resourcePacksBySide[side];
+          return (
+            <div className="strategy-resource-slot" key={side}>
+              <div className="strategy-resource-slot-head">
+                <strong>{side === "1P" ? t(language, "training.resourcePack1P") : t(language, "training.resourcePack2P")}</strong>
+                <span>{side === "2P" && training.p2ResourceSynced ? t(language, "training.resourceSynced") : side}</span>
+              </div>
+              <select
+                aria-label={side === "1P" ? t(language, "training.resourcePack1P") : t(language, "training.resourcePack2P")}
+                onChange={(event) => onStrategyResourcePackChange(side, event.currentTarget.value as StrategyResourcePackId)}
+                value={packId}
+              >
+                {STRATEGY_RESOURCE_PACKS.map((pack) => (
+                  <option key={pack.packId} value={pack.packId}>{strategyResourcePackLabel(pack.packId, language)}</option>
+                ))}
+              </select>
+              <small>{strategyResourcePackById(packId).archivePath}</small>
+            </div>
+          );
+        })}
+        <button className="strategy-resource-sync" onClick={onSync2PResourceTo1P} type="button">{t(language, "training.sync2PTo1P")}</button>
+      </div>
+      <div className="strategy-resource-info" aria-label={t(language, "training.resourceInfo")}>
         <div>
-          <span>{t(language, "training.mode")}</span>
-          <strong>{training.modeLabel}</strong>
+          <span>{t(language, "training.resourceInfo")}</span>
+          <strong>{resourceSummary}</strong>
         </div>
         <div>
-          <span>{t(language, "training.level")}</span>
-          <strong>{training.optimizationLevel}</strong>
+          <span>{t(language, "training.resourceAuthor")}</span>
+          <strong>{authorSummary}</strong>
         </div>
         <div>
-          <span>{t(language, "training.tasBase")}</span>
-          <strong>{training.tasBaseLabel}</strong>
+          <span>{t(language, "training.resourceCreator")}</span>
+          <strong>{creatorSummary}</strong>
         </div>
         <div>
-          <span>{t(language, "training.samples")}</span>
-          <strong>{training.sampleCount}</strong>
+          <span>{t(language, "training.resourceLatestModifier")}</span>
+          <strong>{latestModifierSummary}</strong>
         </div>
         <div>
-          <span>{t(language, "training.validation")}</span>
-          <strong>{training.validationStatus}</strong>
+          <span>{t(language, "training.resourceRevisions")}</span>
+          <strong>{revisionSummary}</strong>
         </div>
         <div>
-          <span>{t(language, "training.run")}</span>
-          <strong>{training.botRunStatus}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.archive")}</span>
-          <strong>{training.evidenceTarget}</strong>
+          <span>{t(language, "training.resourceStandard")}</span>
+          <strong>Protocol {ACTIVE_STRATEGY_PACK.protocolVersion}</strong>
         </div>
       </div>
-      <div className="training-console-footer">
-        <span>{training.traceSummary}</span>
-        <span>{training.nextGate}</span>
+      <div className="strategy-resource-archive">
+        <span>{t(language, "training.archive")}</span>
+        <strong>{archiveSummary}</strong>
       </div>
-      <div className="training-workflow-actions">
-        <button onClick={onTrainingSelectBaseline} type="button">{t(language, "training.selectBaseline")}</button>
-        <button onClick={onTrainingModifyStrategy} type="button">{t(language, "training.modifyStrategy")}</button>
-        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTrainingArchiveStrategy} type="button">{t(language, "training.archiveStrategy")}</button>
-        <button disabled={traceRecording} onClick={onTrainingValidateStrategy} type="button">{t(language, "training.validateStrategy")}</button>
+      <div className="strategy-package-save-panel" aria-label={t(language, "training.saveStrategy")}>
+        <div className="package-scope-control" aria-label={t(language, "training.packageScope")}>
+          <span>{t(language, "training.packageScope")}</span>
+          <div className="package-scope-toggle-stack">
+            {(["1P", "2P"] as PlayerSide[]).map((side) => (
+              <button
+                aria-pressed={packageScopeHasSide(training.packageSideScope, side)}
+                className={packageScopeHasSide(training.packageSideScope, side) ? "active" : ""}
+                key={side}
+                onClick={() => onPackageSideScopeToggle(side)}
+                type="button"
+              >
+                {side === "1P" ? t(language, "training.package1P") : t(language, "training.package2P")}
+              </button>
+            ))}
+          </div>
+          <small>{strategyPackageSideScopeLabel(training.packageSideScope, language)}</small>
+        </div>
+        <button className="validation-replay-button" disabled={traceRecording} onClick={onTrainingValidateStrategy} type="button">{t(language, "training.validateStrategy")}</button>
+        <label className="strategy-save-name-field">
+          <span>{t(language, "training.packageName")}</span>
+          <input
+            onChange={(event) => onStrategyExportNameChange(event.currentTarget.value)}
+            type="text"
+            value={training.strategyExportName}
+          />
+        </label>
+        <button className="save-strategy-button" disabled={!training.validationReplayComplete || traceRecording} onClick={handleSaveStrategy} type="button">
+          {t(language, "training.saveStrategy")}
+        </button>
+        <button className="version-history-button" onClick={onTrainingVersionHistory} type="button">
+          {t(language, "training.versionHistory")}
+        </button>
+        <input
+          {...saveDirectoryInputProps}
+          className="hidden-save-directory-input"
+          onChange={(event) => {
+            const firstFile = event.currentTarget.files?.[0] as (File & { webkitRelativePath?: string }) | undefined;
+            const rootName = firstFile?.webkitRelativePath?.split("/")[0] || firstFile?.name || "";
+            onTrainingSavePathSelected(rootName || t(language, "training.savePathWaiting"));
+            event.currentTarget.value = "";
+          }}
+          ref={saveDirectoryInputRef}
+          type="file"
+        />
+        <small className="strategy-save-path">{training.savePathLabel || t(language, "training.savePathWaiting")}</small>
+        <small className="strategy-version-status">{training.versionStatusLabel || t(language, "training.rollbackUnavailable")}</small>
       </div>
-      <div className="training-actions">
-        <button disabled={traceRecording} onClick={onTraceStart} type="button">{t(language, "training.startCapture")}</button>
-        <button disabled={!traceRecording} onClick={onTraceStop} type="button">{t(language, "training.stop")}</button>
-        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceExport} type="button">{t(language, "training.export")}</button>
-        <button disabled={traceSampleCount === 0 || traceRecording} onClick={onTraceClear} type="button">{t(language, "training.clear")}</button>
+      <div className="strategy-result-section" aria-label={t(language, "training.strategyResults")}>
+        <div className="strategy-result-heading">
+          <span>{t(language, "training.strategyResults")}</span>
+          <strong>{resultPack.displayName[language]}</strong>
+        </div>
+        <div className="strategy-result-board">
+          {strategyResultKeys.map((strategyKey) => {
+            const record = resultPack.strategyResults[strategyKey] ?? unverifiedStrategyResult("Missing result record.");
+            return (
+              <div className="strategy-result-card" key={strategyKey}>
+                <div className="strategy-result-card-head">
+                  <strong>{localizedAiStrategyLabel(strategyKey, language)}</strong>
+                  <span>{strategyResultStatusLabel(record, language)}</span>
+                </div>
+                <div className="strategy-result-metrics">
+                  <span>{t(language, "training.resultKills")}</span>
+                  <b>{strategyResultMetricLabel(record.metrics.kills, language)}</b>
+                  <span>{t(language, "training.resultFixed")}</span>
+                  <b>{strategyResultMetricLabel(record.metrics.fixedTargetsDestroyed, language)}</b>
+                  <span>{t(language, "training.resultRewards")}</span>
+                  <b>{strategyResultMetricLabel(record.metrics.rewardsCollected, language)}</b>
+                  <span>{t(language, "training.resultTime")}</span>
+                  <b>{strategyResultMetricLabel(record.metrics.clearTimeFrames, language, "frames")}</b>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -6474,7 +6890,6 @@ function ConsoleDeck({
   uiLanguage,
   globalTraining,
   traceRecording,
-  traceSampleCount,
   onDirectoryFiles,
   onLoadLocalRom,
   onSelectRom,
@@ -6489,14 +6904,14 @@ function ConsoleDeck({
   onRun,
   onPause,
   onReset,
-  onTraceStart,
-  onTraceStop,
-  onTraceClear,
-  onTraceExport,
-  onTrainingSelectBaseline,
-  onTrainingModifyStrategy,
-  onTrainingArchiveStrategy,
-  onTrainingValidateStrategy
+  onTrainingSaveStrategy,
+  onTrainingSavePathSelected,
+  onTrainingValidateStrategy,
+  onTrainingVersionHistory,
+  onPackageSideScopeToggle,
+  onStrategyResourcePackChange,
+  onStrategyExportNameChange,
+  onSync2PResourceTo1P
 }: {
   status: RuntimeStatus;
   romMetadata: RomMetadata | null;
@@ -6510,7 +6925,6 @@ function ConsoleDeck({
   uiLanguage: UiLanguage;
   globalTraining: GlobalTrainingState;
   traceRecording: boolean;
-  traceSampleCount: number;
   onDirectoryFiles: (files: FileList | null) => void;
   onLoadLocalRom: () => void;
   onSelectRom: (id: string) => void;
@@ -6525,14 +6939,14 @@ function ConsoleDeck({
   onRun: () => void;
   onPause: () => void;
   onReset: () => void;
-  onTraceStart: () => void;
-  onTraceStop: () => void;
-  onTraceClear: () => void;
-  onTraceExport: () => void;
-  onTrainingSelectBaseline: () => void;
-  onTrainingModifyStrategy: () => void;
-  onTrainingArchiveStrategy: () => void;
+  onTrainingSaveStrategy: () => void;
+  onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
+  onTrainingVersionHistory: () => void;
+  onPackageSideScopeToggle: (side: PlayerSide) => void;
+  onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
+  onStrategyExportNameChange: (name: string) => void;
+  onSync2PResourceTo1P: () => void;
 }) {
   const directoryInputRef = useRef<HTMLInputElement | null>(null);
   const isRunning = status === "running";
@@ -6682,20 +7096,6 @@ function ConsoleDeck({
         </button>
         <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
       </div>
-      <GlobalTrainingConsole
-        language={uiLanguage}
-        training={globalTraining}
-        onTrainingArchiveStrategy={onTrainingArchiveStrategy}
-        onTrainingModifyStrategy={onTrainingModifyStrategy}
-        onTrainingSelectBaseline={onTrainingSelectBaseline}
-        onTrainingValidateStrategy={onTrainingValidateStrategy}
-        onTraceClear={onTraceClear}
-        onTraceExport={onTraceExport}
-        onTraceStart={onTraceStart}
-        onTraceStop={onTraceStop}
-        traceRecording={traceRecording}
-        traceSampleCount={traceSampleCount}
-      />
       <TasWindow
         commentaryMode={tasCommentaryMode}
         onCommentaryModeChange={onTasCommentaryModeChange}
@@ -6709,6 +7109,19 @@ function ConsoleDeck({
         playback={tasPlaybackState}
         selectedMovieId={selectedTasMovieId}
         tasEntry={loadedTas}
+      />
+      <OperationStrategyControl
+        language={uiLanguage}
+        training={globalTraining}
+        onTrainingSaveStrategy={onTrainingSaveStrategy}
+        onTrainingSavePathSelected={onTrainingSavePathSelected}
+        onTrainingValidateStrategy={onTrainingValidateStrategy}
+        onTrainingVersionHistory={onTrainingVersionHistory}
+        onPackageSideScopeToggle={onPackageSideScopeToggle}
+        onStrategyResourcePackChange={onStrategyResourcePackChange}
+        onStrategyExportNameChange={onStrategyExportNameChange}
+        onSync2PResourceTo1P={onSync2PResourceTo1P}
+        traceRecording={traceRecording}
       />
     </section>
   );
@@ -7181,6 +7594,16 @@ function App() {
   const [playTraceReport, setPlayTraceReport] = useState<PlayTraceAnalysisReport | null>(null);
   const [traceSampleSnapshot, setTraceSampleSnapshot] = useState<PlayTraceSample[]>([]);
   const [botRunReport, setBotRunReport] = useState<BotRunReport>(createIdleBotRunReport);
+  const [packageSideScope, setPackageSideScope] = useState<StrategyPackageSideScope>("1p-only");
+  const [strategyExportName, setStrategyExportName] = useState<string>(ACTIVE_STRATEGY_PACK.displayName["zh-CN"]);
+  const [validationReplayComplete, setValidationReplayComplete] = useState(false);
+  const [strategySavePathLabel, setStrategySavePathLabel] = useState("");
+  const [strategyVersionStatusLabel, setStrategyVersionStatusLabel] = useState("");
+  const [strategyResourcePacksBySide, setStrategyResourcePacksBySide] = useState<Record<PlayerSide, StrategyResourcePackId>>({
+    "1P": "contra-stage1-strategy-v0",
+    "2P": "contra-stage1-strategy-v0"
+  });
+  const [p2StrategyResourceOverridden, setP2StrategyResourceOverridden] = useState(false);
   const [selectedTasMovieId, setSelectedTasMovieId] = useState("");
   const [tasCommentaryMode, setTasCommentaryMode] = useState<TasCommentaryMode>("strategy-analysis");
   const [tasPlaybackState, setTasPlaybackState] = useState<TasPlaybackUiState>(createIdleTasPlaybackState);
@@ -8364,32 +8787,113 @@ function App() {
     setRunning
   ]);
 
-  const onTrainingSelectBaseline = useCallback(() => {
-    const entry = identifyTasForRom(romMetadata);
-    const movie = tasMoviesForEntry(entry).find((item) => item.id === selectedTasMovieId)
-      ?? selectDefaultTasMovie(entry);
-    if (!entry || !movie) {
-      appendLog("训练：当前 ROM 没有可选 TAS 基准");
-      return;
-    }
-    setSelectedTasMovieId(movie.id);
-    appendLog(`训练：已选择基准 ${movie.title.zh} / ${recommendationLabel(movie)}`);
-  }, [appendLog, romMetadata, selectedTasMovieId]);
+  const onSideTrainingSelectBaseline = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: baseline selection requested`);
+    appendLog("训练：基准候选来自当前资源包；TAS 基准必须先在 TAS 观赏窗口完成分离抽取并归档后才会加入候选列表末尾");
+  }, [appendLog]);
 
-  const onTrainingModifyStrategy = useCallback(() => {
+  const onSideTrainingModifyStrategy = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: opening strategy designer`);
     appendLog("训练：打开策略设计器，准备修改个人策略");
     openStrategyDesigner();
   }, [appendLog, openStrategyDesigner]);
 
-  const onTrainingArchiveStrategy = useCallback(() => {
+  const onSideTrainingArchiveStrategy = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: archiving current trace samples as strategy evidence`);
     appendLog("训练：归档当前采集样本为策略证据");
     exportTraceRecording();
   }, [appendLog, exportTraceRecording]);
 
+  const onTrainingSaveStrategy = useCallback(() => {
+    if (packageSideScope === "none") {
+      appendLog("Training package save blocked: select 1P or 2P first");
+      return;
+    }
+    if (!validationReplayComplete) {
+      appendLog("Training package save blocked: validation replay is required first");
+      return;
+    }
+    appendLog(`Training package save: ${strategyExportName} / ${strategyPackageSideScopeLabel(packageSideScope, uiLanguage)}`);
+  }, [appendLog, packageSideScope, strategyExportName, uiLanguage, validationReplayComplete]);
+
+  const onTrainingSavePathSelected = useCallback((pathLabel: string) => {
+    setStrategySavePathLabel(pathLabel);
+    appendLog(`Training package save path selected: ${pathLabel}`);
+  }, [appendLog]);
+
+  const onTrainingVersionHistory = useCallback(() => {
+    const selectedPackIds = Array.from(new Set(Object.values(strategyResourcePacksBySide)));
+    const revisionCount = selectedPackIds.reduce((total, packId) => total + strategyResourcePackById(packId).revisionHistory.length, 0);
+    const message = revisionCount > selectedPackIds.length
+      ? `Version history ready: ${revisionCount} revisions. Rollback requires selecting a validated snapshot.`
+      : "Version history ready: current packs have revision records, but no older restorable snapshot yet.";
+    setStrategyVersionStatusLabel(message);
+    appendLog(`Training version history: ${message}`);
+  }, [appendLog, strategyResourcePacksBySide]);
+
+  const togglePackageSideScope = useCallback((side: PlayerSide) => {
+    setPackageSideScope((current) => {
+      const next = nextPackageSideScope(current, side);
+      appendLog(`Training package scope: ${strategyPackageSideScopeLabel(next, uiLanguage)}`);
+      return next;
+    });
+    setValidationReplayComplete(false);
+  }, [appendLog, uiLanguage]);
+
+  const changeStrategyResourcePack = useCallback((side: PlayerSide, packId: StrategyResourcePackId) => {
+    if (side === "1P") {
+      setStrategyResourcePacksBySide((current) => ({ ...current, "1P": packId, "2P": p2StrategyResourceOverridden ? current["2P"] : packId }));
+    } else {
+      setP2StrategyResourceOverridden(packId !== strategyResourcePacksBySide["1P"]);
+      setStrategyResourcePacksBySide((current) => ({ ...current, "2P": packId }));
+    }
+    setValidationReplayComplete(false);
+    appendLog(`Training ${side}: resource pack ${strategyResourcePackLabel(packId, uiLanguage)}`);
+  }, [appendLog, p2StrategyResourceOverridden, strategyResourcePacksBySide, uiLanguage]);
+
+  const sync2PResourceTo1P = useCallback(() => {
+    setStrategyResourcePacksBySide((current) => ({ ...current, "2P": current["1P"] }));
+    setP2StrategyResourceOverridden(false);
+    setValidationReplayComplete(false);
+    appendLog("Training 2P: resource pack synced to 1P");
+  }, [appendLog]);
+
+  const changeStrategyExportName = useCallback((name: string) => {
+    setStrategyExportName(name);
+    setValidationReplayComplete(false);
+  }, []);
+
   const onTrainingValidateStrategy = useCallback(() => {
+    setValidationReplayComplete(false);
+    appendLog("Training global: starting package validation replay");
+    void startTasReplay();
+  }, [appendLog, startTasReplay]);
+
+  const onSideTrainingValidateStrategy = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: starting baseline validation replay`);
     appendLog("训练：启动基准验证回放");
     void startTasReplay();
   }, [appendLog, startTasReplay]);
+
+  const onSideTraceStart = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: starting trace capture`);
+    startTraceRecording();
+  }, [appendLog, startTraceRecording]);
+
+  const onSideTraceStop = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: stopping trace capture`);
+    stopTraceRecording();
+  }, [appendLog, stopTraceRecording]);
+
+  const onSideTraceExport = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: exporting trace evidence`);
+    exportTraceRecording();
+  }, [appendLog, exportTraceRecording]);
+
+  const onSideTraceClear = useCallback((side: PlayerSide) => {
+    appendLog(`Training ${side}: clearing trace samples`);
+    clearTraceRecording();
+  }, [appendLog, clearTraceRecording]);
 
   const runBotFrameBatch = useCallback(async (maxFrames: number) => {
     const nes = nesRef.current;
@@ -8742,6 +9246,13 @@ function App() {
   }, [romMetadata?.md5, romMetadata?.romProfileId]);
 
   useEffect(() => {
+    if (tasPlaybackState.status === "finished") {
+      setValidationReplayComplete(true);
+      appendLog("Training package validation replay: finished; save is now enabled for the selected scope.");
+    }
+  }, [appendLog, tasPlaybackState.status]);
+
+  useEffect(() => {
     return () => {
       runningRef.current = false;
       if (timerRef.current !== null) window.clearInterval(timerRef.current);
@@ -8752,10 +9263,31 @@ function App() {
   const twoPlayerActive = Boolean(ramSnapshot?.twoPlayerActive);
   const loadedTasEntry = identifyTasForRom(romMetadata);
   const sideTrainingStates: Record<PlayerSide, SideTrainingState> = {
-    "1P": buildSideTrainingState("1P", uiLanguage, controlModes["1P"], strategyModels["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
-    "2P": buildSideTrainingState("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
+    "1P": buildSideTrainingStateV2("1P", uiLanguage, controlModes["1P"], strategyModels["1P"], strategyResourcePacksBySide["1P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports),
+    "2P": buildSideTrainingStateV2("2P", uiLanguage, controlModes["2P"], strategyModels["2P"], strategyResourcePacksBySide["2P"], ramSnapshot, loadedTasEntry, traceRecording, traceSampleCount, traceLastSummary, playTraceReport, deathTraceReports)
   };
-  const globalTraining = buildGlobalTrainingState(traceRecording, traceSampleCount, traceLastSummary, playTraceReport, loadedTasEntry, botRunReport, uiLanguage);
+  const sideTrainingActions: SideTrainingActions = {
+    traceRecording,
+    traceSampleCount,
+    onSideTrainingSelectBaseline,
+    onSideTrainingModifyStrategy,
+    onSideTrainingArchiveStrategy,
+    onSideTrainingValidateStrategy,
+    onSideTraceStart,
+    onSideTraceStop,
+    onSideTraceExport,
+    onSideTraceClear
+  };
+  const globalTraining = buildGlobalTrainingState(
+    packageSideScope,
+    strategyExportName,
+    validationReplayComplete,
+    strategySavePathLabel,
+    strategyVersionStatusLabel,
+    strategyResourcePacksBySide,
+    !p2StrategyResourceOverridden,
+    uiLanguage
+  );
   const tasPlaybackLocked = tasPlaybackState.status === "playing";
   const pilots: Pilot[] = [
     {
@@ -8858,6 +9390,7 @@ function App() {
           onStrategyChange={(strategy) => changeStrategyModel("1P", strategy)}
           pilot={pilots[0]}
           tasLocked={tasPlaybackLocked}
+          trainingActions={sideTrainingActions}
           uiLanguage={uiLanguage}
         />
         <div className="center-column">
@@ -8894,14 +9427,14 @@ function App() {
             onTasPlay={() => { void startTasReplay(); }}
             onTasStop={stopTasReplay}
             onTasApplyBaseline={applyTasBaselineToSide}
-            onTrainingArchiveStrategy={onTrainingArchiveStrategy}
-            onTrainingModifyStrategy={onTrainingModifyStrategy}
-            onTrainingSelectBaseline={onTrainingSelectBaseline}
+            onTrainingSaveStrategy={onTrainingSaveStrategy}
+            onTrainingSavePathSelected={onTrainingSavePathSelected}
             onTrainingValidateStrategy={onTrainingValidateStrategy}
-            onTraceClear={clearTraceRecording}
-            onTraceExport={exportTraceRecording}
-            onTraceStart={startTraceRecording}
-            onTraceStop={stopTraceRecording}
+            onTrainingVersionHistory={onTrainingVersionHistory}
+            onPackageSideScopeToggle={togglePackageSideScope}
+            onStrategyResourcePackChange={changeStrategyResourcePack}
+            onStrategyExportNameChange={changeStrategyExportName}
+            onSync2PResourceTo1P={sync2PResourceTo1P}
             romLibraryDirLabel={romLibraryDirLabel}
             romLibraryEntries={romLibraryEntries}
             romLibraryStatus={romLibraryStatus}
@@ -8913,7 +9446,6 @@ function App() {
             tasPlaybackState={tasPlaybackState}
             uiLanguage={uiLanguage}
             traceRecording={traceRecording}
-            traceSampleCount={traceSampleCount}
           />
         </div>
         <PilotPanel
@@ -8926,6 +9458,7 @@ function App() {
           onStrategyChange={(strategy) => changeStrategyModel("2P", strategy)}
           pilot={pilots[1]}
           tasLocked={tasPlaybackLocked}
+          trainingActions={sideTrainingActions}
           uiLanguage={uiLanguage}
         />
       </div>

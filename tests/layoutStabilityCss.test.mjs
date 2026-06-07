@@ -38,14 +38,15 @@ test("primary cockpit windows keep stable outer dimensions", () => {
   assertDeclaration(controllerBay, "overflow", /^hidden$/);
 
   const centerColumn = ruleFor(".center-column");
-  assertDeclaration(centerColumn, "grid-template-rows", /^620px 850px$/);
+  assertDeclaration(centerColumn, "grid-template-rows", /^620px 1460px$/);
 
   const tvShell = ruleFor(".tv-shell");
   assertDeclaration(tvShell, "height", /^620px$/);
   assertDeclaration(tvShell, "overflow", /^hidden$/);
 
   const consoleDeck = ruleFor(".console-deck");
-  assertDeclaration(consoleDeck, "height", /^850px$/);
+  assertDeclaration(consoleDeck, "grid-template-rows", /^auto 420px auto 360px 520px$/);
+  assertDeclaration(consoleDeck, "height", /^1460px$/);
   assertDeclaration(consoleDeck, "overflow", /^hidden$/);
 
   const dataDashboard = ruleFor(".data-dashboard");
@@ -54,6 +55,39 @@ test("primary cockpit windows keep stable outer dimensions", () => {
 
   const debugFloor = ruleFor(".debug-floor");
   assertDeclaration(debugFloor, "grid-template-rows", /^270px$/);
+});
+
+test("training controls extend downward without turning the panel into a scroll area", () => {
+  const sidePackIdentity = ruleFor(".side-training-pack-identity");
+  assertDeclaration(sidePackIdentity, "place-items", /^center$/);
+  assertDeclaration(sidePackIdentity, "text-align", /^center$/);
+  assertNoDeclaration(sidePackIdentity, "grid-template-columns");
+
+  const strategyControl = ruleFor(".operation-strategy-control");
+  assertDeclaration(strategyControl, "gap", /^8px$/);
+  assertDeclaration(strategyControl, "padding", /^10px$/);
+  assertNoDeclaration(strategyControl, "overflow");
+
+  const trainingPackBanner = ruleFor(".training-pack-banner");
+  assertDeclaration(trainingPackBanner, "min-height", /^38px$/);
+
+  const strategyResourceRouting = ruleFor(".strategy-resource-routing");
+  assertDeclaration(strategyResourceRouting, "grid-template-columns", /^repeat\(2, minmax\(0, 1fr\)\) minmax\(88px, auto\)$/);
+
+  const strategyResourceInfo = ruleFor(".strategy-resource-info");
+  assertDeclaration(strategyResourceInfo, "grid-template-columns", /^repeat\(6, minmax\(0, 1fr\)\)$/);
+
+  const strategyPackageSavePanel = ruleFor(".strategy-package-save-panel");
+  assertDeclaration(strategyPackageSavePanel, "grid-template-columns", /^96px minmax\(0, 1fr\) minmax\(0, 1\.1fr\) minmax\(0, 1fr\) minmax\(0, 1fr\)$/);
+
+  const strategyResultBoard = ruleFor(".strategy-result-board");
+  assertDeclaration(strategyResultBoard, "grid-template-columns", /^repeat\(5, minmax\(0, 1fr\)\)$/);
+
+  const packageScope = ruleFor(".package-scope-control");
+  assertDeclaration(packageScope, "min-height", /^82px$/);
+
+  const packageScopeToggleStack = ruleFor(".package-scope-toggle-stack");
+  assertDeclaration(packageScopeToggleStack, "grid-template-rows", /^repeat\(2, 1fr\)$/);
 });
 
 test("non-log cockpit content is fully displayed instead of becoming a scroll window", () => {
@@ -67,9 +101,21 @@ test("non-log cockpit content is fully displayed instead of becoming a scroll wi
   assertDeclaration(logLines, "overflow", /^auto$/);
 
   const romList = ruleFor(".rom-list");
-  assertDeclaration(romList, "height", /^170px$/);
-  assertDeclaration(romList, "max-height", /^170px$/);
+  assertDeclaration(romList, "height", /^240px$/);
+  assertDeclaration(romList, "max-height", /^240px$/);
   assertDeclaration(romList, "overflow", /^auto$/);
+
+  const consoleLeft = ruleFor(".console-left");
+  assertDeclaration(consoleLeft, "min-height", /^420px$/);
+
+  const cartridgeSlot = ruleFor(".cartridge-slot");
+  assertDeclaration(cartridgeSlot, "min-height", /^380px$/);
+
+  const romLibraryBrowser = ruleFor(".rom-library-browser");
+  assertDeclaration(romLibraryBrowser, "min-height", /^310px$/);
+
+  const romLibraryBody = ruleFor(".rom-library-body");
+  assertDeclaration(romLibraryBody, "min-height", /^240px$/);
 
   const aiDialogue = ruleFor(".ai-dialogue");
   assertNoDeclaration(aiDialogue, "max-height");

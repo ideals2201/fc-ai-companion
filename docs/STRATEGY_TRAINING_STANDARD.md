@@ -59,6 +59,33 @@ The cockpit training window should expose these actions:
 
 Buttons must not imply that training is complete. They trigger steps in a controlled training workflow.
 
+Side-owned controls must live in each side controller bay. 1P and 2P must expose the same local actions: `Select Base`, `Start Capture`, `Stop`, `Modify Strategy`, `Archive Strategy`, `Validate Replay`, `Export`, and `Clear`. These actions must carry explicit side ownership so the archived evidence and generated fragments know whether they belong to 1P, 2P, or a shared run.
+
+The Operation Strategy Control panel is reserved for cross-side work: active training scenario, current package identity, TAS baseline matching, package side scope, one-click package export, pair validation, resource-pack routing, and global evidence status. It must not be the only place to select or modify a side-owned strategy.
+
+The Operation Strategy Control panel should sit below the TAS viewing panel. This keeps the workflow order clear: observe TAS or another baseline first, then choose resource packs, choose the active Strategy Baseline, archive evidence, and validate replay.
+
+When the selected AI strategy changes in the controller bay, that side's training panel must update its baseline label, candidate category, archive target, and primary action. A `speedrun` strategy trains fast windows; a `combat` strategy trains target-clear fragments; a `loot` strategy trains reward routes; a `guard` strategy trains follow and protection fragments; a `survival` strategy trains death-loop and safety fixes.
+
+Each side training panel must show the selected Strategy Pack identity prominently: `pack name (strategy category)`. The old duplicate `Baseline Strategy` tile should not be shown under it. The baseline tile should be named `Strategy Baseline` and may point to a pack-owned strategy, a TAS-derived baseline, a human demonstration baseline, or a candidate fragment. Selection is side-owned, so 1P and 2P can use different baselines.
+
+The Operation Strategy Control panel must expose two resource slots: `1P Resource Pack` and `2P Resource Pack`. When the user selects a 1P resource pack, 2P defaults to the same pack unless 2P has explicitly selected a different pack. After 2P overrides the pack, future 1P changes must not silently overwrite 2P. A visible `Sync 2P to 1P` action may restore shared selection.
+
+The `Strategy Baseline` selector is not TAS-only. It may choose a pack-owned strategy, a TAS baseline, a human demonstration baseline, or a candidate fragment. The selected baseline must be shown per side and must be compatible with the selected resource pack and ROMProfile.
+
+The Operation Strategy Control panel must display practical resource information: pack name, author, status, protocol version, ROMProfile compatibility, archive target, and whether 1P/2P are synced or independent. This information is part of player trust and emotional value; it should be visible, not buried in logs.
+
+It should also display per-strategy battle results from the selected Strategy Pack when available. The minimum player-facing result fields are kills, fixed targets destroyed, rewards collected, and clear time. These values must come from `quality.strategyResults` or an equivalent validated result artifact. If the selected package only has candidate data, the UI must show `unverified` or the localized equivalent instead of a number.
+
+The Operation Strategy Control panel is also the correct place for package-level save and version-management actions:
+
+- Side-owned training panels choose baselines and edit strategy behavior.
+- Operation Strategy Control selects the resource pack for 1P and 2P.
+- Operation Strategy Control chooses export scope with independent `1P only` and `2P only` toggles. Selecting both sides produces a combined export internally; the UI does not need a separate `1P+2P` button.
+- `Save Strategy` must remain disabled until validation replay has completed for the selected scope.
+- `Version History / Rollback` may be visible, but rollback can only execute against a revision that has a valid hash and restorable snapshot path.
+- Draft revisions may be saved many times. Published or official revisions must be immutable snapshots; later changes create new revisions rather than overwriting old ones.
+
 `Package Strategy` must expose side scope:
 
 - `1P only`: export only 1P fragments, evidence, side baselines, and validation reports.
@@ -168,6 +195,43 @@ Validation evidence should include:
 
 For current Contra work, the priority validation target is stable survival progress without death loops. Perfect clear is a later validation level and must be proven by full-stage evidence.
 
+## 8.1 Environment-Aware Validation
+
+Environment-Aware Validation checks whether a training artifact still works when deterministic context changes.
+
+It must record:
+
+- ROMProfile and checksum.
+- emulator or browser runtime version when available.
+- TAS movie frame and input row when TAS-derived.
+- RNG state, seed range, or unknown status.
+- timing window and input sampling delay.
+- shadow-memory desync status.
+
+Rules:
+
+- If RNG is known and does not match the expected deterministic context, the run must be marked `desynced` or routed through an allowed rollback workflow.
+- If SaveState rollback is used to restore deterministic context, that rollback must be recorded as evidence, not hidden.
+- If deterministic context is unknown, the artifact can be trained, but it cannot claim high reproducibility.
+- Validation must check Negative Constraints before promoting a candidate fragment.
+
+## 8.2 Provenance Graph
+
+Training evidence must preserve a Provenance Graph, not only a flat metadata note.
+
+Each promoted StrategyFragment should record:
+
+- fragment hash.
+- parent hash.
+- parent fragment id.
+- source trace ids.
+- TAS source ids, when applicable.
+- human demonstration ids, when applicable.
+- validation report ids.
+- known failure ids.
+
+This lets the project roll back a bad update and compare strategy versions without relying on manual backups.
+
 ## 9. Optimization Levels
 
 Training artifacts should declare their source level:
@@ -179,6 +243,31 @@ Training artifacts should declare their source level:
 Level 2 output must remain a proposal until it is converted into schema-valid data and verified by runtime evidence.
 
 This keeps training efficient while preventing unverified suggestions from entering playable strategy packs.
+
+## 9.1 训练资产自动化分级检查表
+
+Packaging or promotion must run an automated checklist:
+
+| Level | Name | Required Checks | Allowed Use |
+| --- | --- | --- | --- |
+| Level 0 | 初级 | Schema format check only; no runtime guarantee. | Personal development cache only. |
+| Level 1 | 可运行 | Schema valid, ROMProfile matched, shadow validation completed, no desync record, Negative Constraints passed. | Test baseline library and internal candidate packs. |
+| Level 2 | 专家级 | Level 1 plus human expert review, Provenance Graph complete, perturbation evidence, and 10 or more consecutive successful validation runs for the declared scenario. | Public sharing candidate or verified community package. |
+
+An artifact can move down as well as up. If a later run finds desync, death loop, invalid deterministic context, or broken Negative Constraints, the package status must be downgraded or blocked.
+
+Engineering directive:
+
+```text
+将策略视为代码，将 TAS 轨迹视为测试用例。
+```
+
+This means:
+
+- Strategy changes need versioning, review, validation, and rollback.
+- TAS traces are baseline tests and knowledge sources, not live controllers.
+- A green schema check is not enough to prove gameplay quality.
+- A public package requires evidence that survives deterministic-context and negative-constraint checks.
 
 ## 10. Training Scenario Files
 
