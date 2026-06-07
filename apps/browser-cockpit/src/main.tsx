@@ -2017,6 +2017,15 @@ function statusLabel(status: RuntimeStatus) {
   return "运行错误";
 }
 
+function runtimeStatusLabel(status: RuntimeStatus, language: UiLanguage) {
+  if (status === "no-rom") return t(language, "status.noRom");
+  if (status === "loading") return t(language, "status.loading");
+  if (status === "loaded") return t(language, "status.loaded");
+  if (status === "running") return t(language, "status.running");
+  if (status === "paused") return t(language, "status.paused");
+  return t(language, "status.error");
+}
+
 function audioLabel(status: AudioStatus) {
   if (status === "starting") return "声音启动中";
   if (status === "on") return "声音已开启";
@@ -5853,6 +5862,7 @@ function GlobalTrainingConsole({
 function TasWindow({
   tasEntry,
   selectedMovieId,
+  language,
   commentaryMode,
   playback,
   onCommentaryModeChange,
@@ -5864,6 +5874,7 @@ function TasWindow({
 }: {
   tasEntry: TasRegistryEntry | null;
   selectedMovieId: string;
+  language: UiLanguage;
   commentaryMode: TasCommentaryMode;
   playback: TasPlaybackUiState;
   onCommentaryModeChange: (mode: TasCommentaryMode) => void;
@@ -5878,20 +5889,26 @@ function TasWindow({
   const modes = selectedMovie?.commentaryModes ?? [];
   const progress = playback.totalFrames > 0
     ? `${playback.frameIndex}/${playback.totalFrames}`
-    : "未载入";
+    : t(language, "tas.notLoaded");
   const commentary = selectedMovie
     ? buildTasCommentary(selectedMovie, commentaryMode)
     : "当前 ROM 没有匹配 TAS。";
   const canUseMovie = Boolean(tasEntry && selectedMovie);
+  const movieTitle = (movie: NonNullable<typeof selectedMovie>) => (
+    language === "en-US" ? movie.title.en : movie.title.zh
+  );
+  const movieSubtitle = (movie: NonNullable<typeof selectedMovie>) => (
+    language === "en-US" ? movie.title.zh : movie.title.en
+  );
 
   return (
-    <div className="tas-window" aria-label="TAS 观赏与训练基座">
+    <div className="tas-window" aria-label={t(language, "tas.windowTitle")}>
       <div className="sub-title">
         <Radio size={15} />
-        <span>TAS 观赏 / 训练基座</span>
+        <span>{t(language, "tas.windowTitle")}</span>
       </div>
       <div className="tas-window-body">
-        <div className="tas-movie-list" aria-label="TAS 文件列表">
+        <div className="tas-movie-list" aria-label={t(language, "tas.fileList")}>
           {movies.length > 0 ? movies.map((movie) => (
             <button
               className={movie.id === selectedMovie?.id ? "tas-movie-item active" : "tas-movie-item"}
@@ -5899,58 +5916,58 @@ function TasWindow({
               onClick={() => onMovieSelect(movie.id)}
               type="button"
             >
-              <strong>{movie.title.zh}</strong>
-              <small>{movie.title.en}</small>
+              <strong>{movieTitle(movie)}</strong>
+              <small>{movieSubtitle(movie)}</small>
             </button>
           )) : (
-            <div className="tas-empty">无匹配 TAS</div>
+            <div className="tas-empty">{t(language, "tas.noMatch")}</div>
           )}
         </div>
         <div className="tas-detail">
           {selectedMovie ? (
             <>
               <div className="tas-title-row">
-                <strong>{selectedMovie.title.zh}</strong>
+                <strong>{movieTitle(selectedMovie)}</strong>
                 <span>{selectedMovie.players} / {selectedMovie.category}</span>
               </div>
               <p>{selectedMovie.summaryZh}</p>
               <div className="tas-info-grid">
                 <div>
-                  <span>来源</span>
+                  <span>{t(language, "tas.source")}</span>
                   <b>{selectedMovie.sourceNote}</b>
                 </div>
                 <div>
-                  <span>关键点</span>
+                  <span>{t(language, "tas.keyMoments")}</span>
                   <b>{selectedMovie.keyMoments.slice(0, 2).join(" / ")}</b>
                 </div>
                 <div>
-                  <span>风险</span>
+                  <span>{t(language, "tas.risk")}</span>
                   <b>{selectedMovie.riskNotes[0]}</b>
                 </div>
               </div>
               <div className="tas-meta-grid">
                 <div>
-                  <span>训练基准</span>
+                  <span>{t(language, "tas.trainingBase")}</span>
                   <b>{recommendationLabel(selectedMovie)}</b>
                 </div>
                 <div>
-                  <span>校验</span>
+                  <span>{t(language, "tas.checksum")}</span>
                   <b>{playback.checksumStatus}</b>
                 </div>
                 <div>
-                  <span>进度</span>
+                  <span>{t(language, "tas.progress")}</span>
                   <b>{progress}</b>
                 </div>
                 <div>
-                  <span>阶段</span>
+                  <span>{t(language, "tas.phase")}</span>
                   <b>{tasPhaseLabel(playback.phase)}</b>
                 </div>
                 <div>
-                  <span>当前输入</span>
+                  <span>{t(language, "tas.currentInput")}</span>
                   <b>{playback.currentInput}</b>
                 </div>
               </div>
-              <div className="tas-mode-strip" aria-label="TAS 解说模式">
+              <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
                 {modes.map((mode) => (
                   <button
                     className={mode === commentaryMode ? "active" : ""}
@@ -5965,22 +5982,22 @@ function TasWindow({
               <div className="tas-commentary">{commentary}</div>
             </>
           ) : (
-            <p>当前卡带没有匹配的 TAS 原始档。可继续用人工演示和实机 trace 训练策略。</p>
+            <p>{t(language, "tas.noMatchDetail")}</p>
           )}
         </div>
       </div>
       <div className="tas-control-row">
         <button disabled={!canUseMovie || playback.status === "loading"} onClick={onLoad} type="button">
-          <Database size={14} /> 载入
+          <Database size={14} /> {t(language, "tas.load")}
         </button>
         <button disabled={!canUseMovie || playback.status === "loading" || playback.status === "playing"} onClick={onPlay} type="button">
-          <Play size={14} /> 回放
+          <Play size={14} /> {t(language, "tas.trialReplay")}
         </button>
         <button disabled={playback.status !== "playing"} onClick={onPause} type="button">
-          <Pause size={14} /> 暂停
+          <Pause size={14} /> {t(language, "tas.pause")}
         </button>
         <button disabled={playback.status === "idle" || playback.status === "loading"} onClick={onStop} type="button">
-          <Square size={14} /> 停止
+          <Square size={14} /> {t(language, "tas.stop")}
         </button>
       </div>
       <div className="tas-status-line">
@@ -6095,13 +6112,13 @@ function ConsoleDeck({
   return (
     <section className="console-deck" aria-label="主机">
       <div className="console-status-strip">
-        <span>位置：{romMetadata?.filePath || "未提供本地路径"}</span>
-        <strong>主机状态：{statusLabel(status)}</strong>
+        <span>{t(uiLanguage, "console.path")}：{romMetadata?.filePath || t(uiLanguage, "console.noLocalPath")}</span>
+        <strong>{t(uiLanguage, "console.hostStatus")}：{runtimeStatusLabel(status, uiLanguage)}</strong>
       </div>
       <div className="console-left">
         <div className="panel-title">
           <Cpu size={18} />
-          <span>主机</span>
+          <span>{t(uiLanguage, "console.host")}</span>
           <small className="hardware-spec">{FC_HARDWARE_SPEC}</small>
           <LanguageSwitch language={uiLanguage} onLanguageChange={onLanguageChange} />
         </div>
@@ -6121,17 +6138,17 @@ function ConsoleDeck({
           <div className="rom-library-browser">
             <div className="rom-library-header">
               <div>
-                <span>ROM 目录</span>
+                <span>{t(uiLanguage, "console.romDirectory")}</span>
                 <strong>{romLibraryDirLabel}</strong>
                 <small>{romLibraryStatus}</small>
               </div>
               <button onClick={() => directoryInputRef.current?.click()} type="button">
                 <FolderOpen size={15} />
-                选择 ROM 目录
+                {t(uiLanguage, "console.chooseRomDirectory")}
               </button>
             </div>
             <div className="rom-library-body">
-              <div className="rom-list" aria-label="ROM 目录卡带列表">
+              <div className="rom-list" aria-label={t(uiLanguage, "console.romList")}>
                 {romLibraryEntries.length > 0 ? romLibraryEntries.map((entry) => (
                   <button
                     className={entry.id === selectedRomEntry?.id ? "rom-list-item active" : "rom-list-item"}
@@ -6143,20 +6160,20 @@ function ConsoleDeck({
                     <small>{entry.metadata.romProfileId !== "unknown" ? entry.metadata.romProfileId : entry.metadata.mapperLabel}</small>
                   </button>
                 )) : (
-                  <div className="rom-list-empty">等待 ROM 目录</div>
+                  <div className="rom-list-empty">{t(uiLanguage, "console.waitingRomDirectory")}</div>
                 )}
               </div>
-              <div className="rom-detail" aria-label="选中 ROM 信息">
-                <span>选中卡带</span>
+              <div className="rom-detail" aria-label={t(uiLanguage, "console.selectedRomInfo")}>
+                <span>{t(uiLanguage, "console.selectedCartridge")}</span>
                 <strong>{romEntryTitle(selectedRomEntry)}</strong>
                 {selectedMetadata ? (
                   <div className="rom-meta-grid compact" aria-label="选中 ROM 详情">
                     <div>
-                      <span>中文名</span>
+                      <span>{t(uiLanguage, "console.chineseTitle")}</span>
                       <b>{selectedUiStatus.chineseName}</b>
                     </div>
                     <div>
-                      <span>策略</span>
+                      <span>{t(uiLanguage, "console.strategy")}</span>
                       <b>{selectedUiStatus.strategyStatus}</b>
                     </div>
                     <div>
@@ -6164,19 +6181,19 @@ function ConsoleDeck({
                       <b>{tasStatusLabel(selectedTas)}</b>
                     </div>
                     <div>
-                      <span>版本</span>
+                      <span>{t(uiLanguage, "console.version")}</span>
                       <b>{selectedMetadata.versionLabel}</b>
                     </div>
                     <div>
-                      <span>档案</span>
+                      <span>{t(uiLanguage, "console.profile")}</span>
                       <b>{selectedMetadata.romProfileId}</b>
                     </div>
                     <div>
-                      <span>支持</span>
+                      <span>{t(uiLanguage, "console.support")}</span>
                       <b>{selectedMetadata.romSupportLabel}</b>
                     </div>
                     <div>
-                      <span>容量</span>
+                      <span>{t(uiLanguage, "console.size")}</span>
                       <b>{selectedMetadata.sizeLabel}</b>
                     </div>
                     <div>
@@ -6201,13 +6218,13 @@ function ConsoleDeck({
                     </div>
                   </div>
                 ) : (
-                  <small>请选择 ROM 目录中的卡带。</small>
+                  <small>{t(uiLanguage, "console.selectRomHint")}</small>
                 )}
               </div>
             </div>
           </div>
           <div className="loaded-cartridge-strip" aria-label="当前已插入卡带">
-            <span>当前插入</span>
+            <span>{t(uiLanguage, "console.currentInserted")}</span>
             {romMetadata ? (
               <>
                 <strong>{loadedUiStatus.chineseName} · {romMetadata.displayTitle}</strong>
@@ -6215,18 +6232,18 @@ function ConsoleDeck({
               </>
             ) : (
               <>
-                <strong>{hasRom ? "本地 ROM 已插入" : "等待加载卡带"}</strong>
-                <small>先在上方 ROM 目录选择卡带，再按更换卡带。</small>
+                <strong>{hasRom ? t(uiLanguage, "console.localRomInserted") : t(uiLanguage, "console.waitingCartridge")}</strong>
+                <small>{t(uiLanguage, "console.loadCartridgeHint")}</small>
               </>
             )}
           </div>
         </div>
       </div>
       <div className="console-controls">
-        <button disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button"><Upload size={15} /> 更换卡带</button>
+        <button disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button"><Upload size={15} /> {t(uiLanguage, "console.loadCartridge")}</button>
         <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
           <Power size={15} />
-          {isRunning ? "暂停" : "继续"}
+          {isRunning ? t(uiLanguage, "console.pause") : t(uiLanguage, "console.continue")}
         </button>
         <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
       </div>
@@ -6247,6 +6264,7 @@ function ConsoleDeck({
         onPause={onTasPause}
         onPlay={onTasPlay}
         onStop={onTasStop}
+        language={uiLanguage}
         playback={tasPlaybackState}
         selectedMovieId={selectedTasMovieId}
         tasEntry={loadedTas}
