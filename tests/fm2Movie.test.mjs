@@ -38,8 +38,8 @@ test("parses FM2 header and controller frames for Contra Japan 1P TAS", () => {
   assert.equal(movie.frames[6].p1.select, true);
   assert.equal(movie.frames[6].p1.start, false);
   assert.equal(movie.frames[6].p1.b, false);
-  assert.equal(fm2ButtonsToLabels(movie.frames[6].p1), "选择");
-  assert.equal(fm2ButtonsToLabels({ ...movie.frames[6].p1, select: false, left: true, down: true, b: true }), "左下B");
+  assert.equal(fm2ButtonsToLabels(movie.frames[6].p1), "SELECT");
+  assert.equal(fm2ButtonsToLabels({ ...movie.frames[6].p1, select: false, left: true, down: true, b: true }), "←↓B");
 });
 
 test("summarizes FM2 inputs without loading emulator runtime", () => {

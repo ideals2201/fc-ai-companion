@@ -37,12 +37,12 @@ export type Fm2MovieSummary = {
 const FM2_BUTTON_ORDER: Fm2ButtonName[] = ["right", "left", "down", "up", "start", "select", "b", "a"];
 
 const FM2_BUTTON_LABELS: Record<Fm2ButtonName, string> = {
-  right: "右",
-  left: "左",
-  down: "下",
-  up: "上",
-  start: "开始",
-  select: "选择",
+  right: "→",
+  left: "←",
+  down: "↓",
+  up: "↑",
+  start: "START",
+  select: "SELECT",
   b: "B",
   a: "A"
 };
