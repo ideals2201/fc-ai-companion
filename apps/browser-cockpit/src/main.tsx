@@ -822,6 +822,29 @@ function cartridgeUiStatus(metadata: RomMetadata | null) {
   return gameProfileUiStatus[gameKey];
 }
 
+function localizedStrategyStatusLabel(status: string, language: UiLanguage) {
+  if (language !== "en-US") return status;
+  if (status === "第一关策略 V0 / 调试中") return "Stage 1 strategy V0 / debugging";
+  if (status === "计划中") return "Planned";
+  if (status === "无策略") return "No strategy";
+  return status;
+}
+
+function localizedRomSupportLabel(label: string, language: UiLanguage) {
+  if (language !== "en-US") return label;
+  if (label === "正式适配") return "Production adapted";
+  if (label === "TAS 匹配 / 策略待迁移") return "TAS matched / strategy pending migration";
+  if (label === "待验证") return "Pending verification";
+  if (label === "资料参考") return "Reference only";
+  if (label === "不用于正式策略") return "Not for production strategy";
+  if (label === "未识别") return "Unrecognized";
+  return label;
+}
+
+function pendingHashLabel(language: UiLanguage) {
+  return language === "en-US" ? "Pending" : "待计算";
+}
+
 function createServerRomEntry(info: ServerRomFileInfo): RomLibraryEntry {
   const headerBytes = new Uint8Array(info.headerBytes ?? []);
   const metadata = parseNesRomMetadata(headerBytes, {
@@ -6481,7 +6504,7 @@ function ConsoleDeck({
                     </div>
                     <div>
                       <span>{t(uiLanguage, "console.strategy")}</span>
-                      <b>{selectedUiStatus.strategyStatus}</b>
+                      <b>{localizedStrategyStatusLabel(selectedUiStatus.strategyStatus, uiLanguage)}</b>
                     </div>
                     <div>
                       <span>TAS</span>
@@ -6497,7 +6520,7 @@ function ConsoleDeck({
                     </div>
                     <div>
                       <span>{t(uiLanguage, "console.support")}</span>
-                      <b>{selectedMetadata.romSupportLabel}</b>
+                      <b>{localizedRomSupportLabel(selectedMetadata.romSupportLabel, uiLanguage)}</b>
                     </div>
                     <div>
                       <span>{t(uiLanguage, "console.size")}</span>
@@ -6513,15 +6536,15 @@ function ConsoleDeck({
                     </div>
                     <div>
                       <span>MD5</span>
-                      <b>{selectedMetadata.md5Short || "待计算"}</b>
+                      <b>{selectedMetadata.md5Short || pendingHashLabel(uiLanguage)}</b>
                     </div>
                     <div>
                       <span>SHA1</span>
-                      <b>{selectedMetadata.sha1Short || "待计算"}</b>
+                      <b>{selectedMetadata.sha1Short || pendingHashLabel(uiLanguage)}</b>
                     </div>
                     <div>
                       <span>SHA256</span>
-                      <b>{selectedMetadata.sha256Short || "待计算"}</b>
+                      <b>{selectedMetadata.sha256Short || pendingHashLabel(uiLanguage)}</b>
                     </div>
                   </div>
                 ) : (
@@ -6535,7 +6558,7 @@ function ConsoleDeck({
             {romMetadata ? (
               <>
                 <strong>{loadedUiStatus.chineseName} · {romMetadata.displayTitle}</strong>
-                <small>{romMetadata.romProfileId} / {loadedUiStatus.strategyStatus} / {romMetadata.romSupportLabel} / {localizedTasStatusLabel(loadedTas, uiLanguage)}</small>
+                <small>{romMetadata.romProfileId} / {localizedStrategyStatusLabel(loadedUiStatus.strategyStatus, uiLanguage)} / {localizedRomSupportLabel(romMetadata.romSupportLabel, uiLanguage)} / {localizedTasStatusLabel(loadedTas, uiLanguage)}</small>
               </>
             ) : (
               <>
