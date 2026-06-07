@@ -95,6 +95,7 @@ import {
   evaluateTasPlaybackGuard,
   type TasPlaybackGuardState
 } from "./tasPlaybackGate";
+import { DEFAULT_LANGUAGE, t, type UiLanguage } from "./i18n";
 import { analyzePlayTrace, type PlayTraceAnalysisReport } from "./playTraceAnalysis";
 import { classifyBotRunTerminalState } from "./runtimeStopControl";
 import {
@@ -5990,6 +5991,34 @@ function TasWindow({
   );
 }
 
+function LanguageSwitch({
+  language,
+  onLanguageChange
+}: {
+  language: UiLanguage;
+  onLanguageChange: (language: UiLanguage) => void;
+}) {
+  return (
+    <div className="language-switch" aria-label={t(language, "language.label")}>
+      <span>{t(language, "language.label")}</span>
+      <button
+        className={language === "zh-CN" ? "active" : ""}
+        onClick={() => onLanguageChange("zh-CN")}
+        type="button"
+      >
+        {t(language, "language.zh")}
+      </button>
+      <button
+        className={language === "en-US" ? "active" : ""}
+        onClick={() => onLanguageChange("en-US")}
+        type="button"
+      >
+        {t(language, "language.en")}
+      </button>
+    </div>
+  );
+}
+
 function ConsoleDeck({
   status,
   romMetadata,
@@ -6000,6 +6029,7 @@ function ConsoleDeck({
   selectedTasMovieId,
   tasCommentaryMode,
   tasPlaybackState,
+  uiLanguage,
   globalTraining,
   traceRecording,
   traceSampleCount,
@@ -6012,6 +6042,7 @@ function ConsoleDeck({
   onTasPause,
   onTasPlay,
   onTasStop,
+  onLanguageChange,
   onRun,
   onPause,
   onReset,
@@ -6029,6 +6060,7 @@ function ConsoleDeck({
   selectedTasMovieId: string;
   tasCommentaryMode: TasCommentaryMode;
   tasPlaybackState: TasPlaybackUiState;
+  uiLanguage: UiLanguage;
   globalTraining: GlobalTrainingState;
   traceRecording: boolean;
   traceSampleCount: number;
@@ -6041,6 +6073,7 @@ function ConsoleDeck({
   onTasPause: () => void;
   onTasPlay: () => void;
   onTasStop: () => void;
+  onLanguageChange: (language: UiLanguage) => void;
   onRun: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -6070,6 +6103,7 @@ function ConsoleDeck({
           <Cpu size={18} />
           <span>主机</span>
           <small className="hardware-spec">{FC_HARDWARE_SPEC}</small>
+          <LanguageSwitch language={uiLanguage} onLanguageChange={onLanguageChange} />
         </div>
         <div className="cartridge-slot">
           <input
@@ -6663,6 +6697,7 @@ function App() {
   const [selectedRomId, setSelectedRomId] = useState("");
   const [romLibraryDirLabel, setRomLibraryDirLabel] = useState("D:\\Ai-Play\\ROM");
   const [romLibraryStatus, setRomLibraryStatus] = useState("正在扫描默认 ROM 目录...");
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(DEFAULT_LANGUAGE);
   const [frameCount, setFrameCount] = useState(0);
   const [ramSnapshot, setRamSnapshot] = useState<GameRamSnapshot | null>(null);
   const [gameplayActive, setGameplayActive] = useState(false);
@@ -8316,6 +8351,7 @@ function App() {
             globalTraining={globalTraining}
             onDirectoryFiles={handleRomDirectoryFiles}
             onLoadLocalRom={loadLocalRom}
+            onLanguageChange={setUiLanguage}
             onPause={() => setRunning(false)}
             onReset={resetRuntime}
             onRun={() => setRunning(true)}
@@ -8339,6 +8375,7 @@ function App() {
             status={status}
             tasCommentaryMode={tasCommentaryMode}
             tasPlaybackState={tasPlaybackState}
+            uiLanguage={uiLanguage}
             traceRecording={traceRecording}
             traceSampleCount={traceSampleCount}
           />

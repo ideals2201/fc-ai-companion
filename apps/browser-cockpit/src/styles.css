@@ -962,6 +962,34 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  color: #8da2b9;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.language-switch button {
+  min-width: 54px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  background: #101722;
+  color: #c9d6e6;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.language-switch button.active {
+  border-color: rgba(78, 201, 128, 0.6);
+  background: rgba(42, 137, 82, 0.42);
+  color: #effff4;
+}
+
 .hidden-file-input {
   display: none;
 }
