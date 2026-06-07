@@ -271,8 +271,10 @@ test("side training archive produces standard trace evidence for packaging", () 
 
 test("strategy package save consumes archived side training evidence", () => {
   assert.match(mainSource, /createStrategyPackageEvidenceExport/, "save workflow should use the standard package evidence export helper");
+  assert.match(mainSource, /createCandidateStrategyFragmentProposal/, "save workflow should create candidate fragment proposals from TAS baselines plus TraceEvidence");
   assert.match(mainSource, /createStrategyPackageValidationReport/, "validation replay should be converted into a standard validation report");
   assert.match(mainSource, /strategyPackageValidationReport/, "package save should retain the latest validation report object");
+  assert.match(mainSource, /candidateFragmentProposals:/, "package save should include candidate fragment proposals when evidence has a TAS side baseline");
   assert.match(mainSource, /evidenceBySide:\s*sideTrainingTraceEvidence/, "package save should consume the latest side-owned archived evidence");
   assert.match(mainSource, /validationReport:\s*strategyPackageValidationReport/, "package save should consume the standard validation report");
   assert.match(mainSource, /validationReplayComplete/, "package save should stay behind validation replay");

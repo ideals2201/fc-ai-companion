@@ -28,3 +28,8 @@ test("standardized operation manual requires validation report gates before pack
   assert.match(source, /desync/i, "manual should block package save after desync");
   assert.match(source, /ROMProfile mismatch/i, "manual should block package save on ROMProfile mismatch");
 });
+
+test("standardized operation manual includes candidate fragment package evidence", () => {
+  assert.match(source, /candidate StrategyFragment proposal/i, "manual should include candidate fragment proposals in package evidence");
+  assert.match(source, /tasIsController/i, "manual should keep TAS explicitly marked as non-controller evidence");
+});

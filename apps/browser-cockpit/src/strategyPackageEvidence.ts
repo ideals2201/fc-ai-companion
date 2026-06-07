@@ -1,4 +1,5 @@
 import type { StrategyTraceEvidence, StrategyTraceSide } from "./strategyTraceEvidence";
+import type { CandidateStrategyFragmentProposal } from "./strategyFragmentProposal";
 
 export type StrategyPackageSideScope = "none" | "1p-only" | "2p-only" | "1p-2p";
 
@@ -48,6 +49,7 @@ export type StrategyPackageValidationReportOptions = {
 };
 
 export type StrategyPackageEvidenceExportOptions = {
+  candidateFragmentProposals?: CandidateStrategyFragmentProposal[];
   createdAt?: string;
   displayName: string;
   evidenceBySide: Record<StrategyTraceSide, StrategyTraceEvidence | null>;
@@ -89,11 +91,13 @@ export type StrategyPackageEvidenceExport = {
     sideScope: StrategyPackageSideScope;
     status: "candidate";
     sideArtifacts: Record<"1p" | "2p", {
+      candidateFragments: string[];
       evidence: string[];
       tasSideBaselines: string[];
       validationReports: string[];
     }>;
     quality: {
+      candidateFragmentCount: number;
       evidenceCount: number;
       validatedModes: string[];
     };
@@ -121,6 +125,10 @@ function sideKey(side: StrategyTraceSide): "1p" | "2p" {
 
 function evidencePath(evidence: StrategyTraceEvidence) {
   return `stages/${evidence.stageId}/trace-evidence/${evidence.fragmentId}.json`;
+}
+
+function candidateFragmentPath(evidence: StrategyTraceEvidence, proposal: CandidateStrategyFragmentProposal) {
+  return `stages/${evidence.stageId}/candidate-fragments/${proposal.fragment.id}.json`;
 }
 
 function validationReportPath(report: StrategyPackageValidationReport, evidence: Record<StrategyTraceSide, StrategyTraceEvidence>) {
@@ -255,6 +263,28 @@ function assertValidationReport(
   }
 }
 
+function selectedEvidenceForProposal(
+  proposal: CandidateStrategyFragmentProposal,
+  selectedSides: StrategyTraceSide[],
+  evidence: Record<StrategyTraceSide, StrategyTraceEvidence>
+) {
+  const sourceEvidenceId = proposal.fragment.source.traceEvidence.fragmentId;
+  const side = selectedSides.find((candidateSide) => evidence[candidateSide].fragmentId === sourceEvidenceId);
+  if (!side) {
+    throw new Error(`candidate StrategyFragment proposal missing selected TraceEvidence ${sourceEvidenceId}`);
+  }
+  if (proposal.fragment.status !== "candidate") {
+    throw new Error("candidate StrategyFragment proposal must remain candidate");
+  }
+  if (proposal.fragment.source.tasSideBaseline.tasIsController !== false) {
+    throw new Error("candidate StrategyFragment proposal must keep TAS as non-controller evidence");
+  }
+  return {
+    side,
+    evidence: evidence[side]
+  };
+}
+
 export function createStrategyPackageEvidenceExport(
   options: StrategyPackageEvidenceExportOptions
 ): StrategyPackageEvidenceExport {
@@ -274,11 +304,13 @@ export function createStrategyPackageEvidenceExport(
 
   const sideArtifacts = {
     "1p": {
+      candidateFragments: [] as string[],
       evidence: [] as string[],
       tasSideBaselines: [] as string[],
       validationReports: [] as string[]
     },
     "2p": {
+      candidateFragments: [] as string[],
       evidence: [] as string[],
       tasSideBaselines: [] as string[],
       validationReports: [] as string[]
@@ -298,6 +330,17 @@ export function createStrategyPackageEvidenceExport(
     });
   }
 
+  const candidateFragmentFiles: StrategyPackageEvidenceExport["packageFiles"] = [];
+  for (const proposal of options.candidateFragmentProposals ?? []) {
+    const matched = selectedEvidenceForProposal(proposal, selectedSides, evidence);
+    const path = candidateFragmentPath(matched.evidence, proposal);
+    sideArtifacts[sideKey(matched.side)].candidateFragments.push(path);
+    candidateFragmentFiles.push({
+      path,
+      content: proposal
+    });
+  }
+
   const manifestPatch: StrategyPackageEvidenceExport["manifestPatch"] = {
     packId: options.packId,
     packVersion: options.packVersion,
@@ -306,17 +349,20 @@ export function createStrategyPackageEvidenceExport(
     status: "candidate",
     sideArtifacts: {
       "1p": {
+        candidateFragments: uniqueSorted(sideArtifacts["1p"].candidateFragments),
         evidence: sideArtifacts["1p"].evidence,
         tasSideBaselines: uniqueSorted(sideArtifacts["1p"].tasSideBaselines),
         validationReports: uniqueSorted(sideArtifacts["1p"].validationReports)
       },
       "2p": {
+        candidateFragments: uniqueSorted(sideArtifacts["2p"].candidateFragments),
         evidence: sideArtifacts["2p"].evidence,
         tasSideBaselines: uniqueSorted(sideArtifacts["2p"].tasSideBaselines),
         validationReports: uniqueSorted(sideArtifacts["2p"].validationReports)
       }
     },
     quality: {
+      candidateFragmentCount: candidateFragmentFiles.length,
       evidenceCount: selectedSides.length,
       validatedModes: [validationReport.mode]
     },
@@ -358,6 +404,7 @@ export function createStrategyPackageEvidenceExport(
         path: reportPath,
         content: validationReport
       },
+      ...candidateFragmentFiles,
       ...packageFiles
     ]
   };

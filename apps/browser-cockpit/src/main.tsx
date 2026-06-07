@@ -104,6 +104,11 @@ import {
   type StrategyTraceEvidence
 } from "./strategyTraceEvidence";
 import {
+  createCandidateStrategyFragmentProposal,
+  type CandidateStrategyFragmentProposal,
+  type TasSideBaselineForProposal
+} from "./strategyFragmentProposal";
+import {
   createStrategyPackageEvidenceExport,
   createStrategyPackageValidationReport,
   type StrategyPackageEvidenceExport,
@@ -214,16 +219,7 @@ type SideTrainingMethodOption = {
   label: string;
   description: string;
 };
-type TasSideBaselineArtifactBaseline = {
-  movieId: string;
-  side: PlayerSide;
-  windowId: string;
-  label: string;
-  frameWindow: readonly number[];
-  pressedRatio: number;
-  strategyTypes: readonly string[];
-  intentHints: readonly string[];
-};
+type TasSideBaselineArtifactBaseline = TasSideBaselineForProposal;
 type TasSideBaselineArtifact = {
   role: "tas-side-baselines";
   romProfileId: string;
@@ -1194,7 +1190,7 @@ function tasSideBaselineArtifactOptions(language: UiLanguage): SideTrainingBasel
         Number(baseline.frameWindow[1] ?? baseline.frameWindow[0] ?? 0)
       ] as const;
       return {
-        id: `tas-${artifact.romProfileId}-${baseline.movieId}-${baseline.windowId}-${baseline.side.toLowerCase()}`,
+        id: tasSideBaselineOptionId(artifact.romProfileId, baseline),
         side: baseline.side,
         label: language === "en-US"
           ? `TAS ${baseline.side} ${baseline.label}`
@@ -1210,6 +1206,25 @@ function tasSideBaselineArtifactOptions(language: UiLanguage): SideTrainingBasel
       };
     })
   );
+}
+
+function tasSideBaselineOptionId(romProfileId: string, baseline: Pick<TasSideBaselineArtifactBaseline, "movieId" | "side" | "windowId">) {
+  return `tas-${romProfileId}-${baseline.movieId}-${baseline.windowId}-${baseline.side.toLowerCase()}`;
+}
+
+function findTasSideBaselineForSelectedOption(side: PlayerSide, selectedBaselineId: string) {
+  for (const artifact of TAS_SIDE_BASELINE_ARTIFACTS) {
+    for (const baseline of artifact.baselines) {
+      if (baseline.side !== side) continue;
+      if (tasSideBaselineOptionId(artifact.romProfileId, baseline) === selectedBaselineId) {
+        return {
+          artifact,
+          baseline
+        };
+      }
+    }
+  }
+  return null;
 }
 
 function tasBaselineOptionsForSide(
@@ -9336,7 +9351,22 @@ function App() {
       return;
     }
     try {
+      const candidateFragmentProposals = (["1P", "2P"] as PlayerSide[]).flatMap((side): CandidateStrategyFragmentProposal[] => {
+        if (!packageScopeHasSide(packageSideScope, side)) return [];
+        const evidence = sideTrainingTraceEvidence[side];
+        if (!evidence) return [];
+        const tasBaseline = findTasSideBaselineForSelectedOption(side, selectedSideBaselineIds[side]);
+        if (!tasBaseline) return [];
+        return [
+          createCandidateStrategyFragmentProposal({
+            evidence,
+            tasSideBaseline: tasBaseline.baseline,
+            tasSideBaselinePath: CONTRA_TAS_SIDE_BASELINE_PATH
+          })
+        ];
+      });
       const payload = createStrategyPackageEvidenceExport({
+        candidateFragmentProposals: candidateFragmentProposals,
         displayName: strategyExportName,
         evidenceBySide: sideTrainingTraceEvidence,
         gameProfileId: "contra",
@@ -9357,6 +9387,7 @@ function App() {
     appendLog,
     downloadStrategyPackageEvidenceExport,
     packageSideScope,
+    selectedSideBaselineIds,
     sideTrainingTraceEvidence,
     strategyExportName,
     strategyPackageValidationReport,

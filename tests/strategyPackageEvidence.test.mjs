@@ -80,6 +80,62 @@ function validationReport(overrides = {}) {
   };
 }
 
+function fragmentProposal(side = "1P", overrides = {}) {
+  const sideId = side.toLowerCase();
+  const strategyKey = side === "1P" ? "survival-v0" : "guard-v0";
+  return {
+    schema: "fc-ai-strategy-fragment-proposal-v1",
+    schemaVersion: "1.0.0",
+    fragment: {
+      id: `candidate-fragment-${sideId}-${strategyKey}-human-demo-new`,
+      label: `${side} candidate fragment`,
+      status: "candidate",
+      strategyTypes: side === "1P" ? ["survival", "combat"] : ["survival", "guard"],
+      progressionWindow: {
+        metric: "progression.primary",
+        start: side === "1P" ? 980 : 1100,
+        end: side === "1P" ? 1280 : 1420,
+        unit: "ProgressionUnits",
+        strictEnd: true
+      },
+      conditions: [],
+      actionAdvice: {
+        intent: "advance",
+        intentCombination: [{ intent: "advance", weight: 0.8 }],
+        priority: 70,
+        parameters: {},
+        lockFrames: 0
+      },
+      safetyOverrides: [
+        "real-runtime-trace-required",
+        "tas-desync-guard"
+      ],
+      exitConditions: [
+        { ref: "validation.desynced", op: "eq", value: true }
+      ],
+      source: {
+        traceEvidence: {
+          fragmentId: `candidate-${sideId}-${strategyKey}-human-demo-new`,
+          routeClass: `training:${strategyKey}:human-demo-new`,
+          branchOutcome: "window-complete",
+          sampleCount: 16
+        },
+        tasSideBaseline: {
+          path: "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+          movieId: "contra-j-2p-any-percent",
+          windowId: "opening-active",
+          frameWindow: [650, 1350],
+          tasIsController: false
+        }
+      },
+      telemetry: {
+        requiredRefs: ["progression.primary", "runtime.finalInput", "validation.desynced"]
+      },
+      ...overrides
+    }
+  };
+}
+
 test("builds a strategy-package evidence export from side training trace evidence", () => {
   const exportPayload = createStrategyPackageEvidenceExport({
     createdAt: "2026-06-08T08:00:00.000Z",
@@ -180,6 +236,41 @@ test("creates a schema-bound validation report from completed replay evidence", 
     "stages/stage-1/trace-evidence/candidate-2p-guard-v0-human-demo-new.json"
   ]);
   assert.equal(report.packageStatus, "candidate");
+});
+
+test("exports candidate StrategyFragment proposals alongside evidence without validating them", () => {
+  const proposal = fragmentProposal("1P");
+  const exportPayload = createStrategyPackageEvidenceExport({
+    createdAt: "2026-06-08T08:00:00.000Z",
+    displayName: "Contra side training export",
+    evidenceBySide: {
+      "1P": evidence("1P"),
+      "2P": evidence("2P")
+    },
+    candidateFragmentProposals: [proposal],
+    gameProfileId: "contra",
+    packId: "contra-stage1-strategy-v0",
+    packVersion: "0.1.0",
+    sideScope: "1p-only",
+    validationReport: validationReport({
+      sideScope: "1p-only",
+      selectedSides: ["1P"],
+      evidenceRefs: ["stages/stage-1/trace-evidence/candidate-1p-survival-v0-human-demo-new.json"]
+    }),
+    validationReplayComplete: true
+  });
+
+  const proposalPath = "stages/stage-1/candidate-fragments/candidate-fragment-1p-survival-v0-human-demo-new.json";
+  assert.equal(exportPayload.status, "candidate");
+  assert.equal(exportPayload.manifestPatch.status, "candidate");
+  assert.equal(exportPayload.manifestPatch.quality.candidateFragmentCount, 1);
+  assert.deepEqual(exportPayload.manifestPatch.sideArtifacts["1p"].candidateFragments, [proposalPath]);
+  assert.deepEqual(exportPayload.manifestPatch.sideArtifacts["2p"].candidateFragments, []);
+
+  const exportedProposal = exportPayload.packageFiles.find((file) => file.path === proposalPath);
+  assert.ok(exportedProposal, "candidate fragment proposal should be exported as a package file");
+  assert.equal(exportedProposal.content.fragment.status, "candidate");
+  assert.equal(exportedProposal.content.fragment.source.tasSideBaseline.tasIsController, false);
 });
 
 test("requires archived evidence for every selected package side", () => {

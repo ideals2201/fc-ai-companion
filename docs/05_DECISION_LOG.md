@@ -885,3 +885,26 @@ The strategy pack save path is now a real standardization gate instead of a UI-o
 Required next direction:
 - Build candidate StrategyFragment generation from TAS side-baselines plus archived TraceEvidence.
 - Keep every generated fragment `candidate` until real runtime validation produces a passing ValidationReport for its declared mode.
+
+## 2026-06-08: TAS baseline analysis can produce candidate AI strategy fragments
+
+Decision: TAS side-baselines may be analyzed as baseline strategy material, but the cockpit must combine them with side-owned `TraceEvidence` before creating any AI operation strategy artifact.
+
+Evidence:
+- `apps/browser-cockpit/src/strategyFragmentProposal.ts` defines `fc-ai-strategy-fragment-proposal-v1` and creates candidate StrategyFragment proposals from TAS side-baselines plus matching TraceEvidence.
+- The proposal generator rejects side, ROMProfile, gameProfileId, and stage mismatches.
+- Generated proposals remain `candidate`, use semantic `actionAdvice` instead of raw controller playback, and record `tasIsController: false`.
+- `apps/browser-cockpit/src/strategyPackageEvidence.ts` now exports candidate fragment proposal files under `stages/<stageId>/candidate-fragments/` and records them in `manifest.sideArtifacts`.
+- `apps/browser-cockpit/src/main.tsx` passes selected TAS baseline proposals into package saving only when the selected side has archived TraceEvidence.
+- Verification passed:
+  - `node --test tests/strategyFragmentProposal.test.mjs`: `3/3`.
+  - `node --test tests/strategyPackageEvidence.test.mjs`: `7/7`.
+  - `node --test tests/trainingPanelLayout.test.mjs`: `15/15`.
+  - `node --test tests/standardizedOperationManualDoc.test.mjs`: `4/4`.
+
+Reason:
+This creates the standard pipeline the owner requested: TAS -> baseline strategy analysis -> training TraceEvidence -> candidate AI StrategyFragment -> validation replay -> strategy package export. TAS can guide the AI strategy, but it is never the controller and never upgrades a strategy to validated by itself.
+
+Required next direction:
+- Run real runtime training traces against the selected Contra ROMProfile before upgrading any candidate fragment.
+- Add a browser-visible flow for selecting a TAS-matched ROMProfile and archiving the resulting side evidence.

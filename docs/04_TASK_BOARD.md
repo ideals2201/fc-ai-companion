@@ -467,3 +467,23 @@ Next:
 - Generate candidate StrategyFragments from TAS side-baselines plus archived TraceEvidence.
 - Keep TAS as evidence and baseline material only, not a live controller.
 - Run real runtime validation before upgrading any Contra strategy from `candidate`.
+
+## 2026-06-08 TAS Baseline To Candidate AI Strategy Fragment
+
+Current:
+- TAS side-baselines can now be analyzed as baseline strategy material and converted into candidate AI StrategyFragment proposals when a selected side also has archived `TraceEvidence`.
+- Generated candidate fragments stay `candidate`, carry semantic `actionAdvice`, and keep `tasIsController: false`.
+- Strategy package save now exports candidate fragment proposals under `stages/<stageId>/candidate-fragments/` and references them from `manifest.sideArtifacts`.
+- Package save still requires selected-side TraceEvidence plus a passing `ValidationReport`; TAS baseline material cannot bypass validation.
+
+Verification:
+- `node --test tests/strategyFragmentProposal.test.mjs`: `3/3`.
+- `node --test tests/strategyPackageEvidence.test.mjs`: `7/7`.
+- `node --test tests/trainingPanelLayout.test.mjs`: `15/15`.
+- `node --test tests/standardizedOperationManualDoc.test.mjs`: `4/4`.
+- Browser check: visible Chrome at `http://127.0.0.1:5173/?autoload=1`; clicking `启动1P训练` changed `1P Training` from `已选择，待启动` to `训练中`.
+
+Next:
+- Use a TAS-matched Contra ROMProfile for the TAS baseline training path, or archive a human/AI trace for the current `contra-us-good` ROMProfile.
+- Run validation replay before any candidate fragment or package is upgraded beyond `candidate`.
+- Continue stage-by-stage Contra clearance with separate survival, speed, combat, loot, and guard evidence.

@@ -138,6 +138,7 @@ Required export contents:
 - `manifest.side-artifacts.patch.json`
 - selected side `ValidationReport` files
 - selected side TraceEvidence files
+- candidate StrategyFragment proposal files generated from selected TAS side-baselines plus matching TraceEvidence, when available
 - TAS side-baseline path references, when used
 - ROM policy
 - validation status
@@ -147,6 +148,7 @@ Rules:
 - ROM file must not be bundled.
 - `romFileNotIncluded` must be true.
 - `userMustProvideOwnRom` must be true.
+- TAS-derived candidate StrategyFragment proposals must keep `tasIsController` false.
 - Missing selected-side TraceEvidence blocks package save.
 - Missing or failed ValidationReport blocks package save.
 - If any selected side is unvalidated, export status remains `candidate`.
