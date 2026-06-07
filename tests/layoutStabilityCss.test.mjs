@@ -28,6 +28,12 @@ function assertNoDeclaration(rule, property) {
   assert.equal(match, null, `${property} declaration should not exist`);
 }
 
+function rulesWithSelectorFragment(fragment) {
+  return Array.from(css.matchAll(/([^{}]+)\{([^{}]*)\}/g))
+    .filter((match) => match[1].includes(fragment))
+    .map((match) => match[2]);
+}
+
 test("primary cockpit windows keep stable outer dimensions", () => {
   const equipmentLayout = ruleFor(".equipment-layout");
   assertDeclaration(equipmentLayout, "grid-template-columns", /^minmax\(260px, 310px\) minmax\(520px, 1fr\) minmax\(260px, 310px\)$/);
@@ -88,6 +94,34 @@ test("training controls extend downward without turning the panel into a scroll 
 
   const packageScopeToggleStack = ruleFor(".package-scope-toggle-stack");
   assertDeclaration(packageScopeToggleStack, "grid-template-rows", /^repeat\(2, 1fr\)$/);
+});
+
+test("active training areas use highlighted borders without dimming content", () => {
+  const globalDisabled = ruleFor("button:disabled");
+  assertNoDeclaration(globalDisabled, "opacity");
+  assertNoDeclaration(globalDisabled, "filter");
+
+  const activeTrainingPanel = ruleFor(".side-training-panel.selected-training-side");
+  assertDeclaration(activeTrainingPanel, "border-color", /rgba\(104,\s*227,\s*145,\s*0\.82\)/);
+  assertDeclaration(activeTrainingPanel, "box-shadow", /rgba\(104,\s*227,\s*145,\s*0\.22\)/);
+  assertNoDeclaration(activeTrainingPanel, "opacity");
+  assertNoDeclaration(activeTrainingPanel, "filter");
+
+  const activeTrainingControl = ruleFor(".operation-strategy-control.training-active");
+  assertDeclaration(activeTrainingControl, "border-color", /rgba\(104,\s*227,\s*145,\s*0\.78\)/);
+  assertDeclaration(activeTrainingControl, "box-shadow", /rgba\(104,\s*227,\s*145,\s*0\.2\)/);
+  assertNoDeclaration(activeTrainingControl, "opacity");
+  assertNoDeclaration(activeTrainingControl, "filter");
+
+  for (const rule of rulesWithSelectorFragment(".training-locked")) {
+    assertNoDeclaration(rule, "opacity");
+    assertNoDeclaration(rule, "filter");
+  }
+
+  for (const rule of rulesWithSelectorFragment(":disabled")) {
+    assertNoDeclaration(rule, "opacity");
+    assertNoDeclaration(rule, "filter");
+  }
 });
 
 test("non-log cockpit content is fully displayed instead of becoming a scroll window", () => {

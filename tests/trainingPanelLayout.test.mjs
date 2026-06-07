@@ -28,16 +28,16 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /className=\{training\.selectedForTraining \? "side-training-panel selected-training-side" : "side-training-panel"\}/, "focused side training panel should have a visible selected border");
   assert.match(mainSource, /className=\{training\.selectedForTraining \? "side-training-title-button active" : "side-training-title-button"\}/, "side training title should be a centered selectable button");
   assert.match(mainSource, /onSideTrainingFocus/, "side training title should route focus selection with side ownership");
-  assert.match(mainSource, /className="side-strategy-category-selector"/, "side training panel should allow changing the trained strategy category");
+  assert.match(mainSource, /selectorClassName\("side-strategy-category-selector"/, "side training panel should allow changing the trained strategy category");
   assert.match(mainSource, /training\.strategyCategoryOptions\.map/, "side training strategy selector should list package strategy categories");
   assert.match(mainSource, /onSideTrainingStrategyChange/, "training strategy category changes should be routed with side ownership");
-  assert.match(mainSource, /disabled=\{!training\.trainingSessionActive \|\| !training\.selectedForTraining\}/, "side training strategy buttons should unlock only during an active session for the selected side");
+  assert.match(mainSource, /disabled=\{!sideTrainingActive\}/, "side training strategy buttons should unlock only during that side's active session");
   assert.match(mainSource, /<strong>\{training\.packDisplayName\} \(\{training\.strategyCategoryLabel\}\)<\/strong>/, "pack name and strategy category should be rendered as one prominent centered identity");
   assert.match(mainSource, /training\.strategyBaseline/, "side training panel should use Strategy Baseline instead of the old TAS-only baseline label");
   assert.doesNotMatch(mainSource, /t\(language, "training\.baselineStrategy"\)/, "side training panel should not render the duplicated baseline-strategy field");
-  assert.match(mainSource, /className="side-baseline-selector"/, "side training panel should render a real baseline selector");
+  assert.match(mainSource, /selectorClassName\("side-baseline-selector"/, "side training panel should render a real baseline selector");
   assert.match(mainSource, /training\.baselineOptions\.map/, "side baseline selector should list available baselines");
-  assert.match(mainSource, /className="side-training-method-selector"/, "side training panel should render training method controls");
+  assert.match(mainSource, /selectorClassName\("side-training-method-selector"/, "side training panel should render training method controls");
   assert.match(mainSource, /training\.trainingMethodOptions\.map/, "side training method selector should list available methods");
   assert.match(mainSource, /className="side-training-context-actions"/, "side training panel should expose only contextual actions");
   assert.doesNotMatch(mainSource, /className="side-training-workflow-actions"/, "side training panel should not keep the old permanent workflow row");
@@ -72,8 +72,8 @@ test("center column includes a global training console for shared evidence and v
   assert.match(mainSource, /className="training-pack-banner"/, "operation strategy control should show the strategy pack name prominently");
   assert.match(mainSource, /className="training-session-control"/, "operation strategy control should expose whole-module start and stop training controls");
   assert.match(mainSource, /training\.trainingSessionActive \? "operation-strategy-control training-active" : "operation-strategy-control"/, "operation strategy control should visibly mark active training sessions");
-  assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode controls should be locked by TAS or active training");
-  assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top strategy buttons should be locked by TAS or active training");
+  assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode controls should be locked by TAS or active side training");
+  assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top strategy buttons should be locked by TAS or active side training");
   assert.match(mainSource, /disabled=\{strategyControlsLocked\}/, "top strategy buttons should be disabled while training owns strategy selection");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*t\(language, "training\.strategyBaseline"\)/, "operation strategy control should not duplicate the side-owned strategy baseline selector");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*t\(language, "training\.tasBase"\)[\s\S]*training\.tasBaseLabel/, "operation strategy control should not present TAS as the only base type");
@@ -90,12 +90,25 @@ test("center column includes a global training console for shared evidence and v
   assert.match(mainSource, /training\.resultUnverified/, "unverified result data should be visibly marked");
 });
 
+test("side training sessions are independent and only lock their own play area", () => {
+  assert.match(mainSource, /selectedTrainingSides/, "1P and 2P training selection should be modeled as independent side flags");
+  assert.match(mainSource, /activeTrainingSides/, "active training should be tracked per side instead of one global selected side");
+  assert.doesNotMatch(mainSource, /selectedTrainingSide === "1P"/, "1P and 2P training panels must not be mutually exclusive");
+  assert.doesNotMatch(mainSource, /selectedTrainingSide === "2P"/, "2P training should not depend on a single selected side");
+  assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["1P"\]\.trainingSessionActive\}/, "1P training should lock only the 1P game area");
+  assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "2P training should lock only the 2P game area");
+  assert.match(mainSource, /const trainingSessionActive = activeTrainingSides\["1P"\] \|\| activeTrainingSides\["2P"\]/, "global training status should summarize side sessions");
+  assert.match(mainSource, /const canStartTrainingSession = \(\["1P", "2P"\] as PlayerSide\[\]\)\.some/, "training start should be available when any selected side is not active");
+  assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{[\s\S]*"1P": current\["1P"\] \|\| selectedTrainingSides\["1P"\][\s\S]*"2P": current\["2P"\] \|\| selectedTrainingSides\["2P"\]/, "starting training should activate every selected side without forcing 1P/2P exclusivity");
+  assert.match(mainSource, /setActiveTrainingSides\(\{ "1P": false, "2P": false \}\)/, "stopping training should release every side training lock");
+});
+
 test("operation strategy control keeps only shared strategy-training workflow actions", () => {
   assert.match(mainSource, /onTrainingSessionStart/, "training console should expose whole-module training start");
   assert.match(mainSource, /onTrainingSessionStop/, "training console should expose whole-module training stop");
   assert.match(mainSource, /function trainingControlModeForSelection/, "training session start should derive control mode from baseline and training method");
-  assert.match(mainSource, /setTrainingSessionActive\(true\)/, "starting training should activate the training session");
-  assert.match(mainSource, /setTrainingSessionActive\(false\)/, "stopping training should release the training session");
+  assert.match(mainSource, /setActiveTrainingSides/, "starting and stopping training should update side-owned training sessions");
+  assert.match(mainSource, /canStartTrainingSession/, "training start should be gated by side-owned session state");
   assert.match(mainSource, /training\.saveStrategy/, "training console should expose gated strategy saving");
   assert.match(mainSource, /training\.validateStrategy/, "training console should expose validation or replay");
   assert.doesNotMatch(mainSource, /<GlobalTrainingConsole[\s\S]*onTrainingSelectBaseline=/, "global console should not receive side-owned baseline selection");
@@ -157,12 +170,15 @@ test("side baseline selection uses archived TAS side-baselines without turning T
   const handlerMatch = mainSource.match(/const onSideTrainingSelectBaseline = useCallback\(\(side: PlayerSide\) => \{([\s\S]*?)\}, \[appendLog, selectedSideBaselineIds, uiLanguage\]\);/);
   assert.ok(handlerMatch, "side baseline selection handler should exist");
   const handlerSource = handlerMatch[1];
-  assert.match(mainSource, /TAS_SIDE_BASELINE_CATALOG/, "side baseline choices should come from archived TAS side-baselines");
+  assert.match(mainSource, /side-baselines\.json/, "side baseline choices should import the standard TAS side-baseline artifact");
+  assert.match(mainSource, /TAS_SIDE_BASELINE_ARTIFACTS/, "side baseline choices should come from archived TAS side-baseline artifacts");
+  assert.match(mainSource, /function tasSideBaselineArtifactOptions/, "TAS side-baseline artifacts should be converted into UI baseline options");
   assert.match(mainSource, /function tasBaselineOptionsForSide/, "side baseline choices should be side-filtered");
   assert.match(mainSource, /function findTasSideBaselineOption/, "side baseline choices should resolve archived baseline options");
   assert.match(handlerSource, /findTasSideBaselineOption/, "select baseline should report the archived selected option");
   assert.doesNotMatch(handlerSource, /setSelectedTasMovieId/, "selecting a side baseline should not silently select a raw TAS movie");
   assert.doesNotMatch(handlerSource, /identifyTasForRom/, "raw TAS matching should not make TAS baselines immediately selectable");
+  assert.doesNotMatch(mainSource, /const TAS_SIDE_BASELINE_CATALOG = \[/, "TAS baseline UI should not be maintained as a separate hardcoded list");
 });
 
 test("human demonstration is a baseline source, not a training method", () => {
@@ -184,6 +200,26 @@ test("human demonstration is a baseline source, not a training method", () => {
   assert.match(methodOptionsSource, /human-assist/, "human assist should be a training method");
   assert.match(methodOptionsSource, /manual-edit/, "manual edit should be a training method");
   assert.doesNotMatch(methodOptionsSource, /human-demo-new/, "human demonstration should not be modeled as a training method");
+});
+
+test("side training baseline and method controls unlock only for valid active states", () => {
+  assert.match(mainSource, /function isNewRunBaseline/, "new human and new AI run baselines should have a shared direct-run predicate");
+  assert.match(mainSource, /const sideTrainingActive = training\.trainingSessionActive/, "side panel should derive control availability from its own active session");
+  assert.match(mainSource, /const directRunBaseline = isNewRunBaseline\(training\.selectedBaselineId\)/, "side panel should detect direct human or AI run baselines");
+  assert.match(mainSource, /disabled=\{!sideTrainingActive\}[\s\S]*value=\{training\.selectedBaselineId\}/, "strategy baseline selection should be disabled after training stops");
+  assert.match(mainSource, /disabled=\{!sideTrainingActive \|\| directRunBaseline\}/, "training method choices should be disabled for inactive sides and direct new-run baselines");
+  assert.match(mainSource, /const showDirectRunActions = directRunBaseline/, "direct new-run baselines should expose start/archive actions without requiring a method");
+  assert.match(mainSource, /className=\{selectorClassName\("side-training-method-selector", !sideTrainingActive \|\| directRunBaseline\)\}/, "disabled method selector should have dark inactive styling");
+  assert.match(mainSource, /className=\{selectorClassName\("side-baseline-selector", !sideTrainingActive\)\}/, "disabled baseline selector should have dark inactive styling");
+  assert.match(mainSource, /disabled=\{!sideTrainingActive \|\| actions\.traceRecording\}/, "direct start action should be gated by side training activity");
+});
+
+test("direct training baselines synchronize side play mode while training owns input", () => {
+  assert.match(mainSource, /function trainingControlModeForSelection/, "training baseline should choose the side play mode");
+  assert.match(mainSource, /if \(baselineId === "human-demo-new"\) return "human"/, "new human demonstration baseline should switch the side to human input");
+  assert.match(mainSource, /if \(baselineId === "ai-run-new"\) return "ai"/, "new AI run baseline should switch the side to AI input");
+  assert.match(mainSource, /changeControlMode\(side, trainingControlModeForSelection\(baselineId, selectedSideTrainingMethods\[side\]\)\)/, "changing a baseline during active training should synchronize the side play mode");
+  assert.match(mainSource, /const mode = trainingControlModeForSelection\(selectedSideBaselineIds\[side\], selectedSideTrainingMethods\[side\]\);[\s\S]*changeControlMode\(side, mode\)/, "starting training should synchronize every active side to its baseline mode");
 });
 
 test("side training panels derive their target from the selected AI strategy", () => {
