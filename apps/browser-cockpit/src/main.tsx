@@ -103,6 +103,12 @@ import {
   createSideTrainingTraceEvidence,
   type StrategyTraceEvidence
 } from "./strategyTraceEvidence";
+import {
+  createStrategyPackageEvidenceExport,
+  createStrategyPackageValidationReport,
+  type StrategyPackageEvidenceExport,
+  type StrategyPackageValidationReport
+} from "./strategyPackageEvidence";
 import { classifyBotRunTerminalState } from "./runtimeStopControl";
 import {
   parseTraceCaptureConfig,
@@ -489,6 +495,7 @@ type SideTrainingActions = {
   traceRecording: boolean;
   traceSampleCount: number;
   onSideTrainingFocus: (side: PlayerSide) => void;
+  onSideTrainingStart: (side: PlayerSide) => void;
   onSideTrainingStrategyChange: (side: PlayerSide, strategy: AiStrategyKey) => void;
   onSideTrainingSelectBaseline: (side: PlayerSide) => void;
   onSideTrainingBaselineChange: (side: PlayerSide, baselineId: string) => void;
@@ -903,6 +910,7 @@ const CONTRA_LEGACY_GAME_ID = "contra-us";
 const CONTRA_US_ROM_PROFILE_ID = "contra-us-good";
 const CONTRA_US_COMPATIBILITY_GROUP = "contra-us";
 const PERSONAL_STRATEGY_STORAGE_KEY = "fc-ai.personal.stage1.strategy.v1";
+const CONTRA_TAS_SIDE_BASELINE_PATH = "data/training/contra/tas_bases/contra-j-good/side-baselines.json";
 const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · Controllers x2";
 
 const strategyResultKeys = ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"] as const satisfies readonly AiStrategyKey[];
@@ -6173,7 +6181,7 @@ function buildSideTrainingStateV2(
   const trainingStatusLabel = trainingSessionActive
     ? language === "en-US" ? "Active" : "训练中"
     : selectedForTraining
-      ? language === "en-US" ? "Queued" : "待启动"
+      ? language === "en-US" ? "Queued to start" : "已选择，待启动"
       : language === "en-US" ? "Not selected" : "未选择";
   const captureStatus = traceRecording ? t(language, "training.traceCapturing") : traceSampleCount > 0 ? "Captured" : "Not captured";
   const failureSummary = sideDeath
@@ -6428,6 +6436,7 @@ function SideTrainingPanel({
   const showDirectRunActions = directRunBaseline;
   const showCaptureActions = showDirectRunActions || training.selectedTrainingMethod === "human-assist";
   const autoPatchArchiveLabel = training.selectedBaselineId === "ai-run-new" ? "归档AI跑局" : "生成补丁";
+  const sideStartLabel = language === "en-US" ? `Start ${training.side} Training` : `启动${training.side}训练`;
 
   return (
     <div className={sideTrainingPanelClassName(training)} aria-label={`${training.side} 训练区`}>
@@ -6444,6 +6453,14 @@ function SideTrainingPanel({
       <div className="side-training-pack-identity">
         <strong>{training.packDisplayName} ({training.strategyCategoryLabel})</strong>
       </div>
+      <button
+        className="side-training-start-button"
+        disabled={training.trainingSessionActive}
+        onClick={() => actions.onSideTrainingStart(training.side)}
+        type="button"
+      >
+        {sideStartLabel}
+      </button>
       <div className={selectorClassName("side-strategy-category-selector", !sideTrainingActive)} aria-label="训练策略种类">
         <span>策略种类</span>
         <div>
@@ -7960,6 +7977,8 @@ function App() {
     "1P": null,
     "2P": null
   });
+  const [strategyPackageValidationReport, setStrategyPackageValidationReport] = useState<StrategyPackageValidationReport | null>(null);
+  const [strategyPackageEvidenceExport, setStrategyPackageEvidenceExport] = useState<StrategyPackageEvidenceExport | null>(null);
   const [botRunReport, setBotRunReport] = useState<BotRunReport>(createIdleBotRunReport);
   const [packageSideScope, setPackageSideScope] = useState<StrategyPackageSideScope>("1p-only");
   const [strategyExportName, setStrategyExportName] = useState<string>(ACTIVE_STRATEGY_PACK.displayName["zh-CN"]);
@@ -8191,6 +8210,19 @@ function App() {
     anchor.remove();
     window.URL.revokeObjectURL(url);
     appendLog(`TraceEvidence ${side}: archived ${evidence.sampleCount} frames / ${evidence.branchOutcome}`);
+  }, [appendLog]);
+
+  const downloadStrategyPackageEvidenceExport = useCallback((payload: StrategyPackageEvidenceExport) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fc-ai-strategy-package-evidence-${payload.packId}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+    appendLog(`StrategyPackageEvidence: exported ${payload.packageFiles.length} files / ${payload.status}`);
   }, [appendLog]);
 
   useEffect(() => {
@@ -9227,22 +9259,32 @@ function App() {
     appendLog(`Training ${side}: method ${option.label}`);
   }, [activeTrainingSides, appendLog, changeControlMode, selectedSideBaselineIds]);
 
+  const startSideTraining = useCallback((side: PlayerSide) => {
+    if (activeTrainingSides[side]) {
+      appendLog(`Training ${side}: already active`);
+      return;
+    }
+    setSelectedTrainingSides((current) => ({ ...current, [side]: true }));
+    setActiveTrainingSides((current) => ({ ...current, [side]: true }));
+    setPackageSideScope((current) => packageScopeHasSide(current, side) ? current : side === "1P" ? "1p-only" : "2p-only");
+    const mode = trainingControlModeForSelection(selectedSideBaselineIds[side], selectedSideTrainingMethods[side]);
+    changeControlMode(side, mode);
+    appendLog(`Training: started ${side} / ${controlModeLabels[mode]}`);
+  }, [activeTrainingSides, appendLog, changeControlMode, selectedSideBaselineIds, selectedSideTrainingMethods]);
+
   const onTrainingSessionStart = useCallback(() => {
     const sidesToStart = (["1P", "2P"] as PlayerSide[]).filter((side) => selectedTrainingSides[side] && !activeTrainingSides[side]);
     if (sidesToStart.length === 0) {
       appendLog("Training: select at least one inactive side before starting");
       return;
     }
-    setActiveTrainingSides((current) => ({
-      "1P": current["1P"] || selectedTrainingSides["1P"],
-      "2P": current["2P"] || selectedTrainingSides["2P"]
-    }));
-    for (const side of sidesToStart) {
-      const mode = trainingControlModeForSelection(selectedSideBaselineIds[side], selectedSideTrainingMethods[side]);
-      changeControlMode(side, mode);
-      appendLog(`Training: started ${side} / ${controlModeLabels[mode]}`);
+    if (selectedTrainingSides["1P"] && selectedTrainingSides["2P"]) {
+      setPackageSideScope("1p-2p");
     }
-  }, [activeTrainingSides, appendLog, changeControlMode, selectedSideBaselineIds, selectedSideTrainingMethods, selectedTrainingSides]);
+    for (const side of sidesToStart) {
+      startSideTraining(side);
+    }
+  }, [activeTrainingSides, appendLog, selectedTrainingSides, startSideTraining]);
 
   const onTrainingSessionStop = useCallback(() => {
     setActiveTrainingSides({ "1P": false, "2P": false });
@@ -9270,6 +9312,8 @@ function App() {
       strategyKey: strategyModels[side]
     });
     setSideTrainingTraceEvidence((current) => ({ ...current, [side]: evidence }));
+    setStrategyPackageValidationReport(null);
+    setValidationReplayComplete(false);
     appendLog(`Training ${side}: archiving current trace samples as strategy evidence`);
     appendLog("训练：归档当前采集样本为策略证据");
     exportStrategyTraceEvidence(side, evidence);
@@ -9291,8 +9335,34 @@ function App() {
       appendLog("Training package save blocked: validation replay is required first");
       return;
     }
-    appendLog(`Training package save: ${strategyExportName} / ${strategyPackageSideScopeLabel(packageSideScope, uiLanguage)}`);
-  }, [appendLog, packageSideScope, strategyExportName, uiLanguage, validationReplayComplete]);
+    try {
+      const payload = createStrategyPackageEvidenceExport({
+        displayName: strategyExportName,
+        evidenceBySide: sideTrainingTraceEvidence,
+        gameProfileId: "contra",
+        packId: ACTIVE_STRATEGY_PACK.packId,
+        packVersion: ACTIVE_STRATEGY_PACK.version,
+        sideScope: packageSideScope,
+        tasSideBaselinePaths: [CONTRA_TAS_SIDE_BASELINE_PATH],
+        validationReport: strategyPackageValidationReport,
+        validationReplayComplete
+      });
+      setStrategyPackageEvidenceExport(payload);
+      downloadStrategyPackageEvidenceExport(payload);
+      appendLog(`Training package save: ${strategyExportName} / ${strategyPackageSideScopeLabel(packageSideScope, uiLanguage)} / ${payload.packageFiles.length} files`);
+    } catch (error) {
+      appendLog(`Training package save blocked: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }, [
+    appendLog,
+    downloadStrategyPackageEvidenceExport,
+    packageSideScope,
+    sideTrainingTraceEvidence,
+    strategyExportName,
+    strategyPackageValidationReport,
+    uiLanguage,
+    validationReplayComplete
+  ]);
 
   const onTrainingSavePathSelected = useCallback((pathLabel: string) => {
     setStrategySavePathLabel(pathLabel);
@@ -9316,6 +9386,7 @@ function App() {
       return next;
     });
     setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
   }, [appendLog, uiLanguage]);
 
   const changeStrategyResourcePack = useCallback((side: PlayerSide, packId: StrategyResourcePackId) => {
@@ -9326,6 +9397,7 @@ function App() {
       setStrategyResourcePacksBySide((current) => ({ ...current, "2P": packId }));
     }
     setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
     appendLog(`Training ${side}: resource pack ${strategyResourcePackLabel(packId, uiLanguage)}`);
   }, [appendLog, p2StrategyResourceOverridden, strategyResourcePacksBySide, uiLanguage]);
 
@@ -9333,16 +9405,19 @@ function App() {
     setStrategyResourcePacksBySide((current) => ({ ...current, "2P": current["1P"] }));
     setP2StrategyResourceOverridden(false);
     setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
     appendLog("Training 2P: resource pack synced to 1P");
   }, [appendLog]);
 
   const changeStrategyExportName = useCallback((name: string) => {
     setStrategyExportName(name);
     setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
   }, []);
 
   const onTrainingValidateStrategy = useCallback(() => {
     setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
     appendLog("Training global: starting package validation replay");
     void startTasReplay();
   }, [appendLog, startTasReplay]);
@@ -9725,10 +9800,46 @@ function App() {
 
   useEffect(() => {
     if (tasPlaybackState.status === "finished") {
-      setValidationReplayComplete(true);
-      appendLog("Training package validation replay: finished; save is now enabled for the selected scope.");
+      try {
+        const archivedEvidence = Object.values(sideTrainingTraceEvidence).filter((item): item is StrategyTraceEvidence => Boolean(item));
+        const validationReport = createStrategyPackageValidationReport({
+          evidenceBySide: sideTrainingTraceEvidence,
+          gameProfileId: "contra",
+          mode: "tas-baseline-replay",
+          packId: ACTIVE_STRATEGY_PACK.packId,
+          packVersion: ACTIVE_STRATEGY_PACK.version,
+          replay: {
+            complete: true,
+            desynced: false,
+            deathCount: 0,
+            finalStatus: tasPlaybackState.status,
+            frameIndex: tasPlaybackState.frameIndex,
+            maxProgression: archivedEvidence.reduce((max, evidence) => Math.max(max, evidence.maxWorldX ?? 0), 0)
+          },
+          sideScope: packageSideScope
+        });
+        setStrategyPackageValidationReport(validationReport);
+        setValidationReplayComplete(true);
+        appendLog(`Training package validation replay: finished with ValidationReport ${validationReport.reportId}; save is now enabled for the selected scope.`);
+      } catch (error) {
+        setStrategyPackageValidationReport(null);
+        setValidationReplayComplete(false);
+        appendLog(`Training package validation replay blocked: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else if (tasPlaybackState.status === "desynced") {
+      setStrategyPackageValidationReport(null);
+      setValidationReplayComplete(false);
+      appendLog(`Training package validation replay failed: ${tasPlaybackState.messageDetail ?? tasPlaybackState.message}`);
     }
-  }, [appendLog, tasPlaybackState.status]);
+  }, [
+    appendLog,
+    packageSideScope,
+    sideTrainingTraceEvidence,
+    tasPlaybackState.frameIndex,
+    tasPlaybackState.message,
+    tasPlaybackState.messageDetail,
+    tasPlaybackState.status
+  ]);
 
   useEffect(() => {
     return () => {
@@ -9749,6 +9860,7 @@ function App() {
     traceRecording,
     traceSampleCount,
     onSideTrainingFocus,
+    onSideTrainingStart: startSideTraining,
     onSideTrainingStrategyChange,
     onSideTrainingSelectBaseline,
     onSideTrainingBaselineChange,
@@ -9990,6 +10102,8 @@ function App() {
       <output data-testid="side-training-evidence-json" hidden>{JSON.stringify(sideTrainingTraceEvidence)}</output>
       <output data-testid="side-training-evidence-1p-json" hidden>{JSON.stringify(sideTrainingTraceEvidence["1P"])}</output>
       <output data-testid="side-training-evidence-2p-json" hidden>{JSON.stringify(sideTrainingTraceEvidence["2P"])}</output>
+      <output data-testid="strategy-package-validation-report-json" hidden>{JSON.stringify(strategyPackageValidationReport)}</output>
+      <output data-testid="strategy-package-evidence-export-json" hidden>{JSON.stringify(strategyPackageEvidenceExport)}</output>
       <StrategyDesignerPanel
         draft={strategyDraft}
         language={uiLanguage}

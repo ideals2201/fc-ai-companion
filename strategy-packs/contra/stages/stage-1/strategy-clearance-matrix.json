@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "scopeBoundary": "Stage 1 only. This matrix does not claim full-game clearance until later stages have equivalent evidence.",
+  "status": "candidate",
+  "clearancePolicy": {
+    "primaryGoal": "no-death",
+    "fallbackGoal": "fewest-death",
+    "promotionRule": "A strategy key can move beyond candidate only after real runtime trace evidence and validation replay prove the declared mode.",
+    "deathBudget": {
+      "target": 0,
+      "maximumCandidateFallback": 1
+    }
+  },
+  "runtimePolicy": {
+    "tasIsController": false,
+    "tasUse": "training-evidence-only",
+    "romFileNotIncluded": true,
+    "userMustProvideOwnRom": true,
+    "requiresHashExactMatch": true,
+    "requiresRealRuntimeTrace": true,
+    "requiresValidationReplay": true
+  },
+  "strategyClearance": [
+    {
+      "strategyKey": "survival-v0",
+      "strategyType": "survival",
+      "controllerSource": "ram-driven-strategy-pack-runtime",
+      "clearanceGoal": "no-death first, fewest-death fallback",
+      "stageWindows": [
+        "stage1-opening-survival",
+        "stage1-first-bridge-survival",
+        "stage1-exploding-bridge-danger",
+        "stage1-preboss-platform-capture",
+        "stage1-barrier-clear"
+      ],
+      "evidencePlan": [
+        {
+          "sourceKind": "tas-side-baseline",
+          "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+          "windowIds": ["entry-sync", "opening-active", "fixed-threat-route"],
+          "runtimeUse": "training-evidence-only",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "trace-evidence",
+          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "runtimeUse": "counterexample-and-validation",
+          "status": "candidate"
+        }
+      ],
+      "validationStatus": "candidate",
+      "nextAction": "Run side training with survival-v0, archive TraceEvidence, then validate replay for Stage 1."
+    },
+    {
+      "strategyKey": "speedrun-v0",
+      "strategyType": "speedrun",
+      "controllerSource": "ram-driven-strategy-pack-runtime",
+      "clearanceGoal": "no-death fast-clear, fewest-death fallback",
+      "stageWindows": [
+        "stage1-opening-survival",
+        "stage1-first-bridge-survival",
+        "stage1-middle-fire-advance",
+        "stage1-exploding-bridge-danger"
+      ],
+      "evidencePlan": [
+        {
+          "sourceKind": "tas-side-baseline",
+          "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+          "windowIds": ["entry-sync", "opening-active"],
+          "runtimeUse": "training-evidence-only",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "trace-evidence",
+          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "runtimeUse": "fast-route-counterexample-check",
+          "status": "candidate"
+        }
+      ],
+      "validationStatus": "candidate",
+      "nextAction": "Train speedrun-v0 only after survival windows stop producing death counterexamples."
+    },
+    {
+      "strategyKey": "combat-v0",
+      "strategyType": "combat",
+      "controllerSource": "ram-driven-strategy-pack-runtime",
+      "clearanceGoal": "no-death by clearing threats, fewest-death fallback",
+      "stageWindows": [
+        "stage1-opening-survival",
+        "stage1-middle-fire-advance",
+        "stage1-barrier-approach",
+        "stage1-barrier-clear"
+      ],
+      "evidencePlan": [
+        {
+          "sourceKind": "tas-side-baseline",
+          "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+          "windowIds": ["opening-active", "fixed-threat-route"],
+          "runtimeUse": "training-evidence-only",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "trace-evidence",
+          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "runtimeUse": "fixed-threat-and-barrier-validation",
+          "status": "candidate"
+        }
+      ],
+      "validationStatus": "candidate",
+      "nextAction": "Use fixed-threat TAS windows to tune target priority, then validate HP-lock behavior with runtime traces."
+    },
+    {
+      "strategyKey": "loot-v0",
+      "strategyType": "loot",
+      "controllerSource": "ram-driven-strategy-pack-runtime",
+      "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback",
+      "stageWindows": [
+        "stage1-first-bridge-survival",
+        "stage1-middle-fire-advance"
+      ],
+      "evidencePlan": [
+        {
+          "sourceKind": "trace-evidence",
+          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "runtimeUse": "reward-route-counterexample-check",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "gap",
+          "path": "strategy-packs/contra/stages/stage-1/known-failures.md",
+          "runtimeUse": "loot-specific-TAS-baseline-missing",
+          "status": "gap"
+        }
+      ],
+      "validationStatus": "candidate",
+      "nextAction": "Record reward-route traces before raising loot-v0 priority; do not sacrifice survival for unproven rewards."
+    },
+    {
+      "strategyKey": "guard-v0",
+      "strategyType": "guard",
+      "controllerSource": "ram-driven-strategy-pack-runtime",
+      "clearanceGoal": "no-death coop support, fewest-death fallback",
+      "stageWindows": [
+        "stage1-opening-survival",
+        "stage1-middle-fire-advance",
+        "stage1-barrier-approach"
+      ],
+      "evidencePlan": [
+        {
+          "sourceKind": "tas-side-baseline",
+          "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+          "windowIds": ["entry-sync", "coop-advance-reference", "fixed-threat-route"],
+          "runtimeUse": "training-evidence-only",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "trace-evidence",
+          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "runtimeUse": "human-ai-or-dual-ai-validation",
+          "status": "candidate"
+        }
+      ],
+      "validationStatus": "candidate",
+      "nextAction": "Train 2P guard spacing from split TAS baselines, then validate in human-AI and dual-AI modes separately."
+    }
+  ]
+}

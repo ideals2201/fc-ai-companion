@@ -102,7 +102,9 @@ test("side training sessions are independent and only lock their own play area",
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "2P training should lock only the 2P game area");
   assert.match(mainSource, /const trainingSessionActive = activeTrainingSides\["1P"\] \|\| activeTrainingSides\["2P"\]/, "global training status should summarize side sessions");
   assert.match(mainSource, /const canStartTrainingSession = \(\["1P", "2P"\] as PlayerSide\[\]\)\.some/, "training start should be available when any selected side is not active");
-  assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{[\s\S]*"1P": current\["1P"\] \|\| selectedTrainingSides\["1P"\][\s\S]*"2P": current\["2P"\] \|\| selectedTrainingSides\["2P"\]/, "starting training should activate every selected side without forcing 1P/2P exclusivity");
+  assert.match(mainSource, /const sidesToStart = \(\["1P", "2P"\] as PlayerSide\[\]\)\.filter\(\(side\) => selectedTrainingSides\[side\] && !activeTrainingSides\[side\]\)/, "training start should collect every selected inactive side independently");
+  assert.match(mainSource, /for \(const side of sidesToStart\) \{\s*startSideTraining\(side\);?\s*\}/, "starting training should activate every selected side without forcing 1P/2P exclusivity");
+  assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{ \.\.\.current, \[side\]: true \}\)\)/, "per-side training start should preserve other active side locks");
   assert.match(mainSource, /setActiveTrainingSides\(\{ "1P": false, "2P": false \}\)/, "stopping training should release every side training lock");
 });
 
@@ -110,9 +112,17 @@ test("selected training sides are queued until the start button activates them",
   assert.match(mainSource, /function sideTrainingPanelClassName/, "panel class should be derived from queued and active training state");
   assert.match(mainSource, /training\.trainingSessionActive \? "side-training-panel active-training-side" : training\.selectedForTraining \? "side-training-panel queued-training-side" : "side-training-panel"/, "selected inactive sides should be queued, not active");
   assert.match(mainSource, /training\.trainingSessionActive \? "side-training-title-button active" : training\.selectedForTraining \? "side-training-title-button queued" : "side-training-title-button"/, "selected inactive titles should use queued styling");
-  assert.match(mainSource, /selectedForTraining\s*\?\s*language === "en-US" \? "Queued" : "待启动"/, "selected inactive side should show a clear queued label");
+  assert.match(mainSource, /selectedForTraining\s*\?\s*language === "en-US" \? "Queued to start" : "已选择，待启动"/, "selected inactive side should show a clear queued label");
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["1P"\]\.trainingSessionActive\}/, "top 1P game controls should lock only after 1P training starts");
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "top 2P game controls should lock only after 2P training starts");
+});
+
+test("side training panels expose direct per-side training start controls", () => {
+  assert.match(mainSource, /onSideTrainingStart: \(side: PlayerSide\) => void/, "side actions should include an explicit start command");
+  assert.match(mainSource, /const sideStartLabel = language === "en-US" \? `Start \$\{training\.side\} Training` : `启动\$\{training\.side\}训练`/, "side panels should label the direct start action by side");
+  assert.match(mainSource, /onClick=\{\(\) => actions\.onSideTrainingStart\(training\.side\)\}/, "side start button should activate its own side");
+  assert.match(mainSource, /disabled=\{training\.trainingSessionActive\}/, "side start should be disabled once that side is already training");
+  assert.match(mainSource, /startSideTraining\(side\)/, "side start action should reuse the same activation path as global training");
 });
 
 test("operation strategy control keeps only shared strategy-training workflow actions", () => {
@@ -257,4 +267,17 @@ test("side training archive produces standard trace evidence for packaging", () 
   assert.match(mainSource, /data-testid="side-training-evidence-json"/, "browser tests should be able to inspect the latest side training evidence");
   assert.match(mainSource, /data-testid="side-training-evidence-1p-json"/, "1P evidence should be inspectable separately");
   assert.match(mainSource, /data-testid="side-training-evidence-2p-json"/, "2P evidence should be inspectable separately");
+});
+
+test("strategy package save consumes archived side training evidence", () => {
+  assert.match(mainSource, /createStrategyPackageEvidenceExport/, "save workflow should use the standard package evidence export helper");
+  assert.match(mainSource, /createStrategyPackageValidationReport/, "validation replay should be converted into a standard validation report");
+  assert.match(mainSource, /strategyPackageValidationReport/, "package save should retain the latest validation report object");
+  assert.match(mainSource, /evidenceBySide:\s*sideTrainingTraceEvidence/, "package save should consume the latest side-owned archived evidence");
+  assert.match(mainSource, /validationReport:\s*strategyPackageValidationReport/, "package save should consume the standard validation report");
+  assert.match(mainSource, /validationReplayComplete/, "package save should stay behind validation replay");
+  assert.match(mainSource, /downloadStrategyPackageEvidenceExport/, "package save should download or persist the evidence export payload");
+  assert.match(mainSource, /data-testid="strategy-package-evidence-export-json"/, "browser tests should be able to inspect the latest package evidence export");
+  assert.match(mainSource, /data-testid="strategy-package-validation-report-json"/, "browser tests should be able to inspect the latest validation report");
+  assert.doesNotMatch(mainSource, /new Blob\(\[rom/i, "package save must not include ROM bytes");
 });

@@ -446,3 +446,24 @@ Verification:
 - `npm test`: `187/187`.
 - `npm run build`: passed.
 - Browser check: initial 1P panel showed `待启动` with unlocked top controls; after `启动训练`, 1P showed `训练中` and the 1P top controls were locked.
+
+## 2026-06-08 Strategy Package Evidence Save Gate
+
+Current:
+- Strategy package saving now consumes side-owned `TraceEvidence` from `sideTrainingTraceEvidence`.
+- Validation replay now creates a schema-bound `fc-ai-strategy-validation-report-v1` report before save is enabled.
+- Save is blocked when selected-side evidence is missing, validation report is missing, replay desynced, death count is above zero, replay is incomplete, or ROMProfile compatibility fails.
+- Package evidence export includes a manifest patch, selected TraceEvidence files, and selected ValidationReport files. ROM files are not bundled.
+- Stage 1 and full-game Contra roadmap artifacts remain `candidate` or `gap`; no full-clear validation is claimed.
+
+Verification:
+- `node --test tests/strategyPackageEvidence.test.mjs`: `6/6`.
+- `node --test tests/trainingPanelLayout.test.mjs`: `15/15`.
+- `node --test tests/standardizedOperationManualDoc.test.mjs`: `3/3`.
+- `npm test`: `202/202`.
+- `npm run build`: passed with the existing Vite chunk-size warning.
+
+Next:
+- Generate candidate StrategyFragments from TAS side-baselines plus archived TraceEvidence.
+- Keep TAS as evidence and baseline material only, not a live controller.
+- Run real runtime validation before upgrading any Contra strategy from `candidate`.

@@ -862,3 +862,26 @@ Strategy packs, rollback, and sharing need schema-bound evidence. A raw play tra
 Required next direction:
 - Use archived side evidence as the input for validation replay and strategy-package save.
 - Do not mark a candidate strategy package as validated until its archived evidence and validation report both pass.
+
+## 2026-06-08: Strategy package save requires TraceEvidence plus ValidationReport
+
+Decision: `Save Strategy` must consume archived side `TraceEvidence` and a schema-bound `ValidationReport` before exporting package evidence.
+
+Evidence:
+- `apps/browser-cockpit/src/strategyPackageEvidence.ts` defines `fc-ai-strategy-package-evidence-export-v1` and `fc-ai-strategy-validation-report-v1`.
+- `createStrategyPackageEvidenceExport()` now rejects missing selected-side evidence, missing validation reports, replay desync, death count above zero, incomplete replay, and ROMProfile mismatch.
+- `apps/browser-cockpit/src/main.tsx` stores the latest validation report, invalidates it when evidence/scope/resource/name changes, and exposes it through `strategy-package-validation-report-json`.
+- Package export includes `manifest.side-artifacts.patch.json`, selected side TraceEvidence, and selected side validation report paths. ROM files are not included.
+- Verification passed:
+  - `node --test tests/strategyPackageEvidence.test.mjs`: `6/6`.
+  - `node --test tests/trainingPanelLayout.test.mjs`: `15/15`.
+  - `node --test tests/standardizedOperationManualDoc.test.mjs`: `3/3`.
+  - `npm test`: `202/202`.
+  - `npm run build`: passed with the existing Vite chunk-size warning.
+
+Reason:
+The strategy pack save path is now a real standardization gate instead of a UI-only download. TAS-derived playback can contribute evidence, but it remains a candidate source and cannot bypass death, desync, ROMProfile, or missing-evidence checks.
+
+Required next direction:
+- Build candidate StrategyFragment generation from TAS side-baselines plus archived TraceEvidence.
+- Keep every generated fragment `candidate` until real runtime validation produces a passing ValidationReport for its declared mode.

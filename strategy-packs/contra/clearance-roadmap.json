@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameProfileId": "contra",
+  "scope": "full-game-clearance",
+  "status": "candidate-and-gap",
+  "runtimePolicy": {
+    "tasIsController": false,
+    "tasUse": "training-evidence-only",
+    "romFileNotIncluded": true,
+    "userMustProvideOwnRom": true,
+    "requiresHashExactMatch": true,
+    "requiresRealRuntimeTrace": true,
+    "requiresValidationReplay": true
+  },
+  "clearanceGoal": {
+    "primary": "no-death",
+    "fallback": "fewest-death",
+    "promotionRule": "No stage or strategy key can be marked validated without real runtime TraceEvidence plus validation replay."
+  },
+  "stages": [
+    {
+      "stageId": "stage-1",
+      "label": "Jungle",
+      "validationStatus": "candidate",
+      "matrixPath": "strategy-packs/contra/stages/stage-1/strategy-clearance-matrix.json",
+      "nextEvidenceRequired": "real runtime trace and validation replay for each selected strategy key",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "candidate", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "candidate", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "candidate", "clearanceGoal": "no-death by clearing threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "candidate", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "candidate", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-2",
+      "label": "Base 1",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived baseline windows and real runtime trace for Base 1",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing base targets, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-3",
+      "label": "Waterfall",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived vertical route baseline and real runtime trace for Waterfall",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-climb, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing vertical threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-4",
+      "label": "Base 2",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived base-room baseline and real runtime trace for Base 2",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing base targets, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-5",
+      "label": "Snow Field",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived snow route baseline and real runtime trace for Snow Field",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing snow threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-6",
+      "label": "Energy Zone",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived laser timing baseline and real runtime trace for Energy Zone",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing energy-zone threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-7",
+      "label": "Hangar",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived hangar baseline and real runtime trace for Hangar",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing hangar threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    },
+    {
+      "stageId": "stage-8",
+      "label": "Alien Lair",
+      "validationStatus": "gap",
+      "matrixPath": null,
+      "nextEvidenceRequired": "TAS-derived final-stage baseline and real runtime trace for Alien Lair",
+      "strategyCoverage": [
+        { "strategyKey": "survival-v0", "status": "gap", "clearanceGoal": "no-death first, fewest-death fallback" },
+        { "strategyKey": "speedrun-v0", "status": "gap", "clearanceGoal": "no-death fast-clear, fewest-death fallback" },
+        { "strategyKey": "combat-v0", "status": "gap", "clearanceGoal": "no-death by clearing final-stage threats, fewest-death fallback" },
+        { "strategyKey": "loot-v0", "status": "gap", "clearanceGoal": "no-death while collecting high-value rewards, fewest-death fallback" },
+        { "strategyKey": "guard-v0", "status": "gap", "clearanceGoal": "no-death coop support, fewest-death fallback" }
+      ]
+    }
+  ]
+}
