@@ -1,0 +1,74 @@
+{
+  "schema": "fc-ai-strategy-trace-evidence-v1",
+  "createdAt": "2026-06-08T07:06:00.000+08:00",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "side": "1P",
+  "strategyKey": "speedrun-v0",
+  "fragmentId": "matrix-1p-speedrun-v0-death-worldx625",
+  "failureId": "contra-j-stage1-matrix-speedrun-w625-death",
+  "routeClass": "strategy-matrix:speedrun-v0",
+  "progressionWindow": {
+    "metric": "progression.primary",
+    "start": 0,
+    "end": 625,
+    "unit": "ContraWorldPixels"
+  },
+  "source": {
+    "kind": "browser-ai-botrun",
+    "tasIsController": false,
+    "matrixRun": true
+  },
+  "sourceRunId": "matrix-speedrun-20260608",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&strategy=speedrun-v0&run=matrix-speedrun-20260608",
+  "sourceReport": {
+    "botStatus": "death",
+    "reason": "death-count",
+    "frameCount": 2214,
+    "maxFrames": 20000,
+    "finalWorldX": 625,
+    "finalPlayerX": 128,
+    "finalPlayerY": 132,
+    "finalScore": 1800,
+    "finalWeapon": 16,
+    "bossDefeated": 0,
+    "lastInput": "down+right+A+B",
+    "routeSegment": "first-bridge",
+    "routeAction": "advance",
+    "scriptAction": "p01-first-bridge-weapon",
+    "scriptMode": "reward-shot",
+    "primaryThreat": "slot15:type0x06@144,196/hp1",
+    "activeThreatCount": 7,
+    "actionLock": "evade:6",
+    "fsmReason": "immediate-threat"
+  },
+  "sampleCount": 900,
+  "death": {
+    "frame": 2214,
+    "worldX": 625,
+    "playerX": 128,
+    "playerY": 132,
+    "score": 1800,
+    "weapon": 16,
+    "input": "down+right+A+B",
+    "routeSegment": "first-bridge",
+    "routeAction": "advance"
+  },
+  "topEnemies": [
+    {
+      "slot": 15,
+      "type": 6,
+      "hp": 1,
+      "x": 144,
+      "y": 196,
+      "routine": 3,
+      "kind": "enemy",
+      "threat": true,
+      "fixed": true,
+      "priority": 2
+    }
+  ],
+  "branchOutcome": "strategy-matrix-failed-stop",
+  "interpretation": "The speedrun matrix botrun dies on the first bridge with the route still advancing under immediate threat. This is not Stage 1 clearance."
+}

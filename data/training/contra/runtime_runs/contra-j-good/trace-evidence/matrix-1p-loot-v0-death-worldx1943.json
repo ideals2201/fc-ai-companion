@@ -1,0 +1,74 @@
+{
+  "schema": "fc-ai-strategy-trace-evidence-v1",
+  "createdAt": "2026-06-08T07:06:00.000+08:00",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "side": "1P",
+  "strategyKey": "loot-v0",
+  "fragmentId": "matrix-1p-loot-v0-death-worldx1943",
+  "failureId": "contra-j-stage1-matrix-loot-w1943-death",
+  "routeClass": "strategy-matrix:loot-v0",
+  "progressionWindow": {
+    "metric": "progression.primary",
+    "start": 0,
+    "end": 1943,
+    "unit": "ContraWorldPixels"
+  },
+  "source": {
+    "kind": "browser-ai-botrun",
+    "tasIsController": false,
+    "matrixRun": true
+  },
+  "sourceRunId": "matrix-loot-20260608",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&strategy=loot-v0&run=matrix-loot-20260608",
+  "sourceReport": {
+    "botStatus": "death",
+    "reason": "death-count",
+    "frameCount": 5858,
+    "maxFrames": 20000,
+    "finalWorldX": 1943,
+    "finalPlayerX": 128,
+    "finalPlayerY": 234,
+    "finalScore": 4300,
+    "finalWeapon": 16,
+    "bossDefeated": 0,
+    "lastInput": "right+A+B",
+    "routeSegment": "danger-loot",
+    "routeAction": "cautious",
+    "scriptAction": "p03-mid-fixed-threat",
+    "scriptMode": "fixed-hp-fire",
+    "primaryThreat": "slot9:type0x01@7,224/hp1",
+    "activeThreatCount": 10,
+    "actionLock": "jump:9",
+    "fsmReason": "horizon:fixed"
+  },
+  "sampleCount": 900,
+  "death": {
+    "frame": 5858,
+    "worldX": 1943,
+    "playerX": 128,
+    "playerY": 234,
+    "score": 4300,
+    "weapon": 16,
+    "input": "right+A+B",
+    "routeSegment": "danger-loot",
+    "routeAction": "cautious"
+  },
+  "topEnemies": [
+    {
+      "slot": 11,
+      "type": 4,
+      "hp": 8,
+      "x": 22,
+      "y": 160,
+      "routine": 0,
+      "kind": "durable",
+      "threat": true,
+      "fixed": true,
+      "priority": 8
+    }
+  ],
+  "branchOutcome": "strategy-matrix-failed-stop",
+  "interpretation": "The loot matrix botrun reaches WorldX 1943 with weapon 16 but dies while preserving a loot/cautious route under fixed-threat pressure. This is not Stage 1 clearance."
+}

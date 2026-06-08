@@ -1,0 +1,74 @@
+{
+  "schema": "fc-ai-strategy-trace-evidence-v1",
+  "createdAt": "2026-06-08T07:06:00.000+08:00",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "side": "1P",
+  "strategyKey": "survival-v0",
+  "fragmentId": "matrix-1p-survival-v0-death-worldx2087",
+  "failureId": "contra-j-stage1-matrix-survival-w2087-death",
+  "routeClass": "strategy-matrix:survival-v0",
+  "progressionWindow": {
+    "metric": "progression.primary",
+    "start": 1446,
+    "end": 2087,
+    "unit": "ContraWorldPixels"
+  },
+  "source": {
+    "kind": "browser-ai-botrun",
+    "tasIsController": false,
+    "matrixRun": true
+  },
+  "sourceRunId": "matrix-survival-20260608",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&strategy=survival-v0&run=matrix-survival-20260608",
+  "sourceReport": {
+    "botStatus": "death",
+    "reason": "death-count",
+    "frameCount": 3991,
+    "maxFrames": 20000,
+    "finalWorldX": 2087,
+    "finalPlayerX": 128,
+    "finalPlayerY": 121,
+    "finalScore": 2400,
+    "finalWeapon": 0,
+    "bossDefeated": 0,
+    "lastInput": "up+B",
+    "routeSegment": "weapon-gate-survive",
+    "routeAction": "loot",
+    "scriptAction": "p03-mid-fixed-threat",
+    "scriptMode": "fixed-hp-fire",
+    "primaryThreat": "slot14:type0x07@232,64/hp8",
+    "activeThreatCount": 15,
+    "actionLock": "aim-fire:6",
+    "fsmReason": "immediate-threat"
+  },
+  "sampleCount": 900,
+  "death": {
+    "frame": 3991,
+    "worldX": 2087,
+    "playerX": 128,
+    "playerY": 121,
+    "score": 2400,
+    "weapon": 0,
+    "input": "up+B",
+    "routeSegment": "weapon-gate-survive",
+    "routeAction": "loot"
+  },
+  "topEnemies": [
+    {
+      "slot": 14,
+      "type": 7,
+      "hp": 8,
+      "x": 232,
+      "y": 64,
+      "routine": 3,
+      "kind": "durable",
+      "threat": true,
+      "fixed": true,
+      "priority": 8
+    }
+  ],
+  "branchOutcome": "strategy-matrix-failed-stop",
+  "interpretation": "The survival matrix botrun still dies at WorldX 2087 with default weapon and the high fixed threat alive. This is not Stage 1 clearance."
+}

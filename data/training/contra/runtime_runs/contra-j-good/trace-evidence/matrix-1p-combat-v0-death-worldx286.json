@@ -1,0 +1,74 @@
+{
+  "schema": "fc-ai-strategy-trace-evidence-v1",
+  "createdAt": "2026-06-08T07:06:00.000+08:00",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "side": "1P",
+  "strategyKey": "combat-v0",
+  "fragmentId": "matrix-1p-combat-v0-death-worldx286",
+  "failureId": "contra-j-stage1-matrix-combat-w286-death",
+  "routeClass": "strategy-matrix:combat-v0",
+  "progressionWindow": {
+    "metric": "progression.primary",
+    "start": 0,
+    "end": 286,
+    "unit": "ContraWorldPixels"
+  },
+  "source": {
+    "kind": "browser-ai-botrun",
+    "tasIsController": false,
+    "matrixRun": true
+  },
+  "sourceRunId": "matrix-combat-detail-20260608",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&strategy=combat-v0&run=matrix-combat-detail-20260608",
+  "sourceReport": {
+    "botStatus": "death",
+    "reason": "death-count",
+    "frameCount": 1509,
+    "maxFrames": 20000,
+    "finalWorldX": 286,
+    "finalPlayerX": 128,
+    "finalPlayerY": 164,
+    "finalScore": 100,
+    "finalWeapon": 0,
+    "bossDefeated": 0,
+    "lastInput": "A+B",
+    "routeSegment": "start-clear",
+    "routeAction": "advance",
+    "scriptAction": "none",
+    "scriptMode": "none",
+    "primaryThreat": "slot13:type0x06@163,196/hp1",
+    "activeThreatCount": 6,
+    "actionLock": "evade:10",
+    "fsmReason": "immediate-threat"
+  },
+  "sampleCount": 900,
+  "death": {
+    "frame": 1509,
+    "worldX": 286,
+    "playerX": 128,
+    "playerY": 164,
+    "score": 100,
+    "weapon": 0,
+    "input": "A+B",
+    "routeSegment": "start-clear",
+    "routeAction": "advance"
+  },
+  "topEnemies": [
+    {
+      "slot": 13,
+      "type": 6,
+      "hp": 1,
+      "x": 163,
+      "y": 196,
+      "routine": 3,
+      "kind": "enemy",
+      "threat": true,
+      "fixed": true,
+      "priority": 2
+    }
+  ],
+  "branchOutcome": "strategy-matrix-failed-stop",
+  "interpretation": "The combat matrix botrun dies very early at WorldX 286 while attempting A+B under an immediate fixed threat. This is not Stage 1 clearance."
+}

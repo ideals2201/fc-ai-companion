@@ -7,6 +7,11 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 - `trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json`
 - `trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json`
+- `trace-evidence/matrix-1p-survival-v0-death-worldx2087.json`
+- `trace-evidence/matrix-1p-speedrun-v0-death-worldx625.json`
+- `trace-evidence/matrix-1p-combat-v0-death-worldx286.json`
+- `trace-evidence/matrix-1p-loot-v0-death-worldx1943.json`
+- `trace-evidence/matrix-1p-guard-v0-death-worldx2038.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -45,3 +50,16 @@ The third trace evidence comes from the high fixed-threat station check:
 
 The high-station patch changed the final input and raised score from `2300` to `2400`, but the AI still died at the same WorldX with the high fixed threat alive.
 This proves the local station patch is not enough; the next hypothesis must be route-level weapon/safety handling before this death window.
+
+The strategy matrix evidence comes from five independent browser AI botruns using the `strategy=` URL parameter:
+
+| Strategy | Run | Result | WorldX | Score | Weapon |
+| --- | --- | --- | ---: | ---: | ---: |
+| `survival-v0` | `matrix-survival-20260608` | `death` | `2087` | `2400` | `0` |
+| `speedrun-v0` | `matrix-speedrun-20260608` | `death` | `625` | `1800` | `16` |
+| `combat-v0` | `matrix-combat-detail-20260608` | `death` | `286` | `100` | `0` |
+| `loot-v0` | `matrix-loot-20260608` | `death` | `1943` | `4300` | `16` |
+| `guard-v0` | `matrix-guard-20260608` | `death` | `2038` | `4700` | `0` |
+
+This matrix proves the current package has no validated `contra-j-good` Stage 1 strategy yet.
+The earliest blocker is `combat-v0` at `WorldX 286`; the best-scoring current branch is `guard-v0` at `WorldX 2038`, but it still dies.

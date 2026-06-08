@@ -993,3 +993,28 @@ Required next direction:
 - Add tests for a route-level pre-entry safety/weapon gate before the `WorldX 2087` threat window.
 - Keep the high-station patch as evidence-backed behavior, not as a validated route.
 - Do not claim Stage 1 pass or full clear until a real botrun reaches clear/`bossDefeated` without death.
+
+## 2026-06-08: Strategy matrix must be evidence-gated per strategy type
+
+Decision: make browser botrun strategy-selectable and treat every standard strategy type as its own validation lane.
+
+Evidence:
+- `strategy=` URL parsing now accepts only the five standard matrix strategies: `survival-v0`, `speedrun-v0`, `combat-v0`, `loot-v0`, and `guard-v0`.
+- Five independent `contra-j-good` browser botruns were executed through CDP:
+  - `survival-v0`: death at `WorldX 2087`.
+  - `speedrun-v0`: death at `WorldX 625`.
+  - `combat-v0`: death at `WorldX 286`.
+  - `loot-v0`: death at `WorldX 1943`.
+  - `guard-v0`: death at `WorldX 2038`.
+- Standard TraceEvidence is stored for all five matrix runs under `data/training/contra/runtime_runs/contra-j-good/trace-evidence/`.
+- Focused verification passed:
+  - `node --test tests/botRunConfig.test.mjs`: `2/2`.
+  - `node --test tests/contraJStrategyMatrixEvidence.test.mjs`: `1/1`.
+
+Reason:
+A single `survival-v0` run cannot prove the broader AI companion strategy package. Each strategy type has a different failure surface and must have its own trace, ValidationReport gate, and promotion status.
+
+Required next direction:
+- Use the matrix to prioritize fixes: earliest blocker is `combat-v0` at `WorldX 286`; strongest current branch is `guard-v0` at `WorldX 2038` but still not validated.
+- Continue training from the earliest reusable hazard class, then rerun the full matrix after each stable route-level correction.
+- Do not claim any strategy type validated until a real botrun produces a passing ValidationReport with `deaths=0`.

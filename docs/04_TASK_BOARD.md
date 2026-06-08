@@ -551,3 +551,28 @@ Rule:
 - This is progress evidence, not a pass.
 - Do not mark `contra-j-good` Stage 1 or full-game clearance as validated; current verified pass amount remains `0` stages.
 - Do not keep stacking same-point `WorldX 2087` aim patches. The next route hypothesis must prevent default-weapon arrival into this threat window or create a validated pre-entry safety/weapon route.
+
+## 2026-06-08 Contra Japan Strategy Matrix First Run
+
+Current:
+- Browser botrun now supports the `strategy=` URL parameter for `survival-v0`, `speedrun-v0`, `combat-v0`, `loot-v0`, and `guard-v0`.
+- Ran five independent real browser botruns against `contra-j-good`.
+- Every strategy still ended in `death`; no Stage 1 or full-game clearance is validated.
+- Matrix TraceEvidence files are archived under `data/training/contra/runtime_runs/contra-j-good/trace-evidence/`.
+
+Matrix:
+- `survival-v0`: `matrix-survival-20260608`, death at `WorldX 2087`, score `2400`, weapon `0`.
+- `speedrun-v0`: `matrix-speedrun-20260608`, death at `WorldX 625`, score `1800`, weapon `16`.
+- `combat-v0`: `matrix-combat-detail-20260608`, death at `WorldX 286`, score `100`, weapon `0`.
+- `loot-v0`: `matrix-loot-20260608`, death at `WorldX 1943`, score `4300`, weapon `16`.
+- `guard-v0`: `matrix-guard-20260608`, death at `WorldX 2038`, score `4700`, weapon `0`.
+
+Verification:
+- Browser CDP at `127.0.0.1:9223` read `bot-run-report-json` after each run.
+- `node --test tests/botRunConfig.test.mjs`: `2/2`.
+- `node --test tests/contraJStrategyMatrixEvidence.test.mjs`: `1/1`.
+
+Rule:
+- The strategy matrix is failure evidence, not validation evidence.
+- The next implementation should fix the earliest common survival blocker class before trying to promote any strategy package.
+- TAS remains baseline/training evidence only; none of these runs used TAS as the controller.

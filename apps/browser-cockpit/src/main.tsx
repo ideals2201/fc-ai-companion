@@ -116,6 +116,7 @@ import {
   type StrategyPackageValidationReport
 } from "./strategyPackageEvidence";
 import { classifyBotRunTerminalState } from "./runtimeStopControl";
+import { parseBotRunStrategyParam, type BotRunStrategyKey } from "./botRunConfig";
 import {
   parseTraceCaptureConfig,
   shouldKeepTraceSample,
@@ -9490,7 +9491,7 @@ function App() {
     clearTraceRecording();
   }, [appendLog, clearTraceRecording]);
 
-  const runBotFrameBatch = useCallback(async (maxFrames: number) => {
+  const runBotFrameBatch = useCallback(async (maxFrames: number, strategy: BotRunStrategyKey = "survival-v0") => {
     const nes = nesRef.current;
     const startedAt = new Date().toISOString();
     if (!nes) {
@@ -9515,11 +9516,11 @@ function App() {
     setControlModes({ "1P": "ai", "2P": "human" });
     strategyModelsRef.current = {
       ...strategyModelsRef.current,
-      "1P": "survival-v0"
+      "1P": strategy
     };
     setStrategyModels((current) => ({
       ...current,
-      "1P": "survival-v0"
+      "1P": strategy
     }));
     aiActionLocksRef.current = createAiActionLockStates();
     aiFsmStatesRef.current = createAiFsmStates();
@@ -9823,7 +9824,7 @@ function App() {
     }
     const requestedFrames = Number.parseInt(params.get("botframes") ?? "8000", 10);
     const maxFrames = Number.isFinite(requestedFrames) ? clamp(requestedFrames, 600, 20000) : 8000;
-    void runBotFrameBatch(maxFrames);
+    void runBotFrameBatch(maxFrames, parseBotRunStrategyParam(params));
   }, [runBotFrameBatch, startTraceRecording, status]);
 
   useEffect(() => {
