@@ -732,3 +732,22 @@ Verification:
 Next:
 - Convert this proposal into a runtime-tested training fragment only after adding a focused runtime behavior test.
 - Do not promote it to validated until real runtime TraceEvidence plus a passing ValidationReport exists.
+
+## 2026-06-08 Contra Japan High-Air Runtime Fragment Draft
+
+Current:
+- Added `createStrategyFragmentDraftFromProposal()` to convert a candidate proposal into a schema-bound runtime training draft.
+- The first high-air draft is stored at `data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+- The draft is `candidate-unvalidated`, has `runtimeUse=training-fragment-draft`, and keeps `validation.status=missing`.
+- The draft preserves the W2174 progress source, the W2160 rejected route counterexample, `tasIsController=false`, semantic `actionAdvice`, and `rejected-route-class-guard`.
+
+Verification:
+- TDD RED: `node --test tests/strategyFragmentProposal.test.mjs` failed because `createStrategyFragmentDraftFromProposal` did not exist.
+- TDD RED: `node --test tests/contraJHighAirRuntimeFragmentDraft.test.mjs` failed because the runtime draft JSON did not exist.
+- TDD GREEN: `node --test tests/strategyFragmentProposal.test.mjs`: `5/5`.
+- TDD GREEN: `node --test tests/contraJHighAirRuntimeFragmentDraft.test.mjs`: `1/1`.
+- Handoff GREEN: `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Next:
+- Write the focused runtime behavior test that consumes this draft before wiring any controller behavior.
+- Keep the draft unvalidated until a browser botrun creates passing TraceEvidence and a ValidationReport.

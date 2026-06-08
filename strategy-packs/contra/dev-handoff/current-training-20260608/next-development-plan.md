@@ -29,9 +29,15 @@ The first comparative candidate proposal is now indexed at:
 data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json
 ```
 
+The first schema-converted runtime fragment draft is now indexed at:
+
+```text
+data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json
+```
+
 ## Recommended Next Technical Task
 
-Convert the boss-approach high-air candidate proposal into a runtime-tested training fragment:
+Wire the boss-approach high-air runtime draft into a focused runtime test harness:
 
 - Source window: boss-approach high-air enemy cluster around `WorldX 2112-2174`.
 - Source evidence:
@@ -41,7 +47,7 @@ Convert the boss-approach high-air candidate proposal into a runtime-tested trai
 - Baseline source:
   - `data/training/contra/tas_bases/contra-j-good/side-baselines.json`
 - Required output:
-  - schema-converted runtime fragment
+  - focused runtime behavior test
   - `tasIsController: false`
   - semantic `actionAdvice`, not direct button playback
   - `TraceEvidence`

@@ -17,7 +17,8 @@ async function importTypeScriptModule(path) {
 
 const {
   createCandidateStrategyFragmentProposal,
-  createComparativeStrategyFragmentProposal
+  createComparativeStrategyFragmentProposal,
+  createStrategyFragmentDraftFromProposal
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/strategyFragmentProposal.ts", import.meta.url));
 
 function evidence(overrides = {}) {
@@ -261,4 +262,77 @@ test("generates a comparative candidate StrategyFragment proposal for a rejected
   assert.equal(proposal.fragment.actionAdvice.parameters.requiredValidation, "real-runtime-trace");
   assert.ok(proposal.fragment.safetyOverrides.includes("rejected-route-class-guard"));
   assert.equal("buttons" in proposal.fragment.actionAdvice, false);
+});
+
+test("converts a candidate proposal into an unvalidated runtime fragment draft", () => {
+  const primaryEvidence = evidence({
+    branchOutcome: "route-class-progressed-failed-stop",
+    fragmentId: "candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174",
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2174,
+      unit: "ContraWorldPixels"
+    },
+    routeClass: "runtime-patch:stage-one-boss-approach-early-pit-jump",
+    sampleCount: 900
+  });
+  const rejectedEvidence = evidence({
+    branchOutcome: "route-class-regressed-failed-stop",
+    fragmentId: "candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160",
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2160,
+      unit: "ContraWorldPixels"
+    },
+    routeClass: "runtime-patch:stage-one-boss-approach-high-air-contact",
+    sampleCount: 141
+  });
+  const proposal = createComparativeStrategyFragmentProposal({
+    evidence: primaryEvidence,
+    rejectedEvidence: [rejectedEvidence],
+    id: "candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster",
+    label: "Boss approach high-air cluster candidate",
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2174,
+      unit: "ContraWorldPixels",
+      strictEnd: true
+    },
+    strategyTypes: ["survival", "combat", "recovery"],
+    tasSideBaseline: tasBaseline({
+      windowId: "boss-approach-platform-capture",
+      label: "Boss approach platform capture",
+      frameWindow: [2500, 3600],
+      strategyTypes: ["survival", "recovery", "platform-capture"]
+    }),
+    tasSideBaselinePath: "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
+  });
+
+  const draft = createStrategyFragmentDraftFromProposal({
+    createdAt: "2026-06-08T22:15:00.000+08:00",
+    draftId: "draft-fragment-1p-combat-v0-boss-approach-high-air-cluster",
+    proposal,
+    sourceProposalPath: "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
+  });
+
+  assert.equal(draft.schema, "fc-ai-strategy-fragment-draft-v1");
+  assert.equal(draft.schemaVersion, "1.0.0");
+  assert.equal(draft.status, "candidate-unvalidated");
+  assert.equal(draft.runtimeUse, "training-fragment-draft");
+  assert.equal(draft.validation.required, "real-runtime-trace");
+  assert.equal(draft.validation.status, "missing");
+  assert.equal(draft.sourceProposal.path, "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json");
+  assert.equal(draft.sourceProposal.fragmentId, proposal.fragment.id);
+  assert.equal(draft.sourceProposal.tasIsController, false);
+  assert.equal(draft.fragment.id, "draft-fragment-1p-combat-v0-boss-approach-high-air-cluster");
+  assert.equal(draft.fragment.status, "candidate");
+  assert.equal(draft.fragment.actionAdvice.parameters.prohibitedRouteClass, "runtime-patch:stage-one-boss-approach-high-air-contact");
+  assert.deepEqual(draft.fragment.failureCounterexamples, [
+    "candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160"
+  ]);
+  assert.ok(draft.fragment.safetyOverrides.includes("rejected-route-class-guard"));
+  assert.equal("buttons" in draft.fragment.actionAdvice, false);
 });

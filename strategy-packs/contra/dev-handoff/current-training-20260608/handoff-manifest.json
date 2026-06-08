@@ -54,6 +54,9 @@
     "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json",
     "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
   ],
+  "runtimeFragmentDraftRefs": [
+    "data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
+  ],
   "strategyCoverage": [
     {
       "strategyKey": "survival-v0",
@@ -123,6 +126,9 @@
       ],
       "candidateFragmentRefs": [
         "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
+      ],
+      "runtimeFragmentDraftRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
       ],
       "routeChain": [
         {

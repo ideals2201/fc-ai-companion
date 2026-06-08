@@ -1199,3 +1199,25 @@ Required next direction:
 - Convert the proposal into runtime behavior only with a focused test first.
 - Keep the rejected route class blocked by `rejected-route-class-guard`.
 - Keep TAS as baseline/training evidence only and require real runtime validation before any strategy promotion.
+
+## 2026-06-08: High-air candidate is converted to a runtime fragment draft, still unvalidated
+
+Decision: introduce `fc-ai-strategy-fragment-draft-v1` output for the boss-approach high-air candidate before wiring runtime behavior.
+
+Evidence:
+- The converter test first failed because `createStrategyFragmentDraftFromProposal` did not exist:
+  - `node --test tests/strategyFragmentProposal.test.mjs`.
+- The draft artifact test first failed because `runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json` did not exist:
+  - `node --test tests/contraJHighAirRuntimeFragmentDraft.test.mjs`.
+- The draft is stored at `data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+- Focused verification passed:
+  - `node --test tests/strategyFragmentProposal.test.mjs`: `5/5`.
+  - `node --test tests/contraJHighAirRuntimeFragmentDraft.test.mjs`: `1/1`.
+  - `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Reason:
+A runtime draft is the correct bridge between a data proposal and controller behavior. It gives the next runtime test a concrete fragment to consume while keeping validation status missing and preserving the rejected W2160 route as a guard.
+
+Required next direction:
+- Consume this draft in a focused runtime behavior test before touching live controller flow.
+- Do not mark the draft validated until real runtime TraceEvidence and a passing ValidationReport exist.

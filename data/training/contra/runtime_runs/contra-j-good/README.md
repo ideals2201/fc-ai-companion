@@ -23,6 +23,7 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 - `candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`
+- `runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`
 
 The first trace evidence comes from a real browser AI botrun:
 
@@ -97,3 +98,6 @@ The next combat hypothesis must use a new TAS/human state-action fragment or rou
 The first comparative high-air cluster candidate is stored at `candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
 It combines the best progress evidence at `WorldX 2174`, the rejected regression evidence at `WorldX 2160`, and the TAS `boss-approach-platform-capture` side baseline.
 It remains a candidate proposal only; it prohibits the rejected `stage-one-boss-approach-high-air-contact` route class and still requires real runtime validation.
+
+The first runtime fragment draft converted from that proposal is stored at `runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+It is `candidate-unvalidated`, not an active validated StrategyPack fragment, and its validation status remains `missing` until a real runtime TraceEvidence plus ValidationReport proves it.

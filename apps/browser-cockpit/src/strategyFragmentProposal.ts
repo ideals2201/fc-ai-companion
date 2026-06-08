@@ -63,6 +63,13 @@ export type ComparativeStrategyFragmentProposalOptions = StrategyFragmentProposa
   strategyTypes?: readonly string[];
 };
 
+export type StrategyFragmentDraftOptions = {
+  createdAt?: string;
+  draftId?: string;
+  proposal: CandidateStrategyFragmentProposal;
+  sourceProposalPath: string;
+};
+
 export type CandidateStrategyFragmentProposal = {
   schema: "fc-ai-strategy-fragment-proposal-v1";
   schemaVersion: "1.0.0";
@@ -123,6 +130,30 @@ export type CandidateStrategyFragmentProposal = {
     telemetry: {
       requiredRefs: string[];
     };
+  };
+};
+
+export type StrategyFragmentDraft = {
+  schema: "fc-ai-strategy-fragment-draft-v1";
+  schemaVersion: "1.0.0";
+  createdAt: string;
+  status: "candidate-unvalidated";
+  runtimeUse: "training-fragment-draft";
+  sourceProposal: {
+    path: string;
+    fragmentId: string;
+    traceEvidence: CandidateStrategyFragmentProposal["fragment"]["source"]["traceEvidence"];
+    rejectedTraceEvidence: NonNullable<CandidateStrategyFragmentProposal["fragment"]["source"]["rejectedTraceEvidence"]>;
+    tasSideBaseline: CandidateStrategyFragmentProposal["fragment"]["source"]["tasSideBaseline"];
+    tasIsController: false;
+  };
+  validation: {
+    required: string;
+    status: "missing";
+    reportRefs: string[];
+  };
+  fragment: CandidateStrategyFragmentProposal["fragment"] & {
+    failureCounterexamples: string[];
   };
 };
 
@@ -337,6 +368,47 @@ export function createComparativeStrategyFragmentProposal(
         ...proposal.fragment.source,
         rejectedTraceEvidence
       }
+    }
+  };
+}
+
+export function createStrategyFragmentDraftFromProposal(
+  options: StrategyFragmentDraftOptions
+): StrategyFragmentDraft {
+  const { proposal } = options;
+  if (proposal.fragment.status !== "candidate") {
+    throw new Error("only candidate StrategyFragment proposals can become training drafts");
+  }
+  if (proposal.fragment.source.tasSideBaseline.tasIsController !== false) {
+    throw new Error("StrategyFragment draft cannot use TAS as controller");
+  }
+
+  const rejectedTraceEvidence = proposal.fragment.source.rejectedTraceEvidence ?? [];
+  const requiredValidation = proposal.fragment.actionAdvice.parameters.requiredValidation;
+
+  return {
+    schema: "fc-ai-strategy-fragment-draft-v1",
+    schemaVersion: "1.0.0",
+    createdAt: options.createdAt ?? new Date().toISOString(),
+    status: "candidate-unvalidated",
+    runtimeUse: "training-fragment-draft",
+    sourceProposal: {
+      path: options.sourceProposalPath,
+      fragmentId: proposal.fragment.id,
+      traceEvidence: proposal.fragment.source.traceEvidence,
+      rejectedTraceEvidence,
+      tasSideBaseline: proposal.fragment.source.tasSideBaseline,
+      tasIsController: false
+    },
+    validation: {
+      required: typeof requiredValidation === "string" ? requiredValidation : "real-runtime-trace",
+      status: "missing",
+      reportRefs: []
+    },
+    fragment: {
+      ...proposal.fragment,
+      id: options.draftId ?? proposal.fragment.id.replace(/^candidate-fragment-/, "draft-fragment-"),
+      failureCounterexamples: rejectedTraceEvidence.map((evidence) => evidence.fragmentId)
     }
   };
 }
