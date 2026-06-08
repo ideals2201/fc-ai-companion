@@ -16,7 +16,7 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /packDisplayName: string/, "side training state should expose the selected strategy pack name");
   assert.match(mainSource, /strategyCategoryLabel: string/, "side training state should expose the selected strategy category");
   assert.match(mainSource, /strategyKey: AiStrategyKey/, "side training state should carry the selected strategy key");
-  assert.match(mainSource, /strategyCategoryOptions: Array<\{ key: AiStrategyKey; label: string \}>/, "side training state should expose selectable strategy categories");
+  assert.match(mainSource, /trainingToggleLabel: string/, "side training state should expose a readable start/stop label on the title");
   assert.match(mainSource, /strategyBaselineLabel: string/, "side training state should expose the selected strategy baseline");
   assert.match(mainSource, /selectedForTraining: boolean/, "side training state should know whether it is the focused training side");
   assert.match(mainSource, /trainingStatusLabel: string/, "side training state should expose queued vs active status");
@@ -29,12 +29,12 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /className=\{sideTrainingPanelClassName\(training\)\}/, "side training panel should distinguish queued and active training states");
   assert.match(mainSource, /className=\{sideTrainingTitleClassName\(training\)\}/, "side training title should distinguish queued and active training states");
   assert.match(mainSource, /className="side-training-status"/, "side training panel should visibly label queued vs active status");
-  assert.match(mainSource, /onSideTrainingFocus/, "side training title should route focus selection with side ownership");
-  assert.match(mainSource, /selectorClassName\("side-strategy-category-selector"/, "side training panel should allow changing the trained strategy category");
-  assert.match(mainSource, /training\.strategyCategoryOptions\.map/, "side training strategy selector should list package strategy categories");
-  assert.match(mainSource, /onSideTrainingStrategyChange/, "training strategy category changes should be routed with side ownership");
-  assert.match(mainSource, /disabled=\{!sideTrainingActive\}/, "side training strategy buttons should unlock only during that side's active session");
-  assert.match(mainSource, /<strong>\{training\.packDisplayName\} \(\{training\.strategyCategoryLabel\}\)<\/strong>/, "pack name and strategy category should be rendered as one prominent centered identity");
+  assert.match(mainSource, /onSideTrainingToggle/, "side training title should route per-side training start and stop");
+  assert.match(mainSource, /className="side-training-title-strategy"/, "side training title should show the current top-level AI strategy category");
+  assert.doesNotMatch(mainSource, /strategyCategoryOptions/, "side training panel should not duplicate the top-level AI strategy selector");
+  assert.doesNotMatch(mainSource, /selectorClassName\("side-strategy-category-selector"/, "side training panel should not render its own strategy category selector");
+  assert.doesNotMatch(mainSource, /onSideTrainingStrategyChange/, "side training panel should not own strategy category changes");
+  assert.match(mainSource, /<strong>\{training\.packDisplayName\}<\/strong>/, "pack identity should remain visible without duplicating the strategy selector");
   assert.match(mainSource, /training\.strategyBaseline/, "side training panel should use Strategy Baseline instead of the old TAS-only baseline label");
   assert.doesNotMatch(mainSource, /t\(language, "training\.baselineStrategy"\)/, "side training panel should not render the duplicated baseline-strategy field");
   assert.match(mainSource, /selectorClassName\("side-baseline-selector"/, "side training panel should render a real baseline selector");
@@ -57,6 +57,7 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(cssSource, /\.side-training-title-button\s*\{/, "side training title button should have stable styling");
   assert.doesNotMatch(mainSource, /className="training-stat-grid"/, "side training panel should not show debug metric cards");
   assert.doesNotMatch(mainSource, /className="training-note-grid"/, "side training panel should not show debug note cards");
+  assert.match(cssSource, /\.side-training-title-strategy\s*\{/, "strategy category on the title should have stable styling");
   assert.match(cssSource, /\.side-baseline-selector\s*\{/, "side baseline selector should have stable layout");
   assert.match(cssSource, /\.side-training-method-selector\s*\{/, "training method selector should have stable layout");
   assert.match(cssSource, /\.side-training-context-actions\s*\{/, "side contextual buttons should have stable layout");
@@ -73,7 +74,7 @@ test("center column includes a global training console for shared evidence and v
   assert.match(mainSource, /<OperationStrategyControl[\s\S]*training=\{globalTraining\}/, "host console should place operation strategy control in the center column");
   assert.match(mainSource, /<TasWindow[\s\S]*\/>\s*<OperationStrategyControl/s, "operation strategy control should sit below the TAS viewing window");
   assert.match(mainSource, /className="training-pack-banner"/, "operation strategy control should show the strategy pack name prominently");
-  assert.match(mainSource, /className="training-session-control"/, "operation strategy control should expose whole-module start and stop training controls");
+  assert.match(mainSource, /className="training-session-control"/, "operation strategy control should expose shared training status");
   assert.match(mainSource, /training\.trainingSessionActive \? "operation-strategy-control training-active" : "operation-strategy-control"/, "operation strategy control should visibly mark active training sessions");
   assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode controls should be locked by TAS or active side training");
   assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top strategy buttons should be locked by TAS or active side training");
@@ -93,7 +94,7 @@ test("center column includes a global training console for shared evidence and v
   assert.match(mainSource, /training\.resultUnverified/, "unverified result data should be visibly marked");
 });
 
-test("side training sessions are independent and only lock their own play area", () => {
+test("side training title toggles independent sessions and only locks its own play area", () => {
   assert.match(mainSource, /selectedTrainingSides/, "1P and 2P training selection should be modeled as independent side flags");
   assert.match(mainSource, /activeTrainingSides/, "active training should be tracked per side instead of one global selected side");
   assert.doesNotMatch(mainSource, /selectedTrainingSide === "1P"/, "1P and 2P training panels must not be mutually exclusive");
@@ -101,36 +102,40 @@ test("side training sessions are independent and only lock their own play area",
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["1P"\]\.trainingSessionActive\}/, "1P training should lock only the 1P game area");
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "2P training should lock only the 2P game area");
   assert.match(mainSource, /const trainingSessionActive = activeTrainingSides\["1P"\] \|\| activeTrainingSides\["2P"\]/, "global training status should summarize side sessions");
-  assert.match(mainSource, /const canStartTrainingSession = \(\["1P", "2P"\] as PlayerSide\[\]\)\.some/, "training start should be available when any selected side is not active");
-  assert.match(mainSource, /const sidesToStart = \(\["1P", "2P"\] as PlayerSide\[\]\)\.filter\(\(side\) => selectedTrainingSides\[side\] && !activeTrainingSides\[side\]\)/, "training start should collect every selected inactive side independently");
-  assert.match(mainSource, /for \(const side of sidesToStart\) \{\s*startSideTraining\(side\);?\s*\}/, "starting training should activate every selected side without forcing 1P/2P exclusivity");
+  assert.match(mainSource, /const toggleSideTraining = useCallback\(\(side: PlayerSide\) => \{[\s\S]*activeTrainingSides\[side\][\s\S]*stopSideTraining\(side\)[\s\S]*startSideTraining\(side\)/, "training title should toggle the matching side between active and inactive");
   assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{ \.\.\.current, \[side\]: true \}\)\)/, "per-side training start should preserve other active side locks");
-  assert.match(mainSource, /setActiveTrainingSides\(\{ "1P": false, "2P": false \}\)/, "stopping training should release every side training lock");
+  assert.match(mainSource, /setActiveTrainingSides\(\(current\) => \(\{ \.\.\.current, \[side\]: false \}\)\)/, "per-side training stop should preserve other active side locks");
+  assert.doesNotMatch(mainSource, /setActiveTrainingSides\(\{ "1P": false, "2P": false \}\)/, "training stop should not be a global all-sides control");
 });
 
-test("selected training sides are queued until the start button activates them", () => {
+test("selected training sides are ready until the title activates them", () => {
   assert.match(mainSource, /function sideTrainingPanelClassName/, "panel class should be derived from queued and active training state");
   assert.match(mainSource, /training\.trainingSessionActive \? "side-training-panel active-training-side" : training\.selectedForTraining \? "side-training-panel queued-training-side" : "side-training-panel"/, "selected inactive sides should be queued, not active");
   assert.match(mainSource, /training\.trainingSessionActive \? "side-training-title-button active" : training\.selectedForTraining \? "side-training-title-button queued" : "side-training-title-button"/, "selected inactive titles should use queued styling");
-  assert.match(mainSource, /selectedForTraining\s*\?\s*language === "en-US" \? "Queued to start" : "已选择，待启动"/, "selected inactive side should show a clear queued label");
+  assert.match(mainSource, /selectedForTraining\s*\?\s*language === "en-US" \? "Ready" : "待训练"/, "selected inactive side should show a ready label because the title is the start control");
+  assert.doesNotMatch(mainSource, /Queued to start/, "side training should no longer describe a separate start-button queue");
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["1P"\]\.trainingSessionActive\}/, "top 1P game controls should lock only after 1P training starts");
   assert.match(mainSource, /trainingLocked=\{sideTrainingStates\["2P"\]\.trainingSessionActive\}/, "top 2P game controls should lock only after 2P training starts");
 });
 
-test("side training panels expose direct per-side training start controls", () => {
-  assert.match(mainSource, /onSideTrainingStart: \(side: PlayerSide\) => void/, "side actions should include an explicit start command");
-  assert.match(mainSource, /const sideStartLabel = language === "en-US" \? `Start \$\{training\.side\} Training` : `启动\$\{training\.side\}训练`/, "side panels should label the direct start action by side");
-  assert.match(mainSource, /onClick=\{\(\) => actions\.onSideTrainingStart\(training\.side\)\}/, "side start button should activate its own side");
-  assert.match(mainSource, /disabled=\{training\.trainingSessionActive\}/, "side start should be disabled once that side is already training");
-  assert.match(mainSource, /startSideTraining\(side\)/, "side start action should reuse the same activation path as global training");
+test("side training panels use the Training title as the per-side start stop control", () => {
+  assert.match(mainSource, /trainingToggleLabel: string/, "side training state should expose an accessible title toggle label");
+  assert.match(mainSource, /onSideTrainingToggle: \(side: PlayerSide\) => void/, "side actions should include one title toggle command");
+  assert.match(mainSource, /aria-pressed=\{training\.trainingSessionActive\}/, "the Training title should behave like an active-session toggle");
+  assert.match(mainSource, /aria-label=\{training\.trainingToggleLabel\}/, "the Training title should describe whether it starts or stops this side");
+  assert.match(mainSource, /onClick=\{\(\) => actions\.onSideTrainingToggle\(training\.side\)\}/, "clicking the Training title should toggle its own side");
+  assert.match(mainSource, /className="side-training-title-strategy"/, "the Training title should show the current strategy category");
+  assert.doesNotMatch(mainSource, /className="side-training-start-button"/, "side panels should not render a separate training start button");
+  assert.doesNotMatch(mainSource, /sideStartLabel/, "side panels should not keep a separate start-button label");
+  assert.doesNotMatch(mainSource, /onSideTrainingStart: \(side: PlayerSide\) => void/, "side actions should not expose a separate start button command");
 });
 
 test("operation strategy control keeps only shared strategy-training workflow actions", () => {
-  assert.match(mainSource, /onTrainingSessionStart/, "training console should expose whole-module training start");
-  assert.match(mainSource, /onTrainingSessionStop/, "training console should expose whole-module training stop");
+  assert.doesNotMatch(mainSource, /onTrainingSessionStart/, "training console should not expose a separate whole-module training start button");
+  assert.doesNotMatch(mainSource, /onTrainingSessionStop/, "training console should not expose a separate whole-module training stop button");
   assert.match(mainSource, /function trainingControlModeForSelection/, "training session start should derive control mode from baseline and training method");
   assert.match(mainSource, /setActiveTrainingSides/, "starting and stopping training should update side-owned training sessions");
-  assert.match(mainSource, /canStartTrainingSession/, "training start should be gated by side-owned session state");
+  assert.doesNotMatch(mainSource, /canStartTrainingSession/, "global training state should not keep a start-button gate");
   assert.match(mainSource, /training\.saveStrategy/, "training console should expose gated strategy saving");
   assert.match(mainSource, /training\.validateStrategy/, "training console should expose validation or replay");
   assert.doesNotMatch(mainSource, /<GlobalTrainingConsole[\s\S]*onTrainingSelectBaseline=/, "global console should not receive side-owned baseline selection");
@@ -244,11 +249,14 @@ test("direct training baselines synchronize side play mode while training owns i
   assert.match(mainSource, /const mode = trainingControlModeForSelection\(selectedSideBaselineIds\[side\], selectedSideTrainingMethods\[side\]\);[\s\S]*changeControlMode\(side, mode\)/, "starting training should synchronize every active side to its baseline mode");
 });
 
-test("side training panels derive their target from the selected AI strategy", () => {
+test("side training panels derive their target from the locked top AI strategy", () => {
   assert.match(mainSource, /function trainingProfileForStrategy/, "training target should be derived from the selected strategy key");
   assert.match(mainSource, /function strategyTrainingCandidateCount/, "candidate counts should be strategy-aware");
-  assert.match(mainSource, /const onSideTrainingStrategyChange = useCallback/, "training panel should have a dedicated strategy-category change handler");
-  assert.match(mainSource, /onSideTrainingStrategyChange[\s\S]*changeStrategyModel\(side, strategy\)/, "training strategy changes should update the top AI strategy selection");
+  assert.doesNotMatch(mainSource, /const onSideTrainingStrategyChange = useCallback/, "training panel should not have a second strategy-category change handler");
+  assert.match(mainSource, /strategyModels\["1P"\]/, "1P training state should derive from the top 1P AI strategy selection");
+  assert.match(mainSource, /strategyModels\["2P"\]/, "2P training state should derive from the top 2P AI strategy selection");
+  assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top AI strategy controls should lock while that side is training");
+  assert.match(mainSource, /disabled=\{strategyControlsLocked\}/, "training should prevent strategy category switching by locking the top AI strategy buttons");
   assert.match(mainSource, /case "survival-v0"/, "survival strategy should have its own training profile");
   assert.match(mainSource, /case "speedrun-v0"/, "speedrun strategy should have its own training profile");
   assert.match(mainSource, /case "combat-v0"/, "combat strategy should have its own training profile");
