@@ -463,6 +463,7 @@ type BotRunReport = {
   lastInput: TraceInputSample;
   finalEnemies: Array<Pick<EnemySlotSnapshot, "slot" | "type" | "hp" | "x" | "y" | "routine" | "kind" | "threat" | "fixed" | "priority">>;
   runtime: RuntimeDebugSnapshot | null;
+  terminalRuntime: RuntimeDebugSnapshot | null;
   deathTrace: DeathTraceReport | null;
 };
 
@@ -3472,6 +3473,7 @@ function createIdleBotRunReport(): BotRunReport {
     lastInput: traceInput(createButtonState()),
     finalEnemies: [],
     runtime: null,
+    terminalRuntime: null,
     deathTrace: null
   };
 }
@@ -9757,13 +9759,15 @@ function App() {
       statusValue = "error";
     }
 
+    const terminalRuntime = lastRuntime;
     runningRef.current = false;
+    clearRuntimeOwnedInputs();
     setStatus((current) => current === "running" ? "paused" : current);
     setFrameCount(frameRef.current);
     setRamSnapshot(ramSnapshotRef.current);
     setGameplayActive(gameplayActiveRef.current);
     const finalSnapshot = ramSnapshotRef.current;
-    const finalRuntime = lastRuntime ?? buildRuntimeDebugSnapshot({
+    const finalRuntime = buildRuntimeDebugSnapshot({
       side: "1P",
       mode: controlModesRef.current["1P"],
       strategyKey: strategyModelsRef.current["1P"],
@@ -9811,9 +9815,10 @@ function App() {
         priority: enemy.priority
       })) ?? [],
       runtime: finalRuntime,
+      terminalRuntime,
       deathTrace: lastDeathTraceRef.current
     });
-  }, [clearAllInputs, tickFrame]);
+  }, [clearAllInputs, clearRuntimeOwnedInputs, tickFrame]);
 
   const installRom = useCallback((data: Uint8Array, metadata: RomMetadata) => {
     const nes = nesRef.current || createNes();

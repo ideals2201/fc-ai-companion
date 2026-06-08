@@ -310,6 +310,13 @@ test("strategy input only writes after gameplay starts and stops on pause", () =
   assert.match(mainSource, /runtimeStatus: runtimeStatus === "running" \? "running" : "paused"/, "training trace samples should not label paused frames as running");
 });
 
+test("botrun stop path clears runtime inputs before publishing the final paused report", () => {
+  assert.match(mainSource, /runningRef\.current = false;\s*clearRuntimeOwnedInputs\(\);/, "botrun completion should clear AI/TAS/system inputs before reporting paused state");
+  assert.match(mainSource, /const terminalRuntime = lastRuntime;/, "botrun should preserve the last active frame separately for evidence review");
+  assert.match(mainSource, /runtimeStatus: statusValue === "error" \? "error" : "paused"[\s\S]*buttons: finalButtonsRef\.current\["1P"\][\s\S]*rawAiButtons: lastRawAiButtonsRef\.current\["1P"\][\s\S]*lockedAiButtons: lastLockedAiButtonsRef\.current\["1P"\]/, "final botrun runtime should be rebuilt from cleared runtime-owned inputs");
+  assert.match(mainSource, /terminalRuntime,/, "botrun report should export the last active runtime separately from the final paused runtime");
+});
+
 test("side training panels derive their target from the locked top AI strategy", () => {
   assert.match(mainSource, /function trainingProfileForStrategy/, "training target should be derived from the selected strategy key");
   assert.match(mainSource, /function strategyTrainingCandidateCount/, "candidate counts should be strategy-aware");
