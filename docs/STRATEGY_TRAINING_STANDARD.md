@@ -50,6 +50,8 @@ The cockpit training window should expose these actions:
 - `Select Base`: choose a baseline strategy or TAS-derived side baseline.
 - `Start Capture`: begin recording runtime input and RAM state.
 - `Stop`: stop capture.
+- `Start Run`: start an auto-patch or AI-run training attempt.
+- `Stop Run`: stop the current training attempt and close the run window.
 - `Modify Strategy`: open or generate a StrategyFragment draft.
 - `Archive Strategy`: save trace evidence, fragment proposal, or strategy-pack update.
 - `Package Strategy`: create a distributable Strategy Pack export from selected validated or candidate artifacts.
@@ -60,6 +62,10 @@ The cockpit training window should expose these actions:
 Buttons must not imply that training is complete. They trigger steps in a controlled training workflow.
 
 Side-owned controls must live in each side controller bay. 1P and 2P must expose the same local actions: `Select Base`, `Start Capture`, `Stop`, `Modify Strategy`, `Archive Strategy`, `Validate Replay`, `Export`, and `Clear`. These actions must carry explicit side ownership so the archived evidence and generated fragments know whether they belong to 1P, 2P, or a shared run.
+
+When 1P and 2P train in the same synchronized experiment, both sides must use one shared training method. The strategy category, baseline, resource pack, ROMProfile, side scope, and shared training method are configured before the training session starts. After the session starts, this configuration is locked until the session stops. This prevents one TraceEvidence window from mixing incompatible methods, packs, or strategy targets.
+
+Auto-patch runs must arm trace capture before the first runtime frame. `Start Run` must start the emulator run and trace capture together; `Stop Run` must stop the run and close trace capture together, recording the stop reason when available. A run can end by manual stop, death, stage clear, frame cap, stuck loop, or desync, but it must never create a patch candidate without synchronized trace evidence.
 
 The Operation Strategy Control panel is reserved for cross-side work: active training scenario, current package identity, TAS baseline matching, package side scope, one-click package export, pair validation, resource-pack routing, and global evidence status. It must not be the only place to select or modify a side-owned strategy.
 

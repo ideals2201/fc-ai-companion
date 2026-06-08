@@ -1240,3 +1240,22 @@ Required next direction:
 - Use this decision in a trace-only training path first.
 - Keep `runtime-patch:stage-one-boss-approach-high-air-contact` blocked.
 - Do not promote or export this fragment as validated until real runtime TraceEvidence and a passing ValidationReport exist.
+
+## 2026-06-08: Synchronized dual-side training locks method and run capture
+
+Decision: treat simultaneous 1P/2P training as one synchronized experiment with one shared training method. Baseline, method, resource pack, ROMProfile, side scope, and top strategy selection are configured before training starts and locked while training is active.
+
+Evidence:
+- A focused UI contract test was added for shared training method, configuration lock, and auto-patch run capture synchronization:
+  - `node --test tests\trainingPanelLayout.test.mjs`
+- The strategy training standard now documents `Start Run`, `Stop Run`, shared training method, configuration lock, and the requirement to arm trace capture before the first runtime frame:
+  - `node --test tests\strategyTrainingStandardDoc.test.mjs`
+- `npm run build` passed after the runtime UI state change.
+
+Reason:
+If 1P and 2P change training methods independently during the same run, the resulting TraceEvidence cannot prove a coherent experiment. Auto-patch is especially strict: the run must start with capture already armed, otherwise the generated patch candidate has no trustworthy frame-by-frame evidence.
+
+Required next direction:
+- Browser-test the visible training panel after starting the dev server.
+- Keep package save behind TraceEvidence plus ValidationReport gates.
+- Continue Strategy Pack selection work so only package-declared strategies are selectable.

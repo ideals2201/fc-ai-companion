@@ -33,6 +33,11 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /current training context/i, "training standard should define packaging default scope");
   assert.match(source, /Validate Replay/, "training standard should define validation replay");
   assert.match(source, /side controller bay/i, "training standard should place side-owned controls in each controller bay");
+  assert.match(source, /shared training method/i, "training standard should require one shared method for a synchronized training session");
+  assert.match(source, /configuration is locked/i, "training standard should lock baseline, method, pack, strategy, and side scope after training starts");
+  assert.match(source, /Start Run/i, "training standard should define a run-start action for auto-patch training");
+  assert.match(source, /Stop Run/i, "training standard should define a run-stop action for auto-patch training");
+  assert.match(source, /arm trace capture before the first runtime frame/i, "training standard should require auto-patch runs to synchronize capture before running");
   assert.match(source, /Operation Strategy Control/, "training standard should reserve operation strategy control for cross-side work");
   assert.match(source, /1P Resource Pack/, "training standard should define the 1P resource-pack slot");
   assert.match(source, /2P Resource Pack/, "training standard should define the 2P resource-pack slot");

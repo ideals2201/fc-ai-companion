@@ -24,6 +24,9 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /selectedBaselineId: string/, "side training state should carry the selected baseline id");
   assert.match(mainSource, /trainingMethodOptions: SideTrainingMethodOption\[\]/, "side training state should expose selectable training methods");
   assert.match(mainSource, /selectedTrainingMethod: SideTrainingMethod/, "side training state should carry the selected training method");
+  assert.match(mainSource, /trainingConfigLocked: boolean/, "side training state should expose whether baseline and method settings are locked");
+  assert.match(mainSource, /trainingRunActive: boolean/, "side training state should expose whether its run is currently recording");
+  assert.match(mainSource, /trainingRunStatusLabel: string/, "side training state should expose visible run status");
   assert.match(mainSource, /<SideTrainingPanel[\s\S]*training=\{pilot\.training\}/, "PilotPanel should place training inside the controller bay");
   assert.match(mainSource, /className="side-training-pack-identity"/, "side training panel should prominently show strategy pack identity");
   assert.match(mainSource, /className=\{sideTrainingPanelClassName\(training\)\}/, "side training panel should distinguish queued and active training states");
@@ -51,6 +54,7 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /onSideTrainingArchiveStrategy/, "strategy archival should be routed with side ownership");
   assert.match(mainSource, /onSideTrainingValidateStrategy/, "validation should be routed with side ownership");
   assert.match(mainSource, /onSideTraceStart/, "trace capture should be available from each side training panel");
+  assert.match(mainSource, /onSideTrainingRunToggle/, "auto-patch run start and stop should be routed with side ownership");
   assert.match(cssSource, /\.side-training-panel\s*\{/, "side training panel should have stable styling");
   assert.match(cssSource, /\.side-training-panel\.queued-training-side\s*\{/, "queued training panel should have selected-but-not-active styling");
   assert.match(cssSource, /\.side-training-panel\.active-training-side\s*\{/, "active training panel should have active border styling");
@@ -231,13 +235,13 @@ test("human demonstration is a baseline source, not a training method", () => {
 
 test("side training baseline and method controls unlock only for valid active states", () => {
   assert.match(mainSource, /function isNewRunBaseline/, "new human and new AI run baselines should have a shared direct-run predicate");
-  assert.match(mainSource, /const sideTrainingActive = training\.trainingSessionActive/, "side panel should derive control availability from its own active session");
+  assert.match(mainSource, /const sideTrainingConfigurable = training\.selectedForTraining && !training\.trainingConfigLocked/, "side panel should allow configuration only before a training session starts");
   assert.match(mainSource, /const directRunBaseline = isNewRunBaseline\(training\.selectedBaselineId\)/, "side panel should detect direct human or AI run baselines");
-  assert.match(mainSource, /disabled=\{!sideTrainingActive\}[\s\S]*value=\{training\.selectedBaselineId\}/, "strategy baseline selection should be disabled after training stops");
-  assert.match(mainSource, /disabled=\{!sideTrainingActive \|\| directRunBaseline\}/, "training method choices should be disabled for inactive sides and direct new-run baselines");
+  assert.match(mainSource, /disabled=\{!sideTrainingConfigurable\}[\s\S]*value=\{training\.selectedBaselineId\}/, "strategy baseline selection should be configured before training starts and locked during training");
+  assert.match(mainSource, /disabled=\{!sideTrainingConfigurable \|\| directRunBaseline\}/, "training method choices should be configured before training starts and locked during training");
   assert.match(mainSource, /const showDirectRunActions = directRunBaseline/, "direct new-run baselines should expose start/archive actions without requiring a method");
-  assert.match(mainSource, /className=\{selectorClassName\("side-training-method-selector", !sideTrainingActive \|\| directRunBaseline\)\}/, "disabled method selector should have dark inactive styling");
-  assert.match(mainSource, /className=\{selectorClassName\("side-baseline-selector", !sideTrainingActive\)\}/, "disabled baseline selector should have dark inactive styling");
+  assert.match(mainSource, /className=\{selectorClassName\("side-training-method-selector", !sideTrainingConfigurable \|\| directRunBaseline\)\}/, "locked method selector should have dark inactive styling");
+  assert.match(mainSource, /className=\{selectorClassName\("side-baseline-selector", !sideTrainingConfigurable\)\}/, "locked baseline selector should have dark inactive styling");
   assert.match(mainSource, /disabled=\{!sideTrainingActive \|\| actions\.traceRecording\}/, "direct start action should be gated by side training activity");
 });
 
@@ -245,8 +249,27 @@ test("direct training baselines synchronize side play mode while training owns i
   assert.match(mainSource, /function trainingControlModeForSelection/, "training baseline should choose the side play mode");
   assert.match(mainSource, /if \(baselineId === "human-demo-new"\) return "human"/, "new human demonstration baseline should switch the side to human input");
   assert.match(mainSource, /if \(baselineId === "ai-run-new"\) return "ai"/, "new AI run baseline should switch the side to AI input");
-  assert.match(mainSource, /changeControlMode\(side, trainingControlModeForSelection\(baselineId, selectedSideTrainingMethods\[side\]\)\)/, "changing a baseline during active training should synchronize the side play mode");
-  assert.match(mainSource, /const mode = trainingControlModeForSelection\(selectedSideBaselineIds\[side\], selectedSideTrainingMethods\[side\]\);[\s\S]*changeControlMode\(side, mode\)/, "starting training should synchronize every active side to its baseline mode");
+  assert.match(mainSource, /if \(activeTrainingSides\[side\]\) \{[\s\S]*baseline change blocked because training is active/, "baseline changes should be blocked after training starts");
+  assert.match(mainSource, /const mode = trainingControlModeForSelection\(selectedSideBaselineIds\[side\], selectedTrainingMethod\);[\s\S]*changeControlMode\(side, mode\)/, "starting training should synchronize every active side to its locked baseline mode");
+});
+
+test("dual AI training uses one shared method and locks it after start", () => {
+  assert.match(mainSource, /const \[selectedTrainingMethod, setSelectedTrainingMethod\] = useState<SideTrainingMethod>/, "training method should be shared by both sides for a single experiment session");
+  assert.doesNotMatch(mainSource, /selectedSideTrainingMethods/, "training method should not be stored as independent 1P and 2P methods");
+  assert.match(mainSource, /setSelectedTrainingMethod\(option\.key\)/, "changing method from either side should update the shared method");
+  assert.match(mainSource, /if \(trainingSessionActive\) \{[\s\S]*method change blocked because training is active/, "method changes should be blocked once any training side starts");
+  assert.match(mainSource, /buildSideTrainingStateV2\("1P"[\s\S]*selectedTrainingMethod/, "1P panel should receive the shared training method");
+  assert.match(mainSource, /buildSideTrainingStateV2\("2P"[\s\S]*selectedTrainingMethod/, "2P panel should receive the shared training method");
+});
+
+test("auto-patch run start synchronizes capture and exposes a stop run control", () => {
+  assert.match(mainSource, /trainingRunActiveSides/, "auto-patch run state should be tracked per training side");
+  assert.match(mainSource, /const trainingRunActive = trainingRunActiveSides\["1P"\] \|\| trainingRunActiveSides\["2P"\]/, "global run status should summarize side run state");
+  assert.match(mainSource, /const startSideTrainingRun = useCallback\(\(side: PlayerSide\) => \{[\s\S]*startTraceRecording\(\)[\s\S]*setRunning\(true\)/, "starting an auto-patch run should begin trace capture and run the emulator together");
+  assert.match(mainSource, /const stopSideTrainingRun = useCallback\(\(side: PlayerSide\) => \{[\s\S]*stopTraceRecording\(\)[\s\S]*setRunning\(false\)/, "stopping an auto-patch run should stop capture and pause the run together");
+  assert.match(mainSource, /onSideTrainingRunToggle: \(side: PlayerSide\) => void/, "side actions should expose one auto-patch run toggle");
+  assert.match(mainSource, /training\.trainingRunActive \? "停止跑局" : "开始跑局"/, "auto-patch UI should show start or stop run from the same control");
+  assert.match(mainSource, /actions\.onSideTrainingRunToggle\(training\.side\)/, "auto-patch run button should call the run toggle");
 });
 
 test("side training panels derive their target from the locked top AI strategy", () => {
