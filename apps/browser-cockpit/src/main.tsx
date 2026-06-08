@@ -822,7 +822,7 @@ const aiStrategyOptions: Array<{ key: AiStrategyKey; label: string; description:
   { key: "placeholder", label: "安全占位 Bot", description: "空输入 / 待机" },
   { key: "rules-v0", label: "规则基线 V0", description: "等待 RAM/FSM" },
   { key: "survival-v0", label: "稳健生存", description: "优先避险和低风险推进" },
-  { key: "speedrun-v0", label: "快速推进", description: "优先推进和基础避险" },
+  { key: "speedrun-v0", label: "快速推进候选", description: "TAS/FCEUX 基准待训练，未验证通关" },
   { key: "combat-v0", label: "清敌优先", description: "优先射击屏幕威胁" },
   { key: "loot-v0", label: "奖励优先", description: "优先武器箱和飞行胶囊" },
   { key: "guard-v0", label: "护卫队友", description: "保护 1P 周围威胁" },
@@ -935,7 +935,7 @@ function unverifiedStrategyResult(evidence: string): StrategyResultRecord {
 
 const CONTRA_STAGE1_STRATEGY_RESULTS: Record<(typeof strategyResultKeys)[number], StrategyResultRecord> = {
   "survival-v0": unverifiedStrategyResult("Awaiting Stage 1 robust survival runtime validation."),
-  "speedrun-v0": unverifiedStrategyResult("Awaiting Stage 1 fast-pass runtime validation."),
+  "speedrun-v0": unverifiedStrategyResult("Reusable TAS/FCEUX speedrun candidate is indexed; awaiting Stage 1 runtime validation."),
   "combat-v0": unverifiedStrategyResult("Awaiting Stage 1 combat-clear runtime validation."),
   "loot-v0": unverifiedStrategyResult("Awaiting Stage 1 reward-route runtime validation."),
   "guard-v0": unverifiedStrategyResult("Awaiting human-AI or dual-AI guard validation.")
@@ -3481,7 +3481,7 @@ function getPilotTemperament(side: PlayerSide, mode: ControlMode, strategyKey: A
   if (strategyKey === "off") return "AI 未启用";
   if (strategyKey === "placeholder") return "AI 安全占位";
   if (strategyKey === "survival-v0") return "稳健生存";
-  if (strategyKey === "speedrun-v0") return "快速推进";
+  if (strategyKey === "speedrun-v0") return "快速推进候选";
   if (strategyKey === "combat-v0") return "清敌优先";
   if (strategyKey === "loot-v0") return "奖励优先";
   if (strategyKey === "guard-v0") return "护卫队友";
@@ -5989,7 +5989,7 @@ function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey, language: 
     return ["稳健生存：优先避开近身危险。", "威胁过密时放慢推进，先跳开、点射，再继续前进。"];
   }
   if (strategyKey === "speedrun-v0") {
-    return ["快速推进：优先向右推进。", "遇到近身危险会跳跃，前方有威胁时射击。"];
+    return ["快速推进候选：复用 TAS/FCEUX 基准窗口。", "当前仍有 WorldX 625 死亡反例，必须真实跑局验证后才能升级。"];
   }
   if (strategyKey === "combat-v0") {
     return ["清敌优先：先处理屏幕威胁。", "敌人靠近时会停推进、持续射击并尝试跳开。"];

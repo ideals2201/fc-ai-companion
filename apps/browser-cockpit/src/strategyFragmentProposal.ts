@@ -70,6 +70,10 @@ export type StrategyFragmentDraftOptions = {
   sourceProposalPath: string;
 };
 
+type TraceEvidenceWithOptionalInputSummary = StrategyTraceEvidence & {
+  inputSummary?: Record<string, number>;
+};
+
 export type CandidateStrategyFragmentProposal = {
   schema: "fc-ai-strategy-fragment-proposal-v1";
   schemaVersion: "1.0.0";
@@ -194,10 +198,11 @@ function actionIntentCombination(
   evidence: StrategyTraceEvidence,
   tasSideBaseline: TasSideBaselineForProposal
 ) {
+  const inputSummary = (evidence as TraceEvidenceWithOptionalInputSummary).inputSummary ?? {};
   const intents = [
     { intent: "advance", weight: Math.min(1, Math.max(0.45, (tasSideBaseline.buttonPressFrames.right ?? 0) / Math.max(1, tasSideBaseline.totalFrames))) },
     (tasSideBaseline.buttonPressFrames.a ?? 0) > 0 ? { intent: "jump", weight: 0.7 } : null,
-    Object.keys(evidence.inputSummary).some((label) => label.includes("B")) || (tasSideBaseline.buttonPressFrames.b ?? 0) > 0
+    Object.keys(inputSummary).some((label) => label.includes("B")) || (tasSideBaseline.buttonPressFrames.b ?? 0) > 0
       ? { intent: "fire_target", weight: 0.65 }
       : null,
     (tasSideBaseline.buttonPressFrames.down ?? 0) > 0 ? { intent: "aim_down", weight: 0.45 } : null

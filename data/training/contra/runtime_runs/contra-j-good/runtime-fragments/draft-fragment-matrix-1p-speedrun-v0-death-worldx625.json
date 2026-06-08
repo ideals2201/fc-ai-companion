@@ -1,0 +1,140 @@
+{
+  "schema": "fc-ai-strategy-fragment-draft-v1",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-06-09T01:30:00.000+08:00",
+  "status": "candidate-unvalidated",
+  "runtimeUse": "training-fragment-draft",
+  "sourceProposal": {
+    "path": "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-matrix-1p-speedrun-v0-death-worldx625.json",
+    "fragmentId": "candidate-fragment-matrix-1p-speedrun-v0-death-worldx625",
+    "traceEvidence": {
+      "fragmentId": "matrix-1p-speedrun-v0-death-worldx625",
+      "routeClass": "strategy-matrix:speedrun-v0",
+      "branchOutcome": "strategy-matrix-failed-stop",
+      "sampleCount": 900
+    },
+    "rejectedTraceEvidence": [],
+    "tasSideBaseline": {
+      "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+      "movieId": "contra-j-2p-any-percent",
+      "windowId": "opening-active",
+      "frameWindow": [
+        650,
+        1350
+      ],
+      "tasIsController": false
+    },
+    "tasIsController": false
+  },
+  "validation": {
+    "required": "real-runtime-trace",
+    "status": "missing",
+    "reportRefs": []
+  },
+  "fragment": {
+    "id": "draft-fragment-matrix-1p-speedrun-v0-death-worldx625",
+    "label": "Opening active control candidate",
+    "status": "candidate",
+    "strategyTypes": [
+      "survival",
+      "speed",
+      "combat"
+    ],
+    "progressionWindow": {
+      "metric": "progression.primary",
+      "start": 0,
+      "end": 625,
+      "unit": "ContraWorldPixels",
+      "strictEnd": true
+    },
+    "conditions": [
+      {
+        "ref": "stage.id",
+        "op": "eq",
+        "value": "stage-1"
+      },
+      {
+        "ref": "player.1P.alive",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "ref": "rom.profile",
+        "op": "eq",
+        "value": "contra-j-good"
+      }
+    ],
+    "actionAdvice": {
+      "intent": "advance",
+      "intentCombination": [
+        {
+          "intent": "advance",
+          "weight": 0.9171428571428571
+        },
+        {
+          "intent": "jump",
+          "weight": 0.7
+        }
+      ],
+      "priority": 70,
+      "parameters": {
+        "sourceKind": "tas-side-baseline-plus-trace-evidence",
+        "routeClass": "strategy-matrix:speedrun-v0",
+        "requiredValidation": "real-runtime-trace",
+        "tasWindowId": "opening-active"
+      },
+      "lockFrames": 0
+    },
+    "safetyOverrides": [
+      "immediate-lethal-danger",
+      "real-runtime-trace-required",
+      "safety-override-required",
+      "side-owned-promotion-required",
+      "tas-desync-guard"
+    ],
+    "exitConditions": [
+      {
+        "ref": "progression.primary",
+        "op": "gte",
+        "value": 625
+      },
+      {
+        "ref": "player.1P.alive",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "ref": "validation.desynced",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "source": {
+      "traceEvidence": {
+        "fragmentId": "matrix-1p-speedrun-v0-death-worldx625",
+        "routeClass": "strategy-matrix:speedrun-v0",
+        "branchOutcome": "strategy-matrix-failed-stop",
+        "sampleCount": 900
+      },
+      "tasSideBaseline": {
+        "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+        "movieId": "contra-j-2p-any-percent",
+        "windowId": "opening-active",
+        "frameWindow": [
+          650,
+          1350
+        ],
+        "tasIsController": false
+      }
+    },
+    "telemetry": {
+      "requiredRefs": [
+        "progression.primary",
+        "player.1P.position",
+        "runtime.finalInput",
+        "validation.desynced"
+      ]
+    },
+    "failureCounterexamples": []
+  }
+}

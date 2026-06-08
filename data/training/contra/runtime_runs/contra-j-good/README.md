@@ -22,7 +22,9 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
+- `candidate-fragments/candidate-fragment-matrix-1p-speedrun-v0-death-worldx625.json`
 - `candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`
+- `runtime-fragments/draft-fragment-matrix-1p-speedrun-v0-death-worldx625.json`
 - `runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -74,6 +76,11 @@ The strategy matrix evidence comes from five independent browser AI botruns usin
 
 This matrix proves the current package has no validated `contra-j-good` Stage 1 strategy yet.
 The initial matrix earliest blocker was `combat-v0` at `WorldX 286`; the best-scoring initial branch was `guard-v0` at `WorldX 2038`, but it still died.
+
+The reusable `speedrun-v0` candidate is stored at `candidate-fragments/candidate-fragment-matrix-1p-speedrun-v0-death-worldx625.json`.
+It combines the `matrix-speedrun-20260608` failure at `WorldX 625` with the TAS `opening-active` 1P side baseline.
+The matching runtime draft is stored at `runtime-fragments/draft-fragment-matrix-1p-speedrun-v0-death-worldx625.json`.
+This is reuse material for training only: TAS is not the controller, and validation remains missing until a real runtime TraceEvidence plus ValidationReport proves the route.
 
 The combat opening follow-up evidence comes from browser AI botruns that tested the low fixed-threat opening route class and its later blocker transitions:
 

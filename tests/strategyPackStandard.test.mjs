@@ -79,7 +79,7 @@ test("contra manifest binds the pack to standard 1.0 and candidate status", () =
   assert.deepEqual(manifest.romProfileIds, ["contra-us-good", "contra-j-good"]);
   assert.equal(manifest.sideScope, "shared");
   assert.deepEqual(manifest.strategySlots, ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"], "current official pack should preserve the five standard category slots");
-  assert.deepEqual(manifest.strategyKeys, ["survival-v0", "speedrun-v0"], "current official pack should expose only the survival and FCEUX/TAS-derived speedrun mainline strategies");
+  assert.deepEqual(manifest.strategyKeys, ["survival-v0", "speedrun-v0"], "current official pack should expose only the survival and speedrun candidate strategies");
   assert.equal(manifest.status, "candidate");
   assert.equal(manifest.standards.strategyProtocol, "1.0.0");
   assert.equal(manifest.files.gameProfile, "game-profile.json");

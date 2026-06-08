@@ -75,13 +75,25 @@
         },
         {
           "sourceKind": "trace-evidence",
-          "path": "strategy-packs/contra/stages/stage-1/trace-evidence",
+          "path": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-speedrun-v0-death-worldx625.json",
           "runtimeUse": "fast-route-counterexample-check",
           "status": "candidate"
+        },
+        {
+          "sourceKind": "candidate-fragment",
+          "path": "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-matrix-1p-speedrun-v0-death-worldx625.json",
+          "runtimeUse": "tas-baseline-reuse-candidate",
+          "status": "candidate"
+        },
+        {
+          "sourceKind": "runtime-fragment-draft",
+          "path": "data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-matrix-1p-speedrun-v0-death-worldx625.json",
+          "runtimeUse": "training-fragment-draft",
+          "status": "candidate-unvalidated"
         }
       ],
-      "validationStatus": "candidate",
-      "nextAction": "Train speedrun-v0 only after survival windows stop producing death counterexamples."
+      "validationStatus": "candidate-unvalidated",
+      "nextAction": "Reuse the TAS opening-active baseline plus the WorldX 625 speedrun failure as a training candidate, then validate it with real runtime TraceEvidence before promotion."
     },
     {
       "strategyKey": "combat-v0",

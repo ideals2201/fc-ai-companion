@@ -21,7 +21,7 @@ test("stage 1 clearance matrix covers every declared strategy key separately", (
   for (const strategyKey of manifest.strategyKeys) {
     const entry = entriesByKey.get(strategyKey);
     assert.ok(entry, `${strategyKey} should have a clearance entry`);
-    assert.equal(entry.validationStatus, "candidate", `${strategyKey} should stay candidate until real runtime validation`);
+    assert.ok(["candidate", "candidate-unvalidated"].includes(entry.validationStatus), `${strategyKey} should stay candidate until real runtime validation`);
     assert.match(entry.clearanceGoal, /no-death|fewest-death/, `${strategyKey} should declare a no-death or fewest-death goal`);
     assert.ok(entry.evidencePlan.some((item) => item.sourceKind === "tas-side-baseline" || item.sourceKind === "trace-evidence" || item.status === "gap"), `${strategyKey} should cite TAS, trace evidence, or an explicit evidence gap`);
   }

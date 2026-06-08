@@ -198,8 +198,10 @@ test("operation strategy control supports side-specific resource packs and basel
 });
 
 test("strategy buttons are derived from the selected resource pack manifest", () => {
-  assert.match(mainSource, /const currentPackStrategyKeys = \["survival-v0", "speedrun-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should expose only the two current mainline strategy keys");
+  assert.match(mainSource, /const currentPackStrategyKeys = \["survival-v0", "speedrun-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should expose only the two current selectable candidate strategy keys");
   assert.match(mainSource, /const standardStrategyCategoryKeys = \["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should keep the five standard strategy category slots visible");
+  assert.match(mainSource, /\{ key: "speedrun-v0", label: "快速推进候选", description: "TAS\/FCEUX 基准待训练，未验证通关" \}/, "speedrun should be labeled as an unvalidated TAS/FCEUX-baseline candidate, not a learned FCEUX controller");
+  assert.match(mainSource, /if \(strategyKey === "speedrun-v0"\) return "快速推进候选"/, "pilot status should not imply speedrun is already validated");
   assert.match(mainSource, /strategySlots:\s*standardStrategyCategoryKeys/, "official Contra pack should display all standard category slots");
   assert.match(mainSource, /strategyKeys:\s*currentPackStrategyKeys/, "official Contra pack should consume the current mainline strategy keys");
   assert.match(mainSource, /strategyKeys:\s*\["personal-v0"\]/, "personal draft pack should expose personal strategy only after it is represented as a pack key");

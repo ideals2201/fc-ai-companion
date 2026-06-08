@@ -135,7 +135,7 @@
           "rewardsCollected": { "value": null, "status": "unverified" },
           "clearTimeFrames": { "value": null, "status": "unverified" }
         },
-        "evidence": "需要完成快速推进真实跑局验证后写入。"
+        "evidence": "已接入 TAS/FCEUX opening-active 侧基准和 matrix-speedrun-20260608 的 WorldX 625 死亡反例，形成可复用候选训练片段；仍需真实跑局 ValidationReport 后才能升级。"
       },
       "combat-v0": {
         "status": "candidate",
