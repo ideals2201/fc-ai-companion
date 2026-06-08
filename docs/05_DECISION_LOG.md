@@ -1221,3 +1221,22 @@ A runtime draft is the correct bridge between a data proposal and controller beh
 Required next direction:
 - Consume this draft in a focused runtime behavior test before touching live controller flow.
 - Do not mark the draft validated until real runtime TraceEvidence and a passing ValidationReport exist.
+
+## 2026-06-08: Runtime tactics may consume the high-air draft only as unvalidated training advice
+
+Decision: add a runtime tactics consumer for `fc-ai-strategy-fragment-draft-v1` that outputs semantic training advice, not controller buttons.
+
+Evidence:
+- The focused runtime test first failed because `createStageOneRuntimeFragmentDraftDecision` did not exist:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`.
+- The consumer is implemented in `apps/browser-cockpit/src/contraStage1RewardTactics.ts`.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `54/54`.
+
+Reason:
+The high-air candidate must be visible to runtime training logic before it can produce real trace evidence, but it is still unvalidated. Returning semantic intents and explicit guard metadata lets training observe and evaluate the fragment without promoting TAS data into live controller input.
+
+Required next direction:
+- Use this decision in a trace-only training path first.
+- Keep `runtime-patch:stage-one-boss-approach-high-air-contact` blocked.
+- Do not promote or export this fragment as validated until real runtime TraceEvidence and a passing ValidationReport exist.

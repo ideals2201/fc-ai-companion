@@ -16,6 +16,7 @@ async function importTypeScriptModule(path) {
 }
 
 const {
+  createStageOneRuntimeFragmentDraftDecision,
   findMidWeaponTurretStallTarget,
   findRewardStationFallingThreat,
   midWeaponTurretBreakoutPatch,
@@ -41,6 +42,10 @@ const {
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/contraStage1RewardTactics.ts", import.meta.url));
 
 const mainSource = fs.readFileSync(new URL("../apps/browser-cockpit/src/main.tsx", import.meta.url), "utf8");
+const bossApproachHighAirDraft = JSON.parse(fs.readFileSync(new URL(
+  "../data/training/contra/runtime_runs/contra-j-good/runtime-fragments/draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json",
+  import.meta.url
+), "utf8"));
 
 test("mid fixed script prioritizes a close stage reward target", () => {
   const target = midFixedScriptRewardOverride({
@@ -628,6 +633,53 @@ test("stage one boss approach jump edge ends before the third takeoff point", ()
   }, true, 3998);
 
   assert.equal(patch, null);
+});
+
+test("runtime consumes the high-air draft as unvalidated training advice", () => {
+  assert.equal(typeof createStageOneRuntimeFragmentDraftDecision, "function");
+  assert.equal("buttons" in bossApproachHighAirDraft.fragment.actionAdvice, false);
+
+  const decision = createStageOneRuntimeFragmentDraftDecision({
+    level: 0,
+    worldX: 2168,
+    playerX: 128,
+    playerY: 101,
+    enemies: [
+      { fixed: true, hp: 6, kind: "durable", routine: 4, threat: true, type: 7, x: 145, y: 64 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 5, x: 130, y: 132 }
+    ]
+  }, bossApproachHighAirDraft, {
+    activeRouteClass: "runtime-patch:stage-one-boss-approach-early-pit-jump"
+  });
+
+  assert.equal(decision?.draftId, "draft-fragment-1p-combat-v0-boss-approach-high-air-cluster");
+  assert.equal(decision?.runtimeUse, "training-fragment-draft");
+  assert.equal(decision?.validationStatus, "missing");
+  assert.equal(decision?.tasIsController, false);
+  assert.equal(decision?.routeClass, "training-draft:stage-one-boss-approach-high-air-cluster");
+  assert.equal(decision?.sourceRouteClass, "runtime-patch:stage-one-boss-approach-early-pit-jump");
+  assert.equal(decision?.prohibitedRouteClass, "runtime-patch:stage-one-boss-approach-high-air-contact");
+  assert.deepEqual(decision?.semanticIntents, ["advance", "jump", "fire_target", "aim_down"]);
+  assert.equal("buttons" in decision, false);
+});
+
+test("runtime refuses the high-air draft when the rejected route class is active", () => {
+  assert.equal(typeof createStageOneRuntimeFragmentDraftDecision, "function");
+
+  const decision = createStageOneRuntimeFragmentDraftDecision({
+    level: 0,
+    worldX: 2168,
+    playerX: 128,
+    playerY: 101,
+    enemies: [
+      { fixed: true, hp: 6, kind: "durable", routine: 4, threat: true, type: 7, x: 145, y: 64 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 5, x: 130, y: 132 }
+    ]
+  }, bossApproachHighAirDraft, {
+    activeRouteClass: "runtime-patch:stage-one-boss-approach-high-air-contact"
+  });
+
+  assert.equal(decision, null);
 });
 
 test("stage one boss approach close body clears the WorldX 2809 lower soldier without jump lock", () => {

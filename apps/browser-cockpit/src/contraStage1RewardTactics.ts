@@ -78,6 +78,59 @@ export type StageOneRewardThreatSnapshot<T extends StageOneRewardThreat> = {
   worldX: number;
 };
 
+export type StageOneRuntimeFragmentDraftIntent = {
+  intent: string;
+  weight?: number;
+};
+
+export type StageOneRuntimeFragmentDraft = {
+  fragment?: {
+    actionAdvice?: {
+      intent?: string;
+      intentCombination?: StageOneRuntimeFragmentDraftIntent[];
+      parameters?: {
+        prohibitedRouteClass?: string;
+        requiredValidation?: string;
+        routeClass?: string;
+      };
+    };
+    failureCounterexamples?: string[];
+    id?: string;
+    progressionWindow?: {
+      end?: number;
+      start?: number;
+      strictEnd?: boolean;
+    };
+    safetyOverrides?: string[];
+  };
+  runtimeUse?: string;
+  schema?: string;
+  sourceProposal?: {
+    tasIsController?: boolean;
+  };
+  status?: string;
+  validation?: {
+    status?: string;
+  };
+};
+
+export type StageOneRuntimeFragmentDraftDecision = {
+  actionAdvice: {
+    intent: string;
+    requiredValidation: string | null;
+  };
+  draftId: string;
+  failureCounterexamples: string[];
+  prohibitedRouteClass: string | null;
+  routeClass: string;
+  runtimeUse: "training-fragment-draft";
+  safetyOverrides: string[];
+  semanticIntents: string[];
+  sourceRouteClass: string | null;
+  tasIsController: false;
+  validationStatus: string;
+};
+
 export type StageOneRedTurretLowThreatSnapshot<
   Target extends StageOneRewardTarget,
   Threat extends StageOneRewardThreat
@@ -103,6 +156,78 @@ function isSpreadWeapon(weapon: number) {
 function isPotentialWeaponReward(enemy: StageOneRewardThreat) {
   return enemy.hp > 0
     && (enemy.type === 0x00 || enemy.type === 0x02 || enemy.type === 0x03 || enemy.type === 0x12);
+}
+
+function trainingRouteClassForDraft(fragmentId: string) {
+  const fragmentRoute = fragmentId
+    .replace(/^draft-fragment-1p-combat-v0-/, "")
+    .replace(/^draft-fragment-/, "");
+  const stageRoute = fragmentRoute.startsWith("stage-one-") ? fragmentRoute : `stage-one-${fragmentRoute}`;
+  return `training-draft:${stageRoute}`;
+}
+
+function hasBossApproachHighAirCluster<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>
+) {
+  const highForwardThreat = snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.hp <= 0) return false;
+    if (!enemy.fixed && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 12 && dx <= 132 && dy >= -72 && dy <= -18;
+  });
+  const closeBodyThreat = snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -12 && dx <= 44 && dy >= 8 && dy <= 58;
+  });
+  return highForwardThreat && closeBodyThreat;
+}
+
+export function createStageOneRuntimeFragmentDraftDecision<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>,
+  draft: StageOneRuntimeFragmentDraft,
+  options: { activeRouteClass?: string | null } = {}
+): StageOneRuntimeFragmentDraftDecision | null {
+  if (snapshot.level !== 0) return null;
+  if (draft.schema !== "fc-ai-strategy-fragment-draft-v1") return null;
+  if (draft.runtimeUse !== "training-fragment-draft") return null;
+  if (draft.status !== "candidate-unvalidated") return null;
+  if (draft.validation?.status !== "missing") return null;
+  if (draft.sourceProposal?.tasIsController !== false) return null;
+
+  const fragment = draft.fragment;
+  const actionAdvice = fragment?.actionAdvice;
+  const progressionWindow = fragment?.progressionWindow;
+  if (!fragment?.id || !actionAdvice || !progressionWindow) return null;
+  if (typeof progressionWindow.start !== "number" || typeof progressionWindow.end !== "number") return null;
+  if (snapshot.worldX < progressionWindow.start) return null;
+  if (progressionWindow.strictEnd ? snapshot.worldX > progressionWindow.end : snapshot.worldX >= progressionWindow.end) {
+    return null;
+  }
+
+  const prohibitedRouteClass = actionAdvice.parameters?.prohibitedRouteClass ?? null;
+  if (prohibitedRouteClass && options.activeRouteClass === prohibitedRouteClass) return null;
+  if (!hasBossApproachHighAirCluster(snapshot)) return null;
+
+  return {
+    actionAdvice: {
+      intent: actionAdvice.intent ?? "advance",
+      requiredValidation: actionAdvice.parameters?.requiredValidation ?? null
+    },
+    draftId: fragment.id,
+    failureCounterexamples: [...(fragment.failureCounterexamples ?? [])],
+    prohibitedRouteClass,
+    routeClass: trainingRouteClassForDraft(fragment.id),
+    runtimeUse: "training-fragment-draft",
+    safetyOverrides: [...(fragment.safetyOverrides ?? [])],
+    semanticIntents: (actionAdvice.intentCombination ?? []).map((entry) => entry.intent),
+    sourceRouteClass: actionAdvice.parameters?.routeClass ?? null,
+    tasIsController: false,
+    validationStatus: draft.validation.status
+  };
 }
 
 export function midFixedScriptRewardOverride<T extends StageOneRewardTarget>(

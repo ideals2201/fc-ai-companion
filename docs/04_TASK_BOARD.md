@@ -751,3 +751,19 @@ Verification:
 Next:
 - Write the focused runtime behavior test that consumes this draft before wiring any controller behavior.
 - Keep the draft unvalidated until a browser botrun creates passing TraceEvidence and a ValidationReport.
+
+## 2026-06-08 Contra Japan High-Air Runtime Draft Consumption
+
+Current:
+- Added `createStageOneRuntimeFragmentDraftDecision()` in `apps/browser-cockpit/src/contraStage1RewardTactics.ts`.
+- The runtime tactics layer can now consume `draft-fragment-1p-combat-v0-boss-approach-high-air-cluster.json` as semantic training advice.
+- The decision requires `schema=fc-ai-strategy-fragment-draft-v1`, `runtimeUse=training-fragment-draft`, `status=candidate-unvalidated`, `validation.status=missing`, and `tasIsController=false`.
+- The decision keeps `runtime-patch:stage-one-boss-approach-high-air-contact` blocked through the draft's `prohibitedRouteClass` and returns no direct controller `buttons`.
+
+Verification:
+- TDD RED: `node --test tests/contraStage1RewardTactics.test.mjs` failed because `createStageOneRuntimeFragmentDraftDecision` was missing.
+- TDD GREEN: `node --test tests/contraStage1RewardTactics.test.mjs`: `54/54`.
+
+Next:
+- Wire this decision into a trace-only training observation flow before any controller behavior.
+- Keep the fragment unvalidated until real runtime `TraceEvidence` plus a passing `ValidationReport` exists.
