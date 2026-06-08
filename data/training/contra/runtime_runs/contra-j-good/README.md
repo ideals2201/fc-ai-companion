@@ -22,6 +22,7 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
+- `candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`
 
 The first trace evidence comes from a real browser AI botrun:
 
@@ -92,3 +93,7 @@ It moves the failure class from the original `WorldX 286-290` opening low fixed-
 The early boss-approach pit jump moved the blocker past `WorldX 2112` to a later `WorldX 2174` high-air sniper/contact death.
 The tested high-air contact patch variants gained action-lock ownership but regressed the branch to `WorldX 2160`, so this local route class is rejected rather than promoted.
 The next combat hypothesis must use a new TAS/human state-action fragment or route-class redesign for the boss-approach high-air enemy cluster and must not claim clearance without a passing validation report.
+
+The first comparative high-air cluster candidate is stored at `candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+It combines the best progress evidence at `WorldX 2174`, the rejected regression evidence at `WorldX 2160`, and the TAS `boss-approach-platform-capture` side baseline.
+It remains a candidate proposal only; it prohibits the rejected `stage-one-boss-approach-high-air-contact` route class and still requires real runtime validation.

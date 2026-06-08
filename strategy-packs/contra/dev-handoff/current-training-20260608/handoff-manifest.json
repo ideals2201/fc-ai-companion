@@ -51,7 +51,8 @@
   ],
   "candidateFragmentRefs": [
     "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json",
-    "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json"
+    "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json",
+    "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
   ],
   "strategyCoverage": [
     {
@@ -119,6 +120,9 @@
       ],
       "rejectedEvidenceRefs": [
         "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json"
+      ],
+      "candidateFragmentRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json"
       ],
       "routeChain": [
         {

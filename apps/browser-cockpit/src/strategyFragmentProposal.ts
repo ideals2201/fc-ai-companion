@@ -49,6 +49,20 @@ export type StrategyFragmentProposalOptions = {
   tasSideBaselinePath: string;
 };
 
+export type ComparativeStrategyFragmentProposalOptions = StrategyFragmentProposalOptions & {
+  id?: string;
+  label?: string;
+  progressionWindow?: {
+    metric: string;
+    start: number;
+    end: number;
+    unit: string;
+    strictEnd: true;
+  };
+  rejectedEvidence: StrategyTraceEvidence[];
+  strategyTypes?: readonly string[];
+};
+
 export type CandidateStrategyFragmentProposal = {
   schema: "fc-ai-strategy-fragment-proposal-v1";
   schemaVersion: "1.0.0";
@@ -92,6 +106,12 @@ export type CandidateStrategyFragmentProposal = {
         branchOutcome: string;
         sampleCount: number;
       };
+      rejectedTraceEvidence?: Array<{
+        fragmentId: string;
+        routeClass: string;
+        branchOutcome: string;
+        sampleCount: number;
+      }>;
       tasSideBaseline: {
         path: string;
         movieId: string;
@@ -176,6 +196,24 @@ function assertBaselineMatchesEvidence(
   }
 }
 
+function assertEvidenceMatchesEvidence(
+  evidence: StrategyTraceEvidence,
+  comparisonEvidence: StrategyTraceEvidence
+) {
+  if (comparisonEvidence.side !== evidence.side) {
+    throw new Error("comparison TraceEvidence side mismatch");
+  }
+  if (comparisonEvidence.romProfileId !== evidence.romProfileId) {
+    throw new Error("comparison TraceEvidence ROMProfile mismatch");
+  }
+  if (comparisonEvidence.gameProfileId !== evidence.gameProfileId) {
+    throw new Error("comparison TraceEvidence gameProfileId mismatch");
+  }
+  if (comparisonEvidence.stageId !== evidence.stageId) {
+    throw new Error("comparison TraceEvidence stageId mismatch");
+  }
+}
+
 export function createCandidateStrategyFragmentProposal(
   options: StrategyFragmentProposalOptions
 ): CandidateStrategyFragmentProposal {
@@ -251,6 +289,53 @@ export function createCandidateStrategyFragmentProposal(
           "runtime.finalInput",
           "validation.desynced"
         ]
+      }
+    }
+  };
+}
+
+export function createComparativeStrategyFragmentProposal(
+  options: ComparativeStrategyFragmentProposalOptions
+): CandidateStrategyFragmentProposal {
+  const proposal = createCandidateStrategyFragmentProposal(options);
+  for (const rejectedEvidence of options.rejectedEvidence) {
+    assertEvidenceMatchesEvidence(options.evidence, rejectedEvidence);
+  }
+
+  const rejectedTraceEvidence = options.rejectedEvidence.map((evidence) => ({
+    fragmentId: evidence.fragmentId,
+    routeClass: evidence.routeClass,
+    branchOutcome: evidence.branchOutcome,
+    sampleCount: evidence.sampleCount
+  }));
+  const prohibitedRouteClass = rejectedTraceEvidence[0]?.routeClass ?? null;
+
+  return {
+    ...proposal,
+    fragment: {
+      ...proposal.fragment,
+      id: options.id ?? proposal.fragment.id,
+      label: options.label ?? proposal.fragment.label,
+      strategyTypes: uniqueStrategyTypes(options.strategyTypes ?? proposal.fragment.strategyTypes),
+      progressionWindow: options.progressionWindow ?? proposal.fragment.progressionWindow,
+      actionAdvice: {
+        ...proposal.fragment.actionAdvice,
+        parameters: {
+          ...proposal.fragment.actionAdvice.parameters,
+          sourceKind: "tas-side-baseline-plus-comparative-trace-evidence",
+          prohibitedRouteClass,
+          rejectedEvidenceCount: rejectedTraceEvidence.length
+        }
+      },
+      safetyOverrides: [
+        ...new Set([
+          ...proposal.fragment.safetyOverrides,
+          "rejected-route-class-guard"
+        ])
+      ],
+      source: {
+        ...proposal.fragment.source,
+        rejectedTraceEvidence
       }
     }
   };

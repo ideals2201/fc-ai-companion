@@ -710,3 +710,25 @@ Verification:
 Next:
 - Use this handoff package as the first handover point before the boss-approach high-air state-action fragment work.
 - Keep the package as a directory of JSON/Markdown in the repo; do not commit `.zip` or ROM-like packaged assets.
+
+## 2026-06-08 Contra Japan Boss Approach High-Air Cluster Candidate
+
+Current:
+- Added comparative StrategyFragment proposal support for rejected route classes.
+- The new candidate proposal is stored at `data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+- It combines:
+  - best progress evidence `candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`;
+  - rejected regression evidence `candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`;
+  - TAS `boss-approach-platform-capture` side baseline with `tasIsController=false`.
+- The candidate keeps semantic `actionAdvice`, blocks the rejected `runtime-patch:stage-one-boss-approach-high-air-contact` route class, and remains unvalidated.
+
+Verification:
+- TDD RED: `node --test tests/strategyFragmentProposal.test.mjs` failed because `createComparativeStrategyFragmentProposal` did not exist.
+- TDD RED: `node --test tests/contraJHighAirFragmentProposal.test.mjs` failed because the high-air cluster proposal JSON did not exist.
+- TDD GREEN: `node --test tests/strategyFragmentProposal.test.mjs`: `4/4`.
+- TDD GREEN: `node --test tests/contraJHighAirFragmentProposal.test.mjs`: `2/2`.
+- Handoff GREEN: `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Next:
+- Convert this proposal into a runtime-tested training fragment only after adding a focused runtime behavior test.
+- Do not promote it to validated until real runtime TraceEvidence plus a passing ValidationReport exists.

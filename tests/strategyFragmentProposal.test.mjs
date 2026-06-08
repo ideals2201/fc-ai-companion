@@ -16,7 +16,8 @@ async function importTypeScriptModule(path) {
 }
 
 const {
-  createCandidateStrategyFragmentProposal
+  createCandidateStrategyFragmentProposal,
+  createComparativeStrategyFragmentProposal
 } = await importTypeScriptModule(new URL("../apps/browser-cockpit/src/strategyFragmentProposal.ts", import.meta.url));
 
 function evidence(overrides = {}) {
@@ -171,4 +172,93 @@ test("normalizes TAS strategy labels to declared package strategy types", () => 
   assert.ok(proposal.fragment.strategyTypes.includes("platform-capture"));
   assert.equal(proposal.fragment.strategyTypes.includes("coop-spacing"), false);
   assert.equal(proposal.fragment.strategyTypes.includes("speedrun"), false);
+});
+
+test("generates a comparative candidate StrategyFragment proposal for a rejected route class", () => {
+  const primaryEvidence = evidence({
+    branchOutcome: "route-class-progressed-failed-stop",
+    endWorldX: 2174,
+    fragmentId: "candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174",
+    inputSummary: { "down+right+B": 71, "up+right+B": 313 },
+    maxWorldX: 2174,
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2174,
+      unit: "ContraWorldPixels"
+    },
+    routeClass: "runtime-patch:stage-one-boss-approach-early-pit-jump",
+    sampleCount: 900
+  });
+  const rejectedEvidence = evidence({
+    branchOutcome: "route-class-regressed-failed-stop",
+    endWorldX: 2160,
+    fragmentId: "candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160",
+    inputSummary: { "up+right+A+B": 20, "up+left+A+B": 9 },
+    maxWorldX: 2167,
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2160,
+      unit: "ContraWorldPixels"
+    },
+    routeClass: "runtime-patch:stage-one-boss-approach-high-air-contact",
+    sampleCount: 141
+  });
+
+  const proposal = createComparativeStrategyFragmentProposal({
+    evidence: primaryEvidence,
+    rejectedEvidence: [rejectedEvidence],
+    id: "candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster",
+    label: "Boss approach high-air cluster candidate",
+    progressionWindow: {
+      metric: "progression.primary",
+      start: 2040,
+      end: 2174,
+      unit: "ContraWorldPixels",
+      strictEnd: true
+    },
+    strategyTypes: ["survival", "combat", "recovery"],
+    tasSideBaseline: tasBaseline({
+      windowId: "boss-approach-platform-capture",
+      label: "Boss approach platform capture",
+      frameWindow: [2500, 3600],
+      totalFrames: 1100,
+      buttonPressFrames: {
+        up: 1,
+        down: 37,
+        left: 5,
+        right: 1057,
+        a: 44,
+        b: 125,
+        start: 0,
+        select: 0
+      },
+      strategyTypes: ["survival", "recovery", "platform-capture"]
+    }),
+    tasSideBaselinePath: "data/training/contra/tas_bases/contra-j-good/side-baselines.json"
+  });
+
+  assert.equal(proposal.schema, "fc-ai-strategy-fragment-proposal-v1");
+  assert.equal(proposal.fragment.id, "candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster");
+  assert.equal(proposal.fragment.label, "Boss approach high-air cluster candidate");
+  assert.equal(proposal.fragment.status, "candidate");
+  assert.deepEqual(proposal.fragment.progressionWindow, {
+    metric: "progression.primary",
+    start: 2040,
+    end: 2174,
+    unit: "ContraWorldPixels",
+    strictEnd: true
+  });
+  assert.ok(proposal.fragment.strategyTypes.includes("combat"));
+  assert.ok(proposal.fragment.strategyTypes.includes("recovery"));
+  assert.equal(proposal.fragment.source.traceEvidence.fragmentId, primaryEvidence.fragmentId);
+  assert.equal(proposal.fragment.source.rejectedTraceEvidence[0].fragmentId, rejectedEvidence.fragmentId);
+  assert.equal(proposal.fragment.source.rejectedTraceEvidence[0].branchOutcome, "route-class-regressed-failed-stop");
+  assert.equal(proposal.fragment.source.tasSideBaseline.windowId, "boss-approach-platform-capture");
+  assert.equal(proposal.fragment.source.tasSideBaseline.tasIsController, false);
+  assert.equal(proposal.fragment.actionAdvice.parameters.prohibitedRouteClass, "runtime-patch:stage-one-boss-approach-high-air-contact");
+  assert.equal(proposal.fragment.actionAdvice.parameters.requiredValidation, "real-runtime-trace");
+  assert.ok(proposal.fragment.safetyOverrides.includes("rejected-route-class-guard"));
+  assert.equal("buttons" in proposal.fragment.actionAdvice, false);
 });

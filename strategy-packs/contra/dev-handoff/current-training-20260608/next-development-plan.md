@@ -23,9 +23,15 @@ The current `combat-v0` branch moved the opening blocker from `WorldX 286` to a 
 
 The follow-up boss-approach high-air contact patch regressed the branch to `WorldX 2160`, so it is archived as rejected evidence. Do not resume blind coordinate patching in this window.
 
+The first comparative candidate proposal is now indexed at:
+
+```text
+data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json
+```
+
 ## Recommended Next Technical Task
 
-Create a new boss-approach high-air training fragment:
+Convert the boss-approach high-air candidate proposal into a runtime-tested training fragment:
 
 - Source window: boss-approach high-air enemy cluster around `WorldX 2112-2174`.
 - Source evidence:
@@ -35,7 +41,7 @@ Create a new boss-approach high-air training fragment:
 - Baseline source:
   - `data/training/contra/tas_bases/contra-j-good/side-baselines.json`
 - Required output:
-  - candidate `StrategyFragment` proposal
+  - schema-converted runtime fragment
   - `tasIsController: false`
   - semantic `actionAdvice`, not direct button playback
   - `TraceEvidence`

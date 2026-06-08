@@ -1176,3 +1176,26 @@ Required next direction:
 - Treat the package as a continuation map for the next developer or session.
 - Keep it `candidate-research` until a real runtime `ValidationReport` passes.
 - Do not distribute ROMs or `.zip` archives from the repo.
+
+## 2026-06-08: Boss-approach high-air cluster needs a comparative candidate fragment, not another local patch
+
+Decision: create a comparative candidate StrategyFragment proposal for the boss-approach high-air cluster and require it to carry both progress evidence and rejected regression evidence.
+
+Evidence:
+- The generator test first failed because `createComparativeStrategyFragmentProposal` was missing:
+  - `node --test tests/strategyFragmentProposal.test.mjs`.
+- The artifact test first failed because the proposal JSON was missing:
+  - `node --test tests/contraJHighAirFragmentProposal.test.mjs`.
+- The candidate proposal is stored at `data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-combat-v0-boss-approach-high-air-cluster.json`.
+- Focused verification passed:
+  - `node --test tests/strategyFragmentProposal.test.mjs`: `4/4`.
+  - `node --test tests/contraJHighAirFragmentProposal.test.mjs`: `2/2`.
+  - `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Reason:
+The W2174 branch is the best current progress, but W2160 proves that the local high-air contact patch regressed. The next artifact must preserve both facts so future code cannot accidentally promote the rejected route class. A comparative proposal is the right intermediate product before any runtime behavior change.
+
+Required next direction:
+- Convert the proposal into runtime behavior only with a focused test first.
+- Keep the rejected route class blocked by `rejected-route-class-guard`.
+- Keep TAS as baseline/training evidence only and require real runtime validation before any strategy promotion.
