@@ -6,6 +6,7 @@ Current archived artifacts:
 
 - `trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 - `trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json`
+- `trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -30,3 +31,17 @@ The second trace evidence comes from the follow-up runtime patch check:
 
 The recovery patch moved the failure from `WorldX 2068` to `WorldX 2087` and changed the final input from `down+B` to `right+A+B`.
 This is measurable progress evidence only. It is still a failed route class and not Stage 1 clearance.
+
+The third trace evidence comes from the high fixed-threat station check:
+
+- URL: `http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&run=mid-fixed-high-station-check-20260608b`
+- Result: `death`
+- WorldX: `2087`
+- Deaths: `1`
+- Score: `2400`
+- Last input: `up+B`
+- Strategy state: `survival-v0`, `weapon-gate-survive`, `p03-mid-fixed-threat`
+- Runtime patch: `stage-one-mid-fixed-threat-high-station`
+
+The high-station patch changed the final input and raised score from `2300` to `2400`, but the AI still died at the same WorldX with the high fixed threat alive.
+This proves the local station patch is not enough; the next hypothesis must be route-level weapon/safety handling before this death window.

@@ -5,6 +5,7 @@ import ts from "typescript";
 
 const candidateProposalPath = "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
 const evidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
+const highStationEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json";
 const recoveryEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json";
 const sideBaselinesPath = "data/training/contra/tas_bases/contra-j-good/side-baselines.json";
 
@@ -112,5 +113,31 @@ test("Contra Japan mid fixed-threat recovery run is archived when it still dies"
   assert.equal(evidence.death.input, "right+A+B");
   assert.equal(evidence.branchOutcome, "route-class-failed-stop");
   assert.ok(evidence.inputSummary["right+A+B"] > 60);
+  assert.match(evidence.interpretation, /still dies/i);
+});
+
+test("Contra Japan high fixed-threat station run is archived when it still dies", () => {
+  const evidence = readJson(highStationEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.fragmentId, "candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087");
+  assert.equal(evidence.failureId, "contra-j-stage1-w2087-mid-fixed-high-station-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-mid-fixed-threat-high-station");
+  assert.equal(evidence.sourceRunId, "mid-fixed-high-station-check-20260608b");
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.finalWorldX, 2087);
+  assert.equal(evidence.sourceReport.finalScore, 2400);
+  assert.equal(evidence.sourceReport.lastInput, "up+B");
+  assert.equal(evidence.sourceReport.actionLock, "aim-fire:6");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot14:type0x07@232,64/hp8");
+  assert.equal(evidence.sampleCount, 900);
+  assert.equal(evidence.death.worldX, 2087);
+  assert.equal(evidence.death.input, "up+B");
+  assert.equal(evidence.death.lastAlive.input, "none");
+  assert.equal(evidence.branchOutcome, "route-class-failed-stop");
+  assert.ok(evidence.inputSummary["up+B"] > 140);
   assert.match(evidence.interpretation, /still dies/i);
 });

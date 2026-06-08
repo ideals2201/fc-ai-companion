@@ -971,3 +971,25 @@ Required next direction:
 - Treat `WorldX 2087` as the next counterexample.
 - Add tests for high/forward fixed-threat handling before changing runtime behavior again.
 - Keep TAS-derived material as baseline/training evidence only; it is not a controller and cannot bypass runtime validation.
+
+## 2026-06-08: Contra Japan WorldX 2087 local station patch is not enough
+
+Decision: keep the high fixed-threat station patch as a measured counterexample, but stop treating same-point `WorldX 2087` aim tuning as the main path to clearance.
+
+Evidence:
+- A failing unit test was added for the `WorldX 2087` high/forward fixed-threat counterexample before implementation.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `41/41`.
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `4/4`.
+- Browser CDP botrun `mid-fixed-high-station-check-20260608b` still died at `WorldX 2087`.
+- The patch changed final input from `right+A+B` to `up+B` and raised score from `2300` to `2400`, proving behavior changed but did not solve the route.
+- New standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json`.
+- External route references support a route-level correction: StrategyWiki's NES Stage 1 guide emphasizes obtaining Spread and clearing boss threats before core attack; TASVideos' Contra resource notes boss HP can only drop `1 HP/frame`, making stable hit registration and positioning more important than raw fire-holding.
+
+Reason:
+The current AI reaches the counterexample with default weapon `0`, no Stage 1 clear, and the high fixed threat still alive. A same-frame aim correction can change score/input but cannot prove safe progress. The next strategy should change pre-entry route ownership: reach this area with a better weapon or safer station, then validate continuous damage and survival.
+
+Required next direction:
+- Add tests for a route-level pre-entry safety/weapon gate before the `WorldX 2087` threat window.
+- Keep the high-station patch as evidence-backed behavior, not as a validated route.
+- Do not claim Stage 1 pass or full clear until a real botrun reaches clear/`bossDefeated` without death.

@@ -210,6 +210,27 @@ test("stage one mid fixed threat recovery ignores the window without a close fix
   assert.equal(patch, null);
 });
 
+test("stage one mid fixed threat recovery stations under the Contra Japan WorldX 2087 high forward fixed threat", () => {
+  const patch = stageOneMidFixedThreatRecoveryPatch({
+    level: 0,
+    worldX: 2087,
+    playerX: 128,
+    playerY: 121,
+    enemies: [
+      { fixed: true, hp: 8, kind: "durable", routine: 1, threat: true, type: 7, x: 232, y: 64 },
+      { fixed: true, hp: 240, kind: "durable", routine: 6, threat: true, type: 2, x: 184, y: 160 }
+    ]
+  }, false, 3991);
+
+  assert.equal(patch?.reason, "stage-one-mid-fixed-threat-high-station");
+  assert.equal(patch?.right, false);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.down, false);
+  assert.equal(patch?.up, true);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, true);
+});
+
 test("mid fixed script applies the Contra Japan fixed-threat recovery patch", () => {
   assert.match(mainSource, /stageOneMidFixedThreatRecoveryPatch/, "runtime should import the recovery patch");
   assert.match(mainSource, /midFixedThreatRecoveryPatch/, "fixed-hp script should evaluate the recovery patch");

@@ -46,6 +46,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-boss-approach-platform-jump"
     | "stage-one-boss-approach-jump-edge"
     | "stage-one-mandatory-spread-gate"
+    | "stage-one-mid-fixed-threat-high-station"
     | "stage-one-mid-fixed-threat-recovery"
     | "stage-one-spread-exit-jump"
     | "stage-one-spread-jump-edge"
@@ -533,6 +534,32 @@ export function stageOneMidFixedThreatRecoveryPatch<T extends StageOneRewardThre
   if (snapshot.level !== 0) return null;
   if (snapshot.worldX < 2048 || snapshot.worldX > 2100) return null;
   if (snapshot.playerY < 112 || snapshot.playerY > 170) return null;
+
+  const highForwardFixedThreat = snapshot.enemies
+    .filter((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0) return false;
+      if (!enemy.fixed && enemy.kind !== "durable") return false;
+      if (enemy.type !== 7 && enemy.type !== 6 && enemy.type !== 4 && enemy.type !== 2 && enemy.kind !== "durable") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 64 && dx <= 132 && dy >= -72 && dy <= 12;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+  if (highForwardFixedThreat) {
+    return {
+      a: false,
+      b: frame % 6 < 5,
+      down: false,
+      left: false,
+      reason: "stage-one-mid-fixed-threat-high-station",
+      right: false,
+      up: true
+    };
+  }
 
   const fixedThreat = snapshot.enemies
     .filter((enemy) => {

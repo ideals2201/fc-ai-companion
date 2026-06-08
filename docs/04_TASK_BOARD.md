@@ -532,16 +532,22 @@ Next:
 
 Current:
 - Added executable runtime recovery behavior `stage-one-mid-fixed-threat-recovery` for the `contra-j-good` mid fixed-threat failure window.
+- Added follow-up high fixed-threat station behavior `stage-one-mid-fixed-threat-high-station` for the `WorldX 2087` counterexample.
 - The patch is wired into `p03-mid-fixed-threat` before the mandatory spread gate and clears the old crouch-fire lock by advancing with jump/fire when a close fixed threat is present.
 - Real browser botrun `mid-fixed-recovery-check-20260608` still ended in death, but moved the failure from `WorldX 2068` to `WorldX 2087`.
+- Real browser botrun `mid-fixed-high-station-check-20260608b` still died at `WorldX 2087`, but changed the final input from `right+A+B` to `up+B` and final score from `2300` to `2400`.
 - The new death evidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json`.
+- The high-station death evidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json`.
 - Final observed state: `status=death`, `frameCount=3991`, `deaths=1`, `finalWorldX=2087`, `finalPlayerX=128`, `finalPlayerY=121`, `finalScore=2300`, `finalWeapon=0`, `bossDefeated=0`, `lastInput=right+A+B`, primary threat `slot14:type0x07@232,64/hp8`.
+- Final high-station state: `status=death`, `frameCount=3991`, `deaths=1`, `finalWorldX=2087`, `finalPlayerX=128`, `finalPlayerY=121`, `finalScore=2400`, `finalWeapon=0`, `bossDefeated=0`, `lastInput=up+B`, action lock `aim-fire:6`, primary threat `slot14:type0x07@232,64/hp8`.
+- External route references reinforce the next direction: StrategyWiki's NES Stage 1 guide prioritizes Spread and clearing the boss sniper/turrets before the core, while TASVideos' Contra resource notes boss HP can only drop by `1 HP/frame`, so stable hit registration matters more than holding fire blindly.
 
 Verification:
-- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `3/3`.
-- `node --test tests/contraStage1RewardTactics.test.mjs`: `40/40`.
+- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `4/4`.
+- `node --test tests/contraStage1RewardTactics.test.mjs`: `41/41`.
+- Browser CDP botrun against visible Chrome on `127.0.0.1:9223`: `status=death`, `finalWorldX=2087`, `lastInput=up+B`, `finalScore=2400`.
 
 Rule:
 - This is progress evidence, not a pass.
 - Do not mark `contra-j-good` Stage 1 or full-game clearance as validated; current verified pass amount remains `0` stages.
-- The next route hypothesis must handle the new high/forward fixed-threat counterexample at `WorldX 2087`, not repeat the old `WorldX 2068` crouch-fire patch.
+- Do not keep stacking same-point `WorldX 2087` aim patches. The next route hypothesis must prevent default-weapon arrival into this threat window or create a validated pre-entry safety/weapon route.
