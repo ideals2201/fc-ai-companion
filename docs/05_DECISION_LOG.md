@@ -1042,3 +1042,23 @@ Required next direction:
 - Do not continue retuning the old `WorldX 286-290` contact frame unless fresh evidence regresses there.
 - The next implementation must create a focused test for the `WorldX 614-626` bridge low fixed-threat crowd state before changing runtime behavior.
 - Keep TAS as baseline/training evidence only and keep all strategy promotion behind real `TraceEvidence` plus `ValidationReport`.
+
+## 2026-06-08: Contra Japan combat bridge blocker moved from WorldX 626 to WorldX 1943
+
+Decision: keep the `stage-one-bridge-low-fixed-crowd` behavior as measurable progress for `combat-v0`, but do not promote the strategy because the real browser botrun still dies.
+
+Evidence:
+- A regression test was added for the new `WorldX 1943` TraceEvidence artifact and failed on missing evidence before the archive file was created.
+- Focused verification passed:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `9/9`.
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `46/46`.
+- Browser botrun `combat-bridge-low-fixed-crowd-check-20260608` ended with `status=death`, `deaths=1`, `finalWorldX=1943`, `finalScore=4500`, `finalWeapon=16`, route segment `danger-clear`, and last input `right+A+B`.
+- Standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json`.
+
+Reason:
+The bridge crowd patch cleared the `WorldX 626` blocker and preserved the weapon `16`, but it exposed a later fall/low-lane danger state. Continuing to tune the old bridge window would repeat the dead-loop pattern because the active failure class has changed.
+
+Required next direction:
+- Treat `WorldX 1943` / `danger-clear` as the active `combat-v0` blocker.
+- Write the next regression test around the `WorldX 1914-1943` falling low-lane danger state before changing runtime behavior.
+- Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.

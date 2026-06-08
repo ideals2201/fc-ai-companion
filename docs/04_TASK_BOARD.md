@@ -597,3 +597,20 @@ Next:
 - Treat `WorldX 626` as the active `combat-v0` blocker for `contra-j-good`.
 - Add a focused regression test for the `WorldX 614-626` bridge low fixed-threat crowd window before changing runtime behavior again.
 - Do not claim any strategy type validated until a real botrun produces a passing `ValidationReport` with `deaths=0`.
+
+## 2026-06-08 Contra Japan Combat Bridge Low Fixed Crowd
+
+Current:
+- `stage-one-bridge-low-fixed-crowd` is implemented and wired into `combat-v0` runtime handling.
+- Real browser botrun `combat-bridge-low-fixed-crowd-check-20260608` moved the failure from `WorldX 626` to `WorldX 1943`.
+- The run still ended with `status=death`, `deaths=1`, `bossDefeated=0`, final score `4500`, weapon `16`, and last input `right+A+B`.
+- Standard TraceEvidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json`.
+
+Verification:
+- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `9/9`.
+- `node --test tests/contraStage1RewardTactics.test.mjs`: `46/46`.
+
+Next:
+- Treat `WorldX 1943` / `danger-clear` as the active `combat-v0` blocker for `contra-j-good`.
+- Add the next route-level regression test for the `WorldX 1914-1943` falling low-lane danger state before changing runtime behavior.
+- Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.

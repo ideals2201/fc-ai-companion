@@ -26,6 +26,7 @@ const {
   stageOneBossApproachJumpEdgePatch,
   stageOneBossApproachMidPlatformCapturePatch,
   stageOneBossApproachPlatformJumpPatch,
+  stageOneBridgeLowFixedCrowdPatch,
   stageOneCloseBodyThreatPatch,
   stageOneOpeningLowFixedThreatPatch,
   stageOneMandatorySpreadGatePatch,
@@ -282,6 +283,35 @@ test("stage one opening low fixed threat owns the pre-contact descent before the
 test("runtime applies the stage one opening low fixed threat patch", () => {
   assert.match(mainSource, /stageOneOpeningLowFixedThreatPatch/, "runtime should import the opening low fixed threat patch");
   assert.match(mainSource, /openingLowFixedThreatPatch/, "runtime should evaluate the opening low fixed threat patch");
+});
+
+test("runtime applies the stage one bridge low fixed crowd patch", () => {
+  assert.match(mainSource, /stageOneBridgeLowFixedCrowdPatch/, "runtime should import the bridge low fixed crowd patch");
+  assert.match(mainSource, /bridgeLowFixedCrowdPatch/, "runtime should evaluate the bridge low fixed crowd patch");
+});
+
+test("stage one bridge low fixed crowd keeps down-fire and clears jump at the Contra Japan WorldX 626 death", () => {
+  const patch = stageOneBridgeLowFixedCrowdPatch({
+    level: 0,
+    worldX: 625,
+    playerX: 128,
+    playerY: 129,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 5, x: 161, y: 148 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 1, x: 115, y: 119 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 1, x: 131, y: 176 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 1, x: 131, y: 146 },
+      { fixed: true, hp: 1, kind: "enemy", routine: 3, threat: true, type: 6, x: 144, y: 196 }
+    ]
+  }, true, 1928);
+
+  assert.equal(patch?.reason, "stage-one-bridge-low-fixed-crowd");
+  assert.equal(patch?.right, true);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.down, true);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, true);
 });
 
 test("stage one close body threat patch air-strafes away from same-lane soldier", () => {

@@ -16,6 +16,7 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json`
 - `trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json`
 - `trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json`
+- `trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -76,7 +77,8 @@ The combat opening follow-up evidence comes from four browser AI botruns that te
 | `stage-one-opening-low-fixed-threat-right-down` | `combat-opening-right-down-check-20260608` | `death` | `290` | `100` | `0` | `down+right+B` |
 | `stage-one-opening-low-fixed-threat-right-only` | `combat-opening-right-only-check-20260608` | `death` | `290` | `100` | `0` | `right` |
 | `stage-one-opening-low-fixed-threat-descent-carry` | `combat-opening-descent-carry-y-check-20260608` | `death` | `626` | `1700` | `16` | `down+right+A+B` |
+| `stage-one-bridge-low-fixed-crowd` | `combat-bridge-low-fixed-crowd-check-20260608` | `death` | `1943` | `4500` | `16` | `right+A+B` |
 
 The current `combat-v0` opening branch is progress evidence, not validation.
-It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to a later bridge-clear blocker at `WorldX 626`.
-The next combat hypothesis must target the `WorldX 614-626` bridge low fixed-threat crowd window and must not claim clearance without a passing validation report.
+It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to the bridge-clear blocker at `WorldX 626`, then to a later `danger-clear` death at `WorldX 1943`.
+The next combat hypothesis must target the `WorldX 1914-1943` danger-clear falling and low-lane state and must not claim clearance without a passing validation report.

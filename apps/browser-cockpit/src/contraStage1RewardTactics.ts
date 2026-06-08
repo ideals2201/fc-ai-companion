@@ -45,6 +45,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-boss-approach-mid-platform-capture"
     | "stage-one-boss-approach-platform-jump"
     | "stage-one-boss-approach-jump-edge"
+    | "stage-one-bridge-low-fixed-crowd"
     | "stage-one-mandatory-spread-gate"
     | "stage-one-mid-fixed-threat-high-station"
     | "stage-one-mid-fixed-threat-recovery"
@@ -278,6 +279,46 @@ export function stageOneOpeningLowFixedThreatPatch<T extends StageOneRewardThrea
     down: false,
     left: false,
     reason: "stage-one-opening-low-fixed-threat",
+    right: true,
+    up: false
+  };
+}
+
+export function stageOneBridgeLowFixedCrowdPatch<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>,
+  grounded: boolean,
+  frame: number
+): StageOneRewardButtonPatch | null {
+  void grounded;
+  void frame;
+  if (snapshot.level !== 0) return null;
+  if (snapshot.worldX < 614 || snapshot.worldX > 640) return null;
+  if (snapshot.playerY < 72 || snapshot.playerY > 148) return null;
+
+  const lowFixedThreat = snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.hp <= 0 || !enemy.fixed) return false;
+    if (enemy.type !== 6 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 8 && dx <= 80 && dy >= 48 && dy <= 132;
+  });
+  if (!lowFixedThreat) return null;
+
+  const crowdThreat = snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -18 && dx <= 74 && dy >= -16 && dy <= 84;
+  });
+  if (!crowdThreat) return null;
+
+  return {
+    a: false,
+    b: true,
+    down: true,
+    left: false,
+    reason: "stage-one-bridge-low-fixed-crowd",
     right: true,
     up: false
   };
