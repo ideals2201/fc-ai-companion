@@ -38,6 +38,10 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /Start Run/i, "training standard should define a run-start action for auto-patch training");
   assert.match(source, /Stop Run/i, "training standard should define a run-stop action for auto-patch training");
   assert.match(source, /arm trace capture before the first runtime frame/i, "training standard should require auto-patch runs to synchronize capture before running");
+  assert.match(source, /runtimeStatus === "running"/, "training standard should require the emulator to be running before strategy writes");
+  assert.match(source, /gameplayActive === true/, "training standard should require RAM-confirmed gameplay before strategy writes");
+  assert.match(source, /paused/i, "training standard should define pause as a no-write state");
+  assert.match(source, /clear AI input/i, "training standard should clear AI input outside the run gate");
   assert.match(source, /Operation Strategy Control/, "training standard should reserve operation strategy control for cross-side work");
   assert.match(source, /1P Resource Pack/, "training standard should define the 1P resource-pack slot");
   assert.match(source, /2P Resource Pack/, "training standard should define the 2P resource-pack slot");

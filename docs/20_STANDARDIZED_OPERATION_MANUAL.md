@@ -75,6 +75,10 @@ Required operation:
 
 The training session owns input only after it is explicitly started. Selecting a side is a queued state, not active controller ownership.
 
+Strategy packages start after the browser cockpit has entered an operable game screen. Runtime input writes from a strategy must be gated by `runtimeStatus === "running"` and `gameplayActive === true`. If the emulator is `paused`, stopped, loading, waiting at a menu, showing attract mode, or otherwise outside RAM-confirmed gameplay, the cockpit must clear AI input and keep strategy output idle.
+
+Menu flow belongs to the cockpit runtime, not the strategy pack. START, SELECT, one-player/two-player entry, pause, continue, and stop-run controls may be driven by the browser UI through a system input source, but those controls must not be stored as strategy-pack controller actions.
+
 ## 5. TraceEvidence
 
 TraceEvidence is the standard archive for real runtime proof.

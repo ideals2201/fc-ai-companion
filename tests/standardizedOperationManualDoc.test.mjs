@@ -21,6 +21,13 @@ test("standardized operation manual preserves project prohibitions", () => {
   assert.match(source, /real runtime trace/i, "manual should require real runtime trace before validation");
 });
 
+test("standardized operation manual gates strategy control to active gameplay", () => {
+  assert.match(source, /runtimeStatus === "running"/, "manual should require the emulator run state before strategy input writes");
+  assert.match(source, /gameplayActive === true/, "manual should require RAM-confirmed gameplay before strategy input writes");
+  assert.match(source, /paused/i, "manual should define pause handling");
+  assert.match(source, /clear AI input/i, "manual should require input clearing when paused or outside gameplay");
+});
+
 test("standardized operation manual requires validation report gates before package save", () => {
   assert.match(source, /fc-ai-strategy-validation-report-v1/, "manual should name the validation report schema");
   assert.match(source, /ValidationReport/i, "manual should require a validation report artifact");

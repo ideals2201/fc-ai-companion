@@ -67,6 +67,10 @@ When 1P and 2P train in the same synchronized experiment, both sides must use on
 
 Auto-patch runs must arm trace capture before the first runtime frame. `Start Run` must start the emulator run and trace capture together; `Stop Run` must stop the run and close trace capture together, recording the stop reason when available. A run can end by manual stop, death, stage clear, frame cap, stuck loop, or desync, but it must never create a patch candidate without synchronized trace evidence.
 
+Operation strategies begin only after the cockpit has reached a RAM-confirmed game screen. Strategy writes are allowed only when `runtimeStatus === "running"` and `gameplayActive === true`. A `paused`, stopped, loading, menu, attract-mode, or desynced runtime is a no-write state: the cockpit must clear AI input and leave strategy output idle.
+
+Startup is owned by the browser cockpit, not by strategy packages. START, SELECT, one-player/two-player menu selection, pause, continue, and stop-run behavior may use a runtime `system` input source. These startup controls must not be encoded as StrategyFragment actions or strategy-pack route steps.
+
 The Operation Strategy Control panel is reserved for cross-side work: active training scenario, current package identity, TAS baseline matching, package side scope, one-click package export, pair validation, resource-pack routing, and global evidence status. It must not be the only place to select or modify a side-owned strategy.
 
 The Operation Strategy Control panel should sit below the TAS viewing panel. This keeps the workflow order clear: observe TAS or another baseline first, then choose resource packs, choose the active Strategy Baseline, archive evidence, and validate replay.

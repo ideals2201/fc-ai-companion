@@ -2256,6 +2256,10 @@ function isGameplayActive(snapshot: GameRamSnapshot | null, frame?: number) {
     && !isLikelyAttractDemo(snapshot, frame);
 }
 
+function strategyRuntimeCanWrite(runtimeStatus: RuntimeStatus, gameplayActive: boolean) {
+  return runtimeStatus === "running" && gameplayActive;
+}
+
 function isLikelyGameMenu(snapshot: GameRamSnapshot | null) {
   if (!snapshot) return true;
   return snapshot.p1State === 0
@@ -2285,6 +2289,29 @@ function isDeathOrRespawnTransition(snapshot: GameRamSnapshot | null) {
   return snapshot.p1State === PLAYER_DEAD_STATE
     || snapshot.deathFlag !== 0
     || (snapshot.p1State === 0 && !isStartableMenuState(snapshot));
+}
+
+function runtimeStartupButtons(
+  snapshot: GameRamSnapshot | null,
+  frame: number,
+  twoPlayerRequested: boolean,
+  twoPlayerActive: boolean
+) {
+  const next = createButtonState();
+  if (!snapshot || isDeathOrRespawnTransition(snapshot) || isGameplayActive(snapshot, frame)) return next;
+  if (isLikelyAttractDemo(snapshot, frame)) {
+    next.start = frame % 30 < 18;
+    return next;
+  }
+  if (!isStartableMenuState(snapshot)) return next;
+  if (twoPlayerRequested && !twoPlayerActive) {
+    const phase = frame % 180;
+    next.select = phase >= 20 && phase < 48;
+    next.start = phase >= 72 && phase < 96;
+    return next;
+  }
+  next.start = frame < 420 ? frame % 30 < 18 : frame % 90 < 24;
+  return next;
 }
 
 function getPlayerDeathFields(side: PlayerSide, snapshot: GameRamSnapshot) {
@@ -5765,22 +5792,7 @@ function decideAiButtons({
     return cloneButtonState(mirrorButtons);
   }
 
-  if (!snapshot || !gameplayActive) {
-    if (isDeathOrRespawnTransition(snapshot)) return next;
-    if (isLikelyAttractDemo(snapshot, frame)) {
-      next.start = frame % 30 < 18;
-      return next;
-    }
-    if (snapshot && !isStartableMenuState(snapshot)) return next;
-    if (side === "1P" && twoPlayerRequested && !twoPlayerActive) {
-      const phase = frame % 180;
-      next.select = phase >= 20 && phase < 48;
-      next.start = phase >= 72 && phase < 96;
-      return next;
-    }
-    next.start = frame < 420 ? frame % 30 < 18 : frame % 90 < 24;
-    return next;
-  }
+  if (!snapshot || !gameplayActive) return next;
 
   return decideTacticalAiButtons(strategyKey, side, snapshot, frame, strategyPlan, fsmState, teamSnapshot, loopExit, bossWallPhaseState);
 }
@@ -8482,6 +8494,18 @@ function App() {
     recomputeSide(side);
   }, [recomputeSide]);
 
+  const clearRuntimeOwnedInputs = useCallback(() => {
+    for (const side of playerSides) {
+      sourceButtonsRef.current[side].ai = createButtonState();
+      sourceButtonsRef.current[side].tas = createButtonState();
+      sourceButtonsRef.current[side].system = createButtonState();
+      aiActionLocksRef.current[side] = createAiActionLockState();
+      lastRawAiButtonsRef.current[side] = createButtonState();
+      lastLockedAiButtonsRef.current[side] = createButtonState();
+      recomputeSide(side);
+    }
+  }, [recomputeSide]);
+
   const clearAllInputs = useCallback(() => {
     const nes = nesRef.current;
     for (const side of playerSides) {
@@ -8744,9 +8768,26 @@ function App() {
     humanSources.some((source) => hasPressedButton(sourceButtonsRef.current[side][source]))
   ), []);
 
-  const applyAiInputs = useCallback((snapshot: GameRamSnapshot | null, active: boolean) => {
+  const applyRuntimeStartupInputs = useCallback((snapshot: GameRamSnapshot | null, runtimeStatus: RuntimeStatus, active: boolean) => {
+    const twoPlayerRequested = controlModesRef.current["2P"] !== "human";
+    const startupButtons = strategyRuntimeCanWrite(runtimeStatus, active)
+      ? createButtonState()
+      : runtimeStartupButtons(snapshot, frameRef.current, twoPlayerRequested, Boolean(snapshot?.twoPlayerActive));
+    setSourceButtons("1P", "system", startupButtons);
+    setSourceButtons("2P", "system", createButtonState());
+  }, [setSourceButtons]);
+
+  const applyAiInputs = useCallback((snapshot: GameRamSnapshot | null, active: boolean, runtimeStatus: RuntimeStatus) => {
     const twoPlayerRequested = controlModesRef.current["2P"] !== "human";
     for (const side of playerSides) {
+      if (!strategyRuntimeCanWrite(runtimeStatus, active)) {
+        const emptyButtons = createButtonState();
+        lastRawAiButtonsRef.current[side] = emptyButtons;
+        lastLockedAiButtonsRef.current[side] = emptyButtons;
+        aiActionLocksRef.current[side] = createAiActionLockState();
+        setSourceButtons(side, "ai", createButtonState());
+        continue;
+      }
       const mode = controlModesRef.current[side];
       const strategyKey = strategyModelsRef.current[side];
       const mirrorSide = side === "1P" ? "2P" : "1P";
@@ -8917,13 +8958,15 @@ function App() {
       const beforeSnapshot = readGameRamSnapshot(nes, frameRef.current);
       ramSnapshotRef.current = beforeSnapshot;
       gameplayActiveRef.current = isGameplayActive(beforeSnapshot, frameRef.current);
+      const runtimeStatus: RuntimeStatus = runningRef.current ? "running" : "paused";
 
       if (tasPlaybackRef.current.active) {
         const tasFrameApplied = applyTasPlaybackInputs();
         if (!tasFrameApplied) return;
       } else {
         applyGamepads();
-        applyAiInputs(beforeSnapshot, gameplayActiveRef.current);
+        applyRuntimeStartupInputs(beforeSnapshot, runtimeStatus, gameplayActiveRef.current);
+        applyAiInputs(beforeSnapshot, gameplayActiveRef.current, runningRef.current ? "running" : "paused");
       }
       nes.frame();
       frameRef.current += 1;
@@ -8990,7 +9033,7 @@ function App() {
       gameplayActiveRef.current = isGameplayActive(afterSnapshot, frameRef.current);
       const traceSample = buildPlayTraceSample({
         frame: frameRef.current,
-        runtimeStatus: "running",
+        runtimeStatus: runtimeStatus === "running" ? "running" : "paused",
         gameplayActive: gameplayActiveRef.current,
         strategyKey: strategyModelsRef.current["1P"],
         strategyPlans: strategyPlansRef.current,
@@ -9064,7 +9107,7 @@ function App() {
         setGameplayActive(gameplayActiveRef.current);
       }
     }
-  }, [addPlayerMetricDeltas, applyAiInputs, applyGamepads, applyTasPlaybackInputs, stopTasPlaybackAsDesynced, stopTraceRecording]);
+  }, [addPlayerMetricDeltas, applyAiInputs, applyGamepads, applyRuntimeStartupInputs, applyTasPlaybackInputs, stopTasPlaybackAsDesynced, stopTraceRecording]);
 
   const setRunning = useCallback((running: boolean, forceRestart = false) => {
     runningRef.current = running;
@@ -9080,13 +9123,14 @@ function App() {
         timerRef.current = window.setInterval(tickFrame, 1000 / 60);
       }
     } else {
+      clearRuntimeOwnedInputs();
       setStatus((current) => current === "running" ? "paused" : current);
       if (timerRef.current !== null) {
         window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
     }
-  }, [enableAudio, tickFrame]);
+  }, [clearRuntimeOwnedInputs, enableAudio, tickFrame]);
 
   const loadSelectedTasMovie = useCallback(async () => {
     const entry = identifyTasForRom(romMetadata);

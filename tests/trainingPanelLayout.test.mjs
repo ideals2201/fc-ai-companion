@@ -298,6 +298,18 @@ test("auto-patch run start synchronizes capture and exposes a stop run control",
   assert.match(mainSource, /actions\.onSideTrainingRunToggle\(training\.side\)/, "auto-patch run button should call the run toggle");
 });
 
+test("strategy input only writes after gameplay starts and stops on pause", () => {
+  assert.match(mainSource, /function strategyRuntimeCanWrite/, "runtime should centralize the strategy write gate");
+  assert.match(mainSource, /function runtimeStartupButtons/, "browser runtime should own menu start/select input outside the strategy pack");
+  assert.match(mainSource, /setSourceButtons\("1P", "system", startupButtons\)/, "startup input should use the system source instead of the AI strategy source");
+  assert.match(mainSource, /runtimeStatus === "running" && gameplayActive/, "strategy write gate should require both running status and active gameplay");
+  assert.match(mainSource, /const applyAiInputs = useCallback\(\(snapshot: GameRamSnapshot \| null, active: boolean, runtimeStatus: RuntimeStatus\) => \{/, "AI input writer should receive runtime status explicitly");
+  assert.match(mainSource, /if \(!strategyRuntimeCanWrite\(runtimeStatus, active\)\) \{[\s\S]*setSourceButtons\(side, "ai", createButtonState\(\)\)/, "AI input writer should clear AI buttons when paused, stopped, or outside gameplay");
+  assert.match(mainSource, /if \(!snapshot \|\| !gameplayActive\) return next;/, "strategy decisions should not press START or SELECT before gameplay is active");
+  assert.match(mainSource, /applyAiInputs\(beforeSnapshot, gameplayActiveRef\.current, runningRef\.current \? "running" : "paused"\)/, "frame loop should pass current run status into the AI write gate");
+  assert.match(mainSource, /runtimeStatus: runtimeStatus === "running" \? "running" : "paused"/, "training trace samples should not label paused frames as running");
+});
+
 test("side training panels derive their target from the locked top AI strategy", () => {
   assert.match(mainSource, /function trainingProfileForStrategy/, "training target should be derived from the selected strategy key");
   assert.match(mainSource, /function strategyTrainingCandidateCount/, "candidate counts should be strategy-aware");
