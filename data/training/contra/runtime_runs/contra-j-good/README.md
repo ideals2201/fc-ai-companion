@@ -20,6 +20,7 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json`
 - `trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json`
 - `trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`
+- `trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -84,8 +85,10 @@ The combat opening follow-up evidence comes from browser AI botruns that tested 
 | `stage-one-danger-low-lane-fall` | `combat-danger-low-lane-fall-check-20260608c` | `death` | `2038` | `4700` | `16` | `B` |
 | `stage-one-spread-turret-suppression` | `combat-spread-turret-suppression-check-20260608b` | `death` | `2112` | `4800` | `16` | `right+A+B` |
 | `stage-one-boss-approach-early-pit-jump` | `combat-boss-approach-early-pit-jump-check-20260608c` | `death` | `2174` | `4900` | `16` | `down+right+B` |
+| `stage-one-boss-approach-high-air-contact` | `combat-boss-approach-high-air-contact-check-20260608e-1780919698927` | `death` | `2160` | `4900` | `16` | `up+right+A+B` |
 
 The current `combat-v0` opening branch is progress evidence, not validation.
 It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to the bridge-clear blocker at `WorldX 626`, then to `danger-clear` deaths at `WorldX 1943` and `WorldX 2038`, and now to the `boss-approach-clear` death at `WorldX 2112`.
 The early boss-approach pit jump moved the blocker past `WorldX 2112` to a later `WorldX 2174` high-air sniper/contact death.
-The next combat hypothesis must target the `WorldX 2173-2174` boss-approach high-air contact transition and must not claim clearance without a passing validation report.
+The tested high-air contact patch variants gained action-lock ownership but regressed the branch to `WorldX 2160`, so this local route class is rejected rather than promoted.
+The next combat hypothesis must use a new TAS/human state-action fragment or route-class redesign for the boss-approach high-air enemy cluster and must not claim clearance without a passing validation report.

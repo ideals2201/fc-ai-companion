@@ -1,0 +1,270 @@
+{
+  "schema": "fc-ai-strategy-dev-handoff-package-v1",
+  "schemaVersion": "1.0.0",
+  "packageId": "contra-stage1-current-training-20260608",
+  "displayName": {
+    "zh": "魂斗罗第一关当前训练交接包 2026-06-08",
+    "en": "Contra Stage 1 Current Training Handoff 2026-06-08"
+  },
+  "createdAt": "2026-06-08T20:40:00.000+08:00",
+  "createdBy": {
+    "displayName": "00号游戏管家",
+    "role": "system"
+  },
+  "packId": "contra-stage1-strategy-v0",
+  "packVersion": "0.1.0",
+  "gameProfileId": "contra",
+  "romProfileIds": [
+    "contra-j-good"
+  ],
+  "stageId": "stage-1",
+  "status": "candidate-research",
+  "summary": "Current Contra Japan Stage 1 training package for developer continuation. It captures the candidate strategy matrix, runtime failure evidence, TAS-derived candidate fragments, and the next recommended development path. It is not a validated clear strategy.",
+  "runtimePolicy": {
+    "tasIsController": false,
+    "tasUse": "training-evidence-only",
+    "romFileNotIncluded": true,
+    "userMustProvideOwnRom": true,
+    "requiresExactRomProfileMatch": true,
+    "requiresRealRuntimeTrace": true,
+    "requiresValidationReplay": true,
+    "claimsFullClearance": false,
+    "claimsStage1Clearance": false
+  },
+  "sourcePackRefs": [
+    "strategy-packs/contra/manifest.json",
+    "strategy-packs/contra/stages/stage-1/fragments.json",
+    "strategy-packs/contra/stages/stage-1/strategy-clearance-matrix.json",
+    "strategy-packs/contra/clearance-roadmap.json"
+  ],
+  "tasTrainingRefs": [
+    {
+      "path": "data/training/contra/tas_bases/contra-j-good/training-base.json",
+      "purpose": "Contra Japan TAS training base metadata and candidate output index.",
+      "tasIsController": false
+    },
+    {
+      "path": "data/training/contra/tas_bases/contra-j-good/side-baselines.json",
+      "purpose": "Side-owned TAS baseline windows for training comparison and fragment proposal.",
+      "tasIsController": false
+    }
+  ],
+  "candidateFragmentRefs": [
+    "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json",
+    "data/training/contra/tas_bases/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-tas-boss-approach-platform-capture.json"
+  ],
+  "strategyCoverage": [
+    {
+      "strategyKey": "survival-v0",
+      "strategyType": "survival",
+      "side": "1P",
+      "validationStatus": "candidate",
+      "clearanceClaim": "not-cleared",
+      "bestRuntimeProgress": {
+        "worldX": 2087,
+        "score": 2400,
+        "weapon": 0,
+        "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-survival-v0-death-worldx2087.json"
+      },
+      "evidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-survival-v0-death-worldx2087.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json"
+      ],
+      "rejectedEvidenceRefs": [],
+      "nextDevelopmentAction": "Use the fixed-threat TAS side baseline and current death evidence to produce a state-action fragment for W2040-W2090, then validate no-death replay before promotion."
+    },
+    {
+      "strategyKey": "speedrun-v0",
+      "strategyType": "speedrun",
+      "side": "1P",
+      "validationStatus": "candidate",
+      "clearanceClaim": "not-cleared",
+      "bestRuntimeProgress": {
+        "worldX": 625,
+        "score": 1800,
+        "weapon": 16,
+        "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-speedrun-v0-death-worldx625.json"
+      },
+      "evidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-speedrun-v0-death-worldx625.json"
+      ],
+      "rejectedEvidenceRefs": [],
+      "nextDevelopmentAction": "Do not optimize speed until survival and combat blockers stop producing death evidence. Use speedrun-v0 as a counterexample source only."
+    },
+    {
+      "strategyKey": "combat-v0",
+      "strategyType": "combat",
+      "side": "1P",
+      "validationStatus": "candidate",
+      "clearanceClaim": "not-cleared",
+      "bestRuntimeProgress": {
+        "worldX": 2174,
+        "score": 4900,
+        "weapon": 16,
+        "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json"
+      },
+      "evidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-combat-v0-death-worldx286.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-low-fixed-stall-worldx286.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json",
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json"
+      ],
+      "rejectedEvidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json"
+      ],
+      "routeChain": [
+        {
+          "routeClass": "stage-one-opening-low-fixed-threat",
+          "result": "stopped",
+          "worldX": 286,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-low-fixed-stall-worldx286.json",
+          "outcome": "stalled"
+        },
+        {
+          "routeClass": "stage-one-opening-low-fixed-threat-right-down",
+          "result": "death",
+          "worldX": 290,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json",
+          "outcome": "failed"
+        },
+        {
+          "routeClass": "stage-one-opening-low-fixed-threat-right-only",
+          "result": "death",
+          "worldX": 290,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json",
+          "outcome": "failed"
+        },
+        {
+          "routeClass": "stage-one-opening-low-fixed-threat-descent-carry",
+          "result": "death",
+          "worldX": 626,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json",
+          "outcome": "progressed-but-failed"
+        },
+        {
+          "routeClass": "stage-one-bridge-low-fixed-crowd",
+          "result": "death",
+          "worldX": 1943,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json",
+          "outcome": "progressed-but-failed"
+        },
+        {
+          "routeClass": "stage-one-danger-low-lane-fall",
+          "result": "death",
+          "worldX": 2038,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json",
+          "outcome": "progressed-but-failed"
+        },
+        {
+          "routeClass": "stage-one-spread-turret-suppression",
+          "result": "death",
+          "worldX": 2112,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json",
+          "outcome": "progressed-but-failed"
+        },
+        {
+          "routeClass": "stage-one-boss-approach-early-pit-jump",
+          "result": "death",
+          "worldX": 2174,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json",
+          "outcome": "best-progress-but-failed"
+        },
+        {
+          "routeClass": "stage-one-boss-approach-high-air-contact",
+          "result": "death",
+          "worldX": 2160,
+          "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json",
+          "outcome": "regressed-and-rejected"
+        }
+      ],
+      "nextDevelopmentAction": "Create a TAS/human state-action fragment or route-class redesign for the boss-approach high-air enemy cluster. Do not continue local threshold patching in W2150-W2174."
+    },
+    {
+      "strategyKey": "loot-v0",
+      "strategyType": "loot",
+      "side": "1P",
+      "validationStatus": "candidate",
+      "clearanceClaim": "not-cleared",
+      "bestRuntimeProgress": {
+        "worldX": 1943,
+        "score": 4300,
+        "weapon": 16,
+        "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-loot-v0-death-worldx1943.json"
+      },
+      "evidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-loot-v0-death-worldx1943.json"
+      ],
+      "rejectedEvidenceRefs": [],
+      "nextDevelopmentAction": "Keep loot-v0 behind survival validation. Its current value is proving weapon pickup and reward pressure, not safe clearance."
+    },
+    {
+      "strategyKey": "guard-v0",
+      "strategyType": "guard",
+      "side": "1P",
+      "validationStatus": "candidate",
+      "clearanceClaim": "not-cleared",
+      "bestRuntimeProgress": {
+        "worldX": 2038,
+        "score": 4700,
+        "weapon": 0,
+        "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-guard-v0-death-worldx2038.json"
+      },
+      "evidenceRefs": [
+        "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-guard-v0-death-worldx2038.json"
+      ],
+      "rejectedEvidenceRefs": [],
+      "nextDevelopmentAction": "Do not promote guard-v0 until a real 2P or human-AI validation mode exists. Use current run as fixed-threat pressure evidence only."
+    }
+  ],
+  "developerEntryPoints": [
+    {
+      "path": "CLI_HANDOFF.md",
+      "purpose": "Session identity, project rules, active objective, and immediate task order."
+    },
+    {
+      "path": "docs/20_STANDARDIZED_OPERATION_MANUAL.md",
+      "purpose": "Standard TAS to training evidence to package export workflow."
+    },
+    {
+      "path": "strategy-packs/contra/manifest.json",
+      "purpose": "Canonical Contra StrategyPack identity and ROM policy."
+    },
+    {
+      "path": "strategy-packs/contra/stages/stage-1/fragments.json",
+      "purpose": "Current protocol StrategyFragment candidates for Stage 1."
+    },
+    {
+      "path": "strategy-packs/contra/stages/stage-1/strategy-clearance-matrix.json",
+      "purpose": "Per-strategy clearance matrix and promotion policy."
+    },
+    {
+      "path": "data/training/contra/runtime_runs/contra-j-good/README.md",
+      "purpose": "Runtime evidence chronology and tested branch outcomes."
+    },
+    {
+      "path": "tests/contraJRuntimeTraceEvidence.test.mjs",
+      "purpose": "Machine checks for the current Contra Japan runtime evidence chain."
+    },
+    {
+      "path": "apps/browser-cockpit/src/contraStage1RewardTactics.ts",
+      "purpose": "Current RAM-driven Stage 1 tactical patch helpers. Treat these as runtime implementation, not package validation."
+    },
+    {
+      "path": "apps/browser-cockpit/src/strategyPackageEvidence.ts",
+      "purpose": "Standard package evidence export helper used by Save Strategy flow."
+    }
+  ],
+  "handoffFiles": [
+    "strategy-packs/contra/dev-handoff/current-training-20260608/README.md",
+    "strategy-packs/contra/dev-handoff/current-training-20260608/handoff-manifest.json",
+    "strategy-packs/contra/dev-handoff/current-training-20260608/next-development-plan.md"
+  ]
+}

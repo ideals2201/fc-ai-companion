@@ -673,3 +673,40 @@ Next:
 - Treat `WorldX 2173-2174` / `boss-approach-clear` high-air contact with `slot14:type0x07@145,64/hp6` as the active `combat-v0` blocker.
 - Add a focused regression test for the `down+right+B` high-air contact death before changing runtime behavior.
 - Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.
+
+## 2026-06-08 Contra Japan Combat Boss Approach High-Air Contact Rejection
+
+Current:
+- Three high-air contact hypotheses were tested against the `WorldX 2173-2174` boss-approach blocker:
+  - left/up-fire avoidance removed the immediate `down+right+B` pattern but still died near `WorldX 2168-2169`.
+  - forward up-fire owned the action lock but still died at `WorldX 2174`.
+  - direct lower-body left avoidance regressed the branch to `WorldX 2160`.
+- The failed branch is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`.
+- The unvalidated runtime patch was removed; the current code should not present `stage-one-boss-approach-high-air-contact` as an active strategy.
+
+Verification:
+- TDD RED: `node --test tests/contraStage1RewardTactics.test.mjs` failed for missing high-air contact behavior before the trial patch.
+- Runtime evidence: browser CDP botrun `combat-boss-approach-high-air-contact-check-20260608e-1780919698927` ended with `status=death`, `finalWorldX=2160`, `finalScore=4900`, `finalWeapon=16`, and `deaths=1`.
+- Evidence RED: `node --test tests/contraJRuntimeTraceEvidence.test.mjs` failed with missing W2160 regression evidence.
+- Evidence GREEN: `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `13/13`.
+
+Next:
+- Stop patching the `WorldX 2157-2174` high-air contact route class by local thresholds.
+- Use TAS/human trace or a state-action fragment for the boss-approach high-air enemy cluster before another runtime change.
+- Keep this as rejection evidence only; do not mark any strategy package validated without a passing `ValidationReport`.
+
+## 2026-06-08 Contra Current Training Handoff Package
+
+Current:
+- The current Contra Japan Stage 1 training state is packaged for developer continuation at `strategy-packs/contra/dev-handoff/current-training-20260608/`.
+- The package is `candidate-research`, not validated, and explicitly does not claim Stage 1 or full-game clearance.
+- The package indexes all five strategy categories (`survival-v0`, `speedrun-v0`, `combat-v0`, `loot-v0`, `guard-v0`), the combat branch chain through `WorldX 2174`, and the rejected high-air contact regression at `WorldX 2160`.
+- The package references current TAS-derived candidate fragments with `tasIsController=false` and includes continuation commands in `next-development-plan.md`.
+
+Verification:
+- TDD RED: `node --test tests/contraStrategyDevHandoffPackage.test.mjs` failed because `handoff-manifest.json` was missing.
+- TDD GREEN: `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Next:
+- Use this handoff package as the first handover point before the boss-approach high-air state-action fragment work.
+- Keep the package as a directory of JSON/Markdown in the repo; do not commit `.zip` or ROM-like packaged assets.

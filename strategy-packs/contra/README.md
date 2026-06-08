@@ -15,6 +15,7 @@
 - `game-profile.json`、`rom-profiles/`、`research/` 保存游戏、ROM、条件、动作和策略分类定义。
 - `stages/stage-1/fragments.json` 保存当前候选 StrategyFragment。
 - `data/training/contra/tas_bases/contra-j-good/side-baselines.json` 是可供训练使用的 TAS side-owned baseline 制品。
+- `dev-handoff/current-training-20260608/` 保存当前训练状态交接包，供其他开发者继续接手；它是 `candidate-research`，不是已验证通关包。
 
 本目录不得包含 ROM 文件。
 

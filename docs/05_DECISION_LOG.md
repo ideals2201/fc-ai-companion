@@ -1130,3 +1130,49 @@ Required next direction:
 - Treat `WorldX 2173-2174` / `boss-approach-clear` high-air contact as the active `combat-v0` blocker.
 - Write the next regression test around the `down+right+B` high-air contact death with top threat `slot14:type0x07@145,64/hp6` before changing runtime behavior.
 - Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.
+
+## 2026-06-08: Contra Japan high-air contact local patch is rejected
+
+Decision: reject the `stage-one-boss-approach-high-air-contact` local runtime patch and archive it as failed TraceEvidence instead of keeping it in active code.
+
+Evidence:
+- A focused test first reproduced the missing W2174 high-air contact handling, and later tests covered the W2167/W2157 oscillation observed in browser traces.
+- Browser botrun variants showed the route class was not valid:
+  - `combat-boss-approach-high-air-contact-check-20260608b-1780919152155`: `death`, `finalWorldX=2168`, final input `down+right+B`.
+  - `combat-boss-approach-high-air-contact-check-20260608c-1780919425260`: `death`, `finalWorldX=2169`, final input `right+A+B`.
+  - `combat-boss-approach-high-air-contact-check-20260608d-1780919573950`: `death`, `finalWorldX=2174`, final input `up+right+A+B`.
+  - `combat-boss-approach-high-air-contact-check-20260608e-1780919698927`: `death`, `finalWorldX=2160`, final input `up+right+A+B`.
+- The final regression evidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json`.
+- Focused evidence verification passed:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `13/13`.
+- The failed runtime patch was removed from `apps/browser-cockpit/src/main.tsx` and `apps/browser-cockpit/src/contraStage1RewardTactics.ts`.
+
+Reason:
+The high-air contact problem is no longer a safe local threshold patch. Forward up-fire can own the action lock, and direct lower-body left avoidance can change the collision surface, but the branch still dies or regresses. Continuing to add local coordinate tweaks would violate the stop rule for repeated failed route classes.
+
+Required next direction:
+- Do not re-add a high-air contact runtime patch without a new source trace.
+- Build the next attempt from TAS/human state-action evidence or a route-class redesign for the boss-approach high-air enemy cluster.
+- Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.
+
+## 2026-06-08: Current Contra training state is packaged as a developer handoff, not a validated strategy
+
+Decision: create `strategy-packs/contra/dev-handoff/current-training-20260608/` as the current training handoff package for other developers.
+
+Evidence:
+- A package contract test was added first and failed because the handoff package did not exist:
+  - `node --test tests/contraStrategyDevHandoffPackage.test.mjs`.
+- The handoff now contains:
+  - `handoff-manifest.json`.
+  - `README.md`.
+  - `next-development-plan.md`.
+- Focused verification passed:
+  - `node --test tests/contraStrategyDevHandoffPackage.test.mjs`: `5/5`.
+
+Reason:
+The current training work has enough evidence to hand over, but not enough evidence to claim clearance. A developer handoff package is the correct form because it indexes the current candidate strategy matrix, runtime failure chain, rejected branch, TAS-derived candidate fragments, and continuation entry points without pretending to be a validated distributable pack.
+
+Required next direction:
+- Treat the package as a continuation map for the next developer or session.
+- Keep it `candidate-research` until a real runtime `ValidationReport` passes.
+- Do not distribute ROMs or `.zip` archives from the repo.

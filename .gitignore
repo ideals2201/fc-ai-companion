@@ -12,6 +12,7 @@ coverage/
 
 # Runtime and local-only files
 .codex-browser-profile/
+.tmp-chrome-botrun-*/
 local_user_files/
 runtime_roms/
 roms/
