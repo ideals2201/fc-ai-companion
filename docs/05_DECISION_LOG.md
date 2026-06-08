@@ -1083,3 +1083,26 @@ Required next direction:
 - Treat `WorldX 2038` / `danger-clear` fixed-threat cluster as the active `combat-v0` blocker.
 - Write the next regression test around the stationary `B`-only death against `slot15:type0x07@153,160/hp2` before changing runtime behavior.
 - Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.
+
+## 2026-06-08: Contra Japan combat blocker moved from WorldX 2038 to WorldX 2112
+
+Decision: wire the existing `stage-one-spread-turret-suppression` behavior into final tactical runtime handling for `combat-v0`, but do not promote the strategy because the real browser botrun still dies.
+
+Evidence:
+- A regression test was added for runtime wiring and first failed because `applyStageOneSpreadTurretSuppression` was missing from `main.tsx`.
+- A regression test documents the W2038 state-action expectation: close fixed threat `slot15:type0x07@153,160/hp2` should use `left+B`, not remain stationary `B`.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `51/51`.
+- Browser botrun `combat-spread-turret-suppression-check-20260608b` ended with `status=death`, `deaths=1`, `finalWorldX=2112`, `finalScore=4800`, `finalWeapon=16`, route segment `boss-approach-clear`, and last input `right+A+B`.
+- A regression test for the new `WorldX 2112` TraceEvidence artifact failed on missing evidence before the archive file was created.
+- Focused evidence verification passed:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `11/11`.
+- Standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json`.
+
+Reason:
+The W2038 stationary `B` fixed-threat death was not caused by missing action capability; the existing spread turret suppression rule already described the correct local response but was not applied in the `combat-v0` danger path or action-lock bypass. Wiring it moved the failure into the boss-approach-clear route at `WorldX 2112`, where the active blocker is now a right-jump fall/sniper transition, not the W2038 fixed-threat station.
+
+Required next direction:
+- Treat `WorldX 2111-2112` / `boss-approach-clear` as the active `combat-v0` blocker.
+- Write the next regression test around the `right+A+B` fall death with top threat `slot14:type0x07@207,64/hp8`.
+- Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.

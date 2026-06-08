@@ -18,6 +18,7 @@ Current archived artifacts:
 - `trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json`
 - `trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json`
 - `trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json`
+- `trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -70,7 +71,7 @@ The strategy matrix evidence comes from five independent browser AI botruns usin
 This matrix proves the current package has no validated `contra-j-good` Stage 1 strategy yet.
 The initial matrix earliest blocker was `combat-v0` at `WorldX 286`; the best-scoring initial branch was `guard-v0` at `WorldX 2038`, but it still died.
 
-The combat opening follow-up evidence comes from four browser AI botruns that tested the low fixed-threat opening route class:
+The combat opening follow-up evidence comes from browser AI botruns that tested the low fixed-threat opening route class and its later blocker transitions:
 
 | Route class | Run | Result | WorldX | Score | Weapon | Last input |
 | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -80,7 +81,8 @@ The combat opening follow-up evidence comes from four browser AI botruns that te
 | `stage-one-opening-low-fixed-threat-descent-carry` | `combat-opening-descent-carry-y-check-20260608` | `death` | `626` | `1700` | `16` | `down+right+A+B` |
 | `stage-one-bridge-low-fixed-crowd` | `combat-bridge-low-fixed-crowd-check-20260608` | `death` | `1943` | `4500` | `16` | `right+A+B` |
 | `stage-one-danger-low-lane-fall` | `combat-danger-low-lane-fall-check-20260608c` | `death` | `2038` | `4700` | `16` | `B` |
+| `stage-one-spread-turret-suppression` | `combat-spread-turret-suppression-check-20260608b` | `death` | `2112` | `4800` | `16` | `right+A+B` |
 
 The current `combat-v0` opening branch is progress evidence, not validation.
-It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to the bridge-clear blocker at `WorldX 626`, then to `danger-clear` deaths at `WorldX 1943` and `WorldX 2038`.
-The next combat hypothesis must target the `WorldX 2038` danger-clear fixed-threat cluster and stationary `B`-only death, and must not claim clearance without a passing validation report.
+It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to the bridge-clear blocker at `WorldX 626`, then to `danger-clear` deaths at `WorldX 1943` and `WorldX 2038`, and now to the `boss-approach-clear` death at `WorldX 2112`.
+The next combat hypothesis must target the `WorldX 2111-2112` boss-approach sniper/fall transition and must not claim clearance without a passing validation report.

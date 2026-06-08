@@ -4793,6 +4793,20 @@ function applyStageOneDangerLowLaneFall(next: ButtonState, snapshot: GameRamSnap
   return true;
 }
 
+function stageOneSpreadTurretSuppressionPatchForSnapshot(snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  return stageOneSpreadTurretSuppressionPatch({
+    ...snapshot,
+    horizon: buildStageOneHorizon(snapshot)
+  }, grounded, frame);
+}
+
+function applyStageOneSpreadTurretSuppression(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const spreadTurretSuppressionPatch = stageOneSpreadTurretSuppressionPatchForSnapshot(snapshot, grounded, frame);
+  if (!spreadTurretSuppressionPatch) return false;
+  applyStageOneRewardTacticsPatch(next, spreadTurretSuppressionPatch);
+  return true;
+}
+
 function applyStageOneBossApproachLowerEdgeJump(next: ButtonState, snapshot: GameRamSnapshot) {
   if (
     snapshot.level !== STAGE_ONE_LEVEL_INDEX
@@ -5430,6 +5444,7 @@ function finalizeTacticalButtons(
   applyStageOneOpeningLowFixedThreat(forcedButtons, snapshot, grounded, frame);
   applyStageOneBridgeLowFixedCrowd(forcedButtons, snapshot, grounded, frame);
   applyStageOneDangerLowLaneFall(forcedButtons, snapshot, grounded, frame);
+  applyStageOneSpreadTurretSuppression(forcedButtons, snapshot, grounded, frame);
   return forcedButtons;
 }
 
@@ -8784,10 +8799,14 @@ function App() {
       const dangerLowLaneFallPatch = actorSnapshot
         ? stageOneDangerLowLaneFallPatch(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
         : null;
+      const spreadTurretSuppressionPatch = actorSnapshot
+        ? stageOneSpreadTurretSuppressionPatchForSnapshot(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
+        : null;
       const bypassActionLock = shouldBypassAiActionLockForBossWallPhase(actorSnapshot, bossWallPhaseState)
         || Boolean(openingLowFixedThreatPatch)
         || Boolean(bridgeLowFixedCrowdPatch)
-        || Boolean(dangerLowLaneFallPatch);
+        || Boolean(dangerLowLaneFallPatch)
+        || Boolean(spreadTurretSuppressionPatch);
       const previousLock = loopExitState.forcedAdvanceBias > 0.5 || bossWallPhaseState.phase !== "idle" || bypassActionLock
         ? createAiActionLockState()
         : aiActionLocksRef.current[side];

@@ -632,3 +632,23 @@ Next:
 - Treat `WorldX 2038` / `danger-clear` fixed-threat cluster as the active `combat-v0` blocker.
 - Add a focused regression test for stationary `B`-only death against `slot15:type0x07@153,160/hp2` before changing runtime behavior.
 - Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.
+
+## 2026-06-08 Contra Japan Combat Spread Turret Suppression
+
+Current:
+- Existing `stage-one-spread-turret-suppression` behavior is now wired into final runtime tactical handling and action-lock bypass.
+- Real browser botrun `combat-spread-turret-suppression-check-20260608b` moved the failure from `WorldX 2038` to `WorldX 2112`.
+- The run still ended with `status=death`, `deaths=1`, `bossDefeated=0`, final score `4800`, weapon `16`, and last input `right+A+B`.
+- Standard TraceEvidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json`.
+
+Verification:
+- TDD RED: `node --test tests/contraStage1RewardTactics.test.mjs` failed because runtime lacked `applyStageOneSpreadTurretSuppression`.
+- TDD GREEN: `node --test tests/contraStage1RewardTactics.test.mjs`: `51/51`.
+- Evidence RED: `node --test tests/contraJRuntimeTraceEvidence.test.mjs` failed with missing W2112 evidence.
+- Evidence GREEN: `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `11/11`.
+- Browser CDP botrun at `127.0.0.1:9223`: `status=death`, `finalWorldX=2112`, `finalScore=4800`, `finalWeapon=16`.
+
+Next:
+- Treat `WorldX 2111-2112` / `boss-approach-clear` sniper/fall transition as the active `combat-v0` blocker.
+- Add a focused regression test for the `right+A+B` fall death with top threat `slot14:type0x07@207,64/hp8`.
+- Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.

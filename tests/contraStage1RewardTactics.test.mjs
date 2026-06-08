@@ -296,6 +296,11 @@ test("runtime applies the stage one danger low lane fall patch and bypasses acti
   assert.match(mainSource, /dangerLowLaneFallPatch/, "runtime should evaluate the danger low lane fall patch");
 });
 
+test("runtime applies the stage one spread turret suppression patch after the danger fall blocker", () => {
+  assert.match(mainSource, /applyStageOneSpreadTurretSuppression/, "runtime should evaluate the W2038 fixed-threat suppression patch");
+  assert.match(mainSource, /spreadTurretSuppressionPatch/, "runtime should bypass action lock for the W2038 fixed-threat suppression patch");
+});
+
 test("stage one bridge low fixed crowd keeps down-fire and clears jump at the Contra Japan WorldX 626 death", () => {
   const patch = stageOneBridgeLowFixedCrowdPatch({
     level: 0,
@@ -360,6 +365,31 @@ test("stage one danger low lane fall ignores safe high danger-clear jumps", () =
   }, false, 5200);
 
   assert.equal(patch, null);
+});
+
+test("stage one spread turret suppression brakes the Contra Japan WorldX 2038 fixed-threat death", () => {
+  const patch = stageOneSpreadTurretSuppressionPatch({
+    level: 0,
+    worldX: 2038,
+    playerX: 128,
+    playerY: 146,
+    horizon: null,
+    weapon: 16,
+    targets: [],
+    enemies: [
+      { fixed: true, hp: 2, kind: "durable", routine: 4, threat: true, type: 7, x: 153, y: 160 },
+      { fixed: true, hp: 1, kind: "object", routine: 0, threat: true, type: 6, x: 7, y: 100 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 5, x: 76, y: 180 }
+    ]
+  }, false, 5430);
+
+  assert.equal(patch?.reason, "stage-one-spread-turret-suppression");
+  assert.equal(patch?.right, false);
+  assert.equal(patch?.left, true);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, true);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.down, false);
 });
 
 test("stage one close body threat patch air-strafes away from same-lane soldier", () => {
