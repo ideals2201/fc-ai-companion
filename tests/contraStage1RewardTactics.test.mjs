@@ -27,6 +27,7 @@ const {
   stageOneBossApproachMidPlatformCapturePatch,
   stageOneBossApproachPlatformJumpPatch,
   stageOneCloseBodyThreatPatch,
+  stageOneOpeningLowFixedThreatPatch,
   stageOneMandatorySpreadGatePatch,
   stageOneMidFixedThreatRecoveryPatch,
   stageOneRedTurretLowThreatPatch,
@@ -234,6 +235,53 @@ test("stage one mid fixed threat recovery stations under the Contra Japan WorldX
 test("mid fixed script applies the Contra Japan fixed-threat recovery patch", () => {
   assert.match(mainSource, /stageOneMidFixedThreatRecoveryPatch/, "runtime should import the recovery patch");
   assert.match(mainSource, /midFixedThreatRecoveryPatch/, "fixed-hp script should evaluate the recovery patch");
+});
+
+test("stage one opening low fixed threat keeps TAS-style right advance without the Contra Japan combat jump death", () => {
+  const patch = stageOneOpeningLowFixedThreatPatch({
+    level: 0,
+    worldX: 286,
+    playerX: 128,
+    playerY: 164,
+    enemies: [
+      { fixed: true, hp: 1, kind: "enemy", routine: 3, threat: true, type: 6, x: 163, y: 196 }
+    ]
+  }, true, 1509);
+
+  assert.equal(patch?.reason, "stage-one-opening-low-fixed-threat");
+  assert.equal(patch?.right, true);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.down, false);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, false);
+});
+
+test("stage one opening low fixed threat owns the pre-contact descent before the Contra Japan combat landing death", () => {
+  const patch = stageOneOpeningLowFixedThreatPatch({
+    level: 0,
+    worldX: 286,
+    playerX: 128,
+    playerY: 107,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 1, x: 150, y: 178 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 1, x: 142, y: 149 },
+      { fixed: true, hp: 1, kind: "enemy", routine: 3, threat: true, type: 6, x: 163, y: 196 }
+    ]
+  }, true, 1466);
+
+  assert.equal(patch?.reason, "stage-one-opening-low-fixed-threat");
+  assert.equal(patch?.right, true);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.down, false);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, false);
+});
+
+test("runtime applies the stage one opening low fixed threat patch", () => {
+  assert.match(mainSource, /stageOneOpeningLowFixedThreatPatch/, "runtime should import the opening low fixed threat patch");
+  assert.match(mainSource, /openingLowFixedThreatPatch/, "runtime should evaluate the opening low fixed threat patch");
 });
 
 test("stage one close body threat patch air-strafes away from same-lane soldier", () => {

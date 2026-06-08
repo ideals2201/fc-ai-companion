@@ -1,0 +1,96 @@
+{
+  "schema": "fc-ai-strategy-trace-evidence-v1",
+  "createdAt": "2026-06-08T10:44:24.161+08:00",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "side": "1P",
+  "strategyKey": "combat-v0",
+  "fragmentId": "candidate-1p-combat-v0-opening-low-fixed-stall-worldx286",
+  "failureId": "contra-j-stage1-combat-w286-opening-low-fixed-stall",
+  "routeClass": "runtime-patch:stage-one-opening-low-fixed-threat",
+  "progressionWindow": {
+    "metric": "progression.primary",
+    "start": 286,
+    "end": 286,
+    "unit": "ContraWorldPixels"
+  },
+  "source": {
+    "kind": "browser-ai-botrun",
+    "tasIsController": false,
+    "previousFailureEvidence": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-combat-v0-death-worldx286.json",
+    "runtimePatch": "stage-one-opening-low-fixed-threat"
+  },
+  "sourceRunId": "combat-opening-low-fixed-check-20260608",
+  "sourceUrl": "http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes&botrun=1&botframes=20000&strategy=combat-v0&run=combat-opening-low-fixed-check-20260608",
+  "sourceReport": {
+    "botStatus": "stopped",
+    "reason": "max-frames",
+    "frameCount": 20000,
+    "maxFrames": 20000,
+    "deaths": 0,
+    "finalWorldX": 286,
+    "finalPlayerX": 128,
+    "finalPlayerY": 164,
+    "finalScore": 100,
+    "finalWeapon": 0,
+    "bossDefeated": 0,
+    "lastInput": "down+B",
+    "routeSegment": "start-clear",
+    "routeAction": "advance",
+    "scriptAction": "none",
+    "scriptMode": "none",
+    "primaryThreat": "slot13:type0x06@163,196/hp1",
+    "activeThreatCount": 6,
+    "actionLock": "idle",
+    "fsmReason": "threat-pool-turret"
+  },
+  "sampleCount": 1,
+  "startWorldX": 286,
+  "endWorldX": 286,
+  "maxWorldX": 286,
+  "stall": {
+    "frame": 20000,
+    "worldX": 286,
+    "playerX": 128,
+    "playerY": 164,
+    "score": 100,
+    "weapon": 0,
+    "input": "down+B",
+    "routeSegment": "start-clear",
+    "routeAction": "advance",
+    "durationFrames": 20000,
+    "reason": "max-frames"
+  },
+  "inputSummary": {
+    "down+B": 1
+  },
+  "topEnemies": [
+    {
+      "slot": 13,
+      "type": 6,
+      "hp": 1,
+      "x": 163,
+      "y": 196,
+      "routine": 3,
+      "kind": "enemy",
+      "threat": true,
+      "fixed": true,
+      "priority": 2
+    },
+    {
+      "slot": 12,
+      "type": 2,
+      "hp": 240,
+      "x": 179,
+      "y": 160,
+      "routine": 3,
+      "kind": "durable",
+      "threat": true,
+      "fixed": true,
+      "priority": 9
+    }
+  ],
+  "branchOutcome": "route-class-stalled-stop",
+  "interpretation": "The opening low fixed-threat patch changed the Contra Japan combat matrix blocker from death at WorldX 286 with A+B into a no-death max-frame stall at the same WorldX with down+B. This proves the jump death was suppressed, but the fixed low threat is not cleared and the route is still not validated."
+}

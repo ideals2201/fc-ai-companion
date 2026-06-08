@@ -576,3 +576,24 @@ Rule:
 - The strategy matrix is failure evidence, not validation evidence.
 - The next implementation should fix the earliest common survival blocker class before trying to promote any strategy package.
 - TAS remains baseline/training evidence only; none of these runs used TAS as the controller.
+
+## 2026-06-08 Contra Japan Combat Opening Descent Carry
+
+Current:
+- `combat-v0` opening low fixed-threat work has four archived browser AI botrun TraceEvidence artifacts under `data/training/contra/runtime_runs/contra-j-good/trace-evidence/`.
+- The direct station variant avoided death but stalled at `WorldX 286`, so it is not valid.
+- The right-down and late right-only variants still died at `WorldX 290`, proving the problem was earlier descent ownership, not only the contact frame.
+- The current descent-carry patch moved the real botrun failure to `WorldX 626`, with score `1700`, weapon `16`, route segment `bridge-clear`, and last input `down+right+A+B`.
+- This is progress evidence only: the run still ended with `deaths=1`, `bossDefeated=0`, and no Stage 1 clearance.
+
+Verification:
+- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `8/8`.
+- `node --test tests/contraStage1RewardTactics.test.mjs`: covered in full test run.
+- `npm test`: `230/230`.
+- `npm run build`: passed with the existing Vite chunk-size warning.
+- ROM compliance scan `rg --files -g "*.nes" -g "*.fds" -g "*.unf" -g "*.unif" -g "*.rom" -g "*.bin"`: no ROM-like files listed.
+
+Next:
+- Treat `WorldX 626` as the active `combat-v0` blocker for `contra-j-good`.
+- Add a focused regression test for the `WorldX 614-626` bridge low fixed-threat crowd window before changing runtime behavior again.
+- Do not claim any strategy type validated until a real botrun produces a passing `ValidationReport` with `deaths=0`.

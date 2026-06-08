@@ -1018,3 +1018,27 @@ Required next direction:
 - Use the matrix to prioritize fixes: earliest blocker is `combat-v0` at `WorldX 286`; strongest current branch is `guard-v0` at `WorldX 2038` but still not validated.
 - Continue training from the earliest reusable hazard class, then rerun the full matrix after each stable route-level correction.
 - Do not claim any strategy type validated until a real botrun produces a passing ValidationReport with `deaths=0`.
+
+## 2026-06-08: Contra Japan combat opening blocker moved from WorldX 286 to WorldX 626
+
+Decision: keep the `stage-one-opening-low-fixed-threat` descent-carry behavior as progress evidence for `combat-v0`, but do not promote or validate the strategy because the real `contra-j-good` run still dies.
+
+Evidence:
+- A regression test was added first for the new TraceEvidence artifact and failed on missing evidence before the archive file was created.
+- Focused verification passed after archiving:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `8/8`.
+- Full verification passed:
+  - `npm test`: `230/230`.
+  - `npm run build`: passed with the existing Vite chunk-size warning.
+- ROM compliance scan with `rg --files -g "*.nes" -g "*.fds" -g "*.unf" -g "*.unif" -g "*.rom" -g "*.bin"` listed no ROM-like files.
+- The archived browser botrun `combat-opening-descent-carry-y-check-20260608` ended with `status=death`, `deaths=1`, `finalWorldX=626`, `finalScore=1700`, `finalWeapon=16`, route segment `bridge-clear`, and last input `down+right+A+B`.
+- The new standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json`.
+
+Reason:
+The earlier `WorldX 286-290` opening blocker had three counterexamples: station stalled, right-down died, and late right-only still died. The player needed descent ownership earlier than the contact frame. The current patch proves measurable progress by reaching the bridge-clear route and acquiring weapon `16`, but it exposes a new crowded low fixed-threat bridge death at `WorldX 626`.
+
+Required next direction:
+- Treat `WorldX 626` as the active `combat-v0` blocker for `contra-j-good`.
+- Do not continue retuning the old `WorldX 286-290` contact frame unless fresh evidence regresses there.
+- The next implementation must create a focused test for the `WorldX 614-626` bridge low fixed-threat crowd state before changing runtime behavior.
+- Keep TAS as baseline/training evidence only and keep all strategy promotion behind real `TraceEvidence` plus `ValidationReport`.

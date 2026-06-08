@@ -12,6 +12,10 @@ Current archived artifacts:
 - `trace-evidence/matrix-1p-combat-v0-death-worldx286.json`
 - `trace-evidence/matrix-1p-loot-v0-death-worldx1943.json`
 - `trace-evidence/matrix-1p-guard-v0-death-worldx2038.json`
+- `trace-evidence/candidate-1p-combat-v0-opening-low-fixed-stall-worldx286.json`
+- `trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json`
+- `trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json`
+- `trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json`
 - `candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json`
 
 The first trace evidence comes from a real browser AI botrun:
@@ -62,4 +66,17 @@ The strategy matrix evidence comes from five independent browser AI botruns usin
 | `guard-v0` | `matrix-guard-20260608` | `death` | `2038` | `4700` | `0` |
 
 This matrix proves the current package has no validated `contra-j-good` Stage 1 strategy yet.
-The earliest blocker is `combat-v0` at `WorldX 286`; the best-scoring current branch is `guard-v0` at `WorldX 2038`, but it still dies.
+The initial matrix earliest blocker was `combat-v0` at `WorldX 286`; the best-scoring initial branch was `guard-v0` at `WorldX 2038`, but it still died.
+
+The combat opening follow-up evidence comes from four browser AI botruns that tested the low fixed-threat opening route class:
+
+| Route class | Run | Result | WorldX | Score | Weapon | Last input |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| `stage-one-opening-low-fixed-threat` | `combat-opening-low-fixed-check-20260608` | `stopped` | `286` | `100` | `0` | `down+B` |
+| `stage-one-opening-low-fixed-threat-right-down` | `combat-opening-right-down-check-20260608` | `death` | `290` | `100` | `0` | `down+right+B` |
+| `stage-one-opening-low-fixed-threat-right-only` | `combat-opening-right-only-check-20260608` | `death` | `290` | `100` | `0` | `right` |
+| `stage-one-opening-low-fixed-threat-descent-carry` | `combat-opening-descent-carry-y-check-20260608` | `death` | `626` | `1700` | `16` | `down+right+A+B` |
+
+The current `combat-v0` opening branch is progress evidence, not validation.
+It moves the failure class from the original `WorldX 286-290` opening low fixed-threat death to a later bridge-clear blocker at `WorldX 626`.
+The next combat hypothesis must target the `WorldX 614-626` bridge low fixed-threat crowd window and must not claim clearance without a passing validation report.

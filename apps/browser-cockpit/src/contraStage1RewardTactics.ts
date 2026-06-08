@@ -48,6 +48,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-mandatory-spread-gate"
     | "stage-one-mid-fixed-threat-high-station"
     | "stage-one-mid-fixed-threat-recovery"
+    | "stage-one-opening-low-fixed-threat"
     | "stage-one-spread-exit-jump"
     | "stage-one-spread-jump-edge"
     | "stage-one-spread-turret-suppression"
@@ -238,6 +239,45 @@ export function stageOneRedTurretLowThreatPatch<
     down: true,
     left: false,
     reason: "stage-one-red-turret-low-threat",
+    right: true,
+    up: false
+  };
+}
+
+export function stageOneOpeningLowFixedThreatPatch<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>,
+  grounded: boolean,
+  frame: number
+): StageOneRewardButtonPatch | null {
+  void frame;
+  void grounded;
+  if (snapshot.level !== 0) return null;
+  if (snapshot.worldX < 248 || snapshot.worldX > 324) return null;
+  if (snapshot.playerY < 96 || snapshot.playerY > 184) return null;
+
+  const lowFixedThreat = snapshot.enemies
+    .filter((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || !enemy.fixed) return false;
+      if (enemy.type !== 6 && enemy.kind !== "durable") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      const landingThreat = snapshot.playerY <= 148 && dy >= 64 && dy <= 112;
+      const contactThreat = snapshot.playerY >= 148 && dy >= 24 && dy <= 58;
+      return dx >= 18 && dx <= 70 && (landingThreat || contactThreat);
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+  if (!lowFixedThreat) return null;
+
+  return {
+    a: false,
+    b: false,
+    down: false,
+    left: false,
+    reason: "stage-one-opening-low-fixed-threat",
     right: true,
     up: false
   };

@@ -4,6 +4,10 @@ import test from "node:test";
 import ts from "typescript";
 
 const candidateProposalPath = "data/training/contra/runtime_runs/contra-j-good/candidate-fragments/candidate-fragment-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
+const combatOpeningStallEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-low-fixed-stall-worldx286.json";
+const combatOpeningRightDownDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json";
+const combatOpeningRightOnlyDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json";
+const combatOpeningDescentCarryDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json";
 const evidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
 const highStationEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json";
 const recoveryEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json";
@@ -140,4 +144,121 @@ test("Contra Japan high fixed-threat station run is archived when it still dies"
   assert.equal(evidence.branchOutcome, "route-class-failed-stop");
   assert.ok(evidence.inputSummary["up+B"] > 140);
   assert.match(evidence.interpretation, /still dies/i);
+});
+
+test("Contra Japan combat opening low fixed-threat patch is archived when it stalls", () => {
+  const evidence = readJson(combatOpeningStallEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-opening-low-fixed-stall-worldx286");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w286-opening-low-fixed-stall");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-opening-low-fixed-threat");
+  assert.equal(evidence.source.previousFailureEvidence, "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-combat-v0-death-worldx286.json");
+  assert.equal(evidence.sourceRunId, "combat-opening-low-fixed-check-20260608");
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceReport.botStatus, "stopped");
+  assert.equal(evidence.sourceReport.reason, "max-frames");
+  assert.equal(evidence.sourceReport.deaths, 0);
+  assert.equal(evidence.sourceReport.finalWorldX, 286);
+  assert.equal(evidence.sourceReport.lastInput, "down+B");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot13:type0x06@163,196/hp1");
+  assert.equal(evidence.stall.worldX, 286);
+  assert.equal(evidence.stall.input, "down+B");
+  assert.equal(evidence.branchOutcome, "route-class-stalled-stop");
+  assert.ok(evidence.topEnemies.some((enemy) => enemy.type === 6 && enemy.hp === 1 && enemy.fixed));
+  assert.match(evidence.interpretation, /not validated/i);
+});
+
+test("Contra Japan combat opening right-down variant is archived when it dies", () => {
+  const evidence = readJson(combatOpeningRightDownDeathEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-opening-right-down-death-worldx290");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w290-opening-right-down-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-opening-low-fixed-threat-right-down");
+  assert.equal(evidence.source.runtimePatchVariant, "right-down-fire");
+  assert.equal(evidence.sourceRunId, "combat-opening-right-down-check-20260608");
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.reason, "death-count");
+  assert.equal(evidence.sourceReport.deaths, 1);
+  assert.equal(evidence.sourceReport.finalWorldX, 290);
+  assert.equal(evidence.sourceReport.lastInput, "down+right+B");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot13:type0x06@159,196/hp1");
+  assert.equal(evidence.sampleCount, 900);
+  assert.equal(evidence.gameplaySampleCount, 312);
+  assert.equal(evidence.death.worldX, 290);
+  assert.equal(evidence.death.lastAlive.input, "down+right+B");
+  assert.equal(evidence.branchOutcome, "route-class-failed-stop");
+  assert.ok(evidence.inputSummary["down+right+B"] > 40);
+  assert.match(evidence.interpretation, /rejects direct promotion/i);
+});
+
+test("Contra Japan combat opening right-only variant is archived when descent still kills it", () => {
+  const evidence = readJson(combatOpeningRightOnlyDeathEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-opening-right-only-death-worldx290");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w290-opening-right-only-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-opening-low-fixed-threat-right-only");
+  assert.equal(evidence.source.runtimePatchVariant, "right-only");
+  assert.equal(evidence.sourceRunId, "combat-opening-right-only-check-20260608");
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.reason, "death-count");
+  assert.equal(evidence.sourceReport.finalWorldX, 290);
+  assert.equal(evidence.sourceReport.lastInput, "right");
+  assert.equal(evidence.death.lastAlive.input, "right");
+  assert.equal(evidence.lastTwentyFramePattern.dominantInput, "down+A+B before late right-only recovery");
+  assert.equal(evidence.branchOutcome, "route-class-failed-stop");
+  assert.ok(evidence.inputSummary["down+A+B"] > 20);
+  assert.match(evidence.interpretation, /opening descent carry/i);
+});
+
+test("Contra Japan combat opening descent-carry patch is archived when it progresses to the bridge blocker", () => {
+  const evidence = readJson(combatOpeningDescentCarryDeathEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-opening-descent-carry-death-worldx626");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w626-bridge-low-fixed-threat-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-opening-low-fixed-threat-descent-carry");
+  assert.equal(evidence.source.runtimePatchVariant, "descent-carry-right-only");
+  assert.equal(evidence.source.previousFailureEvidence, combatOpeningRightOnlyDeathEvidencePath);
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceRunId, "combat-opening-descent-carry-y-check-20260608");
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.reason, "death-count");
+  assert.equal(evidence.sourceReport.finalWorldX, 626);
+  assert.equal(evidence.sourceReport.finalScore, 1700);
+  assert.equal(evidence.sourceReport.finalWeapon, 16);
+  assert.equal(evidence.sourceReport.lastInput, "down+right+A+B");
+  assert.equal(evidence.sourceReport.routeSegment, "bridge-clear");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot15:type0x06@143,196/hp1");
+  assert.equal(evidence.sampleCount, 900);
+  assert.equal(evidence.gameplaySampleCount, 900);
+  assert.equal(evidence.death.worldX, 626);
+  assert.equal(evidence.death.lastAlive.worldX, 625);
+  assert.equal(evidence.death.input, "down+right+A+B");
+  assert.equal(evidence.branchOutcome, "route-class-progressed-failed-stop");
+  assert.ok(evidence.progressionDelta.worldX >= 336);
+  assert.ok(evidence.inputSummary["right+B"] > 170);
+  assert.ok(evidence.topEnemies.some((enemy) => enemy.slot === 15 && enemy.type === 6 && enemy.fixed));
+  assert.match(evidence.interpretation, /not validated/i);
+  assert.match(evidence.interpretation, /WorldX 626/i);
 });
