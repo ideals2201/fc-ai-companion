@@ -61,6 +61,7 @@ import {
   stageOneBossApproachPlatformJumpPatch,
   stageOneBridgeLowFixedCrowdPatch,
   stageOneCloseBodyThreatPatch,
+  stageOneDangerLowLaneFallPatch,
   stageOneMandatorySpreadGatePatch,
   stageOneMidFixedThreatRecoveryPatch,
   stageOneOpeningLowFixedThreatPatch,
@@ -4785,6 +4786,13 @@ function applyStageOneBridgeLowFixedCrowd(next: ButtonState, snapshot: GameRamSn
   return true;
 }
 
+function applyStageOneDangerLowLaneFall(next: ButtonState, snapshot: GameRamSnapshot, grounded: boolean, frame: number) {
+  const dangerLowLaneFallPatch = stageOneDangerLowLaneFallPatch(snapshot, grounded, frame);
+  if (!dangerLowLaneFallPatch) return false;
+  applyStageOneRewardTacticsPatch(next, dangerLowLaneFallPatch);
+  return true;
+}
+
 function applyStageOneBossApproachLowerEdgeJump(next: ButtonState, snapshot: GameRamSnapshot) {
   if (
     snapshot.level !== STAGE_ONE_LEVEL_INDEX
@@ -5421,6 +5429,7 @@ function finalizeTacticalButtons(
   const forcedButtons = applyForcedAdvanceBias(tacticalButtons, loopExit, snapshot);
   applyStageOneOpeningLowFixedThreat(forcedButtons, snapshot, grounded, frame);
   applyStageOneBridgeLowFixedCrowd(forcedButtons, snapshot, grounded, frame);
+  applyStageOneDangerLowLaneFall(forcedButtons, snapshot, grounded, frame);
   return forcedButtons;
 }
 
@@ -8772,9 +8781,13 @@ function App() {
       const bridgeLowFixedCrowdPatch = actorSnapshot
         ? stageOneBridgeLowFixedCrowdPatch(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
         : null;
+      const dangerLowLaneFallPatch = actorSnapshot
+        ? stageOneDangerLowLaneFallPatch(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
+        : null;
       const bypassActionLock = shouldBypassAiActionLockForBossWallPhase(actorSnapshot, bossWallPhaseState)
         || Boolean(openingLowFixedThreatPatch)
-        || Boolean(bridgeLowFixedCrowdPatch);
+        || Boolean(bridgeLowFixedCrowdPatch)
+        || Boolean(dangerLowLaneFallPatch);
       const previousLock = loopExitState.forcedAdvanceBias > 0.5 || bossWallPhaseState.phase !== "idle" || bypassActionLock
         ? createAiActionLockState()
         : aiActionLocksRef.current[side];

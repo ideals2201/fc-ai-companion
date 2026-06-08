@@ -1062,3 +1062,24 @@ Required next direction:
 - Treat `WorldX 1943` / `danger-clear` as the active `combat-v0` blocker.
 - Write the next regression test around the `WorldX 1914-1943` falling low-lane danger state before changing runtime behavior.
 - Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.
+
+## 2026-06-08: Contra Japan combat danger blocker moved from WorldX 1943 to WorldX 2038
+
+Decision: keep the `stage-one-danger-low-lane-fall` behavior as measurable progress for `combat-v0`, but do not promote the strategy because the real browser botrun still dies.
+
+Evidence:
+- A regression test was added for the `WorldX 1943` low-lane fall state before implementation.
+- A regression test was added for the new `WorldX 2038` TraceEvidence artifact and failed on missing evidence before the archive file was created.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `49/49`.
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `10/10`.
+- Browser botrun `combat-danger-low-lane-fall-check-20260608c` ended with `status=death`, `deaths=1`, `finalWorldX=2038`, `finalScore=4700`, `finalWeapon=16`, route segment `danger-clear`, primary threat `slot15:type0x07@153,160/hp2`, and last input `B`.
+- Standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json`.
+
+Reason:
+The low-lane fall patch cleared the `WorldX 1943` right+A+B fall death, but it exposed a later fixed-threat cluster where stationary B-only fire is insufficient. Continuing to retune the `WorldX 1914-1943` fall window would repeat the dead-loop pattern because the active failure class has changed.
+
+Required next direction:
+- Treat `WorldX 2038` / `danger-clear` fixed-threat cluster as the active `combat-v0` blocker.
+- Write the next regression test around the stationary `B`-only death against `slot15:type0x07@153,160/hp2` before changing runtime behavior.
+- Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.

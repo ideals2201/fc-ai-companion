@@ -9,6 +9,7 @@ const combatOpeningRightDownDeathEvidencePath = "data/training/contra/runtime_ru
 const combatOpeningRightOnlyDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json";
 const combatOpeningDescentCarryDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json";
 const combatBridgeLowFixedCrowdDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json";
+const combatDangerLowLaneFallDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json";
 const evidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
 const highStationEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json";
 const recoveryEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json";
@@ -296,4 +297,39 @@ test("Contra Japan combat bridge low fixed crowd patch is archived when it progr
   assert.ok(evidence.topEnemies.some((enemy) => enemy.slot === 10 && enemy.type === 2 && enemy.fixed && enemy.hp === 240));
   assert.match(evidence.interpretation, /not validated/i);
   assert.match(evidence.interpretation, /WorldX 1943/i);
+});
+
+test("Contra Japan combat danger low lane fall patch is archived when it moves the blocker to the next fixed threat", () => {
+  const evidence = readJson(combatDangerLowLaneFallDeathEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w2038-danger-clear-fixed-threat-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-danger-low-lane-fall");
+  assert.equal(evidence.source.runtimePatchVariant, "low-lane-left-brake-fire");
+  assert.equal(evidence.source.previousFailureEvidence, combatBridgeLowFixedCrowdDeathEvidencePath);
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceRunId, "combat-danger-low-lane-fall-check-20260608c");
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.reason, "death-count");
+  assert.equal(evidence.sourceReport.finalWorldX, 2038);
+  assert.equal(evidence.sourceReport.finalScore, 4700);
+  assert.equal(evidence.sourceReport.finalWeapon, 16);
+  assert.equal(evidence.sourceReport.lastInput, "B");
+  assert.equal(evidence.sourceReport.routeSegment, "danger-clear");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot15:type0x07@153,160/hp2");
+  assert.equal(evidence.sampleCount, 900);
+  assert.equal(evidence.gameplaySampleCount, 899);
+  assert.equal(evidence.death.worldX, 2038);
+  assert.equal(evidence.death.lastAlive.worldX, 2038);
+  assert.equal(evidence.branchOutcome, "route-class-progressed-failed-stop");
+  assert.ok(evidence.progressionDelta.worldX >= 95);
+  assert.ok(evidence.inputSummary["left+B"] >= 13);
+  assert.ok(evidence.topEnemies.some((enemy) => enemy.slot === 15 && enemy.type === 7 && enemy.fixed && enemy.hp === 2));
+  assert.match(evidence.interpretation, /not validated/i);
+  assert.match(evidence.interpretation, /WorldX 2038/i);
 });

@@ -614,3 +614,21 @@ Next:
 - Treat `WorldX 1943` / `danger-clear` as the active `combat-v0` blocker for `contra-j-good`.
 - Add the next route-level regression test for the `WorldX 1914-1943` falling low-lane danger state before changing runtime behavior.
 - Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.
+
+## 2026-06-08 Contra Japan Combat Danger Low Lane Fall
+
+Current:
+- `stage-one-danger-low-lane-fall` is implemented and wired into runtime handling.
+- Real browser botrun `combat-danger-low-lane-fall-check-20260608c` moved the failure from `WorldX 1943` to `WorldX 2038`.
+- The run still ended with `status=death`, `deaths=1`, `bossDefeated=0`, final score `4700`, weapon `16`, and last input `B`.
+- Standard TraceEvidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json`.
+
+Verification:
+- `node --test tests/contraStage1RewardTactics.test.mjs`: `49/49`.
+- `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `10/10`.
+- Browser CDP botrun at `127.0.0.1:9223`: `status=death`, `finalWorldX=2038`, `finalScore=4700`, `finalWeapon=16`.
+
+Next:
+- Treat `WorldX 2038` / `danger-clear` fixed-threat cluster as the active `combat-v0` blocker.
+- Add a focused regression test for stationary `B`-only death against `slot15:type0x07@153,160/hp2` before changing runtime behavior.
+- Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.

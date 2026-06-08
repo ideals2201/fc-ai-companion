@@ -28,6 +28,7 @@ const {
   stageOneBossApproachPlatformJumpPatch,
   stageOneBridgeLowFixedCrowdPatch,
   stageOneCloseBodyThreatPatch,
+  stageOneDangerLowLaneFallPatch,
   stageOneOpeningLowFixedThreatPatch,
   stageOneMandatorySpreadGatePatch,
   stageOneMidFixedThreatRecoveryPatch,
@@ -290,6 +291,11 @@ test("runtime applies the stage one bridge low fixed crowd patch", () => {
   assert.match(mainSource, /bridgeLowFixedCrowdPatch/, "runtime should evaluate the bridge low fixed crowd patch");
 });
 
+test("runtime applies the stage one danger low lane fall patch and bypasses action lock", () => {
+  assert.match(mainSource, /stageOneDangerLowLaneFallPatch/, "runtime should import the danger low lane fall patch");
+  assert.match(mainSource, /dangerLowLaneFallPatch/, "runtime should evaluate the danger low lane fall patch");
+});
+
 test("stage one bridge low fixed crowd keeps down-fire and clears jump at the Contra Japan WorldX 626 death", () => {
   const patch = stageOneBridgeLowFixedCrowdPatch({
     level: 0,
@@ -312,6 +318,48 @@ test("stage one bridge low fixed crowd keeps down-fire and clears jump at the Co
   assert.equal(patch?.up, false);
   assert.equal(patch?.a, false);
   assert.equal(patch?.b, true);
+});
+
+test("stage one danger low lane fall brakes right carry at the Contra Japan WorldX 1943 death", () => {
+  assert.equal(typeof stageOneDangerLowLaneFallPatch, "function");
+
+  const patch = stageOneDangerLowLaneFallPatch({
+    level: 0,
+    worldX: 1942,
+    playerX: 128,
+    playerY: 231,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 5, x: 68, y: 218 },
+      { fixed: true, hp: 1, kind: "object", routine: 0, threat: true, type: 6, x: 7, y: 105 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 1, x: 24, y: 232 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 1, x: 7, y: 225 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 2, x: 46, y: 128 }
+    ]
+  }, false, 5275);
+
+  assert.equal(patch?.reason, "stage-one-danger-low-lane-fall");
+  assert.equal(patch?.right, false);
+  assert.equal(patch?.left, true);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, true);
+  assert.equal(patch?.up, false);
+  assert.equal(patch?.down, false);
+});
+
+test("stage one danger low lane fall ignores safe high danger-clear jumps", () => {
+  assert.equal(typeof stageOneDangerLowLaneFallPatch, "function");
+
+  const patch = stageOneDangerLowLaneFallPatch({
+    level: 0,
+    worldX: 1930,
+    playerX: 128,
+    playerY: 150,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 2, x: 46, y: 128 }
+    ]
+  }, false, 5200);
+
+  assert.equal(patch, null);
 });
 
 test("stage one close body threat patch air-strafes away from same-lane soldier", () => {
