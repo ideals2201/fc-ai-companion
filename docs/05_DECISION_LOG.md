@@ -1106,3 +1106,27 @@ Required next direction:
 - Treat `WorldX 2111-2112` / `boss-approach-clear` as the active `combat-v0` blocker.
 - Write the next regression test around the `right+A+B` fall death with top threat `slot14:type0x07@207,64/hp8`.
 - Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.
+
+## 2026-06-08: Contra Japan combat blocker moved from WorldX 2112 to WorldX 2174
+
+Decision: keep the boss-approach pit-jump start change from `WorldX 2078` to `WorldX 2068`, but do not promote the strategy because the real browser botrun still dies.
+
+Evidence:
+- Root-cause trace showed the AI was already at `WorldX 2073`, `playerY 164`, `jumpState 0`, and mostly `right` / `right+B` before the old `WorldX 2078` jump window began.
+- A W2112 low-position left-brake hypothesis was tested in browser and rejected because it produced `up+left+B` but still died, regressing the terminal WorldX to `2108`.
+- A regression test was added for the early boss-approach pit-jump window and first failed because runtime still used `{ start: 2078, end: 2138, minY: 160 }`.
+- Focused verification passed:
+  - `node --test tests/contraStage1RewardTactics.test.mjs`: `52/52`.
+- Browser botrun `combat-boss-approach-early-pit-jump-check-20260608c` ended with `status=death`, `deaths=1`, `finalWorldX=2174`, `finalScore=4900`, `finalWeapon=16`, route segment `boss-approach-clear`, primary threat `slot14:type0x07@145,64/hp6`, and last input `down+right+B`.
+- A regression test for the new `WorldX 2174` TraceEvidence artifact failed on missing evidence before the archive file was created.
+- Focused evidence verification passed:
+  - `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `12/12`.
+- Standard TraceEvidence is stored at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`.
+
+Reason:
+The active blocker was not the final `WorldX 2112` input alone. The trace showed the route committed to the pit too late after a W2073 stall, so the correct retained change is earlier route timing. This moved the blocker into a later high-air contact/sniper state at `WorldX 2174`, proving progress but not clearance.
+
+Required next direction:
+- Treat `WorldX 2173-2174` / `boss-approach-clear` high-air contact as the active `combat-v0` blocker.
+- Write the next regression test around the `down+right+B` high-air contact death with top threat `slot14:type0x07@145,64/hp6` before changing runtime behavior.
+- Keep TAS as baseline/training evidence only and keep every strategy promotion behind real `TraceEvidence` plus a passing `ValidationReport`.

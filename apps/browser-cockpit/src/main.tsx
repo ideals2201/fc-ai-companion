@@ -4640,7 +4640,7 @@ function applyStageOneLatePitJump(next: ButtonState, snapshot: GameRamSnapshot, 
   const inJumpWindow = [
     { start: 1916, end: 2055, minY: 120 },
     { start: 2060, end: 2065, minY: 144 },
-    { start: 2078, end: 2138, minY: 160 },
+    { start: 2068, end: 2138, minY: 160 },
     { start: 2132, end: 2200, minY: 148 },
     { start: 2264, end: 2332, minY: 132 }
   ].some(({ start, end, minY }) => (

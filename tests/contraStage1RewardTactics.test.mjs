@@ -301,6 +301,19 @@ test("runtime applies the stage one spread turret suppression patch after the da
   assert.match(mainSource, /spreadTurretSuppressionPatch/, "runtime should bypass action lock for the W2038 fixed-threat suppression patch");
 });
 
+test("runtime starts the boss approach pit jump before the W2073 stall falls too low", () => {
+  assert.match(
+    mainSource,
+    /\{\s*start:\s*2068,\s*end:\s*2138,\s*minY:\s*160\s*\}/,
+    "late pit jump should start at W2068 so the W2073 boss-approach stall commits before falling"
+  );
+  assert.doesNotMatch(
+    mainSource,
+    /\{\s*start:\s*2078,\s*end:\s*2138,\s*minY:\s*160\s*\}/,
+    "the old W2078 start is too late for the observed W2073/Y164 stall"
+  );
+});
+
 test("stage one bridge low fixed crowd keeps down-fire and clears jump at the Contra Japan WorldX 626 death", () => {
   const patch = stageOneBridgeLowFixedCrowdPatch({
     level: 0,

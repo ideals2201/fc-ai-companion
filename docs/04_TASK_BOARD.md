@@ -652,3 +652,24 @@ Next:
 - Treat `WorldX 2111-2112` / `boss-approach-clear` sniper/fall transition as the active `combat-v0` blocker.
 - Add a focused regression test for the `right+A+B` fall death with top threat `slot14:type0x07@207,64/hp8`.
 - Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.
+
+## 2026-06-08 Contra Japan Combat Boss Approach Early Pit Jump
+
+Current:
+- The W2112 last-frame left-brake hypothesis was rejected by real runtime evidence: it changed the final input to `up+left+B` but regressed the death to `WorldX 2108`.
+- The kept change is route-level timing: the boss-approach late pit jump now starts at `WorldX 2068` instead of `WorldX 2078`.
+- Real browser botrun `combat-boss-approach-early-pit-jump-check-20260608c` moved the failure from `WorldX 2112` to `WorldX 2174`.
+- The run still ended with `status=death`, `deaths=1`, `bossDefeated=0`, final score `4900`, weapon `16`, and last input `down+right+B`.
+- Standard TraceEvidence is archived at `data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json`.
+
+Verification:
+- TDD RED: `node --test tests/contraStage1RewardTactics.test.mjs` failed because the runtime still used the old `{ start: 2078, end: 2138, minY: 160 }` jump window.
+- TDD GREEN: `node --test tests/contraStage1RewardTactics.test.mjs`: `52/52`.
+- Evidence RED: `node --test tests/contraJRuntimeTraceEvidence.test.mjs` failed with missing W2174 evidence.
+- Evidence GREEN: `node --test tests/contraJRuntimeTraceEvidence.test.mjs`: `12/12`.
+- Browser CDP botrun at `127.0.0.1:9223`: `status=death`, `finalWorldX=2174`, `finalScore=4900`, `finalWeapon=16`.
+
+Next:
+- Treat `WorldX 2173-2174` / `boss-approach-clear` high-air contact with `slot14:type0x07@145,64/hp6` as the active `combat-v0` blocker.
+- Add a focused regression test for the `down+right+B` high-air contact death before changing runtime behavior.
+- Keep this as progress evidence only; do not mark any strategy package validated without a passing `ValidationReport`.

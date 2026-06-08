@@ -11,6 +11,7 @@ const combatOpeningDescentCarryDeathEvidencePath = "data/training/contra/runtime
 const combatBridgeLowFixedCrowdDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json";
 const combatDangerLowLaneFallDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json";
 const combatSpreadTurretSuppressionDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json";
+const combatBossApproachEarlyPitJumpDeathEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json";
 const evidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json";
 const highStationEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json";
 const recoveryEvidencePath = "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json";
@@ -368,4 +369,37 @@ test("Contra Japan combat spread turret suppression patch is archived when it mo
   assert.ok(evidence.topEnemies.some((enemy) => enemy.slot === 14 && enemy.type === 7 && enemy.fixed && enemy.hp === 8));
   assert.match(evidence.interpretation, /not validated/i);
   assert.match(evidence.interpretation, /WorldX 2112/i);
+});
+
+test("Contra Japan combat early boss approach pit jump is archived when it moves the blocker past W2112", () => {
+  const evidence = readJson(combatBossApproachEarlyPitJumpDeathEvidencePath);
+
+  assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
+  assert.equal(evidence.gameProfileId, "contra");
+  assert.equal(evidence.romProfileId, "contra-j-good");
+  assert.equal(evidence.stageId, "stage-1");
+  assert.equal(evidence.strategyKey, "combat-v0");
+  assert.equal(evidence.fragmentId, "candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174");
+  assert.equal(evidence.failureId, "contra-j-stage1-combat-w2174-boss-approach-sniper-contact-death");
+  assert.equal(evidence.routeClass, "runtime-patch:stage-one-boss-approach-early-pit-jump");
+  assert.equal(evidence.source.runtimePatchVariant, "late-pit-jump-start-w2068");
+  assert.equal(evidence.source.previousFailureEvidence, combatSpreadTurretSuppressionDeathEvidencePath);
+  assert.equal(evidence.source.tasIsController, false);
+  assert.equal(evidence.sourceRunId, "combat-boss-approach-early-pit-jump-check-20260608c");
+  assert.equal(evidence.sourceReport.botStatus, "death");
+  assert.equal(evidence.sourceReport.reason, "death-count");
+  assert.equal(evidence.sourceReport.finalWorldX, 2174);
+  assert.equal(evidence.sourceReport.finalScore, 4900);
+  assert.equal(evidence.sourceReport.finalWeapon, 16);
+  assert.equal(evidence.sourceReport.lastInput, "down+right+B");
+  assert.equal(evidence.sourceReport.routeSegment, "boss-approach-clear");
+  assert.equal(evidence.sourceReport.primaryThreat, "slot14:type0x07@145,64/hp6");
+  assert.equal(evidence.death.worldX, 2174);
+  assert.equal(evidence.death.lastAlive.worldX, 2173);
+  assert.equal(evidence.branchOutcome, "route-class-progressed-failed-stop");
+  assert.equal(evidence.progressionDelta.worldX, 62);
+  assert.equal(evidence.progressionDelta.score, 100);
+  assert.ok(evidence.topEnemies.some((enemy) => enemy.slot === 14 && enemy.type === 7 && enemy.fixed && enemy.hp === 6));
+  assert.match(evidence.interpretation, /not validated/i);
+  assert.match(evidence.interpretation, /WorldX 2174/i);
 });
