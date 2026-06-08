@@ -82,7 +82,7 @@ test("center column includes a global training console for shared evidence and v
   assert.match(mainSource, /training\.trainingSessionActive \? "operation-strategy-control training-active" : "operation-strategy-control"/, "operation strategy control should visibly mark active training sessions");
   assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode controls should be locked by TAS or active side training");
   assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top strategy buttons should be locked by TAS or active side training");
-  assert.match(mainSource, /disabled=\{strategyControlsLocked\}/, "top strategy buttons should be disabled while training owns strategy selection");
+  assert.match(mainSource, /disabled=\{strategyControlsLocked \|\| strategyUnavailable\}/, "top strategy buttons should be disabled while training owns strategy selection or the pack lacks that strategy");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*t\(language, "training\.strategyBaseline"\)/, "operation strategy control should not duplicate the side-owned strategy baseline selector");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*t\(language, "training\.tasBase"\)[\s\S]*training\.tasBaseLabel/, "operation strategy control should not present TAS as the only base type");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*training\.scenarioLabel/, "operation strategy control should not show detailed training-scenario status");
@@ -197,6 +197,30 @@ test("operation strategy control supports side-specific resource packs and basel
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*onStrategyBaselineChoiceChange/, "baseline choice controls should stay in the side training panel");
 });
 
+test("strategy buttons are derived from the selected resource pack manifest", () => {
+  assert.match(mainSource, /const currentPackStrategyKeys = \["survival-v0", "speedrun-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should expose only the two current mainline strategy keys");
+  assert.match(mainSource, /const standardStrategyCategoryKeys = \["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should keep the five standard strategy category slots visible");
+  assert.match(mainSource, /strategySlots:\s*standardStrategyCategoryKeys/, "official Contra pack should display all standard category slots");
+  assert.match(mainSource, /strategyKeys:\s*currentPackStrategyKeys/, "official Contra pack should consume the current mainline strategy keys");
+  assert.match(mainSource, /strategyKeys:\s*\["personal-v0"\]/, "personal draft pack should expose personal strategy only after it is represented as a pack key");
+  assert.match(mainSource, /strategySlots: readonly AiStrategyKey\[\]/, "resource pack metadata should require declared strategy slots");
+  assert.match(mainSource, /strategyKeys: readonly AiStrategyKey\[\]/, "resource pack metadata should require declared strategy keys");
+  assert.match(mainSource, /type ResourcePackStrategyOption = \{ key: AiStrategyKey; available: boolean \}/, "strategy button options should expose whether the package contains the strategy");
+  assert.match(mainSource, /function strategyOptionsForResourcePack\(resourcePackId: StrategyResourcePackId\): ResourcePackStrategyOption\[\]/, "strategy buttons should be derived from the selected resource pack");
+  assert.match(mainSource, /function coerceStrategyForResourcePack\(strategyKey: AiStrategyKey, resourcePackId: StrategyResourcePackId\)/, "current strategy should be coerced when switching packs");
+  assert.match(mainSource, /strategyResourcePackId: StrategyResourcePackId/, "Pilot should carry the selected resource pack id for button rendering");
+  assert.match(mainSource, /const strategyButtons = strategyOptionsForResourcePack\(pilot\.strategyResourcePackId\)/, "PilotPanel should render buttons for the pilot's selected resource pack");
+  assert.match(mainSource, /strategyButtons\.map/, "PilotPanel should map dynamic strategy buttons instead of a hardcoded global list");
+  assert.match(mainSource, /const strategyUnavailable = !option\.available/, "PilotPanel should virtualize strategies that are not distributed with the current package");
+  assert.match(mainSource, /disabled=\{strategyControlsLocked \|\| strategyUnavailable\}/, "unavailable package strategies should be visible but disabled");
+  assert.match(mainSource, /strategyUnavailable \? "strategy-button unavailable"/, "unavailable package strategies should use a dimmed button class");
+  assert.match(mainSource, /coerceStrategyForResourcePack\(current\[side\], packId\)/, "changing a side resource pack should coerce that side's current strategy");
+  assert.match(mainSource, /coerceStrategyForResourcePack\(current\["2P"\], packId\)/, "1P pack changes should coerce synced 2P strategy when 2P follows 1P");
+  assert.doesNotMatch(mainSource, /const cockpitAiStrategyOptions = aiStrategyOptions\.filter/, "cockpit strategy choices should not be a hardcoded global whitelist");
+  assert.doesNotMatch(mainSource, /\["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0", "personal-v0"\]\.includes\(option\.key\)/, "personal-v0 must not be merged into the official pack's strategy buttons");
+  assert.match(cssSource, /\.strategy-button\.unavailable\s*\{/, "unavailable strategy buttons should have stable dimmed styling");
+});
+
 test("side baseline selection uses archived TAS side-baselines without turning TAS into a controller", () => {
   const handlerMatch = mainSource.match(/const onSideTrainingSelectBaseline = useCallback\(\(side: PlayerSide\) => \{([\s\S]*?)\}, \[appendLog, selectedSideBaselineIds, uiLanguage\]\);/);
   assert.ok(handlerMatch, "side baseline selection handler should exist");
@@ -279,7 +303,7 @@ test("side training panels derive their target from the locked top AI strategy",
   assert.match(mainSource, /strategyModels\["1P"\]/, "1P training state should derive from the top 1P AI strategy selection");
   assert.match(mainSource, /strategyModels\["2P"\]/, "2P training state should derive from the top 2P AI strategy selection");
   assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top AI strategy controls should lock while that side is training");
-  assert.match(mainSource, /disabled=\{strategyControlsLocked\}/, "training should prevent strategy category switching by locking the top AI strategy buttons");
+  assert.match(mainSource, /disabled=\{strategyControlsLocked \|\| strategyUnavailable\}/, "training should prevent strategy category switching while unavailable pack slots stay disabled");
   assert.match(mainSource, /case "survival-v0"/, "survival strategy should have its own training profile");
   assert.match(mainSource, /case "speedrun-v0"/, "speedrun strategy should have its own training profile");
   assert.match(mainSource, /case "combat-v0"/, "combat strategy should have its own training profile");
@@ -294,6 +318,8 @@ test("side training archive produces standard trace evidence for packaging", () 
   assert.match(mainSource, /setSideTrainingTraceEvidence/, "archival should update the side-owned evidence state");
   assert.match(mainSource, /selectedSideBaselineIds\[side\]/, "archival should attach the selected baseline id");
   assert.match(mainSource, /strategyModels\[side\]/, "archival should attach the selected strategy key");
+  assert.match(mainSource, /baselineSourceKind:\s*selectedBaselineOption\?\.sourceKind \?\? "strategy-pack"/, "archival should record whether evidence came from a pack, TAS side baseline, human demo, or AI run");
+  assert.match(mainSource, /trainingMethod:\s*selectedTrainingMethod/, "archival should record the active shared training method");
   assert.match(mainSource, /romMetadata\?\.romProfileId/, "archival should attach the loaded ROM profile id");
   assert.match(mainSource, /data-testid="side-training-evidence-json"/, "browser tests should be able to inspect the latest side training evidence");
   assert.match(mainSource, /data-testid="side-training-evidence-1p-json"/, "1P evidence should be inspectable separately");

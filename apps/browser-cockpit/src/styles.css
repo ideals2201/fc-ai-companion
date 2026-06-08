@@ -418,6 +418,13 @@ button:disabled {
   color: #ffffff;
 }
 
+.strategy-button.unavailable {
+  border-color: rgba(255,255,255,0.06);
+  background: #080b10;
+  color: #5d6875;
+  opacity: 0.58;
+}
+
 .strategy-button-section.inactive .strategy-button {
   border-color: rgba(255,255,255,0.08);
   background: #090d12;

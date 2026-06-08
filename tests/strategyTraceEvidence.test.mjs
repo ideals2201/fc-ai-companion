@@ -191,11 +191,13 @@ test("archives side-owned training samples as standard strategy evidence", () =>
 
   const evidence = createSideTrainingTraceEvidence(samples, {
     baselineId: "human-demo-new",
+    baselineSourceKind: "human-demo",
     gameProfileId: "contra",
     romProfileId: "contra-j-good",
     side: "2P",
     stageId: "stage-1",
-    strategyKey: "guard-v0"
+    strategyKey: "guard-v0",
+    trainingMethod: "human-assist"
   });
 
   assert.equal(evidence.schema, "fc-ai-strategy-trace-evidence-v1");
@@ -215,4 +217,10 @@ test("archives side-owned training samples as standard strategy evidence", () =>
   assert.equal(evidence.inputSummary["right+B"], 1);
   assert.equal(evidence.inputSummary["down+right+B"], 1);
   assert.equal(evidence.branchOutcome, "window-complete");
+  assert.deepEqual(evidence.source, {
+    baselineId: "human-demo-new",
+    baselineSourceKind: "human-demo",
+    trainingMethod: "human-assist",
+    tasIsController: false
+  });
 });

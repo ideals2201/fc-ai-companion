@@ -1,5 +1,27 @@
 export type StrategyTraceSide = "1P" | "2P";
 
+export type StrategyTraceBaselineSourceKind =
+  | "strategy-pack"
+  | "tas-side-baseline"
+  | "human-demo"
+  | "ai-run"
+  | "known-failure"
+  | "unknown";
+
+export type StrategyTraceTrainingMethod =
+  | "auto-patch"
+  | "model-analysis"
+  | "human-assist"
+  | "manual-edit"
+  | "trace-archive";
+
+export type StrategyTraceSource = {
+  baselineId: string;
+  baselineSourceKind: StrategyTraceBaselineSourceKind;
+  trainingMethod: StrategyTraceTrainingMethod;
+  tasIsController: false;
+};
+
 export type StrategyTraceInput = {
   up: boolean;
   down: boolean;
@@ -60,6 +82,7 @@ export type StrategyTraceEvidenceOptions = {
   romProfileId: string;
   routeClass: string;
   side?: StrategyTraceSide;
+  source?: StrategyTraceSource;
   stageId: string;
 };
 
@@ -67,6 +90,7 @@ export type SideTrainingTraceEvidenceOptions = {
   baselineId: string;
   failureId?: string;
   gameProfileId?: string;
+  baselineSourceKind?: StrategyTraceBaselineSourceKind;
   progressionMetric?: string;
   progressionUnit?: string;
   progressionWindow?: StrategyTraceEvidenceOptions["progressionWindow"];
@@ -74,6 +98,7 @@ export type SideTrainingTraceEvidenceOptions = {
   side: StrategyTraceSide;
   stageId?: string;
   strategyKey: string;
+  trainingMethod?: StrategyTraceTrainingMethod;
 };
 
 export type StrategyBranchOutcome =
@@ -105,6 +130,7 @@ export type StrategyTraceEvidence = {
   routeClass: string;
   sampleCount: number;
   side: StrategyTraceSide;
+  source: StrategyTraceSource;
   stageId: string;
   startWorldX: number | null;
   topEnemies: StrategyTraceEnemy[];
@@ -205,6 +231,16 @@ function findDeath(samples: StrategyTraceSample[], side: StrategyTraceSide): Str
   };
 }
 
+function defaultTraceSource(options: StrategyTraceEvidenceOptions): StrategyTraceSource {
+  if (options.source) return options.source;
+  return {
+    baselineId: options.failureId ?? "unspecified",
+    baselineSourceKind: options.failureId ? "known-failure" : "unknown",
+    trainingMethod: "trace-archive",
+    tasIsController: false
+  };
+}
+
 export function classifyBranchOutcome(evidence: Pick<StrategyTraceEvidence, "death" | "endWorldX" | "failureId" | "progressionWindow" | "sampleCount">): StrategyBranchOutcome {
   if (evidence.sampleCount <= 0) return "insufficient-evidence";
   if (evidence.death && evidence.failureId) return "route-class-failed-stop";
@@ -237,6 +273,7 @@ export function createStrategyTraceEvidence(
     routeClass: options.routeClass,
     sampleCount: windowSamples.length,
     side,
+    source: defaultTraceSource(options),
     stageId: options.stageId,
     startWorldX: worldXs.length > 0 ? worldXs[0] : null,
     topEnemies: topEnemies(windowSamples)
@@ -289,6 +326,12 @@ export function createSideTrainingTraceEvidence(
     romProfileId: options.romProfileId ?? "unknown-rom",
     routeClass: `training:${options.strategyKey}:${options.baselineId}`,
     side: options.side,
+    source: {
+      baselineId: options.baselineId,
+      baselineSourceKind: options.baselineSourceKind ?? "strategy-pack",
+      trainingMethod: options.trainingMethod ?? "auto-patch",
+      tasIsController: false
+    },
     stageId: options.stageId ?? "unknown-stage"
   });
 }

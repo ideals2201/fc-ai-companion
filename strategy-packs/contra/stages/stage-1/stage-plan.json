@@ -6,12 +6,16 @@
   "strategyPackVersion": "0.1.0",
   "stageName": "Jungle",
   "primaryMetric": "progression.primary",
-  "strategyKeys": [
+  "strategySlots": [
     "survival-v0",
     "speedrun-v0",
     "combat-v0",
     "loot-v0",
     "guard-v0"
+  ],
+  "strategyKeys": [
+    "survival-v0",
+    "speedrun-v0"
   ],
   "segments": [
     {

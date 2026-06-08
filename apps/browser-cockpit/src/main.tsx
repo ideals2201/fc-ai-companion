@@ -608,6 +608,7 @@ type Pilot = {
   status: string;
   mode: ControlMode;
   strategyKey: AiStrategyKey;
+  strategyResourcePackId: StrategyResourcePackId;
   strategy: string;
   temperament: string;
   buttons: ButtonState;
@@ -635,6 +636,8 @@ type StatItem = {
 
 type CombatMetricKey = "infantry" | "turret" | "flying" | "boss" | "unattributed";
 type WeaponMetricKey = "m" | "s" | "f" | "l" | "r" | "b";
+
+type ResourcePackStrategyOption = { key: AiStrategyKey; available: boolean };
 
 type PlayerMetrics = {
   kills: number;
@@ -828,9 +831,8 @@ const aiStrategyOptions: Array<{ key: AiStrategyKey; label: string; description:
   { key: "input-mirror", label: "调试输入镜像", description: "只作输入诊断" }
 ];
 
-const cockpitAiStrategyOptions = aiStrategyOptions.filter((option) =>
-  ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0", "personal-v0"].includes(option.key)
-);
+const standardStrategyCategoryKeys = ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"] as const satisfies readonly AiStrategyKey[];
+const currentPackStrategyKeys = ["survival-v0", "speedrun-v0"] as const satisfies readonly AiStrategyKey[];
 
 const tasBaselineStrategyMap: Partial<Record<TasStrategyBaseline, AiStrategyKey>> = {
   "survival-v0": "survival-v0",
@@ -966,6 +968,8 @@ const ACTIVE_STRATEGY_PACK = {
   archivePath: "strategy-packs/contra",
   sideScope: "shared",
   romProfileIds: ["contra-us-good", "contra-j-good"],
+  strategySlots: standardStrategyCategoryKeys,
+  strategyKeys: currentPackStrategyKeys,
   displayName: {
     "zh-CN": "魂斗罗第一关策略包 V0",
     "en-US": "Contra Stage 1 Strategy Pack V0"
@@ -995,6 +999,8 @@ const STRATEGY_RESOURCE_PACKS = [
     archivePath: "strategy-packs/contra/community-drafts/local",
     sideScope: "side-owned",
     romProfileIds: ["contra-us-good", "contra-j-good"],
+    strategySlots: ["personal-v0"],
+    strategyKeys: ["personal-v0"],
     displayName: {
       "zh-CN": "个人魂斗罗训练草稿",
       "en-US": "Personal Contra Training Draft"
@@ -1013,6 +1019,8 @@ const STRATEGY_RESOURCE_PACKS = [
   archivePath: string;
   sideScope: string;
   romProfileIds: readonly string[];
+  strategySlots: readonly AiStrategyKey[];
+  strategyKeys: readonly AiStrategyKey[];
   displayName: Record<UiLanguage, string>;
   strategyResults: Partial<Record<AiStrategyKey, StrategyResultRecord>>;
 }>;
@@ -1144,6 +1152,19 @@ function strategyResourcePackById(packId: StrategyResourcePackId) {
 function strategyResourcePackLabel(packId: StrategyResourcePackId, language: UiLanguage) {
   const pack = strategyResourcePackById(packId);
   return `${pack.displayName[language]} · ${pack.version}`;
+}
+
+function strategyOptionsForResourcePack(resourcePackId: StrategyResourcePackId): ResourcePackStrategyOption[] {
+  const pack = strategyResourcePackById(resourcePackId);
+  const availableKeys = new Set<AiStrategyKey>(pack.strategyKeys);
+  return pack.strategySlots.map((key) => ({ key, available: availableKeys.has(key) }));
+}
+
+function coerceStrategyForResourcePack(strategyKey: AiStrategyKey, resourcePackId: StrategyResourcePackId) {
+  const pack = strategyResourcePackById(resourcePackId);
+  const availableKeys: readonly AiStrategyKey[] = pack.strategyKeys;
+  if (availableKeys.includes(strategyKey)) return strategyKey;
+  return availableKeys[0] ?? pack.strategySlots[0] ?? "survival-v0";
 }
 
 function baselineAppliesToSide(option: SideTrainingBaselineOption, side: PlayerSide) {
@@ -6634,6 +6655,7 @@ function PilotPanel({
       : `${localizedControlModeLabel(pilot.mode, uiLanguage)} / ${pilot.status}`;
   const inputLocked = tasLocked || trainingLocked;
   const strategyControlsLocked = tasLocked || trainingLocked;
+  const strategyButtons = strategyOptionsForResourcePack(pilot.strategyResourcePackId);
   return (
     <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"} ${tasLocked ? "tas-locked" : ""} ${trainingLocked ? "training-locked" : ""}`}>
       <div className="controller-head">
@@ -6670,13 +6692,14 @@ function PilotPanel({
       <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiStrategy")}`}>
         <div className="strategy-button-title">{aiActive ? t(uiLanguage, "pilot.aiStrategy") : t(uiLanguage, "pilot.aiStrategyDisabled")}</div>
         <div className="strategy-button-grid">
-          {cockpitAiStrategyOptions.map((option) => {
+          {strategyButtons.map((option) => {
             const selected = aiActive && pilot.strategyKey === option.key;
+            const strategyUnavailable = !option.available;
             return (
               <button
                 aria-pressed={selected}
-                className={selected ? "strategy-button active" : "strategy-button"}
-                disabled={strategyControlsLocked}
+                className={selected ? "strategy-button active" : strategyUnavailable ? "strategy-button unavailable" : "strategy-button"}
+                disabled={strategyControlsLocked || strategyUnavailable}
                 key={option.key}
                 onClick={() => onStrategyChange(option.key)}
                 type="button"
@@ -9357,13 +9380,18 @@ function App() {
       appendLog(`Training ${side}: archive blocked because no trace samples are available`);
       return;
     }
+    const currentTasEntry = identifyTasForRom(romMetadata);
+    const selectedBaselineOptions = sideBaselineOptionsForSide(side, uiLanguage, strategyModels[side], strategyResourcePacksBySide[side], currentTasEntry);
+    const selectedBaselineOption = findTasSideBaselineOption(side, selectedSideBaselineIds[side], selectedBaselineOptions);
     const evidence = createSideTrainingTraceEvidence(samples, {
       baselineId: selectedSideBaselineIds[side],
+      baselineSourceKind: selectedBaselineOption?.sourceKind ?? "strategy-pack",
       gameProfileId: "contra",
       romProfileId: romMetadata?.romProfileId ?? "unknown-rom",
       side,
       stageId: "stage-1",
-      strategyKey: strategyModels[side]
+      strategyKey: strategyModels[side],
+      trainingMethod: selectedTrainingMethod
     });
     setSideTrainingTraceEvidence((current) => ({ ...current, [side]: evidence }));
     setStrategyPackageValidationReport(null);
@@ -9374,10 +9402,13 @@ function App() {
   }, [
     appendLog,
     exportStrategyTraceEvidence,
-    romMetadata?.romProfileId,
+    romMetadata,
     selectedSideBaselineIds,
+    selectedTrainingMethod,
     strategyModels,
-    traceSampleSnapshot
+    strategyResourcePacksBySide,
+    traceSampleSnapshot,
+    uiLanguage
   ]);
 
   const onTrainingSaveStrategy = useCallback(() => {
@@ -9462,9 +9493,26 @@ function App() {
   const changeStrategyResourcePack = useCallback((side: PlayerSide, packId: StrategyResourcePackId) => {
     if (side === "1P") {
       setStrategyResourcePacksBySide((current) => ({ ...current, "1P": packId, "2P": p2StrategyResourceOverridden ? current["2P"] : packId }));
+      setStrategyModels((current) => {
+        const next = {
+          ...current,
+          [side]: coerceStrategyForResourcePack(current[side], packId),
+          "2P": p2StrategyResourceOverridden ? current["2P"] : coerceStrategyForResourcePack(current["2P"], packId)
+        };
+        strategyModelsRef.current = next;
+        return next;
+      });
     } else {
       setP2StrategyResourceOverridden(packId !== strategyResourcePacksBySide["1P"]);
       setStrategyResourcePacksBySide((current) => ({ ...current, "2P": packId }));
+      setStrategyModels((current) => {
+        const next = {
+          ...current,
+          [side]: coerceStrategyForResourcePack(current[side], packId)
+        };
+        strategyModelsRef.current = next;
+        return next;
+      });
     }
     setValidationReplayComplete(false);
     setStrategyPackageValidationReport(null);
@@ -9473,11 +9521,20 @@ function App() {
 
   const sync2PResourceTo1P = useCallback(() => {
     setStrategyResourcePacksBySide((current) => ({ ...current, "2P": current["1P"] }));
+    setStrategyModels((current) => {
+      const packId = strategyResourcePacksBySide["1P"];
+      const next = {
+        ...current,
+        "2P": coerceStrategyForResourcePack(current["2P"], packId)
+      };
+      strategyModelsRef.current = next;
+      return next;
+    });
     setP2StrategyResourceOverridden(false);
     setValidationReplayComplete(false);
     setStrategyPackageValidationReport(null);
     appendLog("Training 2P: resource pack synced to 1P");
-  }, [appendLog]);
+  }, [appendLog, strategyResourcePacksBySide]);
 
   const changeStrategyExportName = useCallback((name: string) => {
     setStrategyExportName(name);
@@ -9999,6 +10056,7 @@ function App() {
       status: localizedPilotStatus("1P", status, controlModes["1P"], strategyModels["1P"], twoPlayerActive, uiLanguage),
       mode: controlModes["1P"],
       strategyKey: strategyModels["1P"],
+      strategyResourcePackId: strategyResourcePacksBySide["1P"],
       strategy: `${getAiStrategyLabel(strategyModels["1P"])} / ${modeStrategyLabels[controlModes["1P"]]}`,
       temperament: getPilotTemperament("1P", controlModes["1P"], strategyModels["1P"], twoPlayerActive),
       buttons: buttonStates["1P"],
@@ -10018,6 +10076,7 @@ function App() {
       status: localizedPilotStatus("2P", status, controlModes["2P"], strategyModels["2P"], twoPlayerActive, uiLanguage),
       mode: controlModes["2P"],
       strategyKey: strategyModels["2P"],
+      strategyResourcePackId: strategyResourcePacksBySide["2P"],
       strategy: `${getAiStrategyLabel(strategyModels["2P"])} / ${modeStrategyLabels[controlModes["2P"]]}`,
       temperament: getPilotTemperament("2P", controlModes["2P"], strategyModels["2P"], twoPlayerActive),
       buttons: buttonStates["2P"],

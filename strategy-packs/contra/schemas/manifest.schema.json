@@ -10,6 +10,7 @@
     "provenance",
     "gameProfileId",
     "romProfileIds",
+    "strategySlots",
     "strategyKeys",
     "supportedModes",
     "status",
@@ -87,6 +88,7 @@
     },
     "gameProfileId": { "type": "string", "minLength": 1 },
     "romProfileIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "strategySlots": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "strategyKeys": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "supportedModes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "status": {
