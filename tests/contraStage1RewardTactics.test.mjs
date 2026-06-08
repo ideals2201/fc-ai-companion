@@ -32,6 +32,7 @@ const {
   stageOneDangerLowLaneFallPatch,
   stageOneOpeningLowFixedThreatPatch,
   stageOneMandatorySpreadGatePatch,
+  stageOneMidFixedCloseBodyCoverPatch,
   stageOneMidFixedThreatRecoveryPatch,
   stageOneRedTurretLowThreatPatch,
   stageOneSpreadExitJumpPatch,
@@ -239,9 +240,39 @@ test("stage one mid fixed threat recovery stations under the Contra Japan WorldX
   assert.equal(patch?.b, true);
 });
 
+test("stage one mid fixed close body cover handles the Contra Japan speedrun WorldX 1381 death without retreating", () => {
+  const patch = stageOneMidFixedCloseBodyCoverPatch({
+    level: 0,
+    worldX: 1381,
+    playerX: 128,
+    playerY: 212,
+    enemies: [
+      { fixed: true, hp: 8, kind: "durable", routine: 0, threat: true, type: 4, x: 22, y: 160 },
+      { fixed: true, hp: 1, kind: "enemy", routine: 3, threat: true, type: 6, x: 28, y: 100 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 5, x: 137, y: 191 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 5, x: 146, y: 187 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 5, x: 157, y: 196 }
+    ]
+  }, true, 6280);
+
+  assert.equal(patch?.reason, "stage-one-mid-fixed-close-body-cover");
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.right, false);
+  assert.equal(patch?.down, false);
+  assert.equal(patch?.a, false);
+  assert.equal(patch?.b, true);
+  assert.equal(patch?.up, true);
+});
+
 test("mid fixed script applies the Contra Japan fixed-threat recovery patch", () => {
   assert.match(mainSource, /stageOneMidFixedThreatRecoveryPatch/, "runtime should import the recovery patch");
   assert.match(mainSource, /midFixedThreatRecoveryPatch/, "fixed-hp script should evaluate the recovery patch");
+});
+
+test("runtime applies the mid fixed close body cover before action locks", () => {
+  assert.match(mainSource, /stageOneMidFixedCloseBodyCoverPatch/, "runtime should import the close body cover patch");
+  assert.match(mainSource, /midFixedCloseBodyCoverPatch/, "runtime should evaluate the close body cover patch");
+  assert.match(mainSource, /Boolean\(midFixedCloseBodyCoverPatch\)/, "close body cover should bypass stale action locks");
 });
 
 test("stage one opening low fixed threat keeps TAS-style right advance without the Contra Japan combat jump death", () => {

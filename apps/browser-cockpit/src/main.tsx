@@ -63,6 +63,7 @@ import {
   stageOneCloseBodyThreatPatch,
   stageOneDangerLowLaneFallPatch,
   stageOneMandatorySpreadGatePatch,
+  stageOneMidFixedCloseBodyCoverPatch,
   stageOneMidFixedThreatRecoveryPatch,
   stageOneOpeningLowFixedThreatPatch,
   stageOneRedTurretLowThreatPatch,
@@ -5175,6 +5176,12 @@ function applyMidFixedHpPoint(
   }
 
   const horizon = buildStageOneHorizon(snapshot);
+  const midFixedCloseBodyCoverPatch = stageOneMidFixedCloseBodyCoverPatch(snapshot, grounded, frame);
+  if (midFixedCloseBodyCoverPatch) {
+    applyStageOneRewardTacticsPatch(next, midFixedCloseBodyCoverPatch);
+    return;
+  }
+
   const midFixedThreatRecoveryPatch = stageOneMidFixedThreatRecoveryPatch(snapshot, grounded, frame);
   if (midFixedThreatRecoveryPatch) {
     applyStageOneRewardTacticsPatch(next, midFixedThreatRecoveryPatch);
@@ -5474,6 +5481,10 @@ function finalizeTacticalButtons(
   loopExit: AiLoopExitState
 ) {
   const tacticalButtons = applyTacticalSafetyLayer(applyCombatTriggerLayer(next, snapshot), strategyKey, side, snapshot, grounded, frame);
+  const midFixedCloseBodyCoverPatch = stageOneMidFixedCloseBodyCoverPatch(snapshot, grounded, frame);
+  if (midFixedCloseBodyCoverPatch) {
+    applyStageOneRewardTacticsPatch(tacticalButtons, midFixedCloseBodyCoverPatch);
+  }
   applyStageOneHighTurretStrafe(tacticalButtons, snapshot);
   applyStageOneLateLowerRouteGuard(tacticalButtons, snapshot, frame);
   applyStageOneLatePitJump(tacticalButtons, snapshot, frame);
@@ -5510,6 +5521,10 @@ function finalizeStageOneScriptButtons(
   loopExit: AiLoopExitState
 ) {
   if (isStageOneCriticalScriptWindow(snapshot)) {
+    const midFixedCloseBodyCoverPatch = stageOneMidFixedCloseBodyCoverPatch(snapshot, grounded, frame);
+    if (midFixedCloseBodyCoverPatch) {
+      applyStageOneRewardTacticsPatch(next, midFixedCloseBodyCoverPatch);
+    }
     applyStageOneHighTurretStrafe(next, snapshot);
     applyStageOneLateLowerRouteGuard(next, snapshot, frame);
     applyStageOneLatePitJump(next, snapshot, frame);
@@ -5535,6 +5550,10 @@ function finalizeStageOneScriptButtons(
     snapshot,
     grounded
   );
+  const midFixedCloseBodyCoverPatch = stageOneMidFixedCloseBodyCoverPatch(snapshot, grounded, frame);
+  if (midFixedCloseBodyCoverPatch) {
+    applyStageOneRewardTacticsPatch(scriptedButtons, midFixedCloseBodyCoverPatch);
+  }
   applyStageOneHighTurretStrafe(scriptedButtons, snapshot);
   applyStageOneLateLowerRouteGuard(scriptedButtons, snapshot, frame);
   applyStageOneLatePitJump(scriptedButtons, snapshot, frame);
@@ -8853,11 +8872,15 @@ function App() {
       const spreadTurretSuppressionPatch = actorSnapshot
         ? stageOneSpreadTurretSuppressionPatchForSnapshot(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
         : null;
+      const midFixedCloseBodyCoverPatch = actorSnapshot
+        ? stageOneMidFixedCloseBodyCoverPatch(actorSnapshot, isGrounded(actorSnapshot, side), frameRef.current)
+        : null;
       const bypassActionLock = shouldBypassAiActionLockForBossWallPhase(actorSnapshot, bossWallPhaseState)
         || Boolean(openingLowFixedThreatPatch)
         || Boolean(bridgeLowFixedCrowdPatch)
         || Boolean(dangerLowLaneFallPatch)
-        || Boolean(spreadTurretSuppressionPatch);
+        || Boolean(spreadTurretSuppressionPatch)
+        || Boolean(midFixedCloseBodyCoverPatch);
       const previousLock = loopExitState.forcedAdvanceBias > 0.5 || bossWallPhaseState.phase !== "idle" || bypassActionLock
         ? createAiActionLockState()
         : aiActionLocksRef.current[side];

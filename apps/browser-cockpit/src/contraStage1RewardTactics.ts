@@ -48,6 +48,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-bridge-low-fixed-crowd"
     | "stage-one-danger-low-lane-fall"
     | "stage-one-mandatory-spread-gate"
+    | "stage-one-mid-fixed-close-body-cover"
     | "stage-one-mid-fixed-threat-high-station"
     | "stage-one-mid-fixed-threat-recovery"
     | "stage-one-opening-low-fixed-threat"
@@ -831,6 +832,51 @@ export function stageOneMidFixedThreatRecoveryPatch<T extends StageOneRewardThre
     reason: "stage-one-mid-fixed-threat-recovery",
     right: true,
     up: fixedThreat.y < snapshot.playerY - 18
+  };
+}
+
+export function stageOneMidFixedCloseBodyCoverPatch<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>,
+  grounded: boolean,
+  frame: number
+): StageOneRewardButtonPatch | null {
+  if (snapshot.level !== 0) return null;
+  if (!grounded) return null;
+  if (snapshot.worldX < 1368 || snapshot.worldX > 1404) return null;
+  if (snapshot.playerY < 196) return null;
+
+  const hasFixedPressure = snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.hp <= 0) return false;
+    if (!enemy.fixed && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -140 && dx <= 80 && dy >= -132 && dy <= 16;
+  });
+  if (!hasFixedPressure) return null;
+
+  const closeBodyThreat = snapshot.enemies
+    .filter((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 4 && dx <= 56 && dy >= -36 && dy <= 18;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+  if (!closeBodyThreat) return null;
+
+  return {
+    a: false,
+    b: frame % 6 < 5,
+    down: false,
+    left: false,
+    reason: "stage-one-mid-fixed-close-body-cover",
+    right: false,
+    up: closeBodyThreat.y < snapshot.playerY - 8
   };
 }
 
