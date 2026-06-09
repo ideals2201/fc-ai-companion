@@ -23,12 +23,14 @@ function parseArgs(argv) {
     dryRun: false,
     frames: 1800,
     probeInput: "none",
+    strategy: "speedrun-v0",
     twoPlayer: false
   };
   for (const arg of argv) {
     if (arg === "--dry-run") options.dryRun = true;
     else if (arg === "--two-player") options.twoPlayer = true;
     else if (arg === "--probe=right-b") options.probeInput = "right-b";
+    else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
       if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 6000);
@@ -120,6 +122,25 @@ function compactSnapshot(snapshot) {
   };
 }
 
+function compactRouteSegment(segment) {
+  if (!segment) {
+    return {
+      id: "none",
+      action: "fallback",
+      fire: "threat",
+      worldStart: null,
+      worldEnd: null
+    };
+  }
+  return {
+    id: segment.id,
+    action: segment.action,
+    fire: segment.fire,
+    worldStart: segment.worldStart,
+    worldEnd: segment.worldEnd
+  };
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const env = readDotEnv(path.resolve(repoRoot, ".env.local"));
@@ -130,6 +151,12 @@ async function main() {
     readHeadlessGameRamSnapshot,
     runtimeStartupButtons
   } = await importTypeScriptModule("apps/browser-cockpit/src/headlessRuntimeCore.ts");
+  const {
+    activeRouteSegmentForPlan,
+    defaultStrategyPlans,
+    planForStrategy
+  } = await importTypeScriptModule("apps/browser-cockpit/src/stageOneStrategyPlan.ts");
+  const strategyPlan = planForStrategy(options.strategy, defaultStrategyPlans);
 
   const baseReport = {
     schema: "fc-ai-headless-runtime-smoke-v1",
@@ -139,6 +166,11 @@ async function main() {
     },
     maxFrames: options.frames,
     probeInput: options.probeInput,
+    strategyKey: options.strategy,
+    strategyPlan: strategyPlan ? {
+      strategy: strategyPlan.strategy,
+      segmentCount: strategyPlan.segments.length
+    } : null,
     twoPlayerRequested: options.twoPlayer
   };
 
@@ -221,6 +253,7 @@ async function main() {
     frameCount: options.frames,
     activeFrame,
     lostActiveFrame,
+    routeSegment: compactRouteSegment(activeRouteSegmentForPlan(finalSnapshot, strategyPlan)),
     rom: {
       fileName: path.basename(romPath),
       ...hashRom(romBytes)
