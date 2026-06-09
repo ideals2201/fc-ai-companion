@@ -106,3 +106,79 @@ test("headless route-plan probe holds fire in boss-wall route segment", () => {
   assert.equal(buttons.right, false);
   assert.equal(buttons.down, true);
 });
+
+test("headless route-plan probe carries right while down-firing airborne close lower soldiers", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 878,
+    routeSegment: {
+      id: "start-survive",
+      action: "survive",
+      fire: "threat",
+      worldStart: 0,
+      worldEnd: 520
+    },
+    snapshot: snapshot({
+      jumpState: 1,
+      playerX: 128,
+      playerY: 80,
+      worldX: 176,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", threat: true, type: 0x05, x: 125, y: 100 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.right, true);
+});
+
+test("headless route-plan probe applies controlled advance after a survival stall", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 6000,
+    progressStallFrames: 1200,
+    routeSegment: {
+      id: "start-survive",
+      action: "survive",
+      fire: "threat",
+      worldStart: 0,
+      worldEnd: 520
+    },
+    snapshot: snapshot({
+      playerX: 128,
+      playerY: 164,
+      worldX: 271,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", threat: true, type: 0x01, x: 161, y: 174 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.right, true);
+});
+
+test("headless route-plan probe bails left from direct body overlap during survival", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 4626,
+    routeSegment: {
+      id: "start-survive",
+      action: "survive",
+      fire: "threat",
+      worldStart: 0,
+      worldEnd: 520
+    },
+    snapshot: snapshot({
+      playerX: 128,
+      playerY: 164,
+      worldX: 275,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", threat: true, type: 0x01, x: 134, y: 151 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+});

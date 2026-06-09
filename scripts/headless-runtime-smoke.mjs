@@ -34,7 +34,7 @@ function parseArgs(argv) {
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
-      if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 6000);
+      if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 20000);
     }
   }
   return options;
@@ -104,6 +104,53 @@ function applyButtonStateToNes(nes, controller, buttons) {
   }
 }
 
+function distanceToPlayer(entity, snapshot) {
+  const dx = entity.x - snapshot.playerX;
+  const dy = entity.y - snapshot.playerY;
+  return {
+    dx,
+    dy,
+    distanceToPlayer: Math.abs(dx) + Math.abs(dy)
+  };
+}
+
+function nearbyEnemies(snapshot) {
+  return snapshot.enemies
+    .map((enemy) => ({
+      slot: enemy.slot,
+      type: enemy.type,
+      hp: enemy.hp,
+      routine: enemy.routine,
+      kind: enemy.kind,
+      threat: enemy.threat,
+      fixed: enemy.fixed,
+      priority: enemy.priority,
+      x: enemy.x,
+      y: enemy.y,
+      vx: enemy.vx,
+      vy: enemy.vy,
+      ...distanceToPlayer(enemy, snapshot)
+    }))
+    .sort((a, b) => a.distanceToPlayer - b.distanceToPlayer)
+    .slice(0, 6);
+}
+
+function nearbyBullets(snapshot) {
+  return snapshot.bullets
+    .map((bullet) => ({
+      slot: bullet.slot,
+      owner: bullet.owner,
+      routine: bullet.routine,
+      bulletSlotCode: bullet.bulletSlotCode,
+      spriteCode: bullet.spriteCode,
+      x: bullet.x,
+      y: bullet.y,
+      ...distanceToPlayer(bullet, snapshot)
+    }))
+    .sort((a, b) => a.distanceToPlayer - b.distanceToPlayer)
+    .slice(0, 6);
+}
+
 function compactSnapshot(snapshot) {
   if (!snapshot) return null;
   return {
@@ -119,7 +166,9 @@ function compactSnapshot(snapshot) {
     weapon: snapshot.weapon,
     twoPlayerActive: snapshot.twoPlayerActive,
     enemyCount: snapshot.enemies.length,
-    bulletCount: snapshot.bullets.length
+    bulletCount: snapshot.bullets.length,
+    nearbyEnemies: nearbyEnemies(snapshot),
+    nearbyBullets: nearbyBullets(snapshot)
   };
 }
 
@@ -227,6 +276,9 @@ async function main() {
   let lostActiveSnapshot = null;
   let lostActiveButtons = createHeadlessButtonState();
   let lostActiveRouteSegment = null;
+  let preLostActiveSnapshot = null;
+  let preLostActiveButtons = createHeadlessButtonState();
+  let preLostActiveRouteSegment = null;
   let maxProgressSnapshot = null;
   let maxProgressRouteSegment = null;
 
@@ -235,6 +287,11 @@ async function main() {
     if (!maxProgressSnapshot) return true;
     if (snapshot.level !== maxProgressSnapshot.level) return snapshot.level > maxProgressSnapshot.level;
     return snapshot.worldX > maxProgressSnapshot.worldX;
+  }
+
+  function currentProgressStallFrames(snapshot) {
+    if (!snapshot || !maxProgressSnapshot) return 0;
+    return Math.max(0, snapshot.frame - maxProgressSnapshot.frame);
   }
 
   for (let frame = 0; frame < options.frames; frame += 1) {
@@ -247,8 +304,9 @@ async function main() {
       Boolean(beforeSnapshot?.twoPlayerActive)
     );
     const routeSegment = activeRouteSegmentForPlan(beforeSnapshot, strategyPlan);
+    const progressStallFrames = currentProgressStallFrames(beforeSnapshot);
     const buttons = active && options.probeInput === "route-plan"
-      ? decideHeadlessRoutePlanProbeButtons({ frame, routeSegment, snapshot: beforeSnapshot })
+      ? decideHeadlessRoutePlanProbeButtons({ frame, progressStallFrames, routeSegment, snapshot: beforeSnapshot })
       : active && options.probeInput !== "none"
         ? probeButtons(options.probeInput, createHeadlessButtonState)
         : startupButtons;
@@ -272,6 +330,9 @@ async function main() {
     }
     if (activeFrame !== null && lostActiveFrame === null && !afterActive) {
       lostActiveFrame = frame + 1;
+      preLostActiveSnapshot = lastActiveSnapshot;
+      preLostActiveButtons = lastActiveButtons;
+      preLostActiveRouteSegment = lastActiveRouteSegment;
       lostActiveSnapshot = finalSnapshot;
       lostActiveButtons = buttons;
       lostActiveRouteSegment = routeSegment;
@@ -279,14 +340,32 @@ async function main() {
   }
 
   const active = isHeadlessGameplayActive(finalSnapshot, options.frames);
-  const status = active ? "active" : activeFrame !== null ? "lost-active" : "not-active";
+  const stallThresholdFrames = 900;
+  const maxProgressStallFrames = active && finalSnapshot && maxProgressSnapshot
+    ? Math.max(0, finalSnapshot.frame - maxProgressSnapshot.frame)
+    : 0;
+  const progressStallFrames = maxProgressStallFrames;
+  const status = lostActiveFrame !== null
+    ? active ? "recovered-after-loss" : "lost-active"
+    : active
+      ? progressStallFrames >= stallThresholdFrames ? "stalled-active" : "active"
+      : activeFrame !== null ? "lost-active" : "not-active";
   console.log(JSON.stringify({
     ...baseReport,
     status,
-    reason: status === "active" ? "gameplay-detected" : status === "lost-active" ? "gameplay-lost" : "max-frames",
+    reason: status === "active"
+      ? "gameplay-detected"
+      : status === "recovered-after-loss"
+        ? "gameplay-loss-recovered"
+      : status === "stalled-active"
+        ? "progress-stalled"
+        : status === "lost-active" ? "gameplay-lost" : "max-frames",
     frameCount: options.frames,
     activeFrame,
     lostActiveFrame,
+    progressStallFrames,
+    maxProgressStallFrames,
+    stallThresholdFrames,
     routeSegment: compactRouteSegment(activeRouteSegmentForPlan(finalSnapshot, strategyPlan)),
     rom: {
       fileName: path.basename(romPath),
@@ -300,6 +379,9 @@ async function main() {
     lostActiveButtons,
     lostActiveRouteSegment: compactRouteSegment(lostActiveRouteSegment),
     lostActiveSnapshot: compactSnapshot(lostActiveSnapshot),
+    preLostActiveButtons,
+    preLostActiveRouteSegment: compactRouteSegment(preLostActiveRouteSegment),
+    preLostActiveSnapshot: compactSnapshot(preLostActiveSnapshot),
     maxProgressRouteSegment: compactRouteSegment(maxProgressRouteSegment),
     maxProgressSnapshot: compactSnapshot(maxProgressSnapshot)
   }, null, 2));

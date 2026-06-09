@@ -135,3 +135,114 @@ rg --files -g "*.nes" -g "*.fds" -g "*.zip" -g "*.7z" -g "*.rar"
    - 导出 schema-bound package evidence；
    - 增加 ValidationReport gate；
    - 继续把 Contra Stage 1 稳健生存策略推进到真实 no-death 或明确低死亡验证。
+
+### 操作训练资料调研
+
+调研结论：
+
+- 操作训练不应只做神经网络训练，也不应只背 TAS。更合理的工程路径是：
+  `人类/TAS/AI 跑局输入记录 -> RAM 结构化状态 -> TraceEvidence -> Baseline/Fragment -> Runtime Validation -> StrategyPack promotion`。
+- Gym Retro / Stable Retro 的设计与我们的方向一致：每个游戏需要定义 starting state、reward function、done condition、RAM variables、ROM hash、movie/replay。我们的 GameProfile、ROMProfile、Condition Registry、StrategyFragment 和 ValidationReport 可以继续沿这个方向发展。
+- Replay/TAS 文件适合作为“示范输入”和“训练基准”，但不能直接等同于生产 AI 控制器；这与我们当前 TAS evidence-only 原则一致。
+- DQfD 的可借鉴点不是立即上深度网络，而是“示范数据 + 自主跑局 + 优先回放”的分层思想。我们可以先实现本地版：失败片段优先进入修正队列，成功片段进入候选 baseline。
+- OpenAI Retro 资料明确提醒：只按分数奖励可能导致 reward farming 和无限循环。我们的训练奖励必须把生存、推进、固定目标、奖励拾取、禁止死循环作为复合目标，而不能只奖励杀敌或分数。
+- FCEUX movie/savestate 工作流证明，frame advance、savestate、movie input 是精确策略片段制作的成熟方法。我们当前 headless smoke 应继续补 `preLostActiveSnapshot`、nearby threat samples、失败窗口记录，形成类似“可回放的实验片段”。
+
+落地工作项：
+
+1. `STRATEGY_TRAINING_STANDARD.md` 后续补充“示范输入 -> baseline -> fragment -> validation”的训练数据流。
+2. `STRATEGY_PROTOCOL_CORE.md` 后续明确 starting state、reward、done、RAM variable、ROM hash 是每个游戏 profile 的必填能力。
+3. Headless smoke 输出继续增强：死亡前一帧、死亡帧、最大进度帧、周边敌人/子弹、按钮状态。
+4. 稳健生存策略优先修“死亡/卡住”而不是追求杀敌数；杀敌、奖励、速度作为策略分支目标，不压过 Safety Override。
+
+### Headless survival 首死修正
+
+问题：
+
+- `survival-v0` 在 headless route-plan probe 中开局死亡。
+- 旧证据显示死亡点：
+  - `lostActiveFrame: 878`
+  - `worldX: 176`
+  - `playerX: 128`
+  - `playerY: 80`
+  - 近身敌人：`dx=-3, dy=20`
+  - 按键：只来得及 `down+B`，没有脱离位移。
+
+修正：
+
+- `headlessRoutePlanProbe` 增加空中下方近身敌人的脱离逻辑：
+  - 下方近身威胁触发 `down+B`；
+  - 同时允许 `right`，避免原地等待子弹命中导致身体碰撞。
+- `scripts/headless-runtime-smoke.mjs` 增加：
+  - `preLostActiveSnapshot`
+  - `preLostActiveButtons`
+  - `nearbyEnemies`
+  - `nearbyBullets`
+  - `distanceToPlayer`
+
+验证：
+
+```powershell
+node --test tests\headlessRuntimeSmokeScript.test.mjs tests\headlessRoutePlanProbe.test.mjs
+npm run smoke:headless-runtime -- --frames=3000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+targeted tests: pass 8 / fail 0
+survival-v0 status: active
+activeFrame: 612
+lostActiveFrame: null
+maxProgressSnapshot.worldX: 271
+```
+
+判断：
+
+- 开局 `WorldX 176` 首死已解除。
+- 当前策略仍不是通关策略；只是把第一个死亡阻塞后移。
+- 下一步要用更长帧数或分段窗口找 `survival-v0` 的下一处死亡/卡住点。
+
+### Headless survival 长跑证据与 WorldX 288 阻塞
+
+新增能力：
+
+- `scripts/headless-runtime-smoke.mjs` 将 headless 最大验证帧数提高到 `20000`，用于捕捉长跑死亡、恢复、卡住，而不是只看短窗口。
+- smoke 报告新增 `maxProgressStallFrames`，按“距离最后一次刷新最大进度的帧数”计算，避免 AI 在相邻 WorldX 抖动时被误判为正常运行。
+- `headlessRoutePlanProbe` 增加直接身体重叠的 Safety Override：
+  - 当敌人与玩家身体区域直接重叠时，先左撤；
+  - 空中下方近身敌人继续允许 `right + down + B`，避免 WorldX 176 首死。
+
+验证：
+
+```powershell
+node --test tests\headlessRuntimeSmokeScript.test.mjs tests\headlessRoutePlanProbe.test.mjs
+npm run smoke:headless-runtime -- --frames=20000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+targeted tests: pass 10 / fail 0
+survival-v0 status: lost-active
+activeFrame: 612
+lostActiveFrame: 18232
+preLostActiveSnapshot.worldX: 288
+preLostActiveButtons: right + A + B
+maxProgressSnapshot.worldX: 706
+```
+
+判断：
+
+- `WorldX 176` 首死已修正。
+- `WorldX 275` 贴身身体碰撞已经有测试覆盖。
+- `WorldX 288` 仍是第一个 no-death 阻塞点；三种微操实验均不可靠：
+  - 扩大左撤范围：避免死亡但形成长时间回退/卡住；
+  - `down + right + B`：仍会死亡；
+  - `up + right + B`：死亡更早。
+- 结论：`WorldX 288` 不能继续靠通用 Danger Detector 猜单帧按键，应升级为关卡动作表中的固定点战术片段，至少包含：
+  - 进入窗口前的站位；
+  - 固定目标优先级；
+  - 禁止无条件跳跃；
+  - 通过/清敌/撤退的超时条件；
+  - 失败时直接生成 TraceEvidence，不允许静默循环。
