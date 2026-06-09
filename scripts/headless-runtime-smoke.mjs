@@ -22,17 +22,28 @@ function parseArgs(argv) {
   const options = {
     dryRun: false,
     frames: 1800,
+    probeInput: "none",
     twoPlayer: false
   };
   for (const arg of argv) {
     if (arg === "--dry-run") options.dryRun = true;
     else if (arg === "--two-player") options.twoPlayer = true;
+    else if (arg === "--probe=right-b") options.probeInput = "right-b";
     else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
       if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 6000);
     }
   }
   return options;
+}
+
+function probeButtons(input, createHeadlessButtonState) {
+  const buttons = createHeadlessButtonState();
+  if (input === "right-b") {
+    buttons.right = true;
+    buttons.b = true;
+  }
+  return buttons;
 }
 
 function readDotEnv(filePath) {
@@ -127,6 +138,7 @@ async function main() {
       tasIsController: false
     },
     maxFrames: options.frames,
+    probeInput: options.probeInput,
     twoPlayerRequested: options.twoPlayer
   };
 
@@ -170,35 +182,45 @@ async function main() {
   nes.loadROM(romBytes);
 
   let activeFrame = null;
+  let lostActiveFrame = null;
   let finalSnapshot = null;
   let finalButtons = createHeadlessButtonState();
 
   for (let frame = 0; frame < options.frames; frame += 1) {
     const beforeSnapshot = readHeadlessGameRamSnapshot(nes, frame);
     const active = isHeadlessGameplayActive(beforeSnapshot, frame);
-    const buttons = runtimeStartupButtons(
+    const startupButtons = runtimeStartupButtons(
       beforeSnapshot,
       frame,
       options.twoPlayer,
       Boolean(beforeSnapshot?.twoPlayerActive)
     );
+    const buttons = active && options.probeInput !== "none"
+      ? probeButtons(options.probeInput, createHeadlessButtonState)
+      : startupButtons;
     applyButtonStateToNes(nes, 1, buttons);
     applyButtonStateToNes(nes, 2, createHeadlessButtonState());
     nes.frame();
     finalButtons = buttons;
     finalSnapshot = readHeadlessGameRamSnapshot(nes, frame + 1);
-    if (activeFrame === null && isHeadlessGameplayActive(finalSnapshot, frame + 1)) {
+    const afterActive = isHeadlessGameplayActive(finalSnapshot, frame + 1);
+    if (activeFrame === null && afterActive) {
       activeFrame = frame + 1;
+    }
+    if (activeFrame !== null && lostActiveFrame === null && !afterActive) {
+      lostActiveFrame = frame + 1;
     }
   }
 
   const active = isHeadlessGameplayActive(finalSnapshot, options.frames);
+  const status = active ? "active" : activeFrame !== null ? "lost-active" : "not-active";
   console.log(JSON.stringify({
     ...baseReport,
-    status: active || activeFrame !== null ? "active" : "not-active",
-    reason: active || activeFrame !== null ? "gameplay-detected" : "max-frames",
+    status,
+    reason: status === "active" ? "gameplay-detected" : status === "lost-active" ? "gameplay-lost" : "max-frames",
     frameCount: options.frames,
     activeFrame,
+    lostActiveFrame,
     rom: {
       fileName: path.basename(romPath),
       ...hashRom(romBytes)

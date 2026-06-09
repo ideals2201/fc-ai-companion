@@ -15,3 +15,9 @@ test("headless runtime smoke report keeps TAS as evidence-only, not controller",
   assert.match(scriptSource, /tasIsController:\s*false/);
   assert.match(scriptSource, /runtimeStartupButtons/);
 });
+
+test("headless runtime smoke can optionally probe direct controller writes", () => {
+  assert.match(scriptSource, /--probe=right-b/);
+  assert.match(scriptSource, /probeInput/);
+  assert.match(scriptSource, /lost-active/);
+});
