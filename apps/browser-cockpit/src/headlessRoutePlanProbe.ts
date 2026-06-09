@@ -1,3 +1,7 @@
+import {
+  stageOneOpeningLowFixedThreatPatch,
+  type StageOneRewardButtonPatch
+} from "./contraStage1RewardTactics";
 import type { StageRouteSegment } from "./stageOneStrategyPlan";
 
 type HeadlessButtonName = "up" | "down" | "left" | "right" | "a" | "b" | "start" | "select";
@@ -7,6 +11,7 @@ type RoutePlanProbeEnemy = {
   fixed: boolean;
   hp: number;
   kind: string;
+  routine?: number;
   threat: boolean;
   type: number;
   x: number;
@@ -85,12 +90,110 @@ function hasAirborneLowerEscapeThreat(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
-function hasDirectBodyOverlapThreat(snapshot: RoutePlanProbeSnapshot) {
-  return snapshot.enemies.some((enemy) => {
+function findDirectBodyOverlapThreat(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.enemies
+    .filter((enemy) => {
     if (isIgnoredEnemy(enemy)) return false;
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -8 && dx <= 14 && dy >= -24 && dy <= 12;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function applyDirectBodyOverlapEscape(buttons: HeadlessButtonState, snapshot: RoutePlanProbeSnapshot, enemy: RoutePlanProbeEnemy) {
+  const dx = enemy.x - snapshot.playerX;
+  buttons.left = dx >= 0;
+  buttons.right = dx < 0;
+}
+
+function applyStageOneRewardPatch(buttons: HeadlessButtonState, patch: StageOneRewardButtonPatch) {
+  if (typeof patch.up === "boolean") buttons.up = patch.up;
+  if (typeof patch.down === "boolean") buttons.down = patch.down;
+  if (typeof patch.left === "boolean") buttons.left = patch.left;
+  if (typeof patch.right === "boolean") buttons.right = patch.right;
+  if (typeof patch.a === "boolean") buttons.a = patch.a;
+  if (typeof patch.b === "boolean") buttons.b = patch.b;
+}
+
+function stageOneOpeningLowFixedThreatProbePatch(
+  snapshot: RoutePlanProbeSnapshot,
+  frame: number
+) {
+  return stageOneOpeningLowFixedThreatPatch({
+    ...snapshot,
+    enemies: snapshot.enemies.map((enemy) => ({
+      ...enemy,
+      routine: enemy.routine ?? 0
+    }))
+  }, isGrounded(snapshot), frame);
+}
+
+function hasEarlyBridgeLowLaneContactWindow(
+  routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
+  snapshot: RoutePlanProbeSnapshot
+) {
+  if (routeSegment?.id !== "bridge-survive") return false;
+  if (snapshot.worldX < 560 || snapshot.worldX > 610) return false;
+  if (snapshot.playerY < 184) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -18 && dx <= 36 && dy >= -40 && dy <= -16;
+  });
+}
+
+function hasEarlyBridgeLowFixedAdvanceWindow(
+  routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
+  snapshot: RoutePlanProbeSnapshot
+) {
+  if (routeSegment?.id !== "bridge-survive") return false;
+  if (snapshot.worldX < 580 || snapshot.worldX > 610) return false;
+  if (snapshot.playerY < 196) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.type !== 6 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 28 && dx <= 76 && dy >= -36 && dy <= 12;
+  });
+}
+
+function hasEarlyBridgeLowFixedBodyWindow(
+  routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
+  snapshot: RoutePlanProbeSnapshot
+) {
+  if (routeSegment?.id !== "bridge-survive") return false;
+  if (snapshot.worldX < 612 || snapshot.worldX > 638) return false;
+  if (snapshot.playerY < 176 || snapshot.playerY > 212) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.type !== 6 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 12 && dx <= 28 && dy >= -8 && dy <= 24;
+  });
+}
+
+function hasEarlyBridgePassedFixedEscapeWindow(
+  routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
+  snapshot: RoutePlanProbeSnapshot
+) {
+  if (routeSegment?.id !== "bridge-survive") return false;
+  if (snapshot.worldX < 636 || snapshot.worldX > 665) return false;
+  if (snapshot.playerY < 136 || snapshot.playerY > 190) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.type !== 6 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -18 && dx <= 8 && dy >= 16 && dy <= 64;
   });
 }
 
@@ -145,8 +248,35 @@ export function decideHeadlessRoutePlanProbeButtons({
   const action = routeSegment?.action ?? "advance";
   const closeThreat = hasCloseThreat(snapshot);
   const airborneLowerEscapeThreat = hasAirborneLowerEscapeThreat(snapshot);
-  const directBodyOverlapThreat = hasDirectBodyOverlapThreat(snapshot);
+  const directBodyOverlapThreat = findDirectBodyOverlapThreat(snapshot);
   const controlledAdvanceBias = progressStallFrames >= 900;
+  const openingLowFixedThreatPatch = stageOneOpeningLowFixedThreatProbePatch(snapshot, frame);
+  if (openingLowFixedThreatPatch) {
+    applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
+    return buttons;
+  }
+  if (hasEarlyBridgeLowFixedAdvanceWindow(routeSegment, snapshot)) {
+    buttons.right = true;
+    buttons.b = true;
+    return buttons;
+  }
+  if (hasEarlyBridgeLowFixedBodyWindow(routeSegment, snapshot)) {
+    buttons.down = true;
+    buttons.right = true;
+    buttons.b = true;
+    return buttons;
+  }
+  if (hasEarlyBridgePassedFixedEscapeWindow(routeSegment, snapshot)) {
+    buttons.down = true;
+    buttons.right = true;
+    buttons.b = true;
+    return buttons;
+  }
+  if (hasEarlyBridgeLowLaneContactWindow(routeSegment, snapshot)) {
+    buttons.right = true;
+    buttons.b = true;
+    return buttons;
+  }
 
   if (action === "hold-fire") {
     buttons.b = true;
@@ -157,7 +287,7 @@ export function decideHeadlessRoutePlanProbeButtons({
 
   if (action === "survive" || action === "guard") {
     if (directBodyOverlapThreat) {
-      buttons.left = true;
+      applyDirectBodyOverlapEscape(buttons, snapshot, directBodyOverlapThreat);
       applyRouteFire(buttons, routeSegment, snapshot, frame);
       applyRouteJump(buttons, routeSegment, snapshot, frame);
       return buttons;
@@ -172,7 +302,7 @@ export function decideHeadlessRoutePlanProbeButtons({
 
   if (action === "cautious") {
     if (directBodyOverlapThreat) {
-      buttons.left = true;
+      applyDirectBodyOverlapEscape(buttons, snapshot, directBodyOverlapThreat);
       applyRouteFire(buttons, routeSegment, snapshot, frame);
       applyRouteJump(buttons, routeSegment, snapshot, frame);
       return buttons;

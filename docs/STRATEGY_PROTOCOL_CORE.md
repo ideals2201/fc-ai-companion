@@ -154,6 +154,8 @@ GameProfile 描述一个游戏如何接入通用协议。
   "entityTaxonomy": "entity-taxonomy.json",
   "actionMapping": "action-map.json",
   "strategyTypes": "strategy-types.json",
+  "startingStates": "starting-states.json",
+  "trainingScenarios": "training-scenarios.json",
   "rngSensitivity": "unknown",
   "rngControlStrategy": "none",
   "runtimePriority": []
@@ -167,10 +169,24 @@ GameProfile 必须说明：
 - 哪些抽象状态变量可以被策略片段引用。
 - 哪些实体类型属于威胁、奖励、目标或无关对象。
 - 语义动作如何映射为最终控制输入。
+- 训练或验证可以从哪些起始状态开始。
+- 每个可验证场景的进度变量、奖励式评分、失败条件和终止条件。
 - 哪些 RAM 或状态字段仍未验证。
 - RNG 是否可读取或只能记录未知状态。
 - `rngSensitivity`：该游戏对 RNG 的依赖程度。
 - `rngControlStrategy`：是否允许通过等待、暂停或空操作影响随机数。
+
+`startingStates` 和 `trainingScenarios` 是为了避免把“开机菜单、开场动画、第一可操作帧、失败回放入口”混在同一个策略片段里。策略片段只能描述 Active Phase 的操作意图；Init Phase、菜单选择、TAS entry point、SaveState 回滚和验证起点必须由 GameProfile 或训练场景声明。
+
+`trainingScenarios` 至少应描述：
+
+- observation variables：运行时读取哪些结构化状态。
+- progress metrics：如何判断正在推进。
+- reward-like scoring：如何给训练或比较打分。
+- terminal conditions：何时判定 clear、death、game over、desync、frame cap 或 stuck loop。
+- validation gates：哪些证据可以让候选片段升级。
+
+这些定义是游戏专用的。核心协议只规定格式和责任边界，不规定魂斗罗、赤色要塞或其他游戏的具体地址和数值。
 
 ### 3.2 ROMProfile
 

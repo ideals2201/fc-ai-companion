@@ -23,6 +23,8 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /--probe=right-b/);
   assert.match(scriptSource, /--probe=route-plan/);
   assert.match(scriptSource, /headlessRoutePlanProbe\.ts/);
+  assert.match(scriptSource, /transpileLocalTypeScriptModule/);
+  assert.match(scriptSource, /\$\{specifier\}\.ts/);
   assert.match(scriptSource, /probeInput/);
   assert.match(scriptSource, /routeSegment/);
   assert.match(scriptSource, /maxProgressSnapshot/);
@@ -37,6 +39,16 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /recovered-after-loss/);
   assert.match(scriptSource, /nearbyEnemies/);
   assert.match(scriptSource, /nearbyBullets/);
+  assert.match(scriptSource, /jumpState/);
   assert.match(scriptSource, /distanceToPlayer/);
   assert.match(scriptSource, /lost-active/);
+});
+
+test("headless runtime smoke can emit a compact trace window for failure analysis", () => {
+  assert.match(scriptSource, /--trace-start=/);
+  assert.match(scriptSource, /--trace-end=/);
+  assert.match(scriptSource, /traceWindow/);
+  assert.match(scriptSource, /compactTraceFrame/);
+  assert.match(scriptSource, /beforeSnapshot/);
+  assert.match(scriptSource, /afterSnapshot/);
 });

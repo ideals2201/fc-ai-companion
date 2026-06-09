@@ -24,6 +24,8 @@ function parseArgs(argv) {
     frames: 1800,
     probeInput: "none",
     strategy: "speedrun-v0",
+    traceEnd: null,
+    traceStart: null,
     twoPlayer: false
   };
   for (const arg of argv) {
@@ -32,10 +34,22 @@ function parseArgs(argv) {
     else if (arg === "--probe=right-b") options.probeInput = "right-b";
     else if (arg === "--probe=route-plan") options.probeInput = "route-plan";
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
+    else if (arg.startsWith("--trace-start=")) {
+      const value = Number.parseInt(arg.slice("--trace-start=".length), 10);
+      if (Number.isFinite(value) && value >= 0) options.traceStart = value;
+    } else if (arg.startsWith("--trace-end=")) {
+      const value = Number.parseInt(arg.slice("--trace-end=".length), 10);
+      if (Number.isFinite(value) && value >= 0) options.traceEnd = value;
+    }
     else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
       if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 20000);
     }
+  }
+  if (options.traceStart !== null && options.traceEnd !== null && options.traceEnd < options.traceStart) {
+    const previousStart = options.traceStart;
+    options.traceStart = options.traceEnd;
+    options.traceEnd = previousStart;
   }
   return options;
 }
@@ -64,7 +78,7 @@ function readDotEnv(filePath) {
   return result;
 }
 
-async function importTypeScriptModule(relativePath) {
+function transpileLocalTypeScriptModule(relativePath) {
   const sourcePath = path.resolve(repoRoot, relativePath);
   const source = fs.readFileSync(sourcePath, "utf8");
   const transpiled = ts.transpileModule(source, {
@@ -73,8 +87,15 @@ async function importTypeScriptModule(relativePath) {
       target: ts.ScriptTarget.ES2022
     }
   });
-  const dataUrl = `data:text/javascript;base64,${Buffer.from(transpiled.outputText).toString("base64")}`;
-  return import(dataUrl);
+  const outputText = transpiled.outputText.replace(/from "\.\/([^"]+)"/g, (_match, specifier) => {
+    const dependencyPath = path.join(path.dirname(relativePath), `${specifier}.ts`).replace(/\\/g, "/");
+    return `from "${transpileLocalTypeScriptModule(dependencyPath)}"`;
+  });
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
+}
+
+async function importTypeScriptModule(relativePath) {
+  return import(transpileLocalTypeScriptModule(relativePath));
 }
 
 function selectedRomPath(env) {
@@ -161,6 +182,7 @@ function compactSnapshot(snapshot) {
     worldX: snapshot.worldX,
     playerX: snapshot.playerX,
     playerY: snapshot.playerY,
+    jumpState: snapshot.jumpState,
     p1State: snapshot.p1State,
     deathFlag: snapshot.deathFlag,
     weapon: snapshot.weapon,
@@ -188,6 +210,37 @@ function compactRouteSegment(segment) {
     fire: segment.fire,
     worldStart: segment.worldStart,
     worldEnd: segment.worldEnd
+  };
+}
+
+function buttonSummary(buttons) {
+  return buttonOrder.filter((button) => buttons[button]);
+}
+
+function shouldTraceFrame(options, frame) {
+  if (options.traceStart === null || options.traceEnd === null) return false;
+  return frame >= options.traceStart && frame <= options.traceEnd;
+}
+
+function compactTraceFrame({
+  active,
+  afterActive,
+  afterSnapshot,
+  beforeSnapshot,
+  buttons,
+  frame,
+  progressStallFrames,
+  routeSegment
+}) {
+  return {
+    frame,
+    active,
+    afterActive,
+    progressStallFrames,
+    routeSegment: compactRouteSegment(routeSegment),
+    buttons: buttonSummary(buttons),
+    beforeSnapshot: compactSnapshot(beforeSnapshot),
+    afterSnapshot: compactSnapshot(afterSnapshot)
   };
 }
 
@@ -281,6 +334,7 @@ async function main() {
   let preLostActiveRouteSegment = null;
   let maxProgressSnapshot = null;
   let maxProgressRouteSegment = null;
+  const traceFrames = [];
 
   function shouldReplaceMaxProgress(snapshot) {
     if (!snapshot) return false;
@@ -316,6 +370,18 @@ async function main() {
     finalButtons = buttons;
     finalSnapshot = readHeadlessGameRamSnapshot(nes, frame + 1);
     const afterActive = isHeadlessGameplayActive(finalSnapshot, frame + 1);
+    if (shouldTraceFrame(options, frame)) {
+      traceFrames.push(compactTraceFrame({
+        active,
+        afterActive,
+        afterSnapshot: finalSnapshot,
+        beforeSnapshot,
+        buttons,
+        frame,
+        progressStallFrames,
+        routeSegment
+      }));
+    }
     if (activeFrame === null && afterActive) {
       activeFrame = frame + 1;
     }
@@ -383,7 +449,15 @@ async function main() {
     preLostActiveRouteSegment: compactRouteSegment(preLostActiveRouteSegment),
     preLostActiveSnapshot: compactSnapshot(preLostActiveSnapshot),
     maxProgressRouteSegment: compactRouteSegment(maxProgressRouteSegment),
-    maxProgressSnapshot: compactSnapshot(maxProgressSnapshot)
+    maxProgressSnapshot: compactSnapshot(maxProgressSnapshot),
+    traceWindow: options.traceStart !== null && options.traceEnd !== null
+      ? {
+          startFrame: options.traceStart,
+          endFrame: options.traceEnd,
+          sampleCount: traceFrames.length,
+          frames: traceFrames
+        }
+      : null
   }, null, 2));
 }
 

@@ -32,6 +32,16 @@ Allowed training sources:
 - Local automated patch suggestion.
 - AI-augmented analysis suggestion.
 
+Training sources are inputs, not approvals. A TAS movie, human run, or AI run can create a baseline or candidate, but it cannot promote a StrategyFragment by itself.
+
+The standard data flow is:
+
+```text
+training source -> observation/action trace -> baseline -> candidate StrategyFragment -> validation replay -> StrategyPack promotion
+```
+
+This mirrors mature retro-game training practice: replay files provide exact input demonstrations, RAM variables provide compact state observations, and scenario rules define progress, reward-like scoring, and terminal conditions. The project must keep these as separate layers so a good-looking replay cannot bypass runtime validation.
+
 Every source must record:
 
 - game profile
@@ -42,6 +52,59 @@ Every source must record:
 - source type
 - trace window or frame window
 - evidence quality
+
+Source-specific requirements:
+
+- Human demonstration: record controller input, structured RAM state, active side, and whether the run was manual, mixed, or assisted.
+- AI run: record selected StrategyPack, strategy key, active fragments, Safety Override decisions, loop-exit state, and failure window.
+- TAS-derived base: record movie file identity, ROM checksum, emulator timing metadata, movie framecount, input row index, player side split, and entry point.
+- Known failure: record the pre-failure window, failure frame, post-failure state, nearby entities, input summary, and the fragment or baseline being tested.
+- Automated or AI-augmented suggestion: record the source evidence ids and keep the suggestion in candidate status until validation replay passes.
+
+## 2.1 Demonstration Learning Model
+
+The project uses demonstration learning as an engineering workflow, not as a blind neural-network mandate.
+
+Recommended progression:
+
+1. Capture an expert trace from human play, TAS, or a validated strategy.
+2. Convert it into `ObservationActionTrace`: structured RAM observation plus semantic input per frame or compact window.
+3. Extract stable windows into baselines, such as bridge jump timing, fixed-threat clearing, reward pickup, boss entry, or teammate spacing.
+4. Let AI run from the candidate baseline.
+5. Archive failure windows where the AI reaches states missing from the demonstration.
+6. Patch only the failing window, then validate again.
+
+This is the project equivalent of DAgger-style dataset aggregation: do not expect one demonstration to cover all states. The AI must run, fail, collect those off-route states, and receive targeted correction.
+
+## 2.2 Reward And Terminal Design
+
+Training scenarios must avoid single-metric reward traps.
+
+Bad reward design:
+
+- score only
+- kills only
+- rightward movement only
+- reward pickup only
+
+Required validation goals must combine:
+
+- survival / no death loops
+- stage progression
+- required blocker or fixed-target handling
+- loop exit
+- strategy-specific objective, such as speed, combat, loot, or guard
+- terminal condition, such as clear, death, game over, desync, frame cap, or stuck loop
+
+For strategy-specific scoring:
+
+- `survival`: death prevention and stable progression outrank speed, kills, and loot.
+- `speedrun`: progress speed matters, but Safety Override and required blockers still outrank raw movement.
+- `combat`: enemy and fixed-target clearing are measured, but no-death and no-loop gates still apply.
+- `loot`: rewards and weapons are measured, but pickup routes cannot override immediate survival.
+- `guard`: teammate survival, spacing, and screen ownership are measured alongside personal survival.
+
+Every game Strategy Pack should define these variables in its own `training-scenarios.json` or equivalent package file. The core training standard does not hardcode game-specific variables.
 
 ## 3. Training Workflow Buttons
 

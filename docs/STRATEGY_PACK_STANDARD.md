@@ -153,6 +153,28 @@ TAS-derived or training artifacts may live outside the package root, but `manife
 
 `training-scenarios.json` is recommended for any pack that claims validation. It should define goal variables, reward-like scoring, terminal conditions, and failure conditions for each validated stage or scene.
 
+Training artifacts indexed by the package should be separated by role:
+
+- `files.rawTAS`: raw external TAS or movie files copied into the local research archive. These are reference inputs only.
+- `files.tasTrainingBases`: extracted TAS-derived baselines, side splits, entry points, and frame windows.
+- `files.humanDemonstrations`: human demonstration traces that can become baselines.
+- `files.aiRuns`: AI run traces, including failed runs.
+- `files.knownFailures`: failure-window evidence used to block or refine fragments.
+- `files.validationReports`: replay or runtime validation reports used for promotion.
+
+The package must never present raw TAS, raw human demonstration, or raw AI input as a validated playable StrategyFragment. They are source material. Promotion requires a schema-valid candidate fragment plus validation evidence.
+
+Validation scenarios must include enough information to detect reward traps and dead loops:
+
+- progress metric
+- survival or death condition
+- stuck-loop condition
+- desync condition, when applicable
+- required blocker or fixed-target condition, when applicable
+- strategy-specific score fields, such as kills, fixed-target destruction, rewards, clear time, teammate survival, or route completion
+
+If a Strategy Pack claims to support training or validation but does not include `training-scenarios.json`, the UI must mark its validation scenario as `missing` or `unconfigured`.
+
 When exporting side-owned packages, the package should also index side artifacts in `manifest.json`:
 
 ```json
