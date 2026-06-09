@@ -30,6 +30,7 @@ function parseArgs(argv) {
     if (arg === "--dry-run") options.dryRun = true;
     else if (arg === "--two-player") options.twoPlayer = true;
     else if (arg === "--probe=right-b") options.probeInput = "right-b";
+    else if (arg === "--probe=route-plan") options.probeInput = "route-plan";
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
@@ -156,6 +157,9 @@ async function main() {
     defaultStrategyPlans,
     planForStrategy
   } = await importTypeScriptModule("apps/browser-cockpit/src/stageOneStrategyPlan.ts");
+  const {
+    decideHeadlessRoutePlanProbeButtons
+  } = await importTypeScriptModule("apps/browser-cockpit/src/headlessRoutePlanProbe.ts");
   const strategyPlan = planForStrategy(options.strategy, defaultStrategyPlans);
 
   const baseReport = {
@@ -217,6 +221,21 @@ async function main() {
   let lostActiveFrame = null;
   let finalSnapshot = null;
   let finalButtons = createHeadlessButtonState();
+  let lastActiveSnapshot = null;
+  let lastActiveButtons = createHeadlessButtonState();
+  let lastActiveRouteSegment = null;
+  let lostActiveSnapshot = null;
+  let lostActiveButtons = createHeadlessButtonState();
+  let lostActiveRouteSegment = null;
+  let maxProgressSnapshot = null;
+  let maxProgressRouteSegment = null;
+
+  function shouldReplaceMaxProgress(snapshot) {
+    if (!snapshot) return false;
+    if (!maxProgressSnapshot) return true;
+    if (snapshot.level !== maxProgressSnapshot.level) return snapshot.level > maxProgressSnapshot.level;
+    return snapshot.worldX > maxProgressSnapshot.worldX;
+  }
 
   for (let frame = 0; frame < options.frames; frame += 1) {
     const beforeSnapshot = readHeadlessGameRamSnapshot(nes, frame);
@@ -227,9 +246,12 @@ async function main() {
       options.twoPlayer,
       Boolean(beforeSnapshot?.twoPlayerActive)
     );
-    const buttons = active && options.probeInput !== "none"
-      ? probeButtons(options.probeInput, createHeadlessButtonState)
-      : startupButtons;
+    const routeSegment = activeRouteSegmentForPlan(beforeSnapshot, strategyPlan);
+    const buttons = active && options.probeInput === "route-plan"
+      ? decideHeadlessRoutePlanProbeButtons({ frame, routeSegment, snapshot: beforeSnapshot })
+      : active && options.probeInput !== "none"
+        ? probeButtons(options.probeInput, createHeadlessButtonState)
+        : startupButtons;
     applyButtonStateToNes(nes, 1, buttons);
     applyButtonStateToNes(nes, 2, createHeadlessButtonState());
     nes.frame();
@@ -239,8 +261,20 @@ async function main() {
     if (activeFrame === null && afterActive) {
       activeFrame = frame + 1;
     }
+    if (afterActive) {
+      lastActiveSnapshot = finalSnapshot;
+      lastActiveButtons = buttons;
+      lastActiveRouteSegment = activeRouteSegmentForPlan(finalSnapshot, strategyPlan);
+      if (shouldReplaceMaxProgress(finalSnapshot)) {
+        maxProgressSnapshot = finalSnapshot;
+        maxProgressRouteSegment = lastActiveRouteSegment;
+      }
+    }
     if (activeFrame !== null && lostActiveFrame === null && !afterActive) {
       lostActiveFrame = frame + 1;
+      lostActiveSnapshot = finalSnapshot;
+      lostActiveButtons = buttons;
+      lostActiveRouteSegment = routeSegment;
     }
   }
 
@@ -259,7 +293,15 @@ async function main() {
       ...hashRom(romBytes)
     },
     finalButtons,
-    finalSnapshot: compactSnapshot(finalSnapshot)
+    finalSnapshot: compactSnapshot(finalSnapshot),
+    lastActiveButtons,
+    lastActiveRouteSegment: compactRouteSegment(lastActiveRouteSegment),
+    lastActiveSnapshot: compactSnapshot(lastActiveSnapshot),
+    lostActiveButtons,
+    lostActiveRouteSegment: compactRouteSegment(lostActiveRouteSegment),
+    lostActiveSnapshot: compactSnapshot(lostActiveSnapshot),
+    maxProgressRouteSegment: compactRouteSegment(maxProgressRouteSegment),
+    maxProgressSnapshot: compactSnapshot(maxProgressSnapshot)
   }, null, 2));
 }
 

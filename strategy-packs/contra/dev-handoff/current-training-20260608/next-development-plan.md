@@ -4,7 +4,7 @@ This package is for continuing Contra Stage 1 strategy development from the curr
 
 ## Start Here
 
-1. Read `CLI_HANDOFF.md`.
+1. Read `docs/21_WORK_LOG.md`.
 2. Read `docs/20_STANDARDIZED_OPERATION_MANUAL.md`.
 3. Read `strategy-packs/contra/dev-handoff/current-training-20260608/handoff-manifest.json`.
 4. Read `data/training/contra/runtime_runs/contra-j-good/README.md`.

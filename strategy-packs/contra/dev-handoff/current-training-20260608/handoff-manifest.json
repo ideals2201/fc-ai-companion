@@ -236,8 +236,8 @@
   ],
   "developerEntryPoints": [
     {
-      "path": "CLI_HANDOFF.md",
-      "purpose": "Session identity, project rules, active objective, and immediate task order."
+      "path": "docs/21_WORK_LOG.md",
+      "purpose": "Current project work log, project rules, active objective, evidence status, and immediate task order."
     },
     {
       "path": "docs/20_STANDARDIZED_OPERATION_MANUAL.md",

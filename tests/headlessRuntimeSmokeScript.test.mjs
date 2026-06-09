@@ -20,7 +20,12 @@ test("headless runtime smoke report keeps TAS as evidence-only, not controller",
 test("headless runtime smoke can optionally probe direct controller writes", () => {
   assert.match(scriptSource, /--strategy=/);
   assert.match(scriptSource, /--probe=right-b/);
+  assert.match(scriptSource, /--probe=route-plan/);
+  assert.match(scriptSource, /headlessRoutePlanProbe\.ts/);
   assert.match(scriptSource, /probeInput/);
   assert.match(scriptSource, /routeSegment/);
+  assert.match(scriptSource, /maxProgressSnapshot/);
+  assert.match(scriptSource, /lastActiveSnapshot/);
+  assert.match(scriptSource, /lostActiveSnapshot/);
   assert.match(scriptSource, /lost-active/);
 });
