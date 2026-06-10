@@ -1947,6 +1947,96 @@ test("headless route-plan probe can isolate W1456 air-route hold-right formation
   assert.equal(runtimeDescentButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1735 danger stack right carry after W1456 route formation", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const preLostSnapshot = snapshot({
+    jumpState: 81,
+    playerX: 113,
+    playerY: 173,
+    worldX: 1736,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 117, y: 186 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 125, y: 196 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousW1456OnlyButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1456-air-route-hold-right",
+    frame: 11977,
+    routeSegment,
+    snapshot: preLostSnapshot
+  });
+
+  assert.equal(previousW1456OnlyButtons.left, true, "the previous W1456-only chain still retreats into contact here");
+  assert.equal(previousW1456OnlyButtons.right, false);
+
+  const inheritedDangerStackButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1735-danger-stack-right-carry",
+    frame: 11977,
+    routeSegment,
+    snapshot: preLostSnapshot
+  });
+
+  assert.equal(inheritedDangerStackButtons.left, false);
+  assert.equal(inheritedDangerStackButtons.right, true);
+  assert.equal(inheritedDangerStackButtons.down, true);
+  assert.equal(inheritedDangerStackButtons.up, false);
+  assert.equal(inheritedDangerStackButtons.a, false);
+  assert.equal(inheritedDangerStackButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1735 same-lane contact right carry", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const sameLaneSnapshot = snapshot({
+    jumpState: 81,
+    playerX: 117,
+    playerY: 173,
+    worldX: 1740,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 117, y: 186 },
+      { fixed: false, hp: 0, kind: "enemy", routine: 6, threat: true, type: 0x05, x: 126, y: 196 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousStackButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1735-danger-stack-right-carry",
+    frame: 11977,
+    routeSegment,
+    snapshot: sameLaneSnapshot
+  });
+
+  assert.equal(previousStackButtons.left, true, "the wider stack inheritance still misses the same-lane dy=13 contact");
+  assert.equal(previousStackButtons.right, false);
+
+  const sameLaneButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1735-same-lane-right-carry",
+    frame: 11977,
+    routeSegment,
+    snapshot: sameLaneSnapshot
+  });
+
+  assert.equal(sameLaneButtons.left, false);
+  assert.equal(sameLaneButtons.right, true);
+  assert.equal(sameLaneButtons.down, true);
+  assert.equal(sameLaneButtons.up, false);
+  assert.equal(sameLaneButtons.a, false);
+  assert.equal(sameLaneButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

@@ -61,6 +61,8 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1454-airborne-fixed-contact-right-carry"
     | "w1454-airborne-fixed-contact-pulse-carry"
     | "w1456-air-route-hold-right"
+    | "w1735-danger-stack-right-carry"
+    | "w1735-same-lane-right-carry"
     | "w1726-danger-low-side-body"
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
@@ -398,6 +400,29 @@ function hasW1726DangerLowSideBodyThreat(snapshot: RoutePlanProbeSnapshot) {
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -6 && dx <= 12 && dy >= 16 && dy <= 52;
+  });
+}
+
+function hasW1735SameLaneContactRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1736 || snapshot.worldX > 1752) return false;
+  if (snapshot.playerY < 150 || snapshot.playerY > 180) return false;
+
+  const hasFixedTargetAhead = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 8 && dx <= 30 && dy >= -60 && dy <= -20;
+  });
+  if (!hasFixedTargetAhead) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -4 && dx <= 6 && dy >= 8 && dy <= 18;
   });
 }
 
@@ -846,6 +871,8 @@ export function decideHeadlessRoutePlanProbeButtons({
   }
   if (
     candidateTrial === "w1456-air-route-hold-right"
+    || candidateTrial === "w1735-danger-stack-right-carry"
+    || candidateTrial === "w1735-same-lane-right-carry"
   ) {
     const routeFormationThreat = findW1456AirRouteFormationThreat(snapshot);
     if (routeFormationThreat) {
@@ -880,6 +907,8 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1735-danger-stack-right-carry"
+      || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
       || candidateTrial === "w1440-descent-lower-body-right-carry"
       || candidateTrial === "w1726-danger-low-side-body"
@@ -910,6 +939,8 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1735-danger-stack-right-carry"
+      || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
       || candidateTrial === "w1440-descent-lower-body-right-carry"
@@ -939,8 +970,25 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
+    candidateTrial === "w1735-same-lane-right-carry"
+    && hasW1735SameLaneContactRightCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-same-lane-contact-right-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
     (
       candidateTrial === "w1726-danger-low-side-body"
+      || candidateTrial === "w1735-danger-stack-right-carry"
+      || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"

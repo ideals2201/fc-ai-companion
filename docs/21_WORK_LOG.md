@@ -348,6 +348,87 @@ Target W1735 danger-survive body-contact window:
   test a candidate that clears or avoids the body stack without losing rightward route control.
 ```
 
+### W1735 late contact fixes rejected
+
+Scope:
+
+- Continue from the rejected `w1456-air-route-hold-right` candidate.
+- Test whether the W1735 death can be avoided by inheriting the existing low-side body right-carry behavior or by adding a same-lane right-carry override.
+- Keep both candidates isolated behind `--candidate-trial`; do not change live `survival-v0`.
+
+Candidates:
+
+```text
+w1735-danger-stack-right-carry
+w1735-same-lane-right-carry
+```
+
+Trace evidence:
+
+```text
+11940 W1751 X128 Y151 J49 buttons=up+left+B fixed slot11 dx=8 dy=-23
+11949 W1742 X119 Y139 J81 buttons=down+left slot13 dx=-5, slot12 dx=34, slot6 dx=34
+11952 W1739 X116 Y138 J81 buttons=right+B
+11958-W11967 alternates left/right around W1744-W1745
+11977 W1736/W1740 X113/X117 Y173 J81 buttons=down+left+B, same-lane slot12 at dx 0..4 dy 13
+11978 deathFlag=1
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-danger-stack-right-carry
+```
+
+```text
+status=lost-active
+lostActiveFrame=11978
+maxProgression=1751
+finalProgression=1761
+lastActive buttons=down+left+B
+lost W1739 playerX=116 playerY=176 slot12 dx=-1 dy=10
+```
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-same-lane-right-carry
+```
+
+```text
+status=lost-active
+lostActiveFrame=11978
+maxProgression=1751
+finalProgression=1721
+lastActive buttons=down+right+B
+lost W1743 playerX=120 playerY=176 slot12 dx=-5 dy=10
+```
+
+Decision:
+
+- Both candidates are rejected.
+- `w1735-danger-stack-right-carry` proves that simply inheriting W1726 low-side body handling is too narrow; the same-lane dy=13 contact bypasses it.
+- `w1735-same-lane-right-carry` proves that even the correct final-frame direction is too late. It changes the final active input to `down+right+B`, but collision remains on the same active frame.
+- The rejected attempts are archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+```
+
+Next inference:
+
+```text
+Do not add more same-frame W1735 contact fixes.
+The next candidate must move earlier:
+  either prevent the W1751-W1740 left retreat from forming,
+  or clear/avoid slot12 before it reaches dx -4..6 / dy 8..18.
+```
+
 ### 取消一次性交接文档
 
 删除：

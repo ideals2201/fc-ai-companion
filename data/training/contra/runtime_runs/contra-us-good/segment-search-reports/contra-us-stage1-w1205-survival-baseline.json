@@ -983,6 +983,78 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate moved the route-formation fix earlier to W1444-W1464 by suppressing airborne left pull around the fixed-target and slot5 convergence. Runtime eliminated the previous W9414/W1445 first death and moved the first loss to frame 11978/W1735 in the danger-survive segment. It is still rejected because the run dies, but the useful lesson is validated: route formation must preserve rightward air control before the lower-body contact forms. Next target is the W1735 danger-survive body-contact window."
+    },
+    {
+      "attemptId": "w1735-danger-stack-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1735-danger-stack-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1761,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 635,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "danger-survive-body-contact-risk",
+        "late-contact-fix-too-late"
+      ],
+      "score": -8615,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-danger-stack-right-carry",
+        "candidateTrial": "w1735-danger-stack-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1761,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1456 route formation and W1726 low-side body right carry. Runtime still died at frame 11978 around W1739/W1740 with slot12 same-lane contact. It moved the final post-death position slightly right but did not prevent the collision, so it is rejected. Lesson: W1735 needs an earlier same-lane contact prevention, not only low-stack inheritance."
+    },
+    {
+      "attemptId": "w1735-same-lane-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1735-same-lane-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1721,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 595,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-lane-body-contact-risk",
+        "same-frame-fix-too-late"
+      ],
+      "score": -8655,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-same-lane-right-carry",
+        "candidateTrial": "w1735-same-lane-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1721,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a narrow W1736-W1752 same-lane contact right-carry override for the W1735 failure. Runtime changed the final active input to down+right+B and moved the collision to W1743/X120, but still died on the same active frame. It is rejected. Lesson: the contact window is already formed by W11977; next work must move earlier than the last active frame and prevent slot12 from reaching the body lane."
     }
   ],
   "bestAttempt": null,
@@ -1940,6 +2012,78 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate moved the route-formation fix earlier to W1444-W1464 by suppressing airborne left pull around the fixed-target and slot5 convergence. Runtime eliminated the previous W9414/W1445 first death and moved the first loss to frame 11978/W1735 in the danger-survive segment. It is still rejected because the run dies, but the useful lesson is validated: route formation must preserve rightward air control before the lower-body contact forms. Next target is the W1735 danger-survive body-contact window."
+    },
+    {
+      "attemptId": "w1735-danger-stack-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1735-danger-stack-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1761,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 635,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "danger-survive-body-contact-risk",
+        "late-contact-fix-too-late"
+      ],
+      "score": -8615,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-danger-stack-right-carry",
+        "candidateTrial": "w1735-danger-stack-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1761,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1456 route formation and W1726 low-side body right carry. Runtime still died at frame 11978 around W1739/W1740 with slot12 same-lane contact. It moved the final post-death position slightly right but did not prevent the collision, so it is rejected. Lesson: W1735 needs an earlier same-lane contact prevention, not only low-stack inheritance."
+    },
+    {
+      "attemptId": "w1735-same-lane-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1735-same-lane-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1721,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 595,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-lane-body-contact-risk",
+        "same-frame-fix-too-late"
+      ],
+      "score": -8655,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1735-same-lane-right-carry",
+        "candidateTrial": "w1735-same-lane-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1721,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a narrow W1736-W1752 same-lane contact right-carry override for the W1735 failure. Runtime changed the final active input to down+right+B and moved the collision to W1743/X120, but still died on the same active frame. It is rejected. Lesson: the contact window is already formed by W11977; next work must move earlier than the last active frame and prevent slot12 from reaching the body lane."
     }
   ],
   "promotionGates": [
