@@ -654,6 +654,24 @@ test("W1686 left-edge local guard attempts are archived after repeated death reg
   assert.ok(duckHold.trialNote.includes("no further local W1686 if-patches"));
 });
 
+test("W1721 airborne upper preclear attempt is archived as manual single-point regression", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1721-airborne-upper-preclear-right-fire-candidate-trial");
+
+  assert.ok(attempt, "W1721 airborne upper preclear candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death", "progress-regression"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1721-airborne-upper-preclear-right-fire");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12673);
+  assert.equal(attempt.maxProgression, 1821);
+  assert.ok(attempt.riskTags.includes("manual-single-point-search-inefficient"));
+  assert.ok(attempt.trialNote.includes("automated segment search"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

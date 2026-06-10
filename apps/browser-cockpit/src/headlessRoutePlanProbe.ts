@@ -70,6 +70,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1686-left-edge-close-body-right-guard"
     | "w1686-left-edge-overhead-duck-guard"
     | "w1686-left-edge-duck-hold-guard"
+    | "w1721-airborne-upper-preclear-right-fire"
     | "w1735-danger-stack-right-carry"
     | "w1735-same-lane-right-carry"
     | "w1726-danger-low-side-body"
@@ -593,6 +594,21 @@ function hasW1686LeftEdgeDuckHoldGuard(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1721AirborneUpperPreclearThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1686 || snapshot.worldX > 1724) return false;
+  if (snapshot.playerX < 24 || snapshot.playerX > 72) return false;
+  if (snapshot.playerY < 136 || snapshot.playerY > 174) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredThreatForSnapshot(snapshot, enemy)) return false;
+    if (enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 5 && enemy.kind !== "enemy") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0 && dx <= 16 && dy >= -34 && dy <= -4;
+  });
+}
+
 function findW1765RearSameLaneContact(snapshot: RoutePlanProbeSnapshot) {
   if (snapshot.worldX < 1758 || snapshot.worldX > 1768) return null;
   if (snapshot.playerY < 170 || snapshot.playerY > 204) return null;
@@ -1086,6 +1102,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1686-left-edge-close-body-right-guard"
     || candidateTrial === "w1686-left-edge-overhead-duck-guard"
     || candidateTrial === "w1686-left-edge-duck-hold-guard"
+    || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
     || candidateTrial === "w1735-danger-stack-right-carry"
     || candidateTrial === "w1735-same-lane-right-carry"
   ) {
@@ -1131,6 +1148,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1686-left-edge-close-body-right-guard"
       || candidateTrial === "w1686-left-edge-overhead-duck-guard"
       || candidateTrial === "w1686-left-edge-duck-hold-guard"
+      || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
@@ -1172,6 +1190,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1686-left-edge-close-body-right-guard"
       || candidateTrial === "w1686-left-edge-overhead-duck-guard"
       || candidateTrial === "w1686-left-edge-duck-hold-guard"
+      || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
@@ -1212,6 +1231,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1686-left-edge-close-body-right-guard"
     || candidateTrial === "w1686-left-edge-overhead-duck-guard"
     || candidateTrial === "w1686-left-edge-duck-hold-guard"
+    || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
   ) {
     const precontactBody = findW1751PrecontactForwardBody(snapshot);
     if (precontactBody) {
@@ -1237,6 +1257,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1686-left-edge-close-body-right-guard"
     || candidateTrial === "w1686-left-edge-overhead-duck-guard"
     || candidateTrial === "w1686-left-edge-duck-hold-guard"
+    || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
   ) {
     const descentBody = findW1755DescentRightFireBody(snapshot);
     if (descentBody) {
@@ -1290,6 +1311,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1686-left-edge-close-body-right-guard"
     || candidateTrial === "w1686-left-edge-overhead-duck-guard"
     || candidateTrial === "w1686-left-edge-duck-hold-guard"
+    || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
   ) {
     const reentryBody = findW1765ReentryForwardBody(snapshot);
     if (reentryBody) {
@@ -1310,6 +1332,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1686-left-edge-close-body-right-guard"
     || candidateTrial === "w1686-left-edge-overhead-duck-guard"
     || candidateTrial === "w1686-left-edge-duck-hold-guard"
+    || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
   ) {
     const reentryExtensionBody = findW1769ReentryRightCarryBody(snapshot);
     if (reentryExtensionBody) {
@@ -1359,10 +1382,26 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
+    candidateTrial === "w1721-airborne-upper-preclear-right-fire"
+    && hasW1721AirborneUpperPreclearThreat(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-w1721-airborne-upper-preclear-right-fire",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (
     (
       candidateTrial === "w1686-left-edge-close-body-right-guard"
       || candidateTrial === "w1686-left-edge-overhead-duck-guard"
       || candidateTrial === "w1686-left-edge-duck-hold-guard"
+      || candidateTrial === "w1721-airborne-upper-preclear-right-fire"
     )
     && hasW1686LeftEdgeCloseBodyRightGuard(snapshot)
   ) {

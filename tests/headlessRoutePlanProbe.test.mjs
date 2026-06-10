@@ -2489,6 +2489,50 @@ test("headless route-plan probe can isolate W1686 left-edge duck hold guard", ()
   assert.equal(duckHoldButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1721 airborne upper preclear right fire", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const airborneUpperThreatSnapshot = snapshot({
+    jumpState: 209,
+    playerX: 60,
+    playerY: 160,
+    worldX: 1721,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 70, y: 132, vx: -1, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 131, y: 128, vx: -2, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const defaultButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12660,
+    routeSegment,
+    snapshot: airborneUpperThreatSnapshot
+  });
+
+  assert.equal(defaultButtons.left, true, "the default close-body rule retreats left in the airborne upper-preclear window");
+  assert.equal(defaultButtons.right, false);
+
+  const preclearButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1721-airborne-upper-preclear-right-fire",
+    frame: 12660,
+    routeSegment,
+    snapshot: airborneUpperThreatSnapshot
+  });
+
+  assert.equal(preclearButtons.left, false);
+  assert.equal(preclearButtons.right, true);
+  assert.equal(preclearButtons.up, true);
+  assert.equal(preclearButtons.down, false);
+  assert.equal(preclearButtons.a, false);
+  assert.equal(preclearButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

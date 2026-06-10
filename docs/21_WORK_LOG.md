@@ -4207,6 +4207,70 @@ npm run build: pass
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - W1721 airborne upper preclear rejected, manual search method flagged
+
+Scope:
+
+- Continue after the W1686 local guard attempts failed.
+- Test one upstream hypothesis from the root-cause trace: prevent the airborne W1721 upper-left retreat by forcing up-right fire.
+- Keep behavior behind `--candidate-trial`; do not promote into live `survival-v0`.
+
+Candidate:
+
+```text
+w1721-airborne-upper-preclear-right-fire
+```
+
+TDD:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+- RED: default close-body behavior in the W1721 airborne upper threat window returns `left=true`.
+- GREEN: candidate returns `right=true`, `up=true`, `b=true`, `left=false`.
+
+Runtime:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1721-airborne-upper-preclear-right-fire
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=12673
+maxProgression=1821
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure evidence:
+
+```text
+preLost frame 12672 W1721 X60 Y140 slot4 dx=-2 dy=-8 buttons=up+left+B
+lost    frame 12673 W1720 X59 Y139 slot4 dx=-2 dy=-7 deathFlag=1
+```
+
+Decision:
+
+- `w1721-airborne-upper-preclear-right-fire` is rejected.
+- It regresses below the W1686 duck-hold candidate (W1942) and below the previous best partial W1765 reentry candidate (W1960).
+- More importantly, it confirms the user's concern: manual single-window button patches are now too slow and too brittle.
+- Next method must shift to automated segment candidate search and stateful StrategyFragment generation:
+  - generate a candidate matrix for WorldX windows;
+  - run headless replay automatically;
+  - rank by no-death first, then max progression, stall frames, fixed-target pressure, and recovery quality;
+  - archive all candidate outcomes.
+
+Archive:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 ## 2026-06-10 - Contra US survival W1686 local guard attempts rejected
 
 Scope:

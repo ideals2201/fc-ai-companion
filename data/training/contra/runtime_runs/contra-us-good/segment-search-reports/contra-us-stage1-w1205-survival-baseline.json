@@ -2418,6 +2418,44 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate extended the W1686 duck until the same-lane soldier settled, raising max progression to W1942. It still dies at frame 12853/W1719 after a later up-left close-body retreat lets slot14 reach dx=5 dy=-17. This is the third local W1686 button-shaping failure, so no further local W1686 if-patches should be attempted before changing the upstream route or pre-clear plan."
+    },
+    {
+      "attemptId": "w1721-airborne-upper-preclear-right-fire-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1721-airborne-upper-preclear-right-fire",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1821,
+      "progressGain": 701,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death",
+        "progress-regression"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "airborne-upper-preclear-regression",
+        "left-side-contact-risk",
+        "manual-single-point-search-inefficient"
+      ],
+      "score": -9600,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1721-airborne-upper-preclear-right-fire",
+        "candidateTrial": "w1721-airborne-upper-preclear-right-fire",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 12673,
+        "maxProgression": 1821,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate moved the W1686 investigation upstream by replacing the airborne W1721 upper-left retreat with up-right fire. It regressed badly: first death occurs at frame 12673/W1720 with slot4 at dx=-2 dy=-7 while inputs are up-left+B after the route has already destabilized. It is rejected and used as evidence that single-point manual button overrides are no longer efficient; the next step should be automated segment search or a stateful route-line/pre-clear plan, not another hand-authored local if-patch."
     }
   ],
   "promotionGates": [
