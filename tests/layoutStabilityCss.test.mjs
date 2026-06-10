@@ -63,6 +63,19 @@ test("primary cockpit windows keep stable outer dimensions", () => {
   assertDeclaration(debugFloor, "grid-template-rows", /^270px$/);
 });
 
+test("TV fullscreen targets only the screen frame, not the control shell", () => {
+  const fullScreenFrame = ruleFor(".screen-frame:fullscreen");
+  assertDeclaration(fullScreenFrame, "width", /^100vw$/);
+  assertDeclaration(fullScreenFrame, "height", /^100vh$/);
+  assertDeclaration(fullScreenFrame, "max-width", /^none$/);
+
+  const fullScreenPicture = ruleFor(".screen-frame:fullscreen .screen-picture");
+  assertDeclaration(fullScreenPicture, "width", /^min\(100vw, calc\(100vh \* 256 \/ 240\)\)$/);
+  assertDeclaration(fullScreenPicture, "height", /^min\(100vh, calc\(100vw \* 240 \/ 256\)\)$/);
+
+  assert.equal(css.includes(".tv-shell:fullscreen"), false, "TV shell should not enter fullscreen with controls");
+});
+
 test("training controls extend downward without turning the panel into a scroll area", () => {
   const sidePackIdentity = ruleFor(".side-training-pack-identity");
   assertDeclaration(sidePackIdentity, "place-items", /^center$/);

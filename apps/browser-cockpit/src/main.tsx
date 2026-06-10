@@ -6825,6 +6825,7 @@ function PilotPanel({
 
 function TelevisionView({
   tvRef,
+  screenFrameRef,
   canvasRef,
   status,
   audioStatus,
@@ -6841,6 +6842,7 @@ function TelevisionView({
   onToggleFullscreen
 }: {
   tvRef: React.RefObject<HTMLDivElement | null>;
+  screenFrameRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   status: RuntimeStatus;
   audioStatus: AudioStatus;
@@ -6883,7 +6885,7 @@ function TelevisionView({
             <span>{ramSnapshot ? `Screen ${ramSnapshot.screen} / WorldX ${ramSnapshot.worldX}` : t(uiLanguage, "tv.screenWaiting")}</span>
           </div>
         </div>
-        <div className="screen-frame">
+        <div className="screen-frame" ref={screenFrameRef}>
           <div className="screen-picture" style={{ filter: visualFilter(visualSettings) }}>
             <canvas ref={canvasRef} className="nes-canvas" width={256} height={240} />
           </div>
@@ -8091,6 +8093,7 @@ function StrategyDesignerPanel({
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const tvRef = useRef<HTMLDivElement | null>(null);
+  const screenFrameRef = useRef<HTMLDivElement | null>(null);
   const nesRef = useRef<NES | null>(null);
   const audioRef = useRef<AudioRuntime | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -8775,7 +8778,7 @@ function App() {
   }, []);
 
   const toggleTvFullscreen = useCallback(() => {
-    const target = tvRef.current;
+    const target = screenFrameRef.current;
     if (!target) return;
     if (document.fullscreenElement) {
       void document.exitFullscreen().catch((error) => {
@@ -10082,7 +10085,7 @@ function App() {
 
   useEffect(() => {
     const onFullscreenChange = () => {
-      setIsTvFullscreen(document.fullscreenElement === tvRef.current);
+      setIsTvFullscreen(document.fullscreenElement === screenFrameRef.current);
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () => {
@@ -10356,6 +10359,7 @@ function App() {
             onVisualChange={changeVisualSetting}
             onVolumeChange={changeVolume}
             ramSnapshot={ramSnapshot}
+            screenFrameRef={screenFrameRef}
             status={status}
             tvRef={tvRef}
             uiLanguage={uiLanguage}

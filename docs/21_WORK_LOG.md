@@ -4245,6 +4245,48 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - TV fullscreen target isolated to the game screen
+
+Scope:
+
+- Fix the center TV fullscreen behavior so volume, brightness, contrast, and color controls do not enter fullscreen with the game picture.
+- Preserve the NES 256:240 aspect ratio in fullscreen.
+
+Root cause:
+
+```text
+The fullscreen request targeted `.tv-shell`.
+That shell contains the TV header, OSD, screen frame, and `.tv-controls`, so browser fullscreen expanded the entire TV panel and let controls affect the available picture space.
+```
+
+Fix:
+
+- Added a dedicated `screenFrameRef`.
+- Changed fullscreen request and fullscreen-state tracking from `.tv-shell` to `.screen-frame`.
+- Moved fullscreen CSS from `.tv-shell:fullscreen` to `.screen-frame:fullscreen`.
+- Added a CSS regression test that rejects `.tv-shell:fullscreen` and requires the fullscreen rule on `.screen-frame:fullscreen`.
+
+Verification:
+
+```powershell
+node --test tests\layoutStabilityCss.test.mjs
+npm run build
+npm test
+```
+
+```text
+layout stability tests: tests 5, pass 5, fail 0
+npm run build: pass
+npm test: tests 391, pass 391, fail 0
+```
+
+Browser check:
+
+```text
+DOM check: `.screen-frame` does not contain `.tv-controls`, and keeps aspect-ratio 256 / 240.
+Automation fullscreen click was blocked by browser permission policy with "Permissions check failed", so real fullscreen entry must be user-click verified in the visible browser.
+```
+
 ## 2026-06-10 - Host Startup Preset And Compact Machine Controls
 
 Goal:
