@@ -2084,6 +2084,117 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate added a narrow W1736-W1752 same-lane contact right-carry override for the W1735 failure. Runtime changed the final active input to down+right+B and moved the collision to W1743/X120, but still died on the same active frame. It is rejected. Lesson: the contact window is already formed by W11977; next work must move earlier than the last active frame and prevent slot12 from reaching the body lane."
+    },
+    {
+      "attemptId": "w1751-precontact-right-fire-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1751-precontact-right-fire",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1761,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1755,
+      "progressGain": 635,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "route-formation-progress-gain",
+        "late-retreat-contact-risk",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -8615,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1751-precontact-right-fire",
+        "candidateTrial": "w1751-precontact-right-fire",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1755,
+        "finalProgression": 1761,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate held right/fire through the W1751 precontact body approach and raised max progression from W1751 to W1755. Runtime still died at frame 11978 after the window ended: from W1755 it fell back into repeated down-left retreat, returned to W1740, and collided with slot12. It is rejected. Lesson: the early right-fire idea is useful but must be extended into the W1755-W1740 descent/landing window instead of stopping at the first precontact correction."
+    },
+    {
+      "attemptId": "w1755-descent-right-fire-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1755-descent-right-fire-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1933,
+      "progressGain": 813,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "route-formation-progress-gain",
+        "reentry-left-retreat-risk",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -10396,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1755-descent-right-fire-carry",
+        "candidateTrial": "w1755-descent-right-fire-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 12402,
+        "maxProgression": 1933,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate extended the W1751 right-fire correction through descent/landing. It survived the original W1739/W1740 contact and stayed active at 12000 frames, then reached W1933 in the longer 14000-frame run. It is still rejected because the first death occurs at frame 12402/W1753 after a later W1765-W1751 reentry sequence repeatedly chose up-left against slot14/slot6 pressure before switching right too late. Lesson: the next candidate must suppress the later W1765 reentry left-retreat pattern, not only the initial W1751 descent."
+    },
+    {
+      "attemptId": "w1765-reentry-right-fire-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1765-reentry-right-fire-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1923,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1960,
+      "progressGain": 840,
+      "progressStallFrames": 117,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "route-formation-progress-gain",
+        "same-lane-reentry-contact-risk",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -7600,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1765-reentry-right-fire-carry",
+        "candidateTrial": "w1765-reentry-right-fire-carry",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 12409,
+        "maxProgression": 1960,
+        "finalProgression": 1923,
+        "progressStallFrames": 117,
+        "maxProgressStallFrames": 117
+      },
+      "trialNote": "Headless-only candidate suppressed the later W1765 up-left retreat and pushed the route to W1960, but it still dies first at frame 12409/W1765. Lost snapshot shows same-lane slot5 contact at dx=-7 dy=0 while the candidate is holding up-right fire. It recovered after loss, so it remains rejected for survival. Lesson: the next candidate must handle grounded or near-grounded W1760-W1768 same-lane reentry contact, not only forward-body retreat."
     }
   ],
   "promotionGates": [

@@ -2037,6 +2037,169 @@ test("headless route-plan probe can isolate W1735 same-lane contact right carry"
   assert.equal(sameLaneButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1751 precontact right-fire route correction", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const precontactSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 151,
+    worldX: 1751,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 164, y: 158, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 102, y: 173, vx: 1, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 162, y: 196, vx: -1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousW1456Buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1456-air-route-hold-right",
+    frame: 11940,
+    routeSegment,
+    snapshot: precontactSnapshot
+  });
+
+  assert.equal(previousW1456Buttons.left, true, "the W1456-only chain still retreats left at W1751");
+  assert.equal(previousW1456Buttons.right, false);
+
+  const correctedButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1751-precontact-right-fire",
+    frame: 11940,
+    routeSegment,
+    snapshot: precontactSnapshot
+  });
+
+  assert.equal(correctedButtons.left, false);
+  assert.equal(correctedButtons.right, true);
+  assert.equal(correctedButtons.up, true);
+  assert.equal(correctedButtons.down, false);
+  assert.equal(correctedButtons.a, false);
+  assert.equal(correctedButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1755 extended descent right-fire carry", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const postPrecontactSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 145,
+    worldX: 1755,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 155, y: 161, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 104, y: 176, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousPrecontactButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1751-precontact-right-fire",
+    frame: 11944,
+    routeSegment,
+    snapshot: postPrecontactSnapshot
+  });
+
+  assert.equal(previousPrecontactButtons.left, true, "the W1751-only correction ends at W1755 and lets close-body retreat resume");
+  assert.equal(previousPrecontactButtons.right, false);
+
+  const extendedPostPrecontactButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1755-descent-right-fire-carry",
+    frame: 11944,
+    routeSegment,
+    snapshot: postPrecontactSnapshot
+  });
+
+  assert.equal(extendedPostPrecontactButtons.left, false);
+  assert.equal(extendedPostPrecontactButtons.right, true);
+  assert.equal(extendedPostPrecontactButtons.down, true);
+  assert.equal(extendedPostPrecontactButtons.up, false);
+  assert.equal(extendedPostPrecontactButtons.a, false);
+  assert.equal(extendedPostPrecontactButtons.b, true);
+
+  const lateDescentSnapshot = snapshot({
+    jumpState: 81,
+    playerX: 113,
+    playerY: 173,
+    worldX: 1740,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 113, y: 186, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 121, y: 196, vx: -1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const extendedLateButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1755-descent-right-fire-carry",
+    frame: 11977,
+    routeSegment,
+    snapshot: lateDescentSnapshot
+  });
+
+  assert.equal(extendedLateButtons.left, false);
+  assert.equal(extendedLateButtons.right, true);
+  assert.equal(extendedLateButtons.down, true);
+  assert.equal(extendedLateButtons.up, false);
+  assert.equal(extendedLateButtons.a, false);
+  assert.equal(extendedLateButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1765 reentry right-fire carry", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const reentrySnapshot = snapshot({
+    jumpState: 209,
+    playerX: 104,
+    playerY: 142,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 139, y: 150, vx: -2, vy: 0 },
+      { fixed: false, hp: 0, kind: "object", routine: 0, threat: true, type: 0x05, x: 81, y: 165, vx: -1, vy: -1 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 68, y: 196, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousDescentButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1755-descent-right-fire-carry",
+    frame: 12386,
+    routeSegment,
+    snapshot: reentrySnapshot
+  });
+
+  assert.equal(previousDescentButtons.left, true, "the W1755-only correction still retreats left during the later W1765 reentry");
+  assert.equal(previousDescentButtons.right, false);
+
+  const reentryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-reentry-right-fire-carry",
+    frame: 12386,
+    routeSegment,
+    snapshot: reentrySnapshot
+  });
+
+  assert.equal(reentryButtons.left, false);
+  assert.equal(reentryButtons.right, true);
+  assert.equal(reentryButtons.up, true);
+  assert.equal(reentryButtons.down, false);
+  assert.equal(reentryButtons.a, false);
+  assert.equal(reentryButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

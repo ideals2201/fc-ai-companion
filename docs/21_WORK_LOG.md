@@ -3113,6 +3113,65 @@ and a body threat descends at dx 3..8, dy -34..-9:
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - Contra US survival W1751-W1765 candidate chain archived
+
+Scope:
+
+- Continue `survival-v0` stage 1 route-plan candidate search.
+- Keep all changes behind `--candidate-trial`.
+- Do not promote a candidate if any death occurs, even when the run later recovers.
+
+Observed baseline problem:
+
+```text
+Earlier W1456 route formation moved the first loss later, but the AI still retreats left around W1751-W1740 under fixed-target/body pressure and dies in the same low-lane section.
+```
+
+Candidate sequence:
+
+```text
+w1751-precontact-right-fire
+  12000-frame result: status=lost-active, lostActiveFrame=11978, maxProgression=1755, finalProgression=1761
+  lesson: W1751 right-fire improves formation but the correction ends too early, allowing W1755 down-left retreat.
+
+w1755-descent-right-fire-carry
+  12000-frame result: status=active, no first death, maxProgression=1768
+  14000-frame result: status=lost-active, lostActiveFrame=12402, maxProgression=1933, finalProgression=82
+  lesson: it fixes the original W1739/W1740 death, but a later W1765-W1751 reentry again chooses up-left before switching right too late.
+
+w1765-reentry-right-fire-carry
+  14000-frame result: status=recovered-after-loss, lostActiveFrame=12409, maxProgression=1960, finalProgression=1923
+  lesson: it suppresses W1765 left-retreat and pushes farther, but first death still occurs at W1765 from same-lane slot5 contact while holding up-right fire.
+```
+
+Archived evidence:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+```
+
+Result:
+
+```text
+headless route-plan probe: tests 49, pass 49, fail 0
+segmented training search: tests 27, pass 27, fail 0
+npm run build: pass
+```
+
+Decision:
+
+- All three candidates are rejected.
+- They are useful as learning evidence because they progressively moved the route from W1755 to W1960, but they still violate the no-death rule.
+- Next candidate must target W1760-W1768 grounded or near-grounded same-lane reentry contact, especially slot5 around dx=-7 dy=0.
+- Do not promote these candidates into live `survival-v0`.
+
 ## 2026-06-10 - W1726 grounded overhead duck advance rejected
 
 Scope:

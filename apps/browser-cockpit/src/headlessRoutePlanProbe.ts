@@ -61,6 +61,9 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1454-airborne-fixed-contact-right-carry"
     | "w1454-airborne-fixed-contact-pulse-carry"
     | "w1456-air-route-hold-right"
+    | "w1751-precontact-right-fire"
+    | "w1755-descent-right-fire-carry"
+    | "w1765-reentry-right-fire-carry"
     | "w1735-danger-stack-right-carry"
     | "w1735-same-lane-right-carry"
     | "w1726-danger-low-side-body"
@@ -424,6 +427,93 @@ function hasW1735SameLaneContactRightCarry(snapshot: RoutePlanProbeSnapshot) {
     const dy = enemy.y - snapshot.playerY;
     return dx >= -4 && dx <= 6 && dy >= 8 && dy <= 18;
   });
+}
+
+function findW1751PrecontactForwardBody(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1748 || snapshot.worldX > 1754) return null;
+  if (snapshot.playerY < 146 || snapshot.playerY > 158) return null;
+
+  const hasFixedTargetAhead = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 4 && dx <= 28 && dy >= -60 && dy <= -10;
+  });
+  if (!hasFixedTargetAhead) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 28 && dx <= 44 && dy >= 0 && dy <= 18;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function findW1755DescentRightFireBody(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1740 || snapshot.worldX > 1756) return null;
+  if (snapshot.playerY < 138 || snapshot.playerY > 176) return null;
+
+  const hasFixedTargetAhead = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 4 && dx <= 32 && dy >= -64 && dy <= -8;
+  });
+  if (!hasFixedTargetAhead) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -2 && dx <= 34 && dy >= 8 && dy <= 32;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function findW1765ReentryForwardBody(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1751 || snapshot.worldX > 1768) return null;
+  if (snapshot.playerY < 140 || snapshot.playerY > 173) return null;
+
+  const hasFixedTargetAhead = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 20 && dx <= 52 && dy >= -80 && dy <= -8;
+  });
+  if (!hasFixedTargetAhead) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 24 && dx <= 42 && dy >= -18 && dy <= 12;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
 }
 
 function hasW1726GroundedOverheadDuckAdvance(snapshot: RoutePlanProbeSnapshot) {
@@ -871,6 +961,9 @@ export function decideHeadlessRoutePlanProbeButtons({
   }
   if (
     candidateTrial === "w1456-air-route-hold-right"
+    || candidateTrial === "w1751-precontact-right-fire"
+    || candidateTrial === "w1755-descent-right-fire-carry"
+    || candidateTrial === "w1765-reentry-right-fire-carry"
     || candidateTrial === "w1735-danger-stack-right-carry"
     || candidateTrial === "w1735-same-lane-right-carry"
   ) {
@@ -907,6 +1000,9 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1751-precontact-right-fire"
+      || candidateTrial === "w1755-descent-right-fire-carry"
+      || candidateTrial === "w1765-reentry-right-fire-carry"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
@@ -939,6 +1035,9 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1751-precontact-right-fire"
+      || candidateTrial === "w1755-descent-right-fire-carry"
+      || candidateTrial === "w1765-reentry-right-fire-carry"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
@@ -968,6 +1067,59 @@ export function decideHeadlessRoutePlanProbeButtons({
       up: false
     });
     return buttons;
+  }
+  if (
+    candidateTrial === "w1751-precontact-right-fire"
+    || candidateTrial === "w1755-descent-right-fire-carry"
+    || candidateTrial === "w1765-reentry-right-fire-carry"
+  ) {
+    const precontactBody = findW1751PrecontactForwardBody(snapshot);
+    if (precontactBody) {
+      const dy = precontactBody.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: dy > 12,
+        left: false,
+        reason: "stage-one-w1751-precontact-right-fire",
+        right: true,
+        up: dy <= 12
+      });
+      return buttons;
+    }
+  }
+  if (
+    candidateTrial === "w1755-descent-right-fire-carry"
+    || candidateTrial === "w1765-reentry-right-fire-carry"
+  ) {
+    const descentBody = findW1755DescentRightFireBody(snapshot);
+    if (descentBody) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: true,
+        left: false,
+        reason: "stage-one-w1755-descent-right-fire-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+  }
+  if (candidateTrial === "w1765-reentry-right-fire-carry") {
+    const reentryBody = findW1765ReentryForwardBody(snapshot);
+    if (reentryBody) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1765-reentry-right-fire-carry",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
   }
   if (
     candidateTrial === "w1735-same-lane-right-carry"

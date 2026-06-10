@@ -491,6 +491,69 @@ test("W1735 same-lane right carry attempt is archived after contact persists", (
   assert.ok(attempt.trialNote.includes("move earlier than the last active frame"));
 });
 
+test("W1751 precontact right-fire attempt is archived after progress gain but later retreat death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1751-precontact-right-fire-candidate-trial");
+
+  assert.ok(attempt, "W1751 precontact right-fire candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1751-precontact-right-fire");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 11978);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1755);
+  assert.equal(attempt.finalProgression, 1761);
+  assert.ok(attempt.riskTags.includes("route-formation-progress-gain"));
+  assert.ok(attempt.riskTags.includes("late-retreat-contact-risk"));
+  assert.ok(attempt.trialNote.includes("W1755"));
+});
+
+test("W1755 descent right-fire carry attempt is archived after later reentry retreat death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1755-descent-right-fire-carry-candidate-trial");
+
+  assert.ok(attempt, "W1755 descent right-fire carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1755-descent-right-fire-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12402);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1933);
+  assert.equal(attempt.finalProgression, 82);
+  assert.ok(attempt.riskTags.includes("route-formation-progress-gain"));
+  assert.ok(attempt.riskTags.includes("reentry-left-retreat-risk"));
+  assert.ok(attempt.trialNote.includes("W1765"));
+});
+
+test("W1765 reentry right-fire carry attempt is archived after same-lane contact death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1765-reentry-right-fire-carry-candidate-trial");
+
+  assert.ok(attempt, "W1765 reentry right-fire carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1765-reentry-right-fire-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12409);
+  assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
+  assert.equal(attempt.maxProgression, 1960);
+  assert.equal(attempt.finalProgression, 1923);
+  assert.ok(attempt.riskTags.includes("route-formation-progress-gain"));
+  assert.ok(attempt.riskTags.includes("same-lane-reentry-contact-risk"));
+  assert.ok(attempt.trialNote.includes("slot5"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,
