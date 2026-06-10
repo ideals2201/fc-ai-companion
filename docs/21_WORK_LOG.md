@@ -1612,3 +1612,81 @@ Decision:
 - Training evidence is now visible in the cockpit, not just hidden JSON.
 - The next useful UI refinement is to show the specific failed gate reason when a ValidationReport exists.
 - The next strategy-development step remains Contra Stage 1 `survival-v0` progression, using these gates to prevent false promotion.
+
+## 2026-06-10 - External operation-training research refresh
+
+Scope:
+
+- Re-check public operation-training, emulator-training, imitation-learning, and TAS workflow references.
+- Decide what should be borrowed into the FC/NES companion workflow.
+- Keep this as a research/log entry only; no runtime behavior change in this step.
+
+Sources checked:
+
+- Gym Retro game integration documentation: https://retro.readthedocs.io/en/latest/integration.html
+- Stable-Retro integration and Python API documentation: https://stable-retro.farama.org/integration/ and https://stable-retro.farama.org/python/
+- Stable-Retro repository notes: https://github.com/Farama-Foundation/stable-retro
+- TASVideos console verification and input editing documentation: https://tasvideos.org/ConsoleVerification/Guide and https://tasvideos.org/InputFileEditing
+- FCEUX Lua and TAS Editor documentation: https://fceux.com/web/help/LuaFunctionsList.html and https://fceux.com/web/help/taseditor/LuaAPI.html
+- DAgger imitation-learning documentation/paper references: https://imitation.readthedocs.io/en/latest/algorithms/dagger.html and https://www.cs.cmu.edu/~sross1/publications/Ross-AIStats11-NoRegret.pdf
+- DQfD paper: https://arxiv.org/abs/1704.03732
+- D4RL offline RL dataset paper: https://arxiv.org/abs/2004.07219
+- OpenAI Retro Contest notes: https://openai.com/index/retro-contest/
+
+Borrowed engineering patterns:
+
+- Keep game integration artifacts separated:
+  - starting state;
+  - memory variable map;
+  - reward-like scoring;
+  - done/failure conditions;
+  - ROM hash/profile;
+  - replay/movie input source.
+- Treat RAM observations as first-class training state. Pixel vision is optional later, not the current efficient path.
+- Treat replay/TAS files as compact demonstrations and sync evidence, not live production controllers.
+- Preserve movie sync anchors:
+  - ROM checksum;
+  - emulator/core identity;
+  - movie framecount;
+  - input row index;
+  - entry point and initial state.
+- Use DAgger-style correction:
+  - do not clone a full run blindly;
+  - run the current strategy;
+  - collect off-route failure windows;
+  - patch short windows;
+  - validate before promotion.
+- Use D4RL/offline-RL style dataset discipline:
+  - every trace should carry observations, actions, rewards/scores, terminal flags, source policy, and quality level;
+  - mixed-quality data is allowed, but must be labeled.
+- Keep reward design multi-objective:
+  - survival;
+  - progress;
+  - fixed-target clearing;
+  - reward pickup;
+  - teammate safety;
+  - stuck-loop prevention.
+
+Rejected or delayed patterns:
+
+- Do not switch the default project workflow to generic neural-network training now. It is slower than strategy-fragment training for Contra Stage 1.
+- Do not use score-only or kill-only reward as a promotion signal. Public references warn that it can create farming loops.
+- Do not rely on screen frame number alone for TAS alignment.
+- Do not promote a replay, human run, or TAS movie directly into a StrategyFragment.
+
+Impact on our next work:
+
+- The current standard direction is still correct:
+
+```text
+source trace -> side-owned baseline -> candidate fragment -> segmented validation -> quality gates -> StrategyPack promotion
+```
+
+- The training UI should expose:
+  - selected baseline source;
+  - training method;
+  - trace/evidence status;
+  - validation gates;
+  - package quality level;
+  - strategy result metrics.
+- The next implementation step should continue improving the operation-training UI and then resume Contra Stage 1 `survival-v0` segmented validation.
