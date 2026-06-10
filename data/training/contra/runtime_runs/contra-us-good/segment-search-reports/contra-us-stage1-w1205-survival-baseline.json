@@ -336,6 +336,39 @@
         "maxProgressStallFrames": 5529
       },
       "trialNote": "Headless-only candidate forced right/down/fire after W1141 low-lane retreat. It avoided death but reduced max progression to W1195 and remained in a long low-lane stall, so the recovery-only approach is rejected."
+    },
+    {
+      "attemptId": "vertical-fixed-station-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-vertical-fixed-station",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1196,
+      "progressGain": 76,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10196,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-vertical-fixed-station",
+        "candidateTrial": "w1205-vertical-fixed-station",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 4581,
+        "maxProgression": 1196,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate held vertical up-fire at W1196-W1212 to shoot the fixed target without left retreat. It died from upper body contact at frame 4581 before reducing fixed-target HP, so vertical station is rejected."
     }
   ],
   "bestAttempt": null,
@@ -646,6 +679,39 @@
         "maxProgressStallFrames": 5529
       },
       "trialNote": "Headless-only candidate forced right/down/fire after W1141 low-lane retreat. It avoided death but reduced max progression to W1195 and remained in a long low-lane stall, so the recovery-only approach is rejected."
+    },
+    {
+      "attemptId": "vertical-fixed-station-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-vertical-fixed-station",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1196,
+      "progressGain": 76,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10196,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-vertical-fixed-station",
+        "candidateTrial": "w1205-vertical-fixed-station",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 4581,
+        "maxProgression": 1196,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate held vertical up-fire at W1196-W1212 to shoot the fixed target without left retreat. It died from upper body contact at frame 4581 before reducing fixed-target HP, so vertical station is rejected."
     }
   ],
   "promotionGates": [

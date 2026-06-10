@@ -192,3 +192,18 @@ test("segmented training search report preserves sync anchors and deterministic 
   ]);
   assert.ok(report.promotionGates.every((gate) => gate.status === "missing"));
 });
+
+test("W1205 vertical fixed-target station attempt is archived as rejected evidence", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "vertical-fixed-station-candidate-trial");
+
+  assert.ok(attempt, "W1205 vertical station candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1205-vertical-fixed-station");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 4581);
+});

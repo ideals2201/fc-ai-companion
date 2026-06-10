@@ -1777,3 +1777,168 @@ Decision:
 - Validation gates are now not only pass/fail lights; they also explain why a gate passed, failed, is missing, or is not applicable.
 - This supports the objective that every strategy conclusion must be backed by visible TraceEvidence and ValidationReport evidence.
 - Next work should either wire an example failed ValidationReport into a replay path for visual inspection or resume Contra Stage 1 `survival-v0` segmented validation.
+
+## 2026-06-10 - W1205 vertical fixed-target station candidate rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` W1205 segmented validation.
+- Test a narrow isolated candidate:
+
+```text
+w1205-vertical-fixed-station
+```
+
+- Keep default live `survival-v0` unchanged unless runtime evidence proves improvement.
+
+Baseline re-check:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+```text
+status=stalled-active
+reason=progress-stalled
+maxProgression=1205
+finalProgression=1154
+progressStallFrames=994
+lostActiveFrame=null
+```
+
+Key trace observation:
+
+- Around `frame=6998..7005`, the AI holds `up+right+A+B` while fixed target slot 11 is almost vertical above the player:
+
+```text
+W1197..W1205 fixed slot11 hp240 dx15..8 dy-84
+```
+
+- At `frame=7006`, close upper soldier pressure switches output to `up+left+A+B`, causing retreat.
+- Fixed target HP remains `240`, so the previous right-up fire was not an effective fixed-target damage station.
+
+Candidate hypothesis:
+
+- At W1196-W1212, when the fixed target is almost vertical above the player, hold:
+
+```text
+up+B, no left, no right, no A
+```
+
+- This was intended to test whether a vertical fire station can damage the fixed target without entering the old retreat loop.
+
+TDD:
+
+- RED:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+fail 1
+headless route-plan probe can isolate W1205 vertical fixed-target station
+left true !== false
+```
+
+- GREEN:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+tests 26
+pass 26
+fail 0
+```
+
+Runtime candidate trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-vertical-fixed-station
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=4581
+maxProgression=1196
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure evidence:
+
+- Pre-loss frame:
+
+```text
+frame=4580
+worldX=1196
+buttons=up+B
+slot15 type1 hp1 dx8 dy-18
+slot11 type2 hp240 dx8 dy-84
+```
+
+- Loss frame:
+
+```text
+frame=4581
+p1State=2
+deathFlag=1
+slot15 type1 hp1 dx6 dy-17
+slot11 type2 hp240 dx8 dy-84
+```
+
+Decision:
+
+- `w1205-vertical-fixed-station` is rejected.
+- Reason: it dies from close upper body contact before fixed target HP changes.
+- Default live `survival-v0` remains unchanged.
+- Report updated:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 30
+pass 30
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+```text
+tsc -b && vite build
+built in 2.25s
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 317
+pass 317
+fail 0
+```
+
+Next inference:
+
+- W1205 is not solved by:
+  - late jump;
+  - right-up through;
+  - straight right fire;
+  - duck-under;
+  - post-retreat recovery;
+  - vertical fixed-target station.
+- The next candidate should treat the upper soldier at `dx~8 dy~-18` as the real blocker before any fixed-target station can run.
