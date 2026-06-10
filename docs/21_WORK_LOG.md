@@ -2692,3 +2692,179 @@ and a body threat descends at dx 3..8, dy -34..-9:
 ```
 
 Do not promote this candidate into live `survival-v0`.
+
+Final verification:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; existing chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 329
+pass 329
+fail 0
+```
+
+## 2026-06-10 - Operation training research notes
+
+Scope:
+
+- Review public references for operation training, TAS movie usage, imitation learning, and retro-game RL integration.
+- Extract only items that can improve the FC AI Companion training workflow.
+
+Useful references:
+
+- Gym Retro / Stable-Retro game integration:
+  - use per-game memory variable manifests, reward definitions, done conditions, ROM hashes, and savestate starts;
+  - this maps directly to our `GameProfile`, `ROMProfile`, `ConditionRegistry`, `RewardDefinition`, `TerminalCondition`, and training window model.
+- FCEUX / TASVideos movie formats:
+  - TAS movie files are input logs, not videos;
+  - exact ROM checksum, emulator/version, movie length, and frame input rows matter for sync;
+  - this supports our rule that TAS is a training baseline/evidence source, not the live controller.
+- Imitation learning / DAgger:
+  - pure behavior cloning is useful for starting from demonstrations but fails when the bot drifts into states not present in the original demonstration;
+  - DAgger-style loops run the current policy, collect the states where it fails, ask for expert correction, and add those corrections to the dataset.
+
+Decision for this project:
+
+- Do not switch the current Contra strategy work to full neural-network training.
+- Keep the current engineering path:
+  - TAS / human / AI run = baseline source;
+  - TraceEvidence = what actually happened;
+  - segmented window = where the strategy failed;
+  - candidate fragment = proposed correction;
+  - validation replay + perturbation checks = promotion gate.
+- Add a future standard update for:
+  - per-game reward/done definitions;
+  - behavior primitive names;
+  - DAgger-style failure correction workflow;
+  - perturbation validation around the corrected window;
+  - strategy package provenance and rollback metadata.
+
+Immediate training implication:
+
+```text
+For Contra Stage 1, keep training in short windows.
+Do not run full-stage guessing loops as the primary method.
+For the current W1641 blocker, collect a pre-compression window before the death,
+then add a candidate that acts before the direct collision window.
+```
+
+## 2026-06-10 - W1641 left-edge right-jump rejected
+
+Scope:
+
+- Continue the Contra US Stage 1 `survival-v0` segment-search loop.
+- Test the next isolated hypothesis for the W1641-W1645 left-edge compression blocker.
+- Do not change the default/live strategy.
+
+Prior blocker:
+
+```text
+W1641-W1645 left-edge overhead body compression:
+  up-left retreat fails;
+  prone/down fire delays death but still fails;
+  the next candidate should test earlier rightward jump/advance.
+```
+
+Candidate added:
+
+```text
+w1641-left-edge-right-jump
+```
+
+Candidate behavior:
+
+- inherits W1205 safe recovery;
+- inherits W1360 station-crowd escape;
+- inherits W1726 low-side body escape;
+- inherits W1660 rear/side retreat guard;
+- changes the W1641-W1650 left-edge overhead-body response to right+jump+up-fire.
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New candidate initially failed because it did not exist and could not inherit the prior candidate chain.
+```
+
+GREEN:
+
+```text
+tests 32
+pass 32
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1641-left-edge-right-jump
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9862
+maxProgression=1930
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window evidence:
+
+```text
+frame 9861 W1649 X33 Y212 btn=uprightab enemy slot13 dx-1 dy-18
+frame 9862 W1648 X32 Y212 deathFlag=1 enemy slot13 dx0 dy-16
+```
+
+Decision:
+
+- `w1641-left-edge-right-jump` is rejected.
+- It improves over `w1660-retreat-regression-guard` in max progression, but still dies at the same compression class.
+- The key lesson is timing: the right-jump starts too late when triggered by the W1641-W1650 body-overlap window.
+- The rejected attempt is archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 10
+pass 10
+fail 0
+```
+
+Next inference:
+
+```text
+W1641 pre-compression escape =
+  if player approaches W1632-W1640 at low lane / left edge risk
+  and slot13 overhead body is forming above or fixed target keeps the route pinned:
+    trigger right-jump before body dx reaches 0..8;
+    do not wait for the direct overhead collision window.
+```
+
+Do not promote this candidate into live `survival-v0`.

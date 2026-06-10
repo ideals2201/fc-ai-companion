@@ -288,3 +288,20 @@ test("W1660 retreat-regression guard attempt is archived after left-edge body de
   assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
   assert.equal(attempt.maxProgression, 1820);
 });
+
+test("W1641 left-edge right-jump attempt is archived after late jump death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1641-left-edge-right-jump-candidate-trial");
+
+  assert.ok(attempt, "W1641 left-edge right-jump candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1641-left-edge-right-jump");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9862);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1930);
+});

@@ -536,6 +536,39 @@
         "maxProgressStallFrames": 1848
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, and W1726 low-side body escape, then added a W1641-W1650 left-edge overhead body guard plus W1658-W1672 retreat-regression guard. It delayed the W1641 left-edge death to W1644 and recovered after the loss, but still died at frame 9867, so it remains rejected."
+    },
+    {
+      "attemptId": "w1641-left-edge-right-jump-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1641-left-edge-right-jump",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1930,
+      "progressGain": 810,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8440,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1641-left-edge-right-jump",
+        "candidateTrial": "w1641-left-edge-right-jump",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9862,
+        "maxProgression": 1930,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, W1726 low-side body escape, and W1660 retreat guard, then changed the W1641-W1650 left-edge overhead-body response from prone fire to right-jump up-fire. Runtime showed the jump was too late: pre-loss input was right+up+A+B at W1649, but the player still died at W1648 from slot13 body overlap, so it remains rejected."
     }
   ],
   "bestAttempt": null,
@@ -1046,6 +1079,39 @@
         "maxProgressStallFrames": 1848
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, and W1726 low-side body escape, then added a W1641-W1650 left-edge overhead body guard plus W1658-W1672 retreat-regression guard. It delayed the W1641 left-edge death to W1644 and recovered after the loss, but still died at frame 9867, so it remains rejected."
+    },
+    {
+      "attemptId": "w1641-left-edge-right-jump-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1641-left-edge-right-jump",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1930,
+      "progressGain": 810,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8440,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1641-left-edge-right-jump",
+        "candidateTrial": "w1641-left-edge-right-jump",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9862,
+        "maxProgression": 1930,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, W1726 low-side body escape, and W1660 retreat guard, then changed the W1641-W1650 left-edge overhead-body response from prone fire to right-jump up-fire. Runtime showed the jump was too late: pre-loss input was right+up+A+B at W1649, but the player still died at W1648 from slot13 body overlap, so it remains rejected."
     }
   ],
   "promotionGates": [

@@ -48,6 +48,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-bridge-low-fixed-crowd"
     | "stage-one-danger-low-lane-fall"
     | "stage-one-left-edge-overhead-body-guard"
+    | "stage-one-left-edge-right-jump-guard"
     | "stage-one-mandatory-spread-gate"
     | "stage-one-mid-fixed-close-body-cover"
     | "stage-one-mid-fixed-threat-high-station"
