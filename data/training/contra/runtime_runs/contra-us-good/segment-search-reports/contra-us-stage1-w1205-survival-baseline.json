@@ -402,6 +402,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate resumed right-up fire after the W1205 upper soldier passed. It broke the W1205 stall and reached W1555, but died at frame 2802 from same-lane body contact at W1151, so the recovery direction is useful but this unsafe version is rejected."
+    },
+    {
+      "attemptId": "post-upper-safe-recovery-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-post-upper-safe-recovery",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1469,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1497,
+      "progressGain": 377,
+      "progressStallFrames": 64,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -9679,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-upper-safe-recovery",
+        "candidateTrial": "w1205-post-upper-safe-recovery",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 7114,
+        "maxProgression": 1497,
+        "finalProgression": 1469,
+        "progressStallFrames": 64,
+        "maxProgressStallFrames": 64
+      },
+      "trialNote": "Headless-only candidate let same-lane body contact override W1205 recovery and resumed right-up fixed-target fire only after the immediate contact window. It broke the W1205 stall without an immediate death, but later died at W1360 from a new close upper-body contact, so it remains rejected."
     }
   ],
   "bestAttempt": null,
@@ -778,6 +811,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate resumed right-up fire after the W1205 upper soldier passed. It broke the W1205 stall and reached W1555, but died at frame 2802 from same-lane body contact at W1151, so the recovery direction is useful but this unsafe version is rejected."
+    },
+    {
+      "attemptId": "post-upper-safe-recovery-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-post-upper-safe-recovery",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1469,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1497,
+      "progressGain": 377,
+      "progressStallFrames": 64,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -9679,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-upper-safe-recovery",
+        "candidateTrial": "w1205-post-upper-safe-recovery",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 7114,
+        "maxProgression": 1497,
+        "finalProgression": 1469,
+        "progressStallFrames": 64,
+        "maxProgressStallFrames": 64
+      },
+      "trialNote": "Headless-only candidate let same-lane body contact override W1205 recovery and resumed right-up fixed-target fire only after the immediate contact window. It broke the W1205 stall without an immediate death, but later died at W1360 from a new close upper-body contact, so it remains rejected."
     }
   ],
   "promotionGates": [

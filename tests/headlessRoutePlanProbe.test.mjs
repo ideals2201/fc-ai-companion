@@ -930,6 +930,65 @@ test("headless route-plan probe can isolate W1205 post-upper recovery", () => {
   assert.equal(buttons.down, false);
 });
 
+test("headless route-plan probe can isolate W1205 post-upper safe recovery", () => {
+  const contactButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1205-post-upper-safe-recovery",
+    frame: 2802,
+    progressStallFrames: 0,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 69,
+      playerY: 212,
+      worldX: 1151,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 75, y: 214 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(contactButtons.left, true);
+  assert.equal(contactButtons.right, false);
+  assert.equal(contactButtons.a, true);
+  assert.equal(contactButtons.b, true);
+
+  const recoveryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1205-post-upper-safe-recovery",
+    frame: 2830,
+    progressStallFrames: 0,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 69,
+      playerY: 212,
+      worldX: 1151,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(recoveryButtons.left, false);
+  assert.equal(recoveryButtons.right, true);
+  assert.equal(recoveryButtons.up, true);
+  assert.equal(recoveryButtons.down, false);
+  assert.equal(recoveryButtons.a, false);
+  assert.equal(recoveryButtons.b, true);
+});
+
 test("headless route-plan probe ignores grounded low-lane object residue instead of stalling at the mid turret", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 4800,

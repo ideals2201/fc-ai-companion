@@ -223,3 +223,19 @@ test("W1205 post-upper recovery attempt is archived despite progress gain", () =
   assert.equal(attempt.runtimeEvidence.lostActiveFrame, 2802);
   assert.equal(attempt.maxProgression, 1555);
 });
+
+test("W1205 post-upper safe recovery attempt is archived after W1360 death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "post-upper-safe-recovery-candidate-trial");
+
+  assert.ok(attempt, "W1205 post-upper safe recovery candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1205-post-upper-safe-recovery");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 7114);
+  assert.equal(attempt.maxProgression, 1497);
+});

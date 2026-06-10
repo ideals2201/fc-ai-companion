@@ -2071,3 +2071,136 @@ tests 319
 pass 319
 fail 0
 ```
+
+## 2026-06-10 - W1205 post-upper safe recovery candidate rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` W1205 automated patch search.
+- Add one isolated headless-only candidate:
+
+```text
+w1205-post-upper-safe-recovery
+```
+
+- Keep default live `survival-v0` unchanged.
+
+Root-cause refinement:
+
+- `w1205-post-upper-recovery` proved that forced right-up fixed-target recovery can break the W1205 loop.
+- It also proved that unconditional recovery is unsafe: it died at W1151 from same-lane body contact.
+- The next minimal hypothesis was therefore:
+
+```text
+if same-lane body threat is still in the contact window:
+  keep survival bailout
+else:
+  recover right+up+B toward the fixed target
+```
+
+TDD:
+
+- RED test added `headless route-plan probe can isolate W1205 post-upper safe recovery`.
+- The test uses the prior death frame shape:
+  - contact case: W1151, enemy `dx=6`, `dy=2` must not force right recovery;
+  - recovery case: same station without contact enemy must force `right+up+B`.
+- RED failed before implementation because the safe recovery candidate was not active and the recovery case did not set `right=true`.
+- GREEN added a candidate-only same-lane body filter and recovery branch.
+
+Targeted test:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+tests 28
+pass 28
+fail 0
+```
+
+Runtime candidate trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-upper-safe-recovery
+```
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=7114
+maxProgression=1497
+finalProgression=1469
+progressStallFrames=64
+```
+
+Failure-window trace:
+
+```text
+frame 7104 W1364 buttons=uprightb
+frame 7106 W1366 buttons=upab
+frame 7108 W1366 buttons=upleftab
+frame 7111 W1363 buttons=upleftab  nearest slot3 dx15 dy-13
+frame 7112 W1362 buttons=upleftab  nearest slot3 dx16 dy-10
+frame 7113 W1361 buttons=upleftab  nearest slot3 dx17 dy-6
+frame 7114 W1360 deathFlag=1       nearest slot3 dx19 dy-2
+```
+
+Decision:
+
+- `w1205-post-upper-safe-recovery` is rejected.
+- It is useful evidence:
+  - it avoids the immediate W1151 death from the previous unsafe recovery;
+  - it breaks the W1205 stall;
+  - it exposes the next blocker at W1360, a close upper-body contact while fixed targets are still alive.
+- Do not promote it into live `survival-v0`.
+- Report updated:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 34
+pass 34
+fail 0
+```
+
+Next inference:
+
+- W1205 recovery can now reach the next station, but W1360 needs its own local safety rule.
+- The next candidate should be a W1360 station-crowd rule, not another W1205 recovery variant:
+
+```text
+W1360 upper-body station rule =
+  if fixed target is overhead and a dynamic enemy enters dx 0..24, dy -32..0:
+    stop pushing left into the body line;
+    prefer vertical jump/up-fire or right-under escape depending on fixed-target lane
+```
+
+Final verification before saving version:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 321
+pass 321
+fail 0
+```
