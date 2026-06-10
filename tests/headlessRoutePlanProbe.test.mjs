@@ -2246,6 +2246,69 @@ test("headless route-plan probe can isolate W1765 rear same-lane duck carry", ()
   assert.equal(rearContactButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1765 grounded rear-contact micro duck", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const groundedRearContactSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 104,
+    playerY: 196,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 95, y: 196, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+  const airborneRearContactSnapshot = snapshot({
+    ...groundedRearContactSnapshot,
+    jumpState: 177,
+    playerY: 186,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 92, y: 196, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousReentryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-reentry-right-fire-carry",
+    frame: 12408,
+    routeSegment,
+    snapshot: groundedRearContactSnapshot
+  });
+
+  assert.equal(previousReentryButtons.up, true);
+  assert.equal(previousReentryButtons.a, true);
+
+  const microDuckButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-grounded-rear-micro-duck",
+    frame: 12408,
+    routeSegment,
+    snapshot: groundedRearContactSnapshot
+  });
+
+  assert.equal(microDuckButtons.left, false);
+  assert.equal(microDuckButtons.right, true);
+  assert.equal(microDuckButtons.up, false);
+  assert.equal(microDuckButtons.down, true);
+  assert.equal(microDuckButtons.a, false);
+  assert.equal(microDuckButtons.b, true);
+
+  const airborneButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-grounded-rear-micro-duck",
+    frame: 12405,
+    routeSegment,
+    snapshot: airborneRearContactSnapshot
+  });
+
+  assert.equal(airborneButtons.up, true, "the micro duck must not flatten the airborne setup before landing");
+  assert.equal(airborneButtons.down, false);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

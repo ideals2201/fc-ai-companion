@@ -2232,6 +2232,44 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate changed the W1765 rear same-lane contact response from up-right jump/fire to right-down fire. It removes the prior frame-12409/W1765 same-lane death, but regresses the route into a left-edge sequence and dies at frame 12546/W1700 after repeated up-left inputs against slot14 at dx 10..7 dy -15..-8. It is rejected because its max progression W1820 is lower than the previous W1765 reentry candidate's W1960 and still violates no-death survival. Lesson: duck-carry is too costly here; the next search should avoid left-edge collapse after rear-contact handling."
+    },
+    {
+      "attemptId": "w1765-grounded-rear-micro-duck-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1765-grounded-rear-micro-duck",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 338,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1804,
+      "progressGain": 684,
+      "progressStallFrames": 1112,
+      "rejectionReasons": [
+        "death",
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "rear-contact-micro-duck-insufficient",
+        "progress-regression",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -9624,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1765-grounded-rear-micro-duck",
+        "candidateTrial": "w1765-grounded-rear-micro-duck",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 12413,
+        "maxProgression": 1804,
+        "finalProgression": 338,
+        "progressStallFrames": 1112,
+        "maxProgressStallFrames": 1112
+      },
+      "trialNote": "Headless-only candidate narrowed the rear-contact duck to grounded W1762-W1768 so it would not flatten the airborne setup. It only shifts the same-lane slot5 death from frame 12409 to frame 12413/W1769, with slot5 still at dx=-6 dy=0, then recovers after loss and stalls back near W338. It is rejected because it still dies, introduces a stall-loop signal, and lowers max progression to W1804 versus the previous W1765 reentry candidate's W1960. Lesson: crouch alone does not solve the rear-contact; the next search needs either earlier spacing or a different route line before slot5 reaches same-lane contact."
     }
   ],
   "promotionGates": [

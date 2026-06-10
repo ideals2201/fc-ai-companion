@@ -44,6 +44,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-w1755-descent-right-fire-carry"
     | "stage-one-w1765-reentry-right-fire-carry"
     | "stage-one-w1765-rear-contact-duck-carry"
+    | "stage-one-w1765-grounded-rear-micro-duck"
     | "stage-one-close-body-threat"
     | "stage-one-red-turret-low-threat"
     | "stage-one-boss-approach-close-body"

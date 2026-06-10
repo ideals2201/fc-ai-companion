@@ -4113,6 +4113,100 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - Contra US survival W1765 grounded rear micro-duck rejected
+
+Scope:
+
+- Test a narrower alternative to `w1765-rear-contact-duck-carry`.
+- Only intervene when grounded at W1762-W1768 with rear same-lane contact.
+- Preserve the prior airborne W1765 reentry setup so the candidate does not flatten the route early.
+
+Candidate:
+
+```text
+w1765-grounded-rear-micro-duck
+```
+
+Hypothesis:
+
+```text
+At the exact grounded rear-contact frame, use right+down+fire without jump/up aim.
+This should avoid slot5 while preventing the wider duck-carry route collapse.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New grounded micro-duck test failed because the candidate did not exist and still produced up aim at the grounded rear-contact frame.
+```
+
+GREEN:
+
+```text
+tests 51
+pass 51
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1765-grounded-rear-micro-duck
+```
+
+Result:
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=12413
+maxProgression=1804
+finalProgression=338
+progressStallFrames=1112
+```
+
+Failure evidence:
+
+```text
+preLost frame 12412 W1769 X108 Y196 buttons=downrightb slot5 dx=-8 dy=0
+lost    frame 12413 W1769 X108 Y196 deathFlag=1       slot5 dx=-6 dy=0
+```
+
+Decision:
+
+- `w1765-grounded-rear-micro-duck` is rejected.
+- It delays the same-lane slot5 death by only 4 frames and still dies.
+- It also lowers max progression to W1804 and triggers a stall-loop signal after recovery.
+- Crouch-only rear-contact handling is not sufficient; the next search should look for earlier spacing or a different route line before slot5 reaches dx=-8..-6.
+
+Archived evidence:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+node --test tests\headlessRoutePlanProbe.test.mjs
+npm run build
+```
+
+```text
+segmented training search: tests 29, pass 29, fail 0
+headless route-plan probe: tests 51, pass 51, fail 0
+npm run build: pass
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 ## 2026-06-10 - Contra US survival W1765 rear-contact duck candidate rejected
 
 Scope:

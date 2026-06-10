@@ -575,6 +575,27 @@ test("W1765 rear-contact duck carry attempt is archived after left-edge regressi
   assert.ok(attempt.trialNote.includes("W1700"));
 });
 
+test("W1765 grounded rear micro-duck attempt is archived after contact only shifts later", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1765-grounded-rear-micro-duck-candidate-trial");
+
+  assert.ok(attempt, "W1765 grounded rear micro-duck candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death", "stuck-loop"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1765-grounded-rear-micro-duck");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12413);
+  assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
+  assert.equal(attempt.maxProgression, 1804);
+  assert.equal(attempt.finalProgression, 338);
+  assert.ok(attempt.riskTags.includes("rear-contact-micro-duck-insufficient"));
+  assert.ok(attempt.riskTags.includes("progress-regression"));
+  assert.ok(attempt.trialNote.includes("slot5"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,
