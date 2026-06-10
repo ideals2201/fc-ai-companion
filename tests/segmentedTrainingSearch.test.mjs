@@ -87,6 +87,35 @@ test("segmented training ranks safe progress above death, stall, and reward-only
   assert.ok(rewardLoop.riskTags.includes("reward-farming-risk"));
 });
 
+test("segmented training rejects attempts that never reach the target segment", () => {
+  const segment = {
+    id: "contra-us-stage1-survival-batch-search",
+    progressionMetric: "progression.primary",
+    progressionStart: 1120,
+    progressionEnd: 2048,
+    strategyKey: "survival-v0"
+  };
+
+  const preSegment = rankSegmentAttempt({
+    attemptId: "short-smoke",
+    candidateFragmentId: "candidate-fragment-1p-survival-v0-short-smoke",
+    deathCount: 0,
+    desynced: false,
+    finalProgression: 430,
+    fixedTargetsDestroyed: 0,
+    frameCount: 1200,
+    maxProgression: 430,
+    progressStallFrames: 0,
+    rewardsCollected: 0,
+    scoreDelta: 0,
+    stuckLoop: false
+  }, segment);
+
+  assert.equal(preSegment.gateStatus, "rejected");
+  assert.ok(preSegment.rejectionReasons.includes("segment-not-reached"));
+  assert.ok(preSegment.riskTags.includes("insufficient-segment-evidence"));
+});
+
 test("segmented training search report keeps the winner as candidate evidence, not validated", () => {
   const report = createSegmentedTrainingSearchReport({
     createdAt: "2026-06-10T09:00:00.000Z",

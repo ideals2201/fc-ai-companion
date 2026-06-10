@@ -16,6 +16,74 @@
 
 ## 2026-06-10
 
+### Contra US 批量候选搜索工具落地
+
+触发：
+
+- 当前 `survival-v0` 手工单窗口补丁效率过低，W1686/W1721 等局部候选反复死亡或回退。
+- 用户指出方法可能有问题，要求提高效率和质量。
+
+方法修正：
+
+- 不再继续靠“看一次、手改一个窗口”推进稳健生存策略。
+- 新增批量候选搜索入口，把多个 `--candidate-trial` 自动跑完、统一转换为 SegmentTrainingAttempt、统一排序、统一拒绝或候选标记。
+- 增加证据门禁：未到目标训练段起点的短帧 smoke 只能标记为 `segment-not-reached`，不能成为 candidate。
+- 增加错误门禁：runtime 执行错误必须标记为 rejected，不允许以 `status=error` 混入候选池。
+
+新增文件：
+
+```text
+apps/browser-cockpit/src/contraSegmentCandidateSearch.ts
+scripts/contra-segment-candidate-search.mjs
+tests/contraSegmentCandidateSearch.test.mjs
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-survival-batch-search-20260610.json
+```
+
+命令：
+
+```powershell
+node scripts\contra-segment-candidate-search.mjs --candidate=w1765-reentry-right-fire-carry --candidate=w1769-reentry-right-carry-extension --candidate=w1686-left-edge-duck-hold-guard --candidate=w1721-airborne-upper-preclear-right-fire --frames=14000 --out=data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-survival-batch-search-20260610.json
+```
+
+批量搜索结果：
+
+```text
+w1765-reentry-right-fire-carry              status=recovered-after-loss lostActiveFrame=12409 maxProgression=1960 rejected death
+w1769-reentry-right-carry-extension         status=lost-active          lostActiveFrame=9414  maxProgression=1783 rejected death
+w1686-left-edge-duck-hold-guard             status=lost-active          lostActiveFrame=12853 maxProgression=1942 rejected death
+w1721-airborne-upper-preclear-right-fire    status=lost-active          lostActiveFrame=12673 maxProgression=1821 rejected death
+```
+
+结论：
+
+- 本批 4 个候选全部 rejected，`bestAttempt=null`。
+- 目前最有信息量的是 `w1765-reentry-right-fire-carry`：虽然发生过 loss/recovery，但 maxProgression 最高到 W1960，说明下一轮应围绕 W1765-W1960 的状态化 route-line/pre-clear 搜索，而不是继续给 W1686/W1721 加孤立 if patch。
+- 新流程已经能防止“短帧没进训练段却被标为候选”的假阳性。
+
+验证：
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs tests\contraSegmentCandidateSearch.test.mjs
+node scripts\contra-segment-candidate-search.mjs --dry-run --candidate=w1769-reentry-right-carry-extension --candidate=w1721-airborne-upper-preclear-right-fire --frames=1200
+node scripts\contra-segment-candidate-search.mjs --candidate=w1769-reentry-right-carry-extension --candidate=w1721-airborne-upper-preclear-right-fire --frames=1200
+```
+
+```text
+segmented + contra candidate search tests: 37 pass, 0 fail
+1200-frame real batch: both rejected as segment-not-reached, bestAttempt=null
+14000-frame real batch: all 4 rejected due death/loss evidence, bestAttempt=null
+```
+
+下一步：
+
+- 把候选从“硬编码 candidateTrial 列表”升级为“数据驱动动作覆盖矩阵”：
+  - WorldX window；
+  - playerX/Y guard；
+  - grounded/airborne；
+  - action primitive；
+  - timeout/exit condition。
+- 用批量工具对 W1765-W1960 窗口生成多动作组合，按无死亡、最大进度、stall、恢复质量排序。
+
 ### 操作训练网络复核
 
 触发：

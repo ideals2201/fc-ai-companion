@@ -94,11 +94,12 @@ function clampNumber(value: number, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function rejectionReasonsForAttempt(attempt: SegmentTrainingAttempt) {
+function rejectionReasonsForAttempt(attempt: SegmentTrainingAttempt, segment: SegmentTrainingDefinition) {
   const reasons: string[] = [];
   if (attempt.desynced) reasons.push("desync");
   if (attempt.deathCount > 0) reasons.push("death");
   if (attempt.stuckLoop) reasons.push("stuck-loop");
+  if (attempt.maxProgression < segment.progressionStart) reasons.push("segment-not-reached");
   return reasons;
 }
 
@@ -108,6 +109,7 @@ function riskTagsForAttempt(attempt: SegmentTrainingAttempt, segment: SegmentTra
   const failedProgress = attempt.stuckLoop || attempt.maxProgression < segment.progressionEnd;
   if (hasRewardSignal && failedProgress) tags.push("reward-farming-risk");
   if (attempt.progressStallFrames >= 120) tags.push("progress-stall-risk");
+  if (attempt.maxProgression < segment.progressionStart) tags.push("insufficient-segment-evidence");
   return tags;
 }
 
@@ -144,7 +146,7 @@ export function rankSegmentAttempt(
   attempt: SegmentTrainingAttempt,
   segment: SegmentTrainingDefinition
 ): SegmentTrainingAttemptRank {
-  const rejectionReasons = rejectionReasonsForAttempt(attempt);
+  const rejectionReasons = rejectionReasonsForAttempt(attempt, segment);
   const riskTags = riskTagsForAttempt(attempt, segment);
   const progressGain = Math.max(0, clampNumber(attempt.maxProgression) - segment.progressionStart);
   const completionBonus = attempt.maxProgression >= segment.progressionEnd ? 1000 : 0;
