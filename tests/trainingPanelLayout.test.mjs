@@ -361,3 +361,12 @@ test("strategy package save consumes archived side training evidence", () => {
   assert.match(mainSource, /data-testid="strategy-package-validation-report-json"/, "browser tests should be able to inspect the latest validation report");
   assert.doesNotMatch(mainSource, /new Blob\(\[rom/i, "package save must not include ROM bytes");
 });
+
+test("operation strategy control surfaces validation quality gates", () => {
+  assert.match(mainSource, /validationReport:\s*StrategyPackageValidationReport \| null/, "operation strategy control should receive the latest ValidationReport");
+  assert.match(mainSource, /validationReport\?\.qualityGates/, "operation strategy control should render ValidationReport quality gates");
+  assert.match(mainSource, /data-testid="strategy-validation-gates"/, "quality gate panel should be inspectable by browser tests");
+  assert.match(mainSource, /data-testid=\{`strategy-validation-gate-\$\{gate\.id\}`\}/, "each quality gate should expose a stable test id");
+  assert.match(mainSource, /training\.qualityGates/, "quality gate panel should use localized training labels");
+  assert.match(mainSource, /quality-gate-card/, "quality gates should have dedicated card styling");
+});

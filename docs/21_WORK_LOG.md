@@ -1533,3 +1533,82 @@ Decision:
 - Strategy package saving is now a stronger evidence gate: a passing-looking replay is insufficient unless the ValidationReport includes explicit quality gates.
 - Candidate exports may mark perturbation and regression as `not-applicable`, but any required gate failure blocks saving.
 - Next work should surface these gate states in the training/operation UI and then continue the Contra Stage 1 survival strategy loop with the same evidence standard.
+
+## 2026-06-10 - Validation quality gates surfaced in cockpit UI
+
+Scope:
+
+- Surface the machine-readable `ValidationReport.qualityGates` in the Operation Strategy Control panel.
+- Keep runtime strategy behavior unchanged.
+
+UI changes:
+
+- `apps/browser-cockpit/src/main.tsx`
+  - `OperationStrategyControl` now receives the latest `StrategyPackageValidationReport`;
+  - renders a `strategy-validation-gates` panel;
+  - shows all ValidationReport quality gates when present;
+  - shows a waiting state before validation replay creates a report.
+- `apps/browser-cockpit/src/i18n.ts`
+  - added Chinese and English labels for quality gates and gate status values.
+- `apps/browser-cockpit/src/styles.css`
+  - added compact fixed-grid gate cards;
+  - green/blue/yellow/red styling maps to passed, not-applicable, missing, and failed states.
+- `tests/trainingPanelLayout.test.mjs`
+  - verifies the Operation Strategy Control panel receives a ValidationReport and exposes quality-gate test ids.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+```
+
+```text
+tests 21
+pass 21
+fail 0
+```
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\strategyPackageEvidence.test.mjs tests\i18n.test.mjs
+```
+
+```text
+tests 32
+pass 32
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+```text
+tsc -b && vite build
+built in 2.20s
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 314
+pass 314
+fail 0
+```
+
+Browser check:
+
+- URL: `http://127.0.0.1:5173/?autoload=1`
+- `data-testid="strategy-validation-gates"` exists.
+- Before validation replay, the panel shows the waiting state:
+
+```text
+验证门禁等待验证回放验证门禁等待验证回放
+```
+
+Decision:
+
+- Training evidence is now visible in the cockpit, not just hidden JSON.
+- The next useful UI refinement is to show the specific failed gate reason when a ValidationReport exists.
+- The next strategy-development step remains Contra Stage 1 `survival-v0` progression, using these gates to prevent false promotion.

@@ -6960,6 +6960,7 @@ function TelevisionView({
 
 function OperationStrategyControl({
   training,
+  validationReport,
   language,
   traceRecording,
   onTrainingSaveStrategy,
@@ -6972,6 +6973,7 @@ function OperationStrategyControl({
   onSync2PResourceTo1P
 }: {
   training: GlobalTrainingState;
+  validationReport: StrategyPackageValidationReport | null;
   language: UiLanguage;
   traceRecording: boolean;
   onTrainingSaveStrategy: () => void;
@@ -7000,6 +7002,7 @@ function OperationStrategyControl({
     .join(" / ");
   const archiveSummary = selectedPackIds.map((packId) => strategyResourcePackById(packId).archivePath).join(" / ");
   const resultPack = strategyResourcePackById(training.resourcePacksBySide["1P"]);
+  const qualityGates = validationReport?.qualityGates ?? [];
   const handleSaveStrategy = () => {
     onTrainingSaveStrategy();
     if (training.packageSideScope !== "none") saveDirectoryInputRef.current?.click();
@@ -7072,6 +7075,25 @@ function OperationStrategyControl({
       <div className="strategy-resource-archive">
         <span>{t(language, "training.archive")}</span>
         <strong>{archiveSummary}</strong>
+      </div>
+      <div className="strategy-validation-gates" data-testid="strategy-validation-gates" aria-label={t(language, "training.qualityGates")}>
+        <div className="strategy-validation-gates-heading">
+          <span>{t(language, "training.qualityGates")}</span>
+          <strong>{validationReport ? `${validationReport.result} · ${validationReport.mode}` : t(language, "training.qualityGateWaiting")}</strong>
+        </div>
+        <div className="strategy-validation-gate-grid">
+          {qualityGates.length > 0 ? qualityGates.map((gate) => (
+            <div className={`quality-gate-card ${gate.status}`} data-testid={`strategy-validation-gate-${gate.id}`} key={gate.id}>
+              <span>{gate.label}</span>
+              <strong>{qualityGateStatusLabel(gate.status, language)}</strong>
+            </div>
+          )) : (
+            <div className="quality-gate-card missing" data-testid="strategy-validation-gate-waiting">
+              <span>{t(language, "training.qualityGates")}</span>
+              <strong>{t(language, "training.qualityGateWaiting")}</strong>
+            </div>
+          )}
+        </div>
       </div>
       <div className="strategy-package-save-panel" aria-label={t(language, "training.saveStrategy")}>
         <div className="package-scope-control" aria-label={t(language, "training.packageScope")}>
@@ -7362,6 +7384,16 @@ function LanguageSwitch({
   );
 }
 
+function qualityGateStatusLabel(
+  status: StrategyPackageValidationReport["qualityGates"][number]["status"],
+  language: UiLanguage
+) {
+  if (status === "passed") return t(language, "training.qualityGatePassed");
+  if (status === "failed") return t(language, "training.qualityGateFailed");
+  if (status === "missing") return t(language, "training.qualityGateMissing");
+  return t(language, "training.qualityGateNotApplicable");
+}
+
 function ConsoleDeck({
   status,
   romMetadata,
@@ -7374,6 +7406,7 @@ function ConsoleDeck({
   tasPlaybackState,
   uiLanguage,
   globalTraining,
+  validationReport,
   traceRecording,
   onDirectoryFiles,
   onLoadLocalRom,
@@ -7409,6 +7442,7 @@ function ConsoleDeck({
   tasPlaybackState: TasPlaybackUiState;
   uiLanguage: UiLanguage;
   globalTraining: GlobalTrainingState;
+  validationReport: StrategyPackageValidationReport | null;
   traceRecording: boolean;
   onDirectoryFiles: (files: FileList | null) => void;
   onLoadLocalRom: () => void;
@@ -7598,6 +7632,7 @@ function ConsoleDeck({
       <OperationStrategyControl
         language={uiLanguage}
         training={globalTraining}
+        validationReport={validationReport}
         onTrainingSaveStrategy={onTrainingSaveStrategy}
         onTrainingSavePathSelected={onTrainingSavePathSelected}
         onTrainingValidateStrategy={onTrainingValidateStrategy}
@@ -10248,6 +10283,7 @@ function App() {
           />
           <ConsoleDeck
             globalTraining={globalTraining}
+            validationReport={strategyPackageValidationReport}
             onDirectoryFiles={handleRomDirectoryFiles}
             onLoadLocalRom={loadLocalRom}
             onLanguageChange={setUiLanguage}
