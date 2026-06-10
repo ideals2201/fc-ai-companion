@@ -433,3 +433,72 @@ Rules:
 - TAS-derived scenarios must preserve ROM checksum, emulator/movie metadata, and frame/input-row alignment when available.
 
 This matches the external pattern used by mature emulator-training systems: keep variable maps and scenario goals in the game integration, while the platform only executes the declared contract.
+
+## 11. External Training Pattern Mapping
+
+External emulator-training projects are reference models, not runtime authorities. The project should borrow their durable engineering patterns while keeping the browser cockpit, Strategy Pack format, and FC/NES companion workflow as the local source of truth.
+
+The required mapping is:
+
+| External Pattern | Local System Meaning | Required Local Artifact |
+| --- | --- | --- |
+| Integration-style memory variables | Game-specific RAM facts are declared outside the strategy logic. | `GameProfile`, `condition-registry.json`, `ram-map.json` |
+| Scenario reward and done rules | A training run must define progress, scoring, success, and failure separately. | `training-scenarios.json`, `ValidationReport` |
+| Replay movie input logs | A compact start state plus per-frame inputs can seed demonstrations. | `TraceEvidence`, TAS side baselines, human demonstration traces |
+| Movie header sync anchors | ROM checksum, emulator/runtime, and input timeline must be preserved. | `ROMProfile`, TAS registry, entry-point metadata |
+| DAgger-style failure aggregation | AI failures after imitation are not noise; they are the next training dataset. | known failures, correction windows, candidate fragments |
+| Reward-trap prevention | Score, kills, or item pickup cannot prove a strategy if progress stalls. | stuck-loop gates, progress metrics, negative constraints |
+| Frame-advance emulator control | Training must advance one deterministic frame after input is selected. | headless runtime smoke, browser runtime gate, frame-indexed traces |
+
+Implementation rules:
+
+- Do not import an external framework as the product architecture unless it improves the local standard directly.
+- Do not train from pixels when the emulator RAM state and controller state are available.
+- Do not store raw button streams as final strategy behavior. Convert them into semantic intents, preconditions, and validation-backed fragments.
+- Do not treat a TAS, human run, or AI run as complete proof. It is a source artifact until it survives local validation.
+- Do not use one full-run reward score to approve a fragment. Approval must be tied to the declared segment, strategy type, and failure conditions.
+
+The preferred training loop is:
+
+```text
+source trace -> side-owned baseline -> candidate fragment -> segmented validation -> failure aggregation -> revision or promotion
+```
+
+This loop allows TAS, human demonstrations, AI runs, and automated patch search to share one pipeline without pretending they are the same kind of evidence.
+
+## 12. Training Quality Gates
+
+A candidate is not promotable until all gates pass.
+
+The minimum gates are:
+
+| Gate | What It Blocks | Required Evidence |
+| --- | --- | --- |
+| Schema Gate | malformed package data and unsupported fields | schema validation output |
+| ROM Gate | wrong game version or mapper-dependent desync | ROMProfile hash match |
+| Entry Gate | startup animation, menu, or wrong checkpoint alignment | entry-point metadata and active-game RAM proof |
+| Sync Gate | TAS/movie input drift and controller-state offset errors | movie framecount, input row, RAM checksum sample |
+| Safety Gate | cliffs, death loops, illegal states, and Negative Constraints | Safety Override trace and failure-condition checks |
+| Progress Gate | reward farming, kill farming, and stuck loops | progress metric plus stuck-loop detector |
+| Strategy Gate | a fragment that works for the wrong strategy type | declared strategy taxonomy and scenario score |
+| Side Gate | mixed 1P/2P ownership or wrong cooperation assumptions | side-owned trace ids and side scope |
+| Perturbation Gate | brittle fragments that only work on one exact frame | small timing or state perturbation report when required |
+| Regression Gate | a new candidate that breaks the current validated baseline | headless smoke or validation replay comparison |
+
+Gate behavior:
+
+- If a gate fails, the artifact remains `candidate` or is archived as `rejected`.
+- If a gate is not applicable, the validation report must say why.
+- If a gate is missing evidence, the artifact is incomplete, not passed.
+- If a candidate improves one metric but fails survival, sync, or progress, it must not be promoted.
+- If a candidate is rejected, keep its trace and reason so future training does not repeat the same failed idea.
+
+Quality labels:
+
+- `draft`: local work in progress; may be incomplete.
+- `candidate`: schema-valid and testable, but not proven.
+- `validated`: passed the declared scenario and gates for one mode.
+- `verified`: passed repeated runs, perturbation checks, and applicable side/cooperation modes.
+- `rejected`: tested and blocked by evidence.
+
+The UI must show these labels plainly. A player should be able to tell whether a strategy is an experiment, a working local candidate, or a proven package before using it in live play.

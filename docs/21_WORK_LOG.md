@@ -1423,3 +1423,57 @@ Decision:
   - W1205 high incoming soldier handling,
   - and route timing before the loop starts.
 - Do not promote `w1205-post-retreat-low-lane-recovery` into live `survival-v0`.
+
+## 2026-06-10 - Network training references mapped into training standard
+
+Scope:
+
+- Review external emulator-training and operation-training patterns for ideas useful to the FC/NES companion platform.
+- Keep the result in the project standard instead of adding runtime behavior prematurely.
+
+External lessons retained:
+
+- Stable-Retro / Gym Retro style integrations separate memory variables, scenario reward rules, done rules, ROM hashes, and start states.
+- Replay or movie files are useful as compact input demonstrations, but they are training sources rather than live controllers.
+- DAgger-style dataset aggregation matches the project workflow: run the current strategy, capture failure states, add short correction windows, and validate again.
+- Score-only or kill-only rewards can create reward traps and loops, so validation must include progress, survival, terminal conditions, and stuck-loop gates.
+- Frame-advance emulator control matches the local browser/jsnes loop: choose input first, then advance one deterministic frame.
+
+Standard changes:
+
+- `docs/STRATEGY_TRAINING_STANDARD.md`
+  - added `## 11. External Training Pattern Mapping`;
+  - added `## 12. Training Quality Gates`;
+  - mapped external patterns to local artifacts such as `GameProfile`, `condition-registry.json`, `TraceEvidence`, TAS side baselines, `ROMProfile`, known failures, candidate fragments, and headless runtime smoke;
+  - formalized promotion gates: Schema, ROM, Entry, Sync, Safety, Progress, Strategy, Side, Perturbation, and Regression;
+  - made the rule explicit: a candidate is not promotable until all gates pass.
+- `tests/strategyTrainingStandardDoc.test.mjs`
+  - now verifies the new sections and required phrases.
+
+Verification:
+
+```powershell
+node --test tests\strategyTrainingStandardDoc.test.mjs
+```
+
+```text
+tests 1
+pass 1
+fail 0
+```
+
+```powershell
+node --test tests\strategyTrainingStandardDoc.test.mjs tests\strategyPackStandardDoc.test.mjs tests\strategyProtocolCoreDoc.test.mjs tests\standardizedOperationManualDoc.test.mjs
+```
+
+```text
+tests 9
+pass 9
+fail 0
+```
+
+Decision:
+
+- Do not switch the project to generic neural-network training as the default.
+- Continue using strategy-fragment training: source trace -> side-owned baseline -> candidate fragment -> segmented validation -> failure aggregation -> revision or promotion.
+- Next implementation work should align the cockpit training UI and strategy-pack validation flow to these gates before promoting new operation strategies.

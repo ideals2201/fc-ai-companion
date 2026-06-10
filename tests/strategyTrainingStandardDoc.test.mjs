@@ -23,7 +23,9 @@ test("strategy training standard document defines the training workflow", () => 
     "## 7. Promotion Rules",
     "## 8. Validation Rules",
     "## 9. Optimization Levels",
-    "## 10. Training Scenario Files"
+    "## 10. Training Scenario Files",
+    "## 11. External Training Pattern Mapping",
+    "## 12. Training Quality Gates"
   ].forEach((heading) => assert.ok(source.includes(heading), `${heading} should be documented`));
 
   assert.match(source, /Select Base/, "training standard should define the baseline-selection action");
@@ -60,4 +62,10 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /Level 1/, "training standard should define Level 1 asset quality");
   assert.match(source, /Level 2/, "training standard should define Level 2 asset quality");
   assert.match(source, /Treat strategies as code, and treat TAS traces as test cases/, "training standard should preserve the engineering directive in English");
+  assert.match(source, /Integration-style memory variables/, "training standard should map external integration patterns to local modules");
+  assert.match(source, /Replay movie input logs/, "training standard should map replay and TAS input logs to local training artifacts");
+  assert.match(source, /DAgger-style failure aggregation/, "training standard should map DAgger-style correction to our trace workflow");
+  assert.match(source, /Reward-trap prevention/, "training standard should map RL reward-trap lessons to validation gates");
+  assert.match(source, /Frame-advance emulator control/, "training standard should map frame-advance bot loops to local runtime execution");
+  assert.match(source, /A candidate is not promotable until all gates pass/, "training standard should state the promotion gate explicitly");
 });
