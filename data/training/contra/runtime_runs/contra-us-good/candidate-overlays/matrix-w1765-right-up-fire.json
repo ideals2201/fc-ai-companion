@@ -1,0 +1,18 @@
+{
+  "id": "matrix-w1765-right-up-fire",
+  "action": "right_up_fire",
+  "guard": {
+    "airborne": true,
+    "enemy": {
+      "dx": [-16, 28],
+      "dy": [-36, 36],
+      "fixed": false,
+      "hpMin": 1,
+      "kind": "enemy",
+      "threat": true
+    },
+    "playerX": [24, 92],
+    "playerY": [128, 220],
+    "worldX": [1748, 1810]
+  }
+}

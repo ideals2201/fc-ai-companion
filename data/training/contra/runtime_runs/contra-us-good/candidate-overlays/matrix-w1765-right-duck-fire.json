@@ -1,0 +1,17 @@
+{
+  "id": "matrix-w1765-right-duck-fire",
+  "action": "right_duck_fire",
+  "guard": {
+    "enemy": {
+      "dx": [-16, 28],
+      "dy": [-16, 44],
+      "fixed": false,
+      "hpMin": 1,
+      "kind": "enemy",
+      "threat": true
+    },
+    "playerX": [24, 92],
+    "playerY": [150, 220],
+    "worldX": [1748, 1810]
+  }
+}

@@ -191,3 +191,33 @@ test("contra segment candidate search CLI can dry-run candidate runtime commands
   assert.ok(output.candidates[0].command.includes("--frames=1234"));
   assert.ok(output.candidates[0].command.includes("--candidate-trial=alpha-window"));
 });
+
+test("contra segment candidate search CLI can dry-run data-driven candidate configs", () => {
+  const tmpDir = path.join(repoRoot, ".tmp", "tests");
+  fs.mkdirSync(tmpDir, { recursive: true });
+  const configPath = path.join(tmpDir, "matrix-w1765-right-up-fire.json");
+  fs.writeFileSync(configPath, JSON.stringify({
+    id: "matrix-w1765-right-up-fire",
+    action: "right_up_fire",
+    guard: {
+      airborne: true,
+      worldX: [1758, 1784]
+    }
+  }, null, 2), "utf8");
+
+  const result = spawnSync(process.execPath, [
+    path.join(repoRoot, "scripts/contra-segment-candidate-search.mjs"),
+    "--dry-run",
+    `--candidate-config=${path.relative(repoRoot, configPath)}`,
+    "--frames=1234"
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.candidates.length, 1);
+  assert.equal(output.candidates[0].candidateTrial, "matrix-w1765-right-up-fire");
+  assert.ok(output.candidates[0].command.includes("--candidate-config=.tmp/tests/matrix-w1765-right-up-fire.json"));
+});

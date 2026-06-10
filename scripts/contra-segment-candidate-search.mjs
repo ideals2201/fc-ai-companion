@@ -7,10 +7,10 @@ import ts from "typescript";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const runtimeScript = path.join(repoRoot, "scripts", "headless-runtime-smoke.mjs");
 const defaultCandidates = [
-  "w1765-reentry-right-fire-carry",
-  "w1769-reentry-right-carry-extension",
-  "w1686-left-edge-duck-hold-guard",
-  "w1721-airborne-upper-preclear-right-fire"
+  { candidateConfigPath: "", candidateTrial: "w1765-reentry-right-fire-carry" },
+  { candidateConfigPath: "", candidateTrial: "w1769-reentry-right-carry-extension" },
+  { candidateConfigPath: "", candidateTrial: "w1686-left-edge-duck-hold-guard" },
+  { candidateConfigPath: "", candidateTrial: "w1721-airborne-upper-preclear-right-fire" }
 ];
 
 function parseArgs(argv) {
@@ -29,7 +29,19 @@ function parseArgs(argv) {
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean);
-      options.candidates.push(...values);
+      options.candidates.push(...values.map((candidateTrial) => ({
+        candidateConfigPath: "",
+        candidateTrial
+      })));
+    } else if (arg.startsWith("--candidate-config=")) {
+      const values = arg.slice("--candidate-config=".length)
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      options.candidates.push(...values.map((candidateConfigPath) => ({
+        candidateConfigPath: candidateConfigPath.replaceAll("\\", "/"),
+        candidateTrial: readCandidateConfigId(candidateConfigPath)
+      })));
     } else if (arg.startsWith("--frames=")) {
       const value = Number.parseInt(arg.slice("--frames=".length), 10);
       if (Number.isFinite(value) && value > 0) options.frames = Math.min(value, 20000);
@@ -47,14 +59,27 @@ function parseArgs(argv) {
   return options;
 }
 
-function buildRuntimeArgs(options, candidateTrial) {
-  return [
+function readCandidateConfigId(configPath) {
+  const absolutePath = path.resolve(repoRoot, configPath);
+  const config = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+  if (!config || typeof config.id !== "string" || !config.id.trim()) {
+    throw new Error(`Candidate config must include id: ${configPath}`);
+  }
+  return config.id.trim();
+}
+
+function buildRuntimeArgs(options, candidate) {
+  const args = [
     runtimeScript,
     `--frames=${options.frames}`,
     `--strategy=${options.strategy}`,
-    "--probe=route-plan",
-    `--candidate-trial=${candidateTrial}`
+    "--probe=route-plan"
   ];
+  if (candidate.candidateConfigPath) {
+    args.push(`--candidate-config=${candidate.candidateConfigPath}`);
+  }
+  args.push(`--candidate-trial=${candidate.candidateTrial}`);
+  return args;
 }
 
 function commandPreview(args) {
@@ -82,8 +107,8 @@ async function importTypeScriptModule(relativePath) {
   return import(transpileLocalTypeScriptModule(relativePath));
 }
 
-function runCandidate(options, candidateTrial) {
-  const args = buildRuntimeArgs(options, candidateTrial);
+function runCandidate(options, candidate) {
+  const args = buildRuntimeArgs(options, candidate);
   const result = spawnSync(process.execPath, args, {
     cwd: repoRoot,
     encoding: "utf8",
@@ -92,7 +117,8 @@ function runCandidate(options, candidateTrial) {
 
   if (result.error) {
     return {
-      candidateTrial,
+      candidateConfigPath: candidate.candidateConfigPath,
+      candidateTrial: candidate.candidateTrial,
       report: {
         status: "error",
         reason: result.error.message,
@@ -104,13 +130,15 @@ function runCandidate(options, candidateTrial) {
 
   try {
     return {
-      candidateTrial,
+      candidateConfigPath: candidate.candidateConfigPath,
+      candidateTrial: candidate.candidateTrial,
       report: JSON.parse(result.stdout),
       stderr: result.stderr
     };
   } catch (error) {
     return {
-      candidateTrial,
+      candidateConfigPath: candidate.candidateConfigPath,
+      candidateTrial: candidate.candidateTrial,
       report: {
         status: "error",
         reason: error instanceof Error ? error.message : String(error),
@@ -128,10 +156,11 @@ function dryRunReport(options) {
     dryRun: true,
     frames: options.frames,
     strategy: options.strategy,
-    candidates: options.candidates.map((candidateTrial) => {
-      const args = buildRuntimeArgs(options, candidateTrial);
+    candidates: options.candidates.map((candidate) => {
+      const args = buildRuntimeArgs(options, candidate);
       return {
-        candidateTrial,
+        candidateConfigPath: candidate.candidateConfigPath || null,
+        candidateTrial: candidate.candidateTrial,
         command: commandPreview(args)
       };
     })
@@ -146,7 +175,7 @@ async function main() {
   }
 
   const { createContraSegmentCandidateSearchReport } = await importTypeScriptModule("apps/browser-cockpit/src/contraSegmentCandidateSearch.ts");
-  const candidates = options.candidates.map((candidateTrial) => runCandidate(options, candidateTrial));
+  const candidates = options.candidates.map((candidate) => runCandidate(options, candidate));
   const report = createContraSegmentCandidateSearchReport({
     candidates,
     createdAt: new Date().toISOString(),
@@ -172,6 +201,7 @@ async function main() {
     strategy: options.strategy,
     candidates: candidates.map((candidate) => ({
       candidateTrial: candidate.candidateTrial,
+      candidateConfigPath: candidate.candidateConfigPath || null,
       status: candidate.report.status ?? "unknown",
       lostActiveFrame: candidate.report.lostActiveFrame ?? null,
       finalProgression: candidate.report.finalSnapshot?.worldX ?? 0,

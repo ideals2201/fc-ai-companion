@@ -82,7 +82,8 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-spread-exit-jump"
     | "stage-one-spread-jump-edge"
     | "stage-one-spread-turret-suppression"
-    | "stage-one-spread-rush";
+    | "stage-one-spread-rush"
+    | `overlay:${string}`;
   right?: boolean;
   up?: boolean;
 };

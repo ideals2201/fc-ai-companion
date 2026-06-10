@@ -29,6 +29,9 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /probeInput/);
   assert.match(scriptSource, /routeSegment/);
   assert.match(scriptSource, /candidateTrial/);
+  assert.match(scriptSource, /--candidate-config=/);
+  assert.match(scriptSource, /readCandidateConfig/);
+  assert.match(scriptSource, /candidateOverlay/);
   assert.match(scriptSource, /maxProgressSnapshot/);
   assert.match(scriptSource, /lastActiveSnapshot/);
   assert.match(scriptSource, /lostActiveSnapshot/);

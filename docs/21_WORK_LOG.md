@@ -84,6 +84,70 @@ segmented + contra candidate search tests: 37 pass, 0 fail
   - timeout/exit condition。
 - 用批量工具对 W1765-W1960 窗口生成多动作组合，按无死亡、最大进度、stall、恢复质量排序。
 
+### Contra US 数据驱动 overlay 动作矩阵落地
+
+触发：
+
+- 批量搜索工具已经能统一运行和排序候选，但候选仍依赖 `candidateTrial` 硬编码分支。
+- 为提高训练效率，候选动作必须从 JSON 配置进入 runtime，而不是每次修改 TypeScript 分支。
+
+新增能力：
+
+- 新增 `routeActionOverlay.ts`，支持用数据声明：
+  - WorldX window；
+  - playerX/playerY guard；
+  - grounded/airborne guard；
+  - enemy relative lane guard；
+  - action primitive，例如 `right_up_fire`、`right_duck_fire`、`pulse_right_fire`、`neutral_fire`。
+- `headless-runtime-smoke.mjs` 新增 `--candidate-config=<path>`。
+- `contra-segment-candidate-search.mjs` 新增 `--candidate-config=<path>`，可以把一个或多个 JSON overlay 当作候选批量运行。
+
+新增候选文件：
+
+```text
+data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-up-fire.json
+data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-duck-fire.json
+data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-pulse-right-fire.json
+data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-neutral-fire.json
+```
+
+Runtime：
+
+```powershell
+node scripts\contra-segment-candidate-search.mjs --candidate-config=data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-up-fire.json --candidate-config=data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-duck-fire.json --candidate-config=data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-pulse-right-fire.json --candidate-config=data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-neutral-fire.json --frames=14000 --out=data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-overlay-matrix-w1765-20260610.json
+```
+
+结果：
+
+```text
+matrix-w1765-right-up-fire     lost-active lostActiveFrame=9414 maxProgression=1783 rejected death
+matrix-w1765-right-duck-fire   lost-active lostActiveFrame=9414 maxProgression=1783 rejected death
+matrix-w1765-pulse-right-fire  lost-active lostActiveFrame=9414 maxProgression=1783 rejected death
+matrix-w1765-neutral-fire      lost-active lostActiveFrame=9414 maxProgression=1783 rejected death
+```
+
+结论：
+
+- 第一组数据驱动 overlay 全部 rejected，`bestAttempt=null`。
+- 这不是策略成功，但方法成功：现在可以用 JSON 生成和运行候选，不需要继续改源码分支。
+- 四个 overlay 都卡在 W1783，说明下一轮不应继续只改 W1765-W1810 的局部动作，而应把搜索窗口前移到 W1720-W1785，并加入 entry-state / route-formation guards。
+
+验证：
+
+```powershell
+node --test tests\routeActionOverlay.test.mjs
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\headlessRuntimeSmokeScript.test.mjs
+node --test tests\contraSegmentCandidateSearch.test.mjs
+```
+
+```text
+route action overlay: 3 pass
+headless route plan probe: 57 pass
+headless runtime smoke script: 6 pass
+contra candidate search: 5 pass
+```
+
 ### 操作训练网络复核
 
 触发：

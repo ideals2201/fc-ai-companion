@@ -1,0 +1,17 @@
+{
+  "id": "matrix-w1765-neutral-fire",
+  "action": "neutral_fire",
+  "guard": {
+    "enemy": {
+      "dx": [-12, 24],
+      "dy": [-28, 28],
+      "fixed": false,
+      "hpMin": 1,
+      "kind": "enemy",
+      "threat": true
+    },
+    "playerX": [24, 92],
+    "playerY": [128, 220],
+    "worldX": [1748, 1810]
+  }
+}

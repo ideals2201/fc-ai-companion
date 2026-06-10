@@ -1,0 +1,22 @@
+{
+  "id": "matrix-w1765-pulse-right-fire",
+  "action": "pulse_right_fire",
+  "pulse": {
+    "firePeriod": 6,
+    "fireWidth": 3
+  },
+  "guard": {
+    "airborne": true,
+    "enemy": {
+      "dx": [-16, 36],
+      "dy": [-40, 40],
+      "fixed": false,
+      "hpMin": 1,
+      "kind": "enemy",
+      "threat": true
+    },
+    "playerX": [24, 92],
+    "playerY": [128, 220],
+    "worldX": [1748, 1810]
+  }
+}

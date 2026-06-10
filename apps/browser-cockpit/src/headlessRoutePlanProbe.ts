@@ -4,6 +4,7 @@ import {
   stageOneOpeningLowFixedThreatPatch,
   type StageOneRewardButtonPatch
 } from "./contraStage1RewardTactics";
+import { routeActionOverlayPatch, type RouteActionOverlay } from "./routeActionOverlay";
 import type { StageRouteSegment } from "./stageOneStrategyPlan";
 
 type HeadlessButtonName = "up" | "down" | "left" | "right" | "a" | "b" | "start" | "select";
@@ -44,6 +45,7 @@ function createProbeButtonState(): HeadlessButtonState {
 }
 
 export type HeadlessRoutePlanProbeOptions = {
+  candidateOverlay?: RouteActionOverlay | null;
   candidateTrial?:
     | "w1205-falling-threat-priority"
     | "w1205-falling-threat-contact-interrupt"
@@ -926,6 +928,7 @@ function applyRouteJump(buttons: HeadlessButtonState, routeSegment: HeadlessRout
 }
 
 export function decideHeadlessRoutePlanProbeButtons({
+  candidateOverlay = null,
   candidateTrial = null,
   frame,
   progressStallFrames = 0,
@@ -943,6 +946,11 @@ export function decideHeadlessRoutePlanProbeButtons({
   const openingLowFixedThreatPatch = stageOneOpeningLowFixedThreatProbePatch(snapshot, frame);
   if (openingLowFixedThreatPatch) {
     applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
+    return buttons;
+  }
+  const overlayPatch = routeActionOverlayPatch(snapshot, candidateOverlay, frame);
+  if (overlayPatch) {
+    applyStageOneRewardPatch(buttons, overlayPatch);
     return buttons;
   }
   if (candidateTrial === "w1205-force-upright-through") {

@@ -1,0 +1,340 @@
+{
+  "schema": "fc-ai-contra-segment-candidate-search-run-v1",
+  "dryRun": false,
+  "frames": 14000,
+  "strategy": "survival-v0",
+  "candidates": [
+    {
+      "candidateTrial": "matrix-w1765-right-up-fire",
+      "candidateConfigPath": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-up-fire.json",
+      "status": "lost-active",
+      "lostActiveFrame": 9414,
+      "finalProgression": 82,
+      "maxProgression": 1783,
+      "progressStallFrames": 0
+    },
+    {
+      "candidateTrial": "matrix-w1765-right-duck-fire",
+      "candidateConfigPath": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-right-duck-fire.json",
+      "status": "lost-active",
+      "lostActiveFrame": 9414,
+      "finalProgression": 82,
+      "maxProgression": 1783,
+      "progressStallFrames": 0
+    },
+    {
+      "candidateTrial": "matrix-w1765-pulse-right-fire",
+      "candidateConfigPath": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-pulse-right-fire.json",
+      "status": "lost-active",
+      "lostActiveFrame": 9414,
+      "finalProgression": 82,
+      "maxProgression": 1783,
+      "progressStallFrames": 0
+    },
+    {
+      "candidateTrial": "matrix-w1765-neutral-fire",
+      "candidateConfigPath": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/matrix-w1765-neutral-fire.json",
+      "status": "lost-active",
+      "lostActiveFrame": 9414,
+      "finalProgression": 82,
+      "maxProgression": 1783,
+      "progressStallFrames": 0
+    }
+  ],
+  "report": {
+    "schema": "fc-ai-segmented-training-search-report-v1",
+    "schemaVersion": "1.0.0",
+    "createdAt": "2026-06-10T11:19:32.228Z",
+    "gameProfileId": "contra",
+    "romProfileId": "contra-us-good",
+    "side": "1P",
+    "stageId": "stage-1",
+    "segment": {
+      "id": "contra-us-stage1-survival-batch-search",
+      "progressionMetric": "progression.primary",
+      "progressionStart": 1120,
+      "progressionEnd": 2048,
+      "strategyKey": "survival-v0"
+    },
+    "status": "candidate-search",
+    "sourceLevel": "Level 1 Automated",
+    "validationStatus": "missing",
+    "syncAnchors": {
+      "runtime": "browser-headless-jsnes",
+      "inputClock": "nes.frame-before-step",
+      "initialStateType": "runtime-checkpoint",
+      "movieFramecount": null,
+      "inputRowIndex": null,
+      "knownInputRamOffsetFrames": null
+    },
+    "deterministicContext": {
+      "rngStatus": "unknown",
+      "inputSamplingDelayFrames": 0,
+      "perturbationRequired": true
+    },
+    "attempts": [
+      {
+        "attemptId": "matrix-w1765-right-up-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-right-up-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-right-duck-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-right-duck-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-pulse-right-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-pulse-right-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-neutral-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-neutral-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      }
+    ],
+    "bestAttempt": null,
+    "rejectedAttempts": [
+      {
+        "attemptId": "matrix-w1765-right-up-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-right-up-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-right-duck-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-right-duck-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-pulse-right-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-pulse-right-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      },
+      {
+        "attemptId": "matrix-w1765-neutral-fire-runtime-trial",
+        "candidateFragmentId": "candidate-fragment-1p-survival-v0-matrix-w1765-neutral-fire",
+        "deathCount": 1,
+        "desynced": false,
+        "finalProgression": 82,
+        "fixedTargetsDestroyed": 0,
+        "frameCount": 14000,
+        "maxProgression": 1783,
+        "progressStallFrames": 0,
+        "rewardsCollected": 0,
+        "runtimeEvidence": {
+          "status": "lost-active",
+          "reason": "gameplay-lost",
+          "lostActiveFrame": 9414,
+          "progressStallFrames": 0,
+          "finalProgression": 82,
+          "maxProgression": 1783
+        },
+        "scoreDelta": 0,
+        "stuckLoop": false,
+        "gateStatus": "rejected",
+        "progressGain": 663,
+        "rejectionReasons": [
+          "death"
+        ],
+        "riskTags": [],
+        "score": -9587
+      }
+    ],
+    "promotionGates": [
+      {
+        "id": "trace-evidence",
+        "status": "missing"
+      },
+      {
+        "id": "validation-report",
+        "status": "missing"
+      },
+      {
+        "id": "mode-specific-runtime-replay",
+        "status": "missing"
+      },
+      {
+        "id": "deterministic-context",
+        "status": "missing"
+      },
+      {
+        "id": "negative-constraints",
+        "status": "missing"
+      }
+    ],
+    "requiredPromotionEvidence": [
+      "TraceEvidence",
+      "ValidationReport",
+      "mode-specific runtime replay"
+    ]
+  }
+}

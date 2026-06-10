@@ -20,6 +20,7 @@ const buttonMap = {
 
 function parseArgs(argv) {
   const options = {
+    candidateConfigPath: "",
     candidateTrial: null,
     dryRun: false,
     frames: 1800,
@@ -37,6 +38,10 @@ function parseArgs(argv) {
     else if (arg.startsWith("--candidate-trial=")) {
       const value = arg.slice("--candidate-trial=".length).trim();
       options.candidateTrial = value || null;
+    }
+    else if (arg.startsWith("--candidate-config=")) {
+      const value = arg.slice("--candidate-config=".length).trim();
+      options.candidateConfigPath = value || "";
     }
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--trace-start=")) {
@@ -106,6 +111,16 @@ async function importTypeScriptModule(relativePath) {
 function selectedRomPath(env) {
   const configured = process.env.FC_AI_COMPANION_ROM_PATH || env.FC_AI_COMPANION_ROM_PATH || "";
   return configured ? path.resolve(configured) : "";
+}
+
+function readCandidateConfig(configPath) {
+  if (!configPath) return null;
+  const absolutePath = path.resolve(repoRoot, configPath);
+  const overlay = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+  return {
+    overlay,
+    path: path.relative(repoRoot, absolutePath).replace(/\\/g, "/")
+  };
 }
 
 function hashRom(bytes) {
@@ -406,6 +421,9 @@ async function main() {
     decideHeadlessRoutePlanProbeButtons
   } = await importTypeScriptModule("apps/browser-cockpit/src/headlessRoutePlanProbe.ts");
   const strategyPlan = planForStrategy(options.strategy, defaultStrategyPlans);
+  const candidateConfig = readCandidateConfig(options.candidateConfigPath);
+  const candidateOverlay = candidateConfig?.overlay ?? null;
+  const candidateTrial = options.candidateTrial ?? candidateOverlay?.id ?? null;
 
   const baseReport = {
     schema: "fc-ai-headless-runtime-smoke-v1",
@@ -414,7 +432,13 @@ async function main() {
       tasIsController: false
     },
     maxFrames: options.frames,
-    candidateTrial: options.candidateTrial,
+    candidateConfig: candidateConfig
+      ? {
+          id: candidateOverlay?.id ?? null,
+          path: candidateConfig.path
+        }
+      : null,
+    candidateTrial,
     probeInput: options.probeInput,
     strategyKey: options.strategy,
     strategyPlan: strategyPlan ? {
@@ -505,7 +529,8 @@ async function main() {
     const progressStallFrames = currentProgressStallFrames(beforeSnapshot);
     const buttons = active && options.probeInput === "route-plan"
       ? decideHeadlessRoutePlanProbeButtons({
-          candidateTrial: options.candidateTrial,
+          candidateTrial,
+          candidateOverlay,
           frame,
           progressStallFrames,
           routeSegment,

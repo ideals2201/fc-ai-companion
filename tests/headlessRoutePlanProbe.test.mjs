@@ -5,23 +5,33 @@ import ts from "typescript";
 
 async function importTypeScriptModule(path) {
   const source = fs.readFileSync(path, "utf8");
-  const dependencySource = fs.readFileSync(new URL("../apps/browser-cockpit/src/contraStage1RewardTactics.ts", import.meta.url), "utf8");
-  const dependency = ts.transpileModule(dependencySource, {
-    compilerOptions: {
-      module: ts.ModuleKind.ES2022,
-      target: ts.ScriptTarget.ES2022
-    }
-  });
-  const dependencyUrl = `data:text/javascript;base64,${Buffer.from(dependency.outputText).toString("base64")}`;
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2022
     }
   });
-  const outputText = transpiled.outputText.replace(/from "\.\/contraStage1RewardTactics"/g, `from "${dependencyUrl}"`);
+  const outputText = transpiled.outputText.replace(/from "\.\/([^"]+)"/g, (_match, specifier) => {
+    const dependencyPath = new URL(`../apps/browser-cockpit/src/${specifier}.ts`, import.meta.url);
+    return `from "${importTypeScriptModuleUrl(dependencyPath)}"`;
+  });
   const dataUrl = `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
   return import(dataUrl);
+}
+
+function importTypeScriptModuleUrl(path) {
+  const source = fs.readFileSync(path, "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022
+    }
+  });
+  const outputText = transpiled.outputText.replace(/from "\.\/([^"]+)"/g, (_match, specifier) => {
+    const dependencyPath = new URL(`../apps/browser-cockpit/src/${specifier}.ts`, import.meta.url);
+    return `from "${importTypeScriptModuleUrl(dependencyPath)}"`;
+  });
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
 }
 
 const {
@@ -2531,6 +2541,55 @@ test("headless route-plan probe can isolate W1721 airborne upper preclear right 
   assert.equal(preclearButtons.down, false);
   assert.equal(preclearButtons.a, false);
   assert.equal(preclearButtons.b, true);
+});
+
+test("headless route-plan probe applies a data-driven candidate overlay before hardcoded trials", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const airborneThreatSnapshot = snapshot({
+    jumpState: 209,
+    playerX: 60,
+    playerY: 160,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 70, y: 150, vx: -1, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateOverlay: {
+      id: "matrix-w1765-right-up-fire",
+      action: "right_up_fire",
+      guard: {
+        airborne: true,
+        enemy: {
+          dx: [-12, 18],
+          dy: [-24, 12],
+          fixed: false,
+          hpMin: 1,
+          kind: "enemy"
+        },
+        playerX: [40, 80],
+        playerY: [140, 180],
+        worldX: [1758, 1784]
+      }
+    },
+    frame: 12660,
+    routeSegment,
+    snapshot: airborneThreatSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
 });
 
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
