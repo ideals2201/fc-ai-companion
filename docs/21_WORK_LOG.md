@@ -1054,3 +1054,144 @@ Decision:
 - The live `survival-v0` strategy is unchanged in outcome: it still stalls at W1205 and is not validated.
 - The isolated falling-threat candidate remains rejected because it causes gameplay loss.
 - The training system is now more rigorous: every future segment attempt must carry sync anchors, deterministic context, and explicit promotion gates before it can move toward StrategyFragment promotion.
+
+### 2026-06-10: W1205 late-contact candidates rejected
+
+Trigger:
+
+- The previous isolated `w1205-falling-threat-priority` candidate passed the stall point but died at `frame=2677`.
+- The trace window showed a close body contact, not a projectile problem.
+
+Root-cause trace:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=3000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-priority --trace-start=2668 --trace-end=2678
+```
+
+Compressed evidence:
+
+```text
+frame 2668 W1198 buttons=uprightab enemy slot14 dx=16 dy=-24
+frame 2671 W1201 buttons=uprightab enemy slot14 dx=9 dy=-21
+frame 2675 W1205 buttons=uprightab enemy slot14 dx=0 dy=-18
+frame 2676 W1206 buttons=uprightab enemy slot14 dx=-2 dy=-18
+frame 2677 W1207 deathFlag=1 p1State=2 enemy slot14 dx=-5 dy=-17
+```
+
+Interpretation:
+
+- The AI kept right-up fire while grounded.
+- The nearby soldier entered the player collision box.
+- Holding A did not create a new jump edge; `jumpState` stayed `0`.
+- Therefore W1205 cannot be solved by simply continuing right-up fire.
+
+New isolated candidates:
+
+1. `w1205-falling-threat-contact-interrupt`
+   - behavior: keep falling-threat priority, then switch to close-body left/up fire in the contact window.
+   - result: rejected.
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-contact-interrupt
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=2677
+maxW=1211
+finalW=82
+```
+
+2. `w1205-contact-jump-preload`
+   - behavior: release A before the contact window, then press A with left-up fire.
+   - result: rejected.
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-contact-jump-preload
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=2677
+maxW=1201
+finalW=82
+```
+
+Code changes:
+
+- `apps/browser-cockpit/src/headlessRoutePlanProbe.ts`
+  - added isolated candidate-trial branches for:
+    - `w1205-falling-threat-contact-interrupt`
+    - `w1205-contact-jump-preload`
+  - default live strategy behavior remains unchanged unless `--candidate-trial` is passed.
+- `tests/headlessRoutePlanProbe.test.mjs`
+  - added candidate isolation tests for both new W1205 branches.
+- `data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json`
+  - archived both candidates as rejected attempts.
+- `tests/contraUSSegmentedTrainingSearchEvidence.test.mjs`
+  - verifies both rejected attempts are present and not validated.
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\contraUSSegmentedTrainingSearchEvidence.test.mjs
+```
+
+Result:
+
+```text
+tests 21
+pass 21
+fail 0
+```
+
+```powershell
+npm test
+```
+
+Result:
+
+```text
+tests 307
+pass 307
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+Result:
+
+```text
+tsc -b && vite build
+built in 2.25s
+```
+
+Default live smoke:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status=stalled-active
+reason=progress-stalled
+maxW=1205
+finalW=1154
+progressStall=994
+```
+
+Decision:
+
+- Both late-contact candidates are rejected.
+- W1205 should now move to an earlier intervention model:
+  - start the route change before W1198,
+  - establish a safe standing position,
+  - clear the soldier/fixed object before body contact,
+  - or use a fixed StagePlan node with deliberate pause/aim instead of reactive close-body handling.
+- Do not promote either rejected branch into live `survival-v0`.

@@ -44,7 +44,11 @@ function createProbeButtonState(): HeadlessButtonState {
 }
 
 export type HeadlessRoutePlanProbeOptions = {
-  candidateTrial?: "w1205-falling-threat-priority" | null;
+  candidateTrial?:
+    | "w1205-falling-threat-priority"
+    | "w1205-falling-threat-contact-interrupt"
+    | "w1205-contact-jump-preload"
+    | null;
   frame: number;
   progressStallFrames?: number;
   routeSegment: Pick<StageRouteSegment, "id" | "action" | "fire" | "jumpEvery" | "worldStart" | "worldEnd"> | null;
@@ -175,6 +179,38 @@ function stageOneCloseBodyThreatProbePatch(
   }, isGrounded(snapshot), frame);
 }
 
+function hasW1205ContactInterruptThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1198 || snapshot.worldX > 1210) return false;
+  if (snapshot.playerY < 188) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -6 && dx <= 10 && dy >= -30 && dy <= 4;
+  });
+}
+
+function findW1205ContactPreloadThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1194 || snapshot.worldX > 1212) return null;
+  if (snapshot.playerY < 188) return null;
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8 && dx <= 18 && dy >= -30 && dy <= 4;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -297,6 +333,41 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (openingLowFixedThreatPatch) {
     applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
     return buttons;
+  }
+  if (candidateTrial === "w1205-contact-jump-preload") {
+    const preloadThreat = findW1205ContactPreloadThreat(snapshot);
+    const fallingThreatPatch = rewardStationFallingThreatProbePatch(snapshot, frame);
+    if (preloadThreat && fallingThreatPatch) {
+      const dx = preloadThreat.x - snapshot.playerX;
+      if (dx > 10) {
+        applyStageOneRewardPatch(buttons, { ...fallingThreatPatch, a: false });
+      } else {
+        applyStageOneRewardPatch(buttons, {
+          a: true,
+          b: true,
+          down: false,
+          left: true,
+          reason: "stage-one-close-body-threat",
+          right: false,
+          up: true
+        });
+      }
+      return buttons;
+    }
+    if (fallingThreatPatch) {
+      applyStageOneRewardPatch(buttons, fallingThreatPatch);
+      return buttons;
+    }
+  }
+  if (candidateTrial === "w1205-falling-threat-contact-interrupt") {
+    const fallingThreatPatch = rewardStationFallingThreatProbePatch(snapshot, frame);
+    if (fallingThreatPatch) {
+      const contactInterruptPatch = hasW1205ContactInterruptThreat(snapshot)
+        ? stageOneCloseBodyThreatProbePatch(snapshot, frame)
+        : null;
+      applyStageOneRewardPatch(buttons, contactInterruptPatch ?? fallingThreatPatch);
+      return buttons;
+    }
   }
   if (candidateTrial === "w1205-falling-threat-priority") {
     const fallingThreatPatch = rewardStationFallingThreatProbePatch(snapshot, frame);

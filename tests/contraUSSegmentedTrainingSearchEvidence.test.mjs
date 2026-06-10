@@ -55,4 +55,22 @@ test("Contra US W1205 segmented search baseline archives the current stall witho
   assert.equal(fallingPriority.finalProgression, 1174);
   assert.equal(fallingPriority.runtimeEvidence.candidateTrial, "w1205-falling-threat-priority");
   assert.equal(fallingPriority.runtimeEvidence.status, "recovered-after-loss");
+
+  const contactInterrupt = report.attempts.find((attempt) => attempt.attemptId === "falling-threat-contact-interrupt-candidate-trial");
+  assert.ok(contactInterrupt, "contact interrupt trial should be archived as a rejected candidate");
+  assert.equal(contactInterrupt.gateStatus, "rejected");
+  assert.ok(contactInterrupt.rejectionReasons.includes("death"));
+  assert.equal(contactInterrupt.maxProgression, 1211);
+  assert.equal(contactInterrupt.finalProgression, 82);
+  assert.equal(contactInterrupt.runtimeEvidence.candidateTrial, "w1205-falling-threat-contact-interrupt");
+  assert.equal(contactInterrupt.runtimeEvidence.status, "lost-active");
+
+  const jumpPreload = report.attempts.find((attempt) => attempt.attemptId === "contact-jump-preload-candidate-trial");
+  assert.ok(jumpPreload, "contact jump preload trial should be archived as a rejected candidate");
+  assert.equal(jumpPreload.gateStatus, "rejected");
+  assert.ok(jumpPreload.rejectionReasons.includes("death"));
+  assert.equal(jumpPreload.maxProgression, 1201);
+  assert.equal(jumpPreload.finalProgression, 82);
+  assert.equal(jumpPreload.runtimeEvidence.candidateTrial, "w1205-contact-jump-preload");
+  assert.equal(jumpPreload.runtimeEvidence.status, "lost-active");
 });
