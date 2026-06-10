@@ -569,6 +569,107 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, W1726 low-side body escape, and W1660 retreat guard, then changed the W1641-W1650 left-edge overhead-body response from prone fire to right-jump up-fire. Runtime showed the jump was too late: pre-loss input was right+up+A+B at W1649, but the player still died at W1648 from slot13 body overlap, so it remains rejected."
+    },
+    {
+      "attemptId": "w1648-left-edge-precompression-advance-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1648-left-edge-precompression-advance",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1845,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1931,
+      "progressGain": 811,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8439,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1648-left-edge-precompression-advance",
+        "candidateTrial": "w1648-left-edge-precompression-advance",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11000,
+        "maxProgression": 1931,
+        "finalProgression": 1845,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited the prior W1205/W1360/W1726/W1660/W1641 chain and added an earlier W1648-W1650 left-edge precompression advance. It prevented the immediate W1648 body death and pushed active play to frame 11000, but still died later around W1678/W1679 from a close upper/body threat, so it remains rejected."
+    },
+    {
+      "attemptId": "w1678-forward-body-duck-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-forward-body-duck-carry",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1692,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1744,
+      "progressGain": 624,
+      "progressStallFrames": 2959,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -7295,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-duck-carry",
+        "candidateTrial": "w1678-forward-body-duck-carry",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1744,
+        "finalProgression": 1692,
+        "progressStallFrames": 2959,
+        "maxProgressStallFrames": 2959
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to handle the W1678 forward-body window with right+down+B. It avoided death but proved that down+right is not usable as movement in this context: the run stalled at W1692 with 2959 stalled frames, so it remains rejected as a no-death stuck-loop example."
+    },
+    {
+      "attemptId": "w1678-forward-body-level-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-forward-body-level-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-level-carry",
+        "candidateTrial": "w1678-forward-body-level-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9260,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and replaced W1678 crouch carry with level fire advance. Runtime regressed: the player died at frame 9260 around W1692/W1693 from a same-lane contact threat, so it remains rejected."
     }
   ],
   "bestAttempt": null,
@@ -1112,6 +1213,107 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, W1726 low-side body escape, and W1660 retreat guard, then changed the W1641-W1650 left-edge overhead-body response from prone fire to right-jump up-fire. Runtime showed the jump was too late: pre-loss input was right+up+A+B at W1649, but the player still died at W1648 from slot13 body overlap, so it remains rejected."
+    },
+    {
+      "attemptId": "w1648-left-edge-precompression-advance-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1648-left-edge-precompression-advance",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1845,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1931,
+      "progressGain": 811,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8439,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1648-left-edge-precompression-advance",
+        "candidateTrial": "w1648-left-edge-precompression-advance",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11000,
+        "maxProgression": 1931,
+        "finalProgression": 1845,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited the prior W1205/W1360/W1726/W1660/W1641 chain and added an earlier W1648-W1650 left-edge precompression advance. It prevented the immediate W1648 body death and pushed active play to frame 11000, but still died later around W1678/W1679 from a close upper/body threat, so it remains rejected."
+    },
+    {
+      "attemptId": "w1678-forward-body-duck-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-forward-body-duck-carry",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1692,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1744,
+      "progressGain": 624,
+      "progressStallFrames": 2959,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -7295,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-duck-carry",
+        "candidateTrial": "w1678-forward-body-duck-carry",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1744,
+        "finalProgression": 1692,
+        "progressStallFrames": 2959,
+        "maxProgressStallFrames": 2959
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to handle the W1678 forward-body window with right+down+B. It avoided death but proved that down+right is not usable as movement in this context: the run stalled at W1692 with 2959 stalled frames, so it remains rejected as a no-death stuck-loop example."
+    },
+    {
+      "attemptId": "w1678-forward-body-level-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-forward-body-level-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-level-carry",
+        "candidateTrial": "w1678-forward-body-level-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9260,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and replaced W1678 crouch carry with level fire advance. Runtime regressed: the player died at frame 9260 around W1692/W1693 from a same-lane contact threat, so it remains rejected."
     }
   ],
   "promotionGates": [

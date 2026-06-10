@@ -305,3 +305,54 @@ test("W1641 left-edge right-jump attempt is archived after late jump death", () 
   assert.equal(attempt.runtimeEvidence.status, "lost-active");
   assert.equal(attempt.maxProgression, 1930);
 });
+
+test("W1648 left-edge precompression advance attempt is archived after W1678 death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1648-left-edge-precompression-advance-candidate-trial");
+
+  assert.ok(attempt, "W1648 precompression candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1648-left-edge-precompression-advance");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 11000);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1931);
+});
+
+test("W1678 forward-body duck carry attempt is archived after stall", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1678-forward-body-duck-carry-candidate-trial");
+
+  assert.ok(attempt, "W1678 duck-carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["stuck-loop"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1678-forward-body-duck-carry");
+  assert.equal(attempt.runtimeEvidence.status, "stalled-active");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, null);
+  assert.equal(attempt.maxProgression, 1744);
+});
+
+test("W1678 forward-body level carry attempt is archived after early same-lane death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1678-forward-body-level-carry-candidate-trial");
+
+  assert.ok(attempt, "W1678 level-carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1678-forward-body-level-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9260);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1812);
+});

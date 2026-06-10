@@ -60,6 +60,9 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1726-danger-low-side-body"
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
+    | "w1648-left-edge-precompression-advance"
+    | "w1678-forward-body-duck-carry"
+    | "w1678-forward-body-level-carry"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -367,6 +370,59 @@ function hasW1641LeftEdgeRightJumpThreat(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1648LeftEdgePrecompressionAdvance(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1646 || snapshot.worldX > 1652) return false;
+  if (snapshot.playerX < 30 || snapshot.playerX > 36 || snapshot.playerY < 204) return false;
+
+  const hasFixedPin = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.hp <= 0) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -8 && dx <= 8 && dy >= -96 && dy <= -64;
+  });
+  if (!hasFixedPin) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    const overheadCompression = dx >= -4 && dx <= 12 && dy >= -56 && dy <= -16;
+    const lowLanePin = dx >= 8 && dx <= 28 && dy >= 8 && dy <= 26;
+    return overheadCompression || lowLanePin;
+  });
+}
+
+function hasW1678RearLowBodyAdvance(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1688 || snapshot.worldX > 1704) return false;
+  if (snapshot.playerY < 204) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -24 && dx <= -5 && dy >= -2 && dy <= 12;
+  });
+}
+
+function hasW1678ForwardUpperBodyDuckCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1676 || snapshot.worldX > 1692) return false;
+  if (snapshot.playerY < 204) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    const overheadCompression = dx >= -4 && dx <= 12 && dy >= -44 && dy <= -20;
+    const sameLaneContact = dx >= 10 && dx <= 22 && dy >= -8 && dy <= 8;
+    return overheadCompression || sameLaneContact;
+  });
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -585,6 +641,9 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1726-danger-low-side-body"
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
+      || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
     )
     && hasW1205PostUpperRecoveryStation(snapshot)
     && !hasW1205PostUpperSameLaneBodyThreat(snapshot)
@@ -606,6 +665,9 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1726-danger-low-side-body"
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
+      || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
     )
     && hasW1360RightUnderStationCrowd(snapshot)
   ) {
@@ -625,6 +687,9 @@ export function decideHeadlessRoutePlanProbeButtons({
       candidateTrial === "w1726-danger-low-side-body"
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
+      || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
     )
     && hasW1726DangerLowSideBodyThreat(snapshot)
   ) {
@@ -636,6 +701,104 @@ export function decideHeadlessRoutePlanProbeButtons({
       reason: "stage-one-danger-low-lane-fall",
       right: true,
       up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-forward-body-duck-carry"
+    && hasW1678ForwardUpperBodyDuckCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-forward-body-duck-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-forward-body-level-carry"
+    && hasW1678ForwardUpperBodyDuckCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-forward-body-level-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-forward-body-level-carry"
+    && hasW1678RearLowBodyAdvance(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-rear-body-advance",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-forward-body-duck-carry"
+    && hasW1678RearLowBodyAdvance(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-rear-body-advance",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
+    )
+    && hasW1648LeftEdgePrecompressionAdvance(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: true,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-left-edge-precompression-advance",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
+    )
+    && hasW1641LeftEdgeRightJumpThreat(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: true,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-left-edge-right-jump-guard",
+      right: true,
+      up: true
     });
     return buttons;
   }
@@ -676,6 +839,25 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (candidateTrial === "w1641-left-edge-right-jump" && hasW1660RetreatRegressionBodyThreat(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-retreat-regression-guard",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
+    )
+    && hasW1660RetreatRegressionBodyThreat(snapshot)
+  ) {
     applyStageOneRewardPatch(buttons, {
       a: false,
       b: true,

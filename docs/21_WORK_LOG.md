@@ -2759,6 +2759,156 @@ For the current W1641 blocker, collect a pre-compression window before the death
 then add a candidate that acts before the direct collision window.
 ```
 
+## 2026-06-10 - W1648 precompression candidate and W1678 follow-ups rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` segmented training from the W1641/W1648 left-edge body-compression blocker.
+- Keep all changes isolated behind `--candidate-trial`.
+- Do not promote anything into live `survival-v0`.
+
+Root-cause trace:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1641-left-edge-right-jump --trace-start=9800 --trace-end=9863
+```
+
+Key window:
+
+```text
+9823-9834: W1650 X34, buttons downleft..., AI is pinned at the left edge.
+9841: W1648 X32, slot13 appears above at dx0 dy-48.
+9844-9861: right-jump starts only after the overhead body is already in collision range.
+9862: death at W1648/X32, slot13 dx0 dy-16.
+```
+
+Conclusion:
+
+- The W1641 direct collision response is too late.
+- The actionable window is the earlier W1648-W1650 precompression state, before slot13 reaches the player body.
+
+Candidate 1:
+
+```text
+w1648-left-edge-precompression-advance
+```
+
+Behavior:
+
+- inherits prior W1205/W1360/W1726/W1660/W1641 candidate chain;
+- detects the W1650 left-edge fixed-pin + low-body/pre-overhead compression;
+- forces `right+up+A+B` before the direct body-overlap frame.
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1648-left-edge-precompression-advance
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=11000
+maxProgression=1931
+finalProgression=1845
+progressStallFrames=0
+```
+
+Decision:
+
+- Rejected because it still dies.
+- Useful learning: it fixes the immediate W1648 compression class and moves the blocker later to W1678/W1679.
+
+Candidate 2:
+
+```text
+w1678-forward-body-duck-carry
+```
+
+Behavior:
+
+- inherits `w1648-left-edge-precompression-advance`;
+- tries to resolve the W1678 forward/body contact with `right+down+B`.
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-duck-carry
+```
+
+```text
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=null
+maxProgression=1744
+finalProgression=1692
+progressStallFrames=2959
+```
+
+Decision:
+
+- Rejected as a stuck-loop.
+- Important negative constraint: `down+right` is not a valid advance action in this water/low-lane context. It avoids death but pins movement.
+
+Candidate 3:
+
+```text
+w1678-forward-body-level-carry
+```
+
+Behavior:
+
+- inherits `w1648-left-edge-precompression-advance`;
+- replaces W1678 crouch carry with level fire advance.
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-forward-body-level-carry
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9260
+maxProgression=1812
+finalProgression=82
+progressStallFrames=0
+```
+
+Decision:
+
+- Rejected because it regresses to an earlier same-lane contact death around W1692/W1693.
+- This confirms that the W1678 window needs a different route-level solution, not a simple stance swap.
+
+Archived evidence:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Tests added:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+route-plan probe: tests 35, pass 35, fail 0
+segmented report: tests 13, pass 13, fail 0
+```
+
+Next inference:
+
+```text
+Keep W1648 precompression as a useful sub-fragment, but do not promote it alone.
+Next W1678 work should not test more stance toggles.
+Instead, collect or derive a route-level correction:
+  either avoid entering W1685-W1693 low-lane body stack,
+  or clear the same-lane runner before it reaches dx <= 16.
+```
+
 ## 2026-06-10 - W1641 left-edge right-jump rejected
 
 Scope:
