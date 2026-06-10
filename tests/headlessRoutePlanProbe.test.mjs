@@ -1706,6 +1706,41 @@ test("headless route-plan probe can isolate W1726 grounded overhead duck advance
   assert.equal(heldButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1440 descent lower-body right carry", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1440-descent-lower-body-right-carry",
+    frame: 9413,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 81,
+      playerX: 108,
+      playerY: 173,
+      worldX: 1440,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 113, y: 196 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 87, y: 218 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

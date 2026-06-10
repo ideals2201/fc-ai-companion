@@ -47,6 +47,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-boss-approach-jump-edge"
     | "stage-one-bridge-low-fixed-crowd"
     | "stage-one-danger-low-lane-fall"
+    | "stage-one-descent-lower-body-right-carry"
     | "stage-one-grounded-overhead-duck-advance"
     | "stage-one-left-edge-overhead-body-guard"
     | "stage-one-left-edge-precompression-advance"

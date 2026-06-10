@@ -47,6 +47,111 @@
 - 继续用 headless runtime smoke 和 segmented training report 做快速迭代；失败候选要归档，不允许靠感觉覆盖 live `survival-v0`。
 - 下一轮魂斗罗 US 稳健生存优先修 W1683-W1684 route formation，而不是继续给 W1726 加局部补丁。
 
+### W1440 descent lower-body right carry rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` after the current formal baseline showed the first runtime death around W1439/W1440.
+- Test a narrow candidate that changes the pre-loss input from `down+left+B` to `down+right+B` during an airborne descent lower-body contact window.
+- Keep the change isolated behind `--candidate-trial`; do not promote it to live `survival-v0`.
+
+Candidate:
+
+```text
+w1440-descent-lower-body-right-carry
+```
+
+Root cause evidence:
+
+Baseline runtime command:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan
+```
+
+Baseline result:
+
+```text
+status=lost-active
+lostActiveFrame=9414
+maxProgression=1783
+finalProgression=82
+preLost W1440 X108 Y173 jumpState=81 buttons=down+left+b
+near threat slot5 type5 dx=5 dy=23
+```
+
+The immediate symptom was a close lower-body enemy during descent. Generic close-body logic chose left retreat, but the character was already in an unsafe landing/contact timing.
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1440 descent-lower-body test first failed because the candidate did not exist and the current decision still pressed left.
+```
+
+GREEN:
+
+```text
+tests 41
+pass 41
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1440-descent-lower-body-right-carry
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9414
+maxProgression=1790
+finalProgression=82
+preLost W1442 X110 Y173 jumpState=49 buttons=down+right+b
+lost W1443 X111 Y176 deathFlag=1 enemy slot5 dx=1 dy=20
+```
+
+Decision:
+
+- `w1440-descent-lower-body-right-carry` is rejected.
+- It successfully changes the local input from left retreat to right carry, but death still occurs on the same frame class.
+- The useful lesson: this blocker is not solved by swapping horizontal direction after descent. The route must prevent the lower-body contact earlier, probably by changing the jump or landing timing before W1436.
+- The rejected attempt is archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+segmentedTrainingSearch: tests 19, pass 19, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Target W1430-W1440 route formation:
+  avoid entering descent with lower-body slot5 already at dx 0..6 / dy 20..24;
+  test earlier jump timing, jump-release timing, or pre-contact fire/positioning;
+  do not repeat a late horizontal-direction swap as the main fix.
+```
+
 ### 取消一次性交接文档
 
 删除：

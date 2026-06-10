@@ -57,6 +57,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-post-upper-recovery"
     | "w1205-post-upper-safe-recovery"
     | "w1360-right-under-station-crowd"
+    | "w1440-descent-lower-body-right-carry"
     | "w1726-danger-low-side-body"
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
@@ -322,6 +323,20 @@ function hasW1360RightUnderStationCrowd(snapshot: RoutePlanProbeSnapshot) {
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -4 && dx <= 12 && dy >= -42 && dy <= -20;
+  });
+}
+
+function hasW1440DescentLowerBodyRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1436 || snapshot.worldX > 1444) return false;
+  if (snapshot.playerY < 160 || snapshot.playerY > 184) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0 && dx <= 14 && dy >= 16 && dy <= 32;
   });
 }
 
@@ -777,6 +792,34 @@ export function decideHeadlessRoutePlanProbeButtons({
       reason: "stage-one-mid-fixed-threat-recovery",
       right: true,
       up: true
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1440-descent-lower-body-right-carry"
+      || candidateTrial === "w1726-danger-low-side-body"
+      || candidateTrial === "w1660-retreat-regression-guard"
+      || candidateTrial === "w1641-left-edge-right-jump"
+      || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
+    )
+    && hasW1440DescentLowerBodyRightCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-descent-lower-body-right-carry",
+      right: true,
+      up: false
     });
     return buttons;
   }

@@ -839,6 +839,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression, W1658 overhead guard, and W1664 same-lane preclear, then added a W1726 grounded overhead duck-advance hold. It converted the W1726 pre-loss input into down-right fire, but the full runtime regressed to a W1683/W1684 close-body death with up-left jump, max W1784 and final W82. It is rejected. The useful lesson is that a local W1726 hold is not enough; the route must avoid entering the W1683 low/upper body stack before the fixed-threat platform."
+    },
+    {
+      "attemptId": "w1440-descent-lower-body-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1440-descent-lower-body-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1440-descent-lower-body-right-carry",
+        "candidateTrial": "w1440-descent-lower-body-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a W1436-W1444 airborne descent lower-body right-carry response after the formal survival baseline died with down-left fire at W1439/W1440. Runtime changed the pre-loss input to down-right fire, but death still occurred on frame 9414 with the lower body contact at W1443. It is rejected. The useful lesson is that this blocker is not solved by swapping left retreat to right carry after descent; the route must prevent the lower-body contact earlier, likely by changing the jump/landing timing before W1436."
     }
   ],
   "bestAttempt": null,
@@ -1652,6 +1687,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression, W1658 overhead guard, and W1664 same-lane preclear, then added a W1726 grounded overhead duck-advance hold. It converted the W1726 pre-loss input into down-right fire, but the full runtime regressed to a W1683/W1684 close-body death with up-left jump, max W1784 and final W82. It is rejected. The useful lesson is that a local W1726 hold is not enough; the route must avoid entering the W1683 low/upper body stack before the fixed-threat platform."
+    },
+    {
+      "attemptId": "w1440-descent-lower-body-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1440-descent-lower-body-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1440-descent-lower-body-right-carry",
+        "candidateTrial": "w1440-descent-lower-body-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a W1436-W1444 airborne descent lower-body right-carry response after the formal survival baseline died with down-left fire at W1439/W1440. Runtime changed the pre-loss input to down-right fire, but death still occurred on frame 9414 with the lower body contact at W1443. It is rejected. The useful lesson is that this blocker is not solved by swapping left retreat to right carry after descent; the route must prevent the lower-body contact earlier, likely by changing the jump/landing timing before W1436."
     }
   ],
   "promotionGates": [
