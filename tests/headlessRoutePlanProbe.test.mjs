@@ -1491,6 +1491,56 @@ test("headless route-plan probe can isolate W1648 left-edge precompression advan
   assert.equal(precompressionButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1664 same-lane preclear pulse", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const sameLaneSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 48,
+    playerY: 212,
+    worldX: 1664,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 0, threat: true, type: 0x05, x: 66, y: 218 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 43, y: 232 }
+    ]
+  });
+
+  const releaseButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1664-same-lane-preclear-pulse",
+    frame: 10932,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: sameLaneSnapshot
+  });
+
+  assert.equal(releaseButtons.left, false);
+  assert.equal(releaseButtons.right, true);
+  assert.equal(releaseButtons.down, true);
+  assert.equal(releaseButtons.up, false);
+  assert.equal(releaseButtons.a, false);
+  assert.equal(releaseButtons.b, false);
+
+  const fireButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1664-same-lane-preclear-pulse",
+    frame: 10934,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: sameLaneSnapshot
+  });
+
+  assert.equal(fireButtons.left, false);
+  assert.equal(fireButtons.right, true);
+  assert.equal(fireButtons.down, true);
+  assert.equal(fireButtons.up, false);
+  assert.equal(fireButtons.a, false);
+  assert.equal(fireButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

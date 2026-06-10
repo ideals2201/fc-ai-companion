@@ -61,6 +61,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
     | "w1648-left-edge-precompression-advance"
+    | "w1664-same-lane-preclear-pulse"
     | "w1678-forward-body-duck-carry"
     | "w1678-forward-body-level-carry"
     | "w1678-low-stack-jump-clear"
@@ -397,6 +398,19 @@ function hasW1648LeftEdgePrecompressionAdvance(snapshot: RoutePlanProbeSnapshot)
   });
 }
 
+function hasW1664SameLanePreclearPulse(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1662 || snapshot.worldX > 1678) return false;
+  if (snapshot.playerY < 204) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 6 && dx <= 22 && dy >= -4 && dy <= 10;
+  });
+}
+
 function hasW1678RearLowBodyAdvance(snapshot: RoutePlanProbeSnapshot) {
   if (!isGrounded(snapshot)) return false;
   if (snapshot.worldX < 1688 || snapshot.worldX > 1704) return false;
@@ -678,6 +692,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
@@ -704,6 +719,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
@@ -728,6 +744,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
@@ -741,6 +758,21 @@ export function decideHeadlessRoutePlanProbeButtons({
       down: true,
       left: false,
       reason: "stage-one-danger-low-lane-fall",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1664-same-lane-preclear-pulse"
+    && hasW1664SameLanePreclearPulse(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: frame % 6 >= 2,
+      down: true,
+      left: false,
+      reason: "stage-one-same-lane-preclear-pulse",
       right: true,
       up: false
     });
@@ -839,6 +871,7 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
@@ -860,6 +893,7 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
@@ -929,6 +963,7 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"

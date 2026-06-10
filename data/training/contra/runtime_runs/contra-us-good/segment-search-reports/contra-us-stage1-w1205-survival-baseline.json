@@ -736,6 +736,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression and tried to create a jump edge for the W1678 upper-body threat by releasing A before right+up+A+B. The first narrow version reached maxProgression 1942 but died earlier at W1682; the extended version regressed to maxProgression 1812 and died at frame 9264 around W1687 from same-lane body contact. The useful lesson is that W1686 is already too late; the route needs earlier pre-clear or approach correction before the same-lane stack forms."
+    },
+    {
+      "attemptId": "w1664-same-lane-preclear-pulse-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1664-same-lane-preclear-pulse",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1930,
+      "progressGain": 810,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8440,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1664-same-lane-preclear-pulse",
+        "candidateTrial": "w1664-same-lane-preclear-pulse",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9862,
+        "maxProgression": 1930,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited the W1648 precompression route and tried to pre-clear the W1664 same-lane body by using a down-right fire pulse to release and re-press B before the low contact stack formed. Runtime generated player bullets, but it regressed to an earlier frame-9862 death around W1658/W1659 from an overhead-left body threat, so this pulse does not solve the route. The useful lesson is that W1664 pre-clear must not weaken the W1658 overhead-body guard; the next candidate should address the overhead threat first or alter the approach before W1658."
     }
   ],
   "bestAttempt": null,
@@ -1446,6 +1479,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression and tried to create a jump edge for the W1678 upper-body threat by releasing A before right+up+A+B. The first narrow version reached maxProgression 1942 but died earlier at W1682; the extended version regressed to maxProgression 1812 and died at frame 9264 around W1687 from same-lane body contact. The useful lesson is that W1686 is already too late; the route needs earlier pre-clear or approach correction before the same-lane stack forms."
+    },
+    {
+      "attemptId": "w1664-same-lane-preclear-pulse-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1664-same-lane-preclear-pulse",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1930,
+      "progressGain": 810,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8440,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1664-same-lane-preclear-pulse",
+        "candidateTrial": "w1664-same-lane-preclear-pulse",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9862,
+        "maxProgression": 1930,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited the W1648 precompression route and tried to pre-clear the W1664 same-lane body by using a down-right fire pulse to release and re-press B before the low contact stack formed. Runtime generated player bullets, but it regressed to an earlier frame-9862 death around W1658/W1659 from an overhead-left body threat, so this pulse does not solve the route. The useful lesson is that W1664 pre-clear must not weaken the W1658 overhead-body guard; the next candidate should address the overhead threat first or alter the approach before W1658."
     }
   ],
   "promotionGates": [

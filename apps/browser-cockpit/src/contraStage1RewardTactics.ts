@@ -60,6 +60,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-forward-body-duck-carry"
     | "stage-one-forward-body-level-carry"
     | "stage-one-low-stack-jump-clear"
+    | "stage-one-same-lane-preclear-pulse"
     | "stage-one-upper-body-jump-edge"
     | "stage-one-spread-exit-jump"
     | "stage-one-spread-jump-edge"

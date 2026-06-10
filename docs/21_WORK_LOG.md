@@ -2693,6 +2693,141 @@ and a body threat descends at dx 3..8, dy -34..-9:
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - W1664 same-lane preclear pulse rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` candidate search after the W1678/W1686 recovery actions failed.
+- Move investigation earlier into the W1650-W1680 setup window.
+- Keep candidate behavior isolated behind `--candidate-trial`.
+
+Trace sampling:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1648-left-edge-precompression-advance --trace-start=10780 --trace-end=11000
+```
+
+Important trace:
+
+```text
+W1664-W1673:
+  slot6 type5 same-lane body moves from dx18/dy6 to dx9/dy6.
+  AI buttons are mostly right+B.
+  traceSummary shows no forward player bullets in that window.
+
+W1678-W1686:
+  same-lane/upper-body stack is already formed.
+  prior jump/stance recovery candidates fail after this point.
+```
+
+Inference:
+
+```text
+The preclear issue is real: B is held but not producing useful forward bullets.
+However, the route also has an earlier overhead-left body threat around W1658/W1659.
+```
+
+Candidate added:
+
+```text
+w1664-same-lane-preclear-pulse
+```
+
+Hypothesis:
+
+```text
+At W1662-W1678, when a same-lane body is ahead,
+use down+right and pulse B to create a new fire edge before the low contact stack forms.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1664 preclear-pulse test failed because candidate did not exist and the behavior still fell back to left/old route logic.
+```
+
+GREEN:
+
+```text
+tests 38
+pass 38
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1664-same-lane-preclear-pulse
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9862
+maxProgression=1930
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window evidence:
+
+```text
+preLost frame 9861:
+  W1658 X42 Y212 buttons=up+right+a+b
+  slot13 type1 dx-10 dy-18
+  slot6 type5 dx24 dy6
+
+lost frame 9862:
+  W1659 X43 Y212 deathFlag=1
+  slot13 type1 dx-11 dy-16
+  slot6 type5 dx23 dy6
+```
+
+Decision:
+
+- `w1664-same-lane-preclear-pulse` is rejected.
+- It produced player bullets, but it regressed to an earlier W1658/W1659 overhead-left body death.
+- It is slightly worse than `w1648-left-edge-precompression-advance` (`maxProgression=1931`, `lostActiveFrame=11000`).
+- The useful lesson: same-lane preclear cannot weaken the W1658 overhead-body guard.
+
+Archived:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 38, pass 38, fail 0
+segmentedTrainingSearch: tests 16, pass 16, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Next candidate must protect W1658 first.
+Then, only after the overhead-left threat is no longer lethal,
+revisit W1664 same-lane preclear with B-pulse.
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 ## 2026-06-10 - W1678 upper-body jump-edge rejected
 
 Scope:

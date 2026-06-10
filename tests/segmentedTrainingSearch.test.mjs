@@ -323,6 +323,23 @@ test("W1648 left-edge precompression advance attempt is archived after W1678 dea
   assert.equal(attempt.maxProgression, 1931);
 });
 
+test("W1664 same-lane preclear pulse attempt is archived after earlier overhead death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1664-same-lane-preclear-pulse-candidate-trial");
+
+  assert.ok(attempt, "W1664 same-lane preclear-pulse candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1664-same-lane-preclear-pulse");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9862);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1930);
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,
