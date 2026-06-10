@@ -769,6 +769,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited the W1648 precompression route and tried to pre-clear the W1664 same-lane body by using a down-right fire pulse to release and re-press B before the low contact stack formed. Runtime generated player bullets, but it regressed to an earlier frame-9862 death around W1658/W1659 from an overhead-left body threat, so this pulse does not solve the route. The useful lesson is that W1664 pre-clear must not weaken the W1658 overhead-body guard; the next candidate should address the overhead threat first or alter the approach before W1658."
+    },
+    {
+      "attemptId": "w1658-overhead-guard-preclear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1658-overhead-guard-preclear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 550,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1825,
+      "progressGain": 705,
+      "progressStallFrames": 1272,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -9745,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1658-overhead-guard-preclear",
+        "candidateTrial": "w1658-overhead-guard-preclear",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 10193,
+        "maxProgression": 1825,
+        "finalProgression": 550,
+        "progressStallFrames": 1272,
+        "maxProgressStallFrames": 1272
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression, guarded the W1658 overhead-left body with down-right fire, then allowed W1664 same-lane preclear. Runtime still produced a gameplay loss at frame 10193 around W1726, recovered to the bridge segment, and accumulated 1272 stall frames. It is rejected. The useful lesson is that W1658 guard can move the blocker later than W1664 preclear alone, but combining it with the current preclear/route still loses control before W1726."
     }
   ],
   "bestAttempt": null,
@@ -1512,6 +1547,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited the W1648 precompression route and tried to pre-clear the W1664 same-lane body by using a down-right fire pulse to release and re-press B before the low contact stack formed. Runtime generated player bullets, but it regressed to an earlier frame-9862 death around W1658/W1659 from an overhead-left body threat, so this pulse does not solve the route. The useful lesson is that W1664 pre-clear must not weaken the W1658 overhead-body guard; the next candidate should address the overhead threat first or alter the approach before W1658."
+    },
+    {
+      "attemptId": "w1658-overhead-guard-preclear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1658-overhead-guard-preclear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 550,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1825,
+      "progressGain": 705,
+      "progressStallFrames": 1272,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -9745,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1658-overhead-guard-preclear",
+        "candidateTrial": "w1658-overhead-guard-preclear",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 10193,
+        "maxProgression": 1825,
+        "finalProgression": 550,
+        "progressStallFrames": 1272,
+        "maxProgressStallFrames": 1272
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression, guarded the W1658 overhead-left body with down-right fire, then allowed W1664 same-lane preclear. Runtime still produced a gameplay loss at frame 10193 around W1726, recovered to the bridge segment, and accumulated 1272 stall frames. It is rejected. The useful lesson is that W1658 guard can move the blocker later than W1664 preclear alone, but combining it with the current preclear/route still loses control before W1726."
     }
   ],
   "promotionGates": [

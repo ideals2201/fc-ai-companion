@@ -1541,6 +1541,64 @@ test("headless route-plan probe can isolate W1664 same-lane preclear pulse", () 
   assert.equal(fireButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1658 overhead body guard before same-lane preclear", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+
+  const overheadButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1658-overhead-guard-preclear",
+    frame: 9861,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 42,
+      playerY: 212,
+      worldX: 1658,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 32, y: 194 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 11, threat: true, type: 0x05, x: 66, y: 218 }
+      ]
+    })
+  });
+
+  assert.equal(overheadButtons.left, false);
+  assert.equal(overheadButtons.right, true);
+  assert.equal(overheadButtons.down, true);
+  assert.equal(overheadButtons.up, false);
+  assert.equal(overheadButtons.a, false);
+  assert.equal(overheadButtons.b, true);
+
+  const preclearButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1658-overhead-guard-preclear",
+    frame: 10934,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 50,
+      playerY: 212,
+      worldX: 1666,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 0, threat: true, type: 0x05, x: 66, y: 218 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 43, y: 232 }
+      ]
+    })
+  });
+
+  assert.equal(preclearButtons.left, false);
+  assert.equal(preclearButtons.right, true);
+  assert.equal(preclearButtons.down, true);
+  assert.equal(preclearButtons.up, false);
+  assert.equal(preclearButtons.a, false);
+  assert.equal(preclearButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

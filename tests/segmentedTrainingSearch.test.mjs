@@ -340,6 +340,24 @@ test("W1664 same-lane preclear pulse attempt is archived after earlier overhead 
   assert.equal(attempt.maxProgression, 1930);
 });
 
+test("W1658 overhead guard preclear attempt is archived after recovered loss", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1658-overhead-guard-preclear-candidate-trial");
+
+  assert.ok(attempt, "W1658 overhead guard preclear candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1658-overhead-guard-preclear");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 10193);
+  assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
+  assert.equal(attempt.maxProgression, 1825);
+  assert.ok(attempt.riskTags.includes("progress-stall-risk"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

@@ -25,7 +25,7 @@
 
 同步：
 
-- `CLI_HANDOFF.md` 改为兼容跳转文件，只指向 `docs/21_WORK_LOG.md`。
+- `CLI_HANDOFF.md` 已删除，不再保留一次性或跳转式交接文档。
 - `strategy-packs/contra/dev-handoff/current-training-20260608/handoff-manifest.json` 的开发入口改为 `docs/21_WORK_LOG.md`。
 - `strategy-packs/contra/dev-handoff/current-training-20260608/next-development-plan.md` 的起始阅读项改为 `docs/21_WORK_LOG.md`。
 
@@ -2689,6 +2689,116 @@ if player is grounded at left screen edge around W1640-W1648
 and a body threat descends at dx 3..8, dy -34..-9:
   simple up-left retreat and simple prone fire both fail;
   next candidate should test a stronger escape rule, probably earlier rightward jump/advance or fixed-target pressure reduction before the compression forms.
+```
+
+Do not promote this candidate into live `survival-v0`.
+
+## 2026-06-10 - W1658 overhead guard preclear rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` candidate search after W1664 same-lane preclear regressed to an earlier W1658/W1659 death.
+- Test whether the W1658 overhead-left body can be guarded first, then allow W1664 same-lane preclear.
+- Keep all behavior isolated behind `--candidate-trial`.
+
+Candidate added:
+
+```text
+w1658-overhead-guard-preclear
+```
+
+Hypothesis:
+
+```text
+At W1656-W1662, when a left/overhead body is already in contact range,
+use down+right+B to avoid the left-up death route.
+After that, inherit W1664 same-lane B-pulse preclear.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1658 overhead guard test failed because candidate did not exist and did not hold the expected down-right guard.
+```
+
+GREEN:
+
+```text
+tests 39
+pass 39
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1658-overhead-guard-preclear
+```
+
+Result:
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=10193
+maxProgression=1825
+finalProgression=550
+progressStallFrames=1272
+```
+
+Failure-window evidence:
+
+```text
+preLost frame 10192:
+  W1726 X110 Y212 buttons=up+left+a+b
+  slot3 type5 dx-12 dy6
+  slot12 type1 dx-1 dy-18
+
+lost frame 10193:
+  W1726 X110 Y212 deathFlag=1
+  slot3 type5 dx-12 dy6
+  slot12 type1 dx-2 dy-17
+```
+
+Decision:
+
+- `w1658-overhead-guard-preclear` is rejected.
+- It prevents the immediate W1658 regression from `w1664-same-lane-preclear-pulse`, but still dies at W1726 and recovers back to the bridge segment.
+- It is not better than the current useful partial baseline `w1648-left-edge-precompression-advance`.
+- The useful lesson: W1658 guard is a partial component, not a complete route. The later W1726 close-body/right-side route must be handled without reintroducing progress collapse.
+
+Archived:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 39, pass 39, fail 0
+segmentedTrainingSearch: tests 17, pass 17, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Best useful partial remains W1648 precompression.
+W1658 guard is useful only if paired with a W1726 route that prevents close-body left-up collapse.
+Next candidate should target W1726 close-body route after W1658 guard, not promote the combined candidate.
 ```
 
 Do not promote this candidate into live `survival-v0`.
