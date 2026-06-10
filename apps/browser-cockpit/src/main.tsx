@@ -925,9 +925,10 @@ const keyboardHints: Record<PlayerSide, string> = {
 
 const AUDIO_SAMPLE_RATE = 44100;
 const AUDIO_BUFFER_SIZE = 1024;
-const AUDIO_TARGET_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.07);
-const AUDIO_MAX_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.18);
-const AUDIO_BUFFER_CAPACITY = Math.round(AUDIO_SAMPLE_RATE * 0.35);
+const AUDIO_PRIME_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.12);
+const AUDIO_TARGET_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.16);
+const AUDIO_MAX_BUFFERED_SAMPLES = Math.round(AUDIO_SAMPLE_RATE * 0.32);
+const AUDIO_BUFFER_CAPACITY = Math.round(AUDIO_SAMPLE_RATE * 0.55);
 const GAMEPAD_AXIS_THRESHOLD = 0.5;
 const ENEMY_SLOT_COUNT = 16;
 const PLAYER_BULLET_SLOT_COUNT = 16;
@@ -2058,6 +2059,7 @@ function createAudioRuntime(initialVolume = 0.28): AudioRuntime {
   let readIndex = 0;
   let writeIndex = 0;
   let buffered = 0;
+  let playbackPrimed = false;
 
   gain.gain.value = initialVolume;
 
@@ -2065,15 +2067,22 @@ function createAudioRuntime(initialVolume = 0.28): AudioRuntime {
     const outputLeft = event.outputBuffer.getChannelData(0);
     const outputRight = event.outputBuffer.getChannelData(1);
     for (let i = 0; i < outputLeft.length; i += 1) {
-      if (buffered > 0) {
-        outputLeft[i] = leftBuffer[readIndex];
-        outputRight[i] = rightBuffer[readIndex];
-        readIndex = (readIndex + 1) % AUDIO_BUFFER_CAPACITY;
-        buffered -= 1;
-      } else {
+      if (!playbackPrimed && buffered < AUDIO_PRIME_BUFFERED_SAMPLES) {
         outputLeft[i] = 0;
         outputRight[i] = 0;
+        continue;
       }
+      playbackPrimed = true;
+      if (buffered <= 0) {
+        outputLeft[i] = 0;
+        outputRight[i] = 0;
+        playbackPrimed = false;
+        continue;
+      }
+      outputLeft[i] = leftBuffer[readIndex];
+      outputRight[i] = rightBuffer[readIndex];
+      readIndex = (readIndex + 1) % AUDIO_BUFFER_CAPACITY;
+      buffered -= 1;
     }
   };
 

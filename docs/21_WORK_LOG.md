@@ -4310,6 +4310,72 @@ Startup preset only controls whether the system source writes title-menu Start/S
 This keeps the behavior close to a real FC console while preserving automated run/test entry points.
 ```
 
+## 2026-06-10 - Browser Audio Stutter Buffer Fix
+
+Problem:
+
+```text
+User reported browser sound was stuttering/choppy.
+```
+
+Root cause:
+
+```text
+The Web Audio ScriptProcessor consumed samples immediately from an empty or near-empty queue.
+When the queue under-ran, the runtime wrote zero samples directly into the output stream.
+When the queue over-ran, it could drop back to a very low 70ms target buffer.
+Both cases create audible discontinuity: under-run silence gaps and over-run skip jumps.
+```
+
+Implemented:
+
+- Added audio priming before playback.
+- Audio now waits for about 120ms of queued samples before consuming.
+- If the queue under-runs, playback re-enters priming instead of repeatedly crackling through empty output.
+- Raised steady buffer target from 70ms to about 160ms.
+- Raised max buffer from 180ms to about 320ms.
+- Raised ring capacity from 350ms to about 550ms.
+
+Files:
+
+```text
+apps/browser-cockpit/src/main.tsx
+tests/audioRuntimePolicy.test.mjs
+docs/21_WORK_LOG.md
+```
+
+Verification:
+
+```powershell
+node --test tests\audioRuntimePolicy.test.mjs
+npm test
+npm run build
+```
+
+Result:
+
+```text
+audioRuntimePolicy: tests 2, pass 2, fail 0
+npm test: tests 390, pass 390, fail 0
+npm run build: pass
+```
+
+Browser check:
+
+```text
+http://127.0.0.1:5173/?autoload=1 reloaded.
+Canvas present.
+Runtime status visible.
+Browser still requires a user click to enable audio, as expected by Web Audio policy.
+```
+
+Tradeoff:
+
+```text
+This intentionally adds a small audio buffer delay to remove choppy playback.
+The delay is far below the previous one-second lag problem and should feel stable for play/testing.
+```
+
 ## 2026-06-10 - Contra US survival W1769 reentry right extension rejected
 
 Scope:
