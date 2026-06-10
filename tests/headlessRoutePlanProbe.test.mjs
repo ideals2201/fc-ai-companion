@@ -831,6 +831,40 @@ test("headless route-plan probe can isolate W1205 pulsed right fire", () => {
   assert.equal(pulseButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1205 post-retreat low-lane recovery", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1205-post-retreat-low-lane-recovery",
+    frame: 6930,
+    progressStallFrames: 930,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 65,
+      playerY: 212,
+      worldX: 1141,
+      enemies: [
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 61, y: 222 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 79, y: 223 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 77, y: 232 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe ignores grounded low-lane object residue instead of stalling at the mid turret", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 4800,

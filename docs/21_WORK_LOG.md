@@ -1368,3 +1368,58 @@ Decision:
 
 - Do not promote any of the four candidates to live `survival-v0`.
 - Next work should stop trying W1205 contact-window variants and move to an earlier route-entry intervention before W1188.
+
+## 2026-06-10 - W1205 post-retreat recovery candidate rejected
+
+Scope:
+
+- Follow up on the W1205 loop after the contact-window candidates were rejected.
+- Inspect the default loop around W1141-W1205 instead of only the W1205 contact frame.
+
+Observed loop shape:
+
+- Default route oscillates:
+  - retreats from W1205 back to about W1141,
+  - briefly resumes right movement,
+  - reaches W1205 again,
+  - then repeats the same retreat.
+- At W1141, the nearby low-lane enemy set includes:
+
+```text
+slot5  type5 routine0 dx=-4 dy=10
+slot15 type1 routine2 dx=14 dy=11
+slot14 type1 routine0 dx=12 dy=20
+```
+
+Hypothesis:
+
+- After the W1205 retreat, force a low-lane recovery through this cluster with right/down/fire.
+
+Candidate:
+
+- `w1205-post-retreat-low-lane-recovery`
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=9000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-retreat-low-lane-recovery
+```
+
+Result:
+
+```text
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=null
+maxW=1195
+finalW=1138
+progressStall=5529
+```
+
+Decision:
+
+- Rejected.
+- It avoids death, but performs worse than baseline (`maxW=1195` versus baseline `maxW=1205`) and remains in a long low-lane stall.
+- The next viable intervention must separate:
+  - low-lane object/soldier cleanup,
+  - W1205 high incoming soldier handling,
+  - and route timing before the loop starts.
+- Do not promote `w1205-post-retreat-low-lane-recovery` into live `survival-v0`.

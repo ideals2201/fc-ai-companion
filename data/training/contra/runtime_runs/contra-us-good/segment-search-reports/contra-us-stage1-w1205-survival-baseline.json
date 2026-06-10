@@ -301,6 +301,41 @@
         "maxProgressStallFrames": 5324
       },
       "trialNote": "Headless-only candidate released B, then pulsed straight right-fire. It generated new straight bullets but they passed under/after the soldier and the player still died at frame 2677, so pulsed straight fire is rejected."
+    },
+    {
+      "attemptId": "post-retreat-low-lane-recovery-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-post-retreat-low-lane-recovery",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1138,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 9000,
+      "gateStatus": "rejected",
+      "maxProgression": 1195,
+      "progressGain": 75,
+      "progressStallFrames": 5529,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -4529,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=9000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-retreat-low-lane-recovery",
+        "candidateTrial": "w1205-post-retreat-low-lane-recovery",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1195,
+        "finalProgression": 1138,
+        "progressStallFrames": 5529,
+        "maxProgressStallFrames": 5529
+      },
+      "trialNote": "Headless-only candidate forced right/down/fire after W1141 low-lane retreat. It avoided death but reduced max progression to W1195 and remained in a long low-lane stall, so the recovery-only approach is rejected."
     }
   ],
   "bestAttempt": null,
@@ -576,6 +611,41 @@
         "maxProgressStallFrames": 5324
       },
       "trialNote": "Headless-only candidate released B, then pulsed straight right-fire. It generated new straight bullets but they passed under/after the soldier and the player still died at frame 2677, so pulsed straight fire is rejected."
+    },
+    {
+      "attemptId": "post-retreat-low-lane-recovery-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-post-retreat-low-lane-recovery",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1138,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 9000,
+      "gateStatus": "rejected",
+      "maxProgression": 1195,
+      "progressGain": 75,
+      "progressStallFrames": 5529,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -4529,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=9000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-retreat-low-lane-recovery",
+        "candidateTrial": "w1205-post-retreat-low-lane-recovery",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1195,
+        "finalProgression": 1138,
+        "progressStallFrames": 5529,
+        "maxProgressStallFrames": 5529
+      },
+      "trialNote": "Headless-only candidate forced right/down/fire after W1141 low-lane retreat. It avoided death but reduced max progression to W1195 and remained in a long low-lane stall, so the recovery-only approach is rejected."
     }
   ],
   "promotionGates": [

@@ -111,4 +111,13 @@ test("Contra US W1205 segmented search baseline archives the current stall witho
   assert.equal(pulsedRightFire.finalProgression, 1147);
   assert.equal(pulsedRightFire.runtimeEvidence.candidateTrial, "w1205-pulsed-right-fire");
   assert.equal(pulsedRightFire.runtimeEvidence.status, "recovered-after-loss");
+
+  const postRetreatRecovery = report.attempts.find((attempt) => attempt.attemptId === "post-retreat-low-lane-recovery-candidate-trial");
+  assert.ok(postRetreatRecovery, "post-retreat low-lane recovery trial should be archived as a rejected candidate");
+  assert.equal(postRetreatRecovery.gateStatus, "rejected");
+  assert.ok(postRetreatRecovery.rejectionReasons.includes("stuck-loop"));
+  assert.equal(postRetreatRecovery.maxProgression, 1195);
+  assert.equal(postRetreatRecovery.finalProgression, 1138);
+  assert.equal(postRetreatRecovery.runtimeEvidence.candidateTrial, "w1205-post-retreat-low-lane-recovery");
+  assert.equal(postRetreatRecovery.runtimeEvidence.status, "stalled-active");
 });

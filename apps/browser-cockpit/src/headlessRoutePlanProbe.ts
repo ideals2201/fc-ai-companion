@@ -52,6 +52,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-force-upright-through"
     | "w1205-duck-under-contact"
     | "w1205-pulsed-right-fire"
+    | "w1205-post-retreat-low-lane-recovery"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -234,6 +235,19 @@ function findW1205PrecontactThreat(snapshot: RoutePlanProbeSnapshot) {
     })[0] ?? null;
 }
 
+function hasW1205PostRetreatLowLaneRecoveryThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1138 || snapshot.worldX > 1162) return false;
+  if (snapshot.playerY < 204) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -12 && dx <= 24 && dy >= 8 && dy <= 28;
+  });
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -404,6 +418,22 @@ export function decideHeadlessRoutePlanProbeButtons({
       });
       return buttons;
     }
+  }
+  if (
+    candidateTrial === "w1205-post-retreat-low-lane-recovery"
+    && progressStallFrames >= 900
+    && hasW1205PostRetreatLowLaneRecoveryThreat(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-danger-low-lane-fall",
+      right: true,
+      up: false
+    });
+    return buttons;
   }
   if (candidateTrial === "w1205-precontact-station-clear") {
     const precontactThreat = findW1205PrecontactThreat(snapshot);
