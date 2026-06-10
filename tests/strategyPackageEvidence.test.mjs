@@ -49,6 +49,31 @@ function evidence(side, overrides = {}) {
   };
 }
 
+function passingQualityGates() {
+  return [
+    "schema",
+    "rom",
+    "entry",
+    "sync",
+    "safety",
+    "progress",
+    "strategy",
+    "side",
+    "perturbation",
+    "regression"
+  ].map((id) => ({
+    id,
+    label: `${id} gate`,
+    required: id !== "perturbation" && id !== "regression",
+    status: id === "perturbation" || id === "regression" ? "not-applicable" : "passed",
+    reason: "test report gate satisfied",
+    evidenceRefs: id === "perturbation" || id === "regression" ? [] : [
+      "stages/stage-1/trace-evidence/candidate-1p-survival-v0-human-demo-new.json",
+      "stages/stage-1/trace-evidence/candidate-2p-guard-v0-human-demo-new.json"
+    ]
+  }));
+}
+
 function validationReport(overrides = {}) {
   return {
     schema: "fc-ai-strategy-validation-report-v1",
@@ -75,6 +100,7 @@ function validationReport(overrides = {}) {
       frameIndex: 4500,
       maxProgression: 1420
     },
+    qualityGates: passingQualityGates(),
     packageStatus: "candidate",
     ...overrides
   };
@@ -236,6 +262,19 @@ test("creates a schema-bound validation report from completed replay evidence", 
     "stages/stage-1/trace-evidence/candidate-2p-guard-v0-human-demo-new.json"
   ]);
   assert.equal(report.packageStatus, "candidate");
+  assert.deepEqual(report.qualityGates.map((gate) => gate.id), [
+    "schema",
+    "rom",
+    "entry",
+    "sync",
+    "safety",
+    "progress",
+    "strategy",
+    "side",
+    "perturbation",
+    "regression"
+  ]);
+  assert.ok(report.qualityGates.every((gate) => gate.status === "passed" || gate.status === "not-applicable"));
 });
 
 test("exports candidate StrategyFragment proposals alongside evidence without validating them", () => {
@@ -364,6 +403,66 @@ test("rejects validation reports that contain death or desync failures", () => {
       })
     }),
     /validation report is desynced/
+  );
+});
+
+test("keeps package saving behind explicit training quality gates", () => {
+  const baseOptions = {
+    displayName: "Contra side training export",
+    evidenceBySide: {
+      "1P": evidence("1P"),
+      "2P": evidence("2P")
+    },
+    gameProfileId: "contra",
+    packId: "contra-stage1-strategy-v0",
+    packVersion: "0.1.0",
+    sideScope: "1p-2p",
+    validationReplayComplete: true
+  };
+
+  assert.throws(
+    () => createStrategyPackageEvidenceExport({
+      ...baseOptions,
+      validationReport: validationReport({
+        qualityGates: undefined
+      })
+    }),
+    /validation report missing training quality gates/
+  );
+
+  const failedGateReport = createStrategyPackageValidationReport({
+    createdAt: "2026-06-08T08:30:00.000Z",
+    evidenceBySide: {
+      "1P": evidence("1P"),
+      "2P": evidence("2P")
+    },
+    gameProfileId: "contra",
+    mode: "tas-baseline-replay",
+    packId: "contra-stage1-strategy-v0",
+    packVersion: "0.1.0",
+    replay: {
+      complete: true,
+      desynced: false,
+      deathCount: 0,
+      finalStatus: "finished",
+      frameIndex: 4500,
+      maxProgression: 1420
+    },
+    sideScope: "1p-2p",
+    qualityGateOverrides: {
+      progress: {
+        status: "failed",
+        reason: "progress stalled before the declared terminal condition"
+      }
+    }
+  });
+
+  assert.throws(
+    () => createStrategyPackageEvidenceExport({
+      ...baseOptions,
+      validationReport: failedGateReport
+    }),
+    /validation report quality gate progress failed/
   );
 });
 

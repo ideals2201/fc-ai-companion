@@ -19,6 +19,35 @@ export type StrategyPackageValidationReplay = {
   maxProgression: number;
 };
 
+export type StrategyPackageQualityGateId =
+  | "schema"
+  | "rom"
+  | "entry"
+  | "sync"
+  | "safety"
+  | "progress"
+  | "strategy"
+  | "side"
+  | "perturbation"
+  | "regression";
+
+export type StrategyPackageQualityGateStatus =
+  | "passed"
+  | "failed"
+  | "missing"
+  | "not-applicable";
+
+export type StrategyPackageQualityGate = {
+  id: StrategyPackageQualityGateId;
+  label: string;
+  required: boolean;
+  status: StrategyPackageQualityGateStatus;
+  reason: string;
+  evidenceRefs: string[];
+};
+
+export type StrategyPackageQualityGateOverride = Partial<Pick<StrategyPackageQualityGate, "required" | "status" | "reason" | "evidenceRefs">>;
+
 export type StrategyPackageValidationReport = {
   schema: "fc-ai-strategy-validation-report-v1";
   schemaVersion: "1.0.0";
@@ -34,6 +63,7 @@ export type StrategyPackageValidationReport = {
   selectedSides: StrategyTraceSide[];
   evidenceRefs: string[];
   replay: StrategyPackageValidationReplay;
+  qualityGates: StrategyPackageQualityGate[];
   packageStatus: "candidate";
 };
 
@@ -44,6 +74,7 @@ export type StrategyPackageValidationReportOptions = {
   mode: StrategyPackageValidationMode;
   packId: string;
   packVersion: string;
+  qualityGateOverrides?: Partial<Record<StrategyPackageQualityGateId, StrategyPackageQualityGateOverride>>;
   replay: StrategyPackageValidationReplay;
   sideScope: StrategyPackageSideScope;
 };
@@ -170,6 +201,150 @@ function collectSelectedEvidence(
   return evidence;
 }
 
+const qualityGateOrder: StrategyPackageQualityGateId[] = [
+  "schema",
+  "rom",
+  "entry",
+  "sync",
+  "safety",
+  "progress",
+  "strategy",
+  "side",
+  "perturbation",
+  "regression"
+];
+
+const qualityGateLabels: Record<StrategyPackageQualityGateId, string> = {
+  schema: "Schema Gate",
+  rom: "ROM Gate",
+  entry: "Entry Gate",
+  sync: "Sync Gate",
+  safety: "Safety Gate",
+  progress: "Progress Gate",
+  strategy: "Strategy Gate",
+  side: "Side Gate",
+  perturbation: "Perturbation Gate",
+  regression: "Regression Gate"
+};
+
+function gateAllowsSave(gate: StrategyPackageQualityGate) {
+  return gate.status === "passed" || gate.status === "not-applicable";
+}
+
+function createQualityGate(
+  id: StrategyPackageQualityGateId,
+  status: StrategyPackageQualityGateStatus,
+  reason: string,
+  evidenceRefs: string[],
+  required = true
+): StrategyPackageQualityGate {
+  return {
+    id,
+    label: qualityGateLabels[id],
+    required,
+    status,
+    reason,
+    evidenceRefs
+  };
+}
+
+function applyQualityGateOverrides(
+  gates: StrategyPackageQualityGate[],
+  overrides: StrategyPackageValidationReportOptions["qualityGateOverrides"]
+) {
+  if (!overrides) return gates;
+  return gates.map((gate) => {
+    const override = overrides[gate.id];
+    if (!override) return gate;
+    return {
+      ...gate,
+      ...override
+    };
+  });
+}
+
+function buildQualityGates(
+  options: StrategyPackageValidationReportOptions,
+  selectedSides: StrategyTraceSide[],
+  evidence: Record<StrategyTraceSide, StrategyTraceEvidence>,
+  evidenceRefs: string[]
+) {
+  const selectedEvidence = selectedSides.map((side) => evidence[side]);
+  const romProfileIds = uniqueSorted(selectedEvidence.map((item) => item.romProfileId));
+  const expectedProgression = Math.max(...selectedEvidence.map((item) => item.progressionWindow.end));
+  const sampleCount = selectedEvidence.reduce((sum, item) => sum + item.sampleCount, 0);
+  const hasTraceDeaths = selectedEvidence.some((item) => item.death !== null);
+  const hasRouteClass = selectedEvidence.every((item) => item.routeClass.trim().length > 0);
+  const sideEvidenceMatches = selectedSides.every((side) => evidence[side].side === side);
+
+  const gates = [
+    createQualityGate(
+      "schema",
+      "passed",
+      "selected TraceEvidence uses the package evidence schema",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "rom",
+      romProfileIds.length > 0 && romProfileIds.every(Boolean) ? "passed" : "missing",
+      "selected evidence declares ROMProfile compatibility",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "entry",
+      sampleCount > 0 && options.replay.frameIndex >= 0 ? "passed" : "missing",
+      "selected evidence and replay declare an active entry window",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "sync",
+      options.replay.desynced ? "failed" : "passed",
+      options.replay.desynced ? (options.replay.desyncReason ?? "replay desynced") : "replay did not report desync",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "safety",
+      options.replay.deathCount > 0 || hasTraceDeaths ? "failed" : "passed",
+      "replay and selected evidence contain no player death",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "progress",
+      options.replay.complete && options.replay.maxProgression >= expectedProgression ? "passed" : "failed",
+      "replay reached the declared progression target without a stuck-loop stop",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "strategy",
+      hasRouteClass ? "passed" : "missing",
+      "selected evidence declares route class and strategy ownership",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "side",
+      sideEvidenceMatches ? "passed" : "failed",
+      "selected sides match side-owned TraceEvidence",
+      evidenceRefs
+    ),
+    createQualityGate(
+      "perturbation",
+      "not-applicable",
+      "perturbation evidence is not required for candidate package export",
+      [],
+      false
+    ),
+    createQualityGate(
+      "regression",
+      "not-applicable",
+      "regression comparison is not required for candidate package export",
+      [],
+      false
+    )
+  ];
+
+  return applyQualityGateOverrides(gates, options.qualityGateOverrides);
+}
+
 export function createStrategyPackageValidationReport(
   options: StrategyPackageValidationReportOptions
 ): StrategyPackageValidationReport {
@@ -190,6 +365,10 @@ export function createStrategyPackageValidationReport(
     options.mode
   ].filter(Boolean).join("-");
 
+  const qualityGates = buildQualityGates(options, selectedSides, evidence, evidenceRefs);
+  const replayPassed = options.replay.complete && !options.replay.desynced && options.replay.deathCount === 0;
+  const gatesPassed = qualityGates.every((gate) => !gate.required || gateAllowsSave(gate));
+
   return {
     schema: "fc-ai-strategy-validation-report-v1",
     schemaVersion: "1.0.0",
@@ -200,13 +379,31 @@ export function createStrategyPackageValidationReport(
     packVersion: options.packVersion,
     sideScope: options.sideScope,
     mode: options.mode,
-    result: options.replay.complete && !options.replay.desynced && options.replay.deathCount === 0 ? "passed" : "failed",
     romProfileIds: uniqueSorted(selectedSides.map((side) => evidence[side].romProfileId)),
     selectedSides,
     evidenceRefs,
     replay: options.replay,
+    qualityGates,
+    result: replayPassed && gatesPassed ? "passed" : "failed",
     packageStatus: "candidate"
   };
+}
+
+function assertTrainingQualityGates(validationReport: StrategyPackageValidationReport) {
+  if (!Array.isArray(validationReport.qualityGates) || validationReport.qualityGates.length === 0) {
+    throw new Error("validation report missing training quality gates");
+  }
+
+  const gatesById = new Map(validationReport.qualityGates.map((gate) => [gate.id, gate]));
+  for (const gateId of qualityGateOrder) {
+    const gate = gatesById.get(gateId);
+    if (!gate) {
+      throw new Error(`validation report missing training quality gate ${gateId}`);
+    }
+    if (gate.required && !gateAllowsSave(gate)) {
+      throw new Error(`validation report quality gate ${gateId} ${gate.status}`);
+    }
+  }
 }
 
 function assertValidationReport(
@@ -244,6 +441,7 @@ function assertValidationReport(
   if (!validationReport.replay.complete) {
     throw new Error("validation report replay is incomplete");
   }
+  assertTrainingQualityGates(validationReport);
   if (validationReport.result !== "passed") {
     throw new Error("validation report did not pass replay gates");
   }

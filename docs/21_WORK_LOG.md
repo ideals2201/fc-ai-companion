@@ -1477,3 +1477,59 @@ Decision:
 - Do not switch the project to generic neural-network training as the default.
 - Continue using strategy-fragment training: source trace -> side-owned baseline -> candidate fragment -> segmented validation -> failure aggregation -> revision or promotion.
 - Next implementation work should align the cockpit training UI and strategy-pack validation flow to these gates before promoting new operation strategies.
+
+## 2026-06-10 - ValidationReport now carries training quality gates
+
+Scope:
+
+- Implement the Training Quality Gates from `docs/STRATEGY_TRAINING_STANDARD.md` in the strategy-package validation flow.
+- Keep runtime gameplay behavior unchanged; this only changes validation/package evidence.
+
+Code changes:
+
+- `apps/browser-cockpit/src/strategyPackageEvidence.ts`
+  - added machine-readable `qualityGates` to `StrategyPackageValidationReport`;
+  - added ten gate ids: `schema`, `rom`, `entry`, `sync`, `safety`, `progress`, `strategy`, `side`, `perturbation`, `regression`;
+  - `createStrategyPackageValidationReport()` now derives gate status from selected `TraceEvidence` and replay data;
+  - `createStrategyPackageEvidenceExport()` now rejects reports with missing quality gates or failed required gates.
+- `tests/strategyPackageEvidence.test.mjs`
+  - verifies generated reports include all ten gates;
+  - verifies old reports without gates are rejected;
+  - verifies a failed required gate blocks package saving even when replay fields look otherwise successful.
+
+Verification:
+
+```powershell
+node --test tests\strategyPackageEvidence.test.mjs
+```
+
+```text
+tests 8
+pass 8
+fail 0
+```
+
+```powershell
+node --test tests\strategyPackageEvidence.test.mjs tests\humanTrainingWorkflow.test.mjs tests\trainingPanelLayout.test.mjs tests\strategyPackStandard.test.mjs
+```
+
+```text
+tests 37
+pass 37
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+```text
+tsc -b && vite build
+built in 2.18s
+```
+
+Decision:
+
+- Strategy package saving is now a stronger evidence gate: a passing-looking replay is insufficient unless the ValidationReport includes explicit quality gates.
+- Candidate exports may mark perturbation and regression as `not-applicable`, but any required gate failure blocks saving.
+- Next work should surface these gate states in the training/operation UI and then continue the Contra Stage 1 survival strategy loop with the same evidence standard.
