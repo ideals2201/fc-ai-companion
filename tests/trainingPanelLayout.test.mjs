@@ -321,8 +321,20 @@ test("normal cartridge launch waits unless a startup preset explicitly enables m
 test("console host controls expose compact launch preset controls and one-row machine buttons", () => {
   assert.match(mainSource, /startupLaunchPreset: StartupLaunchPreset/, "console deck should receive the startup preset");
   assert.match(mainSource, /onStartupLaunchPresetChange: \(preset: StartupLaunchPreset\) => void/, "console deck should route startup preset changes");
+  assert.match(mainSource, /className="console-machine-frame"/, "console host controls should be grouped inside a visible machine frame");
+  assert.match(mainSource, /className="cartridge-slot rom-library-frame"/, "ROM browser should have its own cartridge frame");
+  assert.doesNotMatch(mainSource, /<small>\{entry\.metadata\.romProfileId !== "unknown"/, "ROM list items should show one compact filename line only");
+  assert.match(mainSource, /className="rom-selected-title"[\s\S]*\{t\(uiLanguage, "console\.selectedCartridge"\)\}：[\s\S]*\{romEntryTitle\(selectedRomEntry\)\}/, "selected cartridge title should render as one label-colon-value row");
+  assert.doesNotMatch(mainSource, /<span>\{t\(uiLanguage, "console\.selectedCartridge"\)\}<\/span>\s*<strong>\{romEntryTitle\(selectedRomEntry\)\}<\/strong>/, "selected cartridge title should not consume two rows");
   assert.match(mainSource, /className="startup-preset-row"/, "launch preset controls should have a dedicated compact row");
   assert.match(mainSource, /startupPresetOptions\.map/, "launch preset row should render the wait, auto 1P, and auto 2P options");
+  assert.match(cssSource, /\.console-machine-frame\s*\{[\s\S]*border: 1px solid rgba\(126, 200, 255, 0\.24\)/, "console machine frame should visibly separate host controls");
+  assert.match(cssSource, /\.rom-list\s*\{[\s\S]*height: 155px/, "ROM list should show about four compact cartridge names before scrolling");
+  assert.match(cssSource, /\.rom-library-body\s*\{[\s\S]*align-items: start/, "ROM list and detail should align to their content height instead of stretching unevenly");
+  assert.match(cssSource, /\.rom-detail\s*\{[\s\S]*min-height: 155px/, "ROM detail panel should align with the four-row cartridge list height");
+  assert.match(cssSource, /\.rom-meta-grid\.compact\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/, "ROM facts should use four compact columns like the TAS detail area");
+  assert.match(cssSource, /\.rom-meta-grid div\s*\{[\s\S]*grid-template-columns: auto minmax\(0, 1fr\)/, "ROM facts should render as compact label-colon-value rows");
+  assert.match(cssSource, /\.rom-meta-grid span::after\s*\{[\s\S]*content: "："/, "ROM fact labels should include the visible Chinese colon separator");
   assert.match(cssSource, /\.console-controls\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/, "machine buttons should stay in one equal-width row");
   assert.match(cssSource, /\.console-controls button\s*\{[\s\S]*min-height: 32px/, "machine buttons should be compact instead of oversized");
 });

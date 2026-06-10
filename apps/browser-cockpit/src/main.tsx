@@ -81,13 +81,11 @@ import {
   identifyTasForRom,
   recommendationLabel,
   selectDefaultTasMovie,
-  tasBaselineLabel,
   tasBaseLabel,
   tasMoviesForEntry,
   tasStatusLabel,
   type TasCommentaryMode,
-  type TasRegistryEntry,
-  type TasStrategyBaseline
+  type TasRegistryEntry
 } from "./tasRegistry";
 import {
   fm2ButtonsToLabels,
@@ -859,14 +857,6 @@ const aiStrategyOptions: Array<{ key: AiStrategyKey; label: string; description:
 const standardStrategyCategoryKeys = ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"] as const satisfies readonly AiStrategyKey[];
 const currentPackStrategyKeys = ["survival-v0", "speedrun-v0"] as const satisfies readonly AiStrategyKey[];
 
-const tasBaselineStrategyMap: Partial<Record<TasStrategyBaseline, AiStrategyKey>> = {
-  "survival-v0": "survival-v0",
-  "speedrun-v0": "speedrun-v0",
-  "combat-v0": "combat-v0",
-  "loot-v0": "loot-v0",
-  "guard-v0": "guard-v0"
-};
-
 const DEFAULT_SIDE_BASELINE_ID = "pack-current";
 const DEFAULT_SIDE_TRAINING_METHOD: SideTrainingMethod = "auto-patch";
 
@@ -1279,6 +1269,20 @@ function findTasSideBaselineForSelectedOption(side: PlayerSide, selectedBaseline
     }
   }
   return null;
+}
+
+function findTasSideBaselineOptionForMovie(
+  tasEntry: TasRegistryEntry | null,
+  movieId: string,
+  side: PlayerSide,
+  language: UiLanguage
+) {
+  if (!tasEntry || !movieId) return null;
+  return tasSideBaselineArtifactOptions(language).find((option) =>
+    option.side === side
+    && option.romProfileId === tasEntry.romProfileId
+    && option.id.includes(`-${movieId}-`)
+  ) ?? null;
 }
 
 function tasBaselineOptionsForSide(
@@ -7223,7 +7227,7 @@ function TasWindow({
   onPause,
   onPlay,
   onStop,
-  onApplyBaseline
+  onGenerateBaseline
 }: {
   tasEntry: TasRegistryEntry | null;
   selectedMovieId: string;
@@ -7236,7 +7240,7 @@ function TasWindow({
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
-  onApplyBaseline: (baseline: TasStrategyBaseline, side: PlayerSide) => void;
+  onGenerateBaseline: (movieId: string, side: PlayerSide) => void;
 }) {
   const movies = tasMoviesForEntry(tasEntry);
   const selectedMovie = movies.find((movie) => movie.id === selectedMovieId) ?? selectDefaultTasMovie(tasEntry);
@@ -7255,6 +7259,15 @@ function TasWindow({
     language === "en-US" ? movie.title.zh : movie.title.en
   );
   const movieFileLabel = (movie: NonNullable<typeof selectedMovie>) => movie.fileName;
+  const hasGeneratedBaseline = (side: PlayerSide) => (
+    Boolean(selectedMovie && findTasSideBaselineOptionForMovie(tasEntry, selectedMovie.id, side, language))
+  );
+  const generateBaselineLabel = (side: PlayerSide) => {
+    if (hasGeneratedBaseline(side)) {
+      return side === "1P" ? t(language, "tas.generated1PBaseline") : t(language, "tas.generated2PBaseline");
+    }
+    return side === "1P" ? t(language, "tas.generate1PBaseline") : t(language, "tas.generate2PBaseline");
+  };
 
   return (
     <div className="tas-window" aria-label={t(language, "tas.windowTitle")}>
@@ -7283,17 +7296,19 @@ function TasWindow({
               <div className="tas-empty">{t(language, "tas.noMatch")}</div>
             )}
           </div>
-          <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
-            {modes.map((mode) => (
-              <button
-                className={mode === commentaryMode ? "active" : ""}
-                key={mode}
-                onClick={() => onCommentaryModeChange(mode)}
-                type="button"
-              >
-                {commentaryModeLabel(mode)}
-              </button>
-            ))}
+          <div className="tas-control-row">
+            <button disabled={!canUseMovie || playback.status === "loading"} onClick={onLoad} type="button">
+              <Database size={14} /> {t(language, "tas.load")}
+            </button>
+            <button disabled={!canUseMovie || playback.status === "loading" || playback.status === "playing"} onClick={onPlay} type="button">
+              <Play size={14} /> {t(language, "tas.trialReplay")}
+            </button>
+            <button disabled={playback.status !== "playing"} onClick={onPause} type="button">
+              <Pause size={14} /> {t(language, "tas.pause")}
+            </button>
+            <button disabled={playback.status === "idle" || playback.status === "loading"} onClick={onStop} type="button">
+              <Square size={14} /> {t(language, "tas.stop")}
+            </button>
           </div>
         </div>
         <div className="tas-detail">
@@ -7348,50 +7363,40 @@ function TasWindow({
                   <b className="tas-fact-value">{playback.currentInput}</b>
                 </div>
               </div>
-              <div className="tas-baseline-actions" aria-label={t(language, "tas.applyBaseline")}>
-                {selectedMovie.recommendedBaselines.map((baseline) => {
-                  const liveStrategy = tasBaselineStrategyMap[baseline];
-                  return (
-                    <div className="tas-baseline-action" key={baseline}>
-                      <span>{tasBaselineLabel(baseline)}</span>
-                      <button
-                        disabled={!liveStrategy}
-                        onClick={() => onApplyBaseline(baseline, "1P")}
-                        type="button"
-                      >
-                        {t(language, "tas.apply1P")}
-                      </button>
-                      <button
-                        disabled={!liveStrategy}
-                        onClick={() => onApplyBaseline(baseline, "2P")}
-                        type="button"
-                      >
-                        {t(language, "tas.apply2P")}
-                      </button>
-                    </div>
-                  );
-                })}
+              <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
+                {modes.map((mode) => (
+                  <button
+                    className={mode === commentaryMode ? "active" : ""}
+                    key={mode}
+                    onClick={() => onCommentaryModeChange(mode)}
+                    type="button"
+                  >
+                    {commentaryModeLabel(mode)}
+                  </button>
+                ))}
               </div>
               <div className="tas-commentary">{commentary}</div>
+              <div className="tas-baseline-actions" aria-label={t(language, "tas.generateBaseline")}>
+                <button
+                  disabled={hasGeneratedBaseline("1P")}
+                  onClick={() => onGenerateBaseline(selectedMovie.id, "1P")}
+                  type="button"
+                >
+                  {generateBaselineLabel("1P")}
+                </button>
+                <button
+                  disabled={hasGeneratedBaseline("2P")}
+                  onClick={() => onGenerateBaseline(selectedMovie.id, "2P")}
+                  type="button"
+                >
+                  {generateBaselineLabel("2P")}
+                </button>
+              </div>
             </>
           ) : (
             <p>{t(language, "tas.noMatchDetail")}</p>
           )}
         </div>
-      </div>
-      <div className="tas-control-row">
-        <button disabled={!canUseMovie || playback.status === "loading"} onClick={onLoad} type="button">
-          <Database size={14} /> {t(language, "tas.load")}
-        </button>
-        <button disabled={!canUseMovie || playback.status === "loading" || playback.status === "playing"} onClick={onPlay} type="button">
-          <Play size={14} /> {t(language, "tas.trialReplay")}
-        </button>
-        <button disabled={playback.status !== "playing"} onClick={onPause} type="button">
-          <Pause size={14} /> {t(language, "tas.pause")}
-        </button>
-        <button disabled={playback.status === "idle" || playback.status === "loading"} onClick={onStop} type="button">
-          <Square size={14} /> {t(language, "tas.stop")}
-        </button>
       </div>
     </div>
   );
@@ -7459,7 +7464,7 @@ function ConsoleDeck({
   onTasPause,
   onTasPlay,
   onTasStop,
-  onTasApplyBaseline,
+  onTasGenerateBaseline,
   onLanguageChange,
   onRun,
   onPause,
@@ -7497,7 +7502,7 @@ function ConsoleDeck({
   onTasPause: () => void;
   onTasPlay: () => void;
   onTasStop: () => void;
-  onTasApplyBaseline: (baseline: TasStrategyBaseline, side: PlayerSide) => void;
+  onTasGenerateBaseline: (movieId: string, side: PlayerSide) => void;
   onLanguageChange: (language: UiLanguage) => void;
   onRun: () => void;
   onPause: () => void;
@@ -7524,6 +7529,7 @@ function ConsoleDeck({
 
   return (
     <section className="console-deck" aria-label="主机">
+      <div className="console-machine-frame">
       <div className="console-status-strip">
         <span>{t(uiLanguage, "console.path")}：{romMetadata?.filePath || t(uiLanguage, "console.noLocalPath")}</span>
         <strong>{t(uiLanguage, "console.hostStatus")}：{runtimeStatusLabel(status, uiLanguage)}</strong>
@@ -7535,7 +7541,7 @@ function ConsoleDeck({
           <small className="hardware-spec">{FC_HARDWARE_SPEC}</small>
           <LanguageSwitch language={uiLanguage} onLanguageChange={onLanguageChange} />
         </div>
-        <div className="cartridge-slot">
+        <div className="cartridge-slot rom-library-frame">
           <input
             {...directoryInputProps}
             accept=".nes"
@@ -7570,15 +7576,16 @@ function ConsoleDeck({
                     type="button"
                   >
                     <span>{entry.relativePath}</span>
-                    <small>{entry.metadata.romProfileId !== "unknown" ? entry.metadata.romProfileId : entry.metadata.mapperLabel}</small>
                   </button>
                 )) : (
                   <div className="rom-list-empty">{t(uiLanguage, "console.waitingRomDirectory")}</div>
                 )}
               </div>
               <div className="rom-detail" aria-label={t(uiLanguage, "console.selectedRomInfo")}>
-                <span>{t(uiLanguage, "console.selectedCartridge")}</span>
-                <strong>{romEntryTitle(selectedRomEntry)}</strong>
+                <div className="rom-selected-title">
+                  <span>{t(uiLanguage, "console.selectedCartridge")}：</span>
+                  <strong>{romEntryTitle(selectedRomEntry)}</strong>
+                </div>
                 {selectedMetadata ? (
                   <div className="rom-meta-grid compact" aria-label="选中 ROM 详情">
                     <div>
@@ -7676,6 +7683,7 @@ function ConsoleDeck({
           <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
         </div>
       </div>
+      </div>
       <TasWindow
         commentaryMode={tasCommentaryMode}
         onCommentaryModeChange={onTasCommentaryModeChange}
@@ -7684,7 +7692,7 @@ function ConsoleDeck({
         onPause={onTasPause}
         onPlay={onTasPlay}
         onStop={onTasStop}
-        onApplyBaseline={onTasApplyBaseline}
+        onGenerateBaseline={onTasGenerateBaseline}
         language={uiLanguage}
         playback={tasPlaybackState}
         selectedMovieId={selectedTasMovieId}
@@ -8724,15 +8732,16 @@ function App() {
     appendLog(`Startup preset: ${label}`);
   }, [appendLog, changeControlMode, changeStrategyModel]);
 
-  const applyTasBaselineToSide = useCallback((baseline: TasStrategyBaseline, side: PlayerSide) => {
-    const strategy = tasBaselineStrategyMap[baseline];
-    if (baseline === "special-reference" || !strategy) {
-      appendLog(`TAS baseline: ${tasBaselineLabel(baseline)} is reference-only and cannot be applied directly`);
+  const generateTasBaselineForSide = useCallback((movieId: string, side: PlayerSide) => {
+    const tasEntry = identifyTasForRom(romMetadata);
+    const baseline = findTasSideBaselineOptionForMovie(tasEntry, movieId, side, uiLanguage);
+    if (!baseline) {
+      appendLog(`TAS baseline ${side}: no extracted side baseline exists for ${movieId}; run TAS split extraction first`);
       return;
     }
-    changeStrategyModel(side, strategy);
-    appendLog(`TAS baseline: applied ${tasBaselineLabel(baseline)} to ${side}`);
-  }, [appendLog, changeStrategyModel]);
+    setSelectedSideBaselineIds((current) => ({ ...current, [side]: baseline.id }));
+    appendLog(`TAS baseline ${side}: existing generated baseline selected in training area (${baseline.label})`);
+  }, [appendLog, romMetadata, uiLanguage]);
 
   const openStrategyDesigner = useCallback(() => {
     const personalPlan = strategyPlansRef.current["personal-v0"] ?? createDefaultPersonalPlan();
@@ -10388,7 +10397,7 @@ function App() {
             onTasPause={pauseTasReplay}
             onTasPlay={() => { void startTasReplay(); }}
             onTasStop={stopTasReplay}
-            onTasApplyBaseline={applyTasBaselineToSide}
+            onTasGenerateBaseline={generateTasBaselineForSide}
             onTrainingSaveStrategy={onTrainingSaveStrategy}
           onTrainingSavePathSelected={onTrainingSavePathSelected}
           onTrainingValidateStrategy={onTrainingValidateStrategy}

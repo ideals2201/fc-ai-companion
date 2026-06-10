@@ -4296,6 +4296,65 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - TAS/host console cockpit compaction
+
+Scope:
+
+- Browser cockpit UI only.
+- No strategy-runtime logic changes.
+- Main affected areas: `ConsoleDeck`, TAS watch/training base window, layout stability tests.
+
+Changes:
+
+- Reworked the host console into a visible `console-machine-frame`, with status, cartridge library, startup preset, and machine buttons grouped as one hardware module.
+- Reworked the ROM browser into a framed cartridge area.
+- ROM list now shows one compact filename line per cartridge; the secondary profile/mapper line was removed.
+- ROM list height is now four compact rows before scrolling.
+- Selected cartridge title now renders as one line, for example:
+
+```text
+选中卡带：Contra (J)
+```
+
+- ROM detail facts now use compact label/value rows and four columns, matching the TAS detail style.
+- TAS watch/training window now has a stronger framed module surface.
+- TAS playback controls stay under the TAS file list as a compact 2x2 button group.
+- TAS baseline actions are now side-owned training-baseline generation actions:
+
+```text
+生成1P基准 / 生成2P基准
+1P基准已生成 / 2P基准已生成
+```
+
+Browser verification:
+
+```text
+URL: http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes
+selectedTitle: 选中卡带：Contra (J)
+rom-list height: 155
+rom-detail height: 155
+ROM list items: single child, no <small>
+ROM fact grid: 4 columns
+console-machine-frame: present
+tas-window frame: present
+```
+
+Verification:
+
+```powershell
+node --test tests\layoutStabilityCss.test.mjs tests\trainingPanelLayout.test.mjs tests\tasWindowIntegration.test.mjs
+npm run build
+npm test
+```
+
+Result:
+
+```text
+focused layout/TAS/training tests: pass
+npm run build: pass
+npm test: 395 pass, 0 fail
+```
+
 ## 2026-06-10 - TV fullscreen target isolated to the game screen
 
 Scope:

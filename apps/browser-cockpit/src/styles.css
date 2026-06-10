@@ -946,7 +946,7 @@ dd {
 
 .center-column {
   display: grid;
-  grid-template-rows: 620px 1460px;
+  grid-template-rows: 620px 1520px;
   gap: 10px;
   min-width: 0;
 }
@@ -1134,16 +1134,30 @@ dd {
 
 .console-deck {
   display: grid;
-  grid-template-rows: auto 420px auto 360px 520px;
+  grid-template-rows: 570px 360px 520px;
   grid-template-columns: 1fr;
   gap: 8px;
-  height: 1460px;
+  height: 1520px;
   overflow: hidden;
   margin-top: 0;
   padding: 12px;
   background:
     linear-gradient(180deg, #262a31, #14171c),
     repeating-linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 1px, transparent 1px, transparent 7px);
+}
+
+.console-machine-frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 0;
+  border: 1px solid rgba(126, 200, 255, 0.24);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(10, 17, 24, 0.98), rgba(7, 11, 16, 0.98)),
+    radial-gradient(circle at top left, rgba(82, 180, 255, 0.12), transparent 34%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.32) inset, 0 12px 24px rgba(0,0,0,0.22);
+  padding: 8px;
 }
 
 .console-status-strip {
@@ -1176,7 +1190,7 @@ dd {
   grid-template-rows: auto minmax(0, 1fr);
   align-items: stretch;
   gap: 8px;
-  min-height: 420px;
+  min-height: 0;
 }
 
 .hardware-spec {
@@ -1224,18 +1238,25 @@ dd {
 .cartridge-slot {
   display: grid;
   gap: 8px;
-  min-height: 380px;
+  min-height: 0;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
   background: #0b0f14;
   padding: 10px;
 }
 
+.rom-library-frame {
+  border-color: rgba(126, 200, 255, 0.2);
+  background:
+    linear-gradient(180deg, rgba(11, 16, 22, 0.98), rgba(6, 10, 15, 0.98)),
+    linear-gradient(90deg, rgba(126, 200, 255, 0.06), transparent);
+}
+
 .rom-library-browser {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
-  min-height: 310px;
+  min-height: 0;
 }
 
 .rom-library-header {
@@ -1267,16 +1288,17 @@ dd {
 .rom-library-body {
   display: grid;
   grid-template-columns: minmax(150px, 0.95fr) minmax(0, 1.35fr);
+  align-items: start;
   gap: 8px;
-  min-height: 240px;
+  min-height: 0;
 }
 
 .rom-list {
   display: grid;
   align-content: start;
   gap: 5px;
-  height: 240px;
-  max-height: 240px;
+  height: 155px;
+  max-height: 155px;
   overflow: auto;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
@@ -1286,9 +1308,10 @@ dd {
 
 .rom-list-item {
   display: grid;
+  align-items: center;
   gap: 2px;
   width: 100%;
-  min-height: 38px;
+  min-height: 30px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
   background: #0c1219;
@@ -1303,15 +1326,13 @@ dd {
   background: #102333;
 }
 
-.rom-list-item span,
-.rom-list-item small {
+.rom-list-item span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.rom-list-item small,
 .rom-list-empty {
   color: #8fa4bb;
   font-size: 10px;
@@ -1321,13 +1342,31 @@ dd {
   display: grid;
   align-content: start;
   gap: 6px;
+  min-height: 155px;
   min-width: 0;
 }
 
-.rom-detail > strong {
+.rom-selected-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 24px;
+  min-width: 0;
+}
+
+.rom-selected-title span {
+  color: #94a3b5;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.rom-selected-title strong {
   color: #edf5ff;
   font-size: 14px;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .loaded-cartridge-strip {
@@ -1361,7 +1400,7 @@ dd {
 }
 
 .rom-meta-grid.compact {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .cartridge-slot span,
@@ -1384,8 +1423,10 @@ dd {
 
 .rom-meta-grid div {
   display: grid;
-  gap: 3px;
-  min-height: 34px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
+  min-height: 28px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
   background: #070a0e;
@@ -1395,13 +1436,21 @@ dd {
 .rom-meta-grid span {
   color: #94a3b5;
   font-size: 10px;
+  white-space: nowrap;
+}
+
+.rom-meta-grid span::after {
+  content: "：";
 }
 
 .rom-meta-grid b {
   color: #e9f3ff;
   font-size: 10px;
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rom-path {
@@ -1412,7 +1461,11 @@ dd {
 .console-power-panel {
   display: grid;
   gap: 6px;
-  min-height: 86px;
+  min-height: 84px;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(5, 9, 13, 0.72);
+  padding: 6px;
 }
 
 .console-controls {
@@ -2003,10 +2056,13 @@ dd {
 .tas-window {
   display: grid;
   gap: 6px;
-  border: 1px solid rgba(126, 200, 255, 0.22);
-  border-radius: 8px;
-  background: #0b0f14;
-  padding: 7px;
+  border: 1px solid rgba(126, 200, 255, 0.26);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(10, 17, 24, 0.98), rgba(6, 10, 15, 0.98)),
+    radial-gradient(circle at top left, rgba(82, 180, 255, 0.11), transparent 32%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.32) inset, 0 12px 24px rgba(0,0,0,0.2);
+  padding: 8px;
 }
 
 .tas-window-body {
@@ -2201,7 +2257,7 @@ dd {
 }
 
 .tas-control-row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .tas-mode-strip button,
@@ -2227,28 +2283,11 @@ dd {
 
 .tas-baseline-actions {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
 }
 
-.tas-baseline-action {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px 72px;
-  align-items: center;
-  gap: 5px;
-  min-height: 28px;
-}
-
-.tas-baseline-action span {
-  min-width: 0;
-  color: #d7e9ff;
-  font-size: 11px;
-  font-weight: 800;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tas-baseline-action button {
+.tas-baseline-actions button {
   min-height: 26px;
   border: 1px solid rgba(104, 214, 140, 0.28);
   border-radius: 6px;
@@ -2258,10 +2297,11 @@ dd {
   font-weight: 800;
 }
 
-.tas-baseline-action button:disabled {
+.tas-baseline-actions button:disabled {
   cursor: not-allowed;
   border-color: rgba(104, 214, 140, 0.16);
   box-shadow: none;
+  color: #8fa4bb;
 }
 
 .tas-control-row button:disabled {

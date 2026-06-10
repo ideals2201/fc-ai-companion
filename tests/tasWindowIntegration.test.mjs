@@ -9,14 +9,13 @@ const mainSource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit"
 const cssSource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit", "src", "styles.css"), "utf8");
 const registrySource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit", "src", "tasRegistry.ts"), "utf8");
 
-test("TAS window can apply recommended baselines to either player side", () => {
-  assert.match(registrySource, /export function tasBaselineLabel/, "registry should expose individual baseline labels");
-  assert.match(mainSource, /type TasStrategyBaseline/, "main runtime should receive TAS baseline ids with type safety");
-  assert.match(mainSource, /onApplyBaseline: \(baseline: TasStrategyBaseline, side: PlayerSide\) => void/, "TAS window should expose baseline application");
-  assert.match(mainSource, /applyTasBaselineToSide/, "runtime should implement the side-specific baseline application");
-  assert.match(mainSource, /onApplyBaseline\(baseline, "1P"\)/, "TAS window should allow applying a baseline to 1P");
-  assert.match(mainSource, /onApplyBaseline\(baseline, "2P"\)/, "TAS window should allow applying a baseline to 2P");
-  assert.match(mainSource, /baseline === "special-reference"/, "special-reference should not be applied as a live runtime strategy");
+test("TAS window can generate side-owned training baselines instead of applying live strategies", () => {
+  assert.match(registrySource, /recommendedBaselines: TasStrategyBaseline\[\]/, "registry should still describe recommended strategy categories");
+  assert.match(mainSource, /onGenerateBaseline: \(movieId: string, side: PlayerSide\) => void/, "TAS window should expose side-owned baseline generation");
+  assert.match(mainSource, /generateTasBaselineForSide/, "runtime should generate or select side-owned TAS baselines");
+  assert.match(mainSource, /onGenerateBaseline\(selectedMovie\.id, "1P"\)/, "TAS window should allow generating a 1P training baseline");
+  assert.match(mainSource, /onGenerateBaseline\(selectedMovie\.id, "2P"\)/, "TAS window should allow generating a 2P training baseline");
+  assert.doesNotMatch(mainSource, /changeStrategyModel\(side, strategy\)/, "TAS baseline actions should not directly switch live AI strategies");
 });
 
 test("TAS window exposes the machine-readable training base path", () => {
@@ -32,14 +31,21 @@ test("TAS playback status is attached to the window title", () => {
   assert.match(cssSource, /\.tas-header-status\s*\{/, "title-level TAS status should have compact header styling");
 });
 
+test("TAS window uses a visible framed module surface", () => {
+  assert.match(cssSource, /\.tas-window\s*\{[\s\S]*border: 1px solid rgba\(126, 200, 255, 0\.26\)/, "TAS module should have a visible blue hardware frame");
+  assert.match(cssSource, /\.tas-window\s*\{[\s\S]*box-shadow: 0 0 0 1px rgba\(0,0,0,0\.32\) inset/, "TAS module should be visually separated from the surrounding console surface");
+});
+
 test("TAS browser separates file selection from Chinese detail and watch modes", () => {
   assert.match(mainSource, /const movieFileLabel = .*movie\.fileName/, "TAS list should use the file name as the compact label");
-  assert.match(mainSource, /<div className="tas-sidebar">[\s\S]*className="tas-movie-list"[\s\S]*className="tas-mode-strip"/, "TAS file list and watch-mode buttons should live in the left sidebar");
+  assert.match(mainSource, /<div className="tas-sidebar">[\s\S]*className="tas-movie-list"[\s\S]*className="tas-control-row"/, "TAS file list and playback buttons should live in the left sidebar");
+  assert.match(mainSource, /<div className="tas-detail">[\s\S]*className="tas-mode-strip"[\s\S]*className="tas-commentary"/, "watch-mode buttons should live with the right-side explanation");
   assert.match(mainSource, /<strong>\{movieFileLabel\(movie\)\}<\/strong>/, "TAS list items should only render the file label");
   assert.doesNotMatch(mainSource, /className=\{movie\.id === selectedMovieId \? "tas-movie-item active" : "tas-movie-item"\}[\s\S]*<small>\{movieSubtitle\(movie\)\}<\/small>/, "TAS list should not duplicate Chinese subtitles");
   assert.match(mainSource, /className="tas-subtitle-row"[\s\S]*movieSubtitle\(selectedMovie\)[\s\S]*selectedMovie\.fileName/, "right-side detail should show bilingual title and file name");
   assert.match(cssSource, /\.tas-sidebar\s*\{/, "TAS sidebar should have dedicated layout");
-  assert.match(cssSource, /\.tas-mode-strip\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/, "watch-mode buttons should be compact in the sidebar");
+  assert.match(cssSource, /\.tas-mode-strip\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/, "watch-mode buttons should be compact beside the explanation");
+  assert.match(cssSource, /\.tas-control-row\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/, "playback buttons should be a 2x2 matrix under the list");
   assert.match(cssSource, /\.tas-movie-list\s*\{[\s\S]*height:\s*132px/, "TAS movie list should be tall enough for several files");
 });
 

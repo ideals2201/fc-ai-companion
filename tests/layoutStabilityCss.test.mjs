@@ -44,16 +44,19 @@ test("primary cockpit windows keep stable outer dimensions", () => {
   assertDeclaration(controllerBay, "overflow", /^hidden$/);
 
   const centerColumn = ruleFor(".center-column");
-  assertDeclaration(centerColumn, "grid-template-rows", /^620px 1460px$/);
+  assertDeclaration(centerColumn, "grid-template-rows", /^620px 1520px$/);
 
   const tvShell = ruleFor(".tv-shell");
   assertDeclaration(tvShell, "height", /^620px$/);
   assertDeclaration(tvShell, "overflow", /^hidden$/);
 
   const consoleDeck = ruleFor(".console-deck");
-  assertDeclaration(consoleDeck, "grid-template-rows", /^auto 420px auto 360px 520px$/);
-  assertDeclaration(consoleDeck, "height", /^1460px$/);
+  assertDeclaration(consoleDeck, "grid-template-rows", /^570px 360px 520px$/);
+  assertDeclaration(consoleDeck, "height", /^1520px$/);
   assertDeclaration(consoleDeck, "overflow", /^hidden$/);
+
+  const consoleMachineFrame = ruleFor(".console-machine-frame");
+  assertDeclaration(consoleMachineFrame, "grid-template-rows", /^auto minmax\(0, 1fr\) auto$/);
 
   const dataDashboard = ruleFor(".data-dashboard");
   assertDeclaration(dataDashboard, "height", /^700px$/);
@@ -154,21 +157,22 @@ test("non-log cockpit content is fully displayed instead of becoming a scroll wi
   assertDeclaration(logLines, "overflow", /^auto$/);
 
   const romList = ruleFor(".rom-list");
-  assertDeclaration(romList, "height", /^240px$/);
-  assertDeclaration(romList, "max-height", /^240px$/);
+  assertDeclaration(romList, "height", /^155px$/);
+  assertDeclaration(romList, "max-height", /^155px$/);
   assertDeclaration(romList, "overflow", /^auto$/);
 
   const consoleLeft = ruleFor(".console-left");
-  assertDeclaration(consoleLeft, "min-height", /^420px$/);
+  assertDeclaration(consoleLeft, "min-height", /^0$/);
 
   const cartridgeSlot = ruleFor(".cartridge-slot");
-  assertDeclaration(cartridgeSlot, "min-height", /^380px$/);
+  assertDeclaration(cartridgeSlot, "min-height", /^0$/);
 
   const romLibraryBrowser = ruleFor(".rom-library-browser");
-  assertDeclaration(romLibraryBrowser, "min-height", /^310px$/);
+  assertDeclaration(romLibraryBrowser, "min-height", /^0$/);
 
   const romLibraryBody = ruleFor(".rom-library-body");
-  assertDeclaration(romLibraryBody, "min-height", /^240px$/);
+  assertDeclaration(romLibraryBody, "min-height", /^0$/);
+  assertDeclaration(romLibraryBody, "align-items", /^start$/);
 
   const aiDialogue = ruleFor(".ai-dialogue");
   assertNoDeclaration(aiDialogue, "max-height");
