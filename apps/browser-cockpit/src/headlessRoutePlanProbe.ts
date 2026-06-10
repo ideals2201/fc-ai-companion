@@ -56,6 +56,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-vertical-fixed-station"
     | "w1205-post-upper-recovery"
     | "w1205-post-upper-safe-recovery"
+    | "w1360-right-under-station-crowd"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -290,6 +291,29 @@ function hasW1205PostUpperSameLaneBodyThreat(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1360RightUnderStationCrowd(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1356 || snapshot.worldX > 1370) return false;
+  if (snapshot.playerY < 204) return false;
+
+  const hasOverheadFixedTarget = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -8 && dx <= 24 && dy >= -112 && dy <= -72;
+  });
+  if (!hasOverheadFixedTarget) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -4 && dx <= 12 && dy >= -42 && dy <= -20;
+  });
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -502,10 +526,22 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
-    candidateTrial === "w1205-post-upper-safe-recovery"
+    (candidateTrial === "w1205-post-upper-safe-recovery" || candidateTrial === "w1360-right-under-station-crowd")
     && hasW1205PostUpperRecoveryStation(snapshot)
     && !hasW1205PostUpperSameLaneBodyThreat(snapshot)
   ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-mid-fixed-threat-recovery",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (candidateTrial === "w1360-right-under-station-crowd" && hasW1360RightUnderStationCrowd(snapshot)) {
     applyStageOneRewardPatch(buttons, {
       a: false,
       b: true,

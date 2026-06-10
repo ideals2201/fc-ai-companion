@@ -239,3 +239,19 @@ test("W1205 post-upper safe recovery attempt is archived after W1360 death", () 
   assert.equal(attempt.runtimeEvidence.lostActiveFrame, 7114);
   assert.equal(attempt.maxProgression, 1497);
 });
+
+test("W1360 station crowd escape attempt is archived after W1726 death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1360-right-under-station-crowd-candidate-trial");
+
+  assert.ok(attempt, "W1360 station-crowd candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1360-right-under-station-crowd");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9079);
+  assert.equal(attempt.maxProgression, 1758);
+});

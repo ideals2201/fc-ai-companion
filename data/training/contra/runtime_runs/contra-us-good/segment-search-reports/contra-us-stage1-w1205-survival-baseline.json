@@ -435,6 +435,39 @@
         "maxProgressStallFrames": 64
       },
       "trialNote": "Headless-only candidate let same-lane body contact override W1205 recovery and resumed right-up fixed-target fire only after the immediate contact window. It broke the W1205 stall without an immediate death, but later died at W1360 from a new close upper-body contact, so it remains rejected."
+    },
+    {
+      "attemptId": "w1360-right-under-station-crowd-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1360-right-under-station-crowd",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1758,
+      "progressGain": 638,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8612,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1360-right-under-station-crowd",
+        "candidateTrial": "w1360-right-under-station-crowd",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9079,
+        "maxProgression": 1758,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery and forced right-up fire through the W1360 upper-body station crowd. It reached W1758 in the danger segment, but died at W1726 from low/side body contact during down-left fire, so it remains rejected."
     }
   ],
   "bestAttempt": null,
@@ -844,6 +877,39 @@
         "maxProgressStallFrames": 64
       },
       "trialNote": "Headless-only candidate let same-lane body contact override W1205 recovery and resumed right-up fixed-target fire only after the immediate contact window. It broke the W1205 stall without an immediate death, but later died at W1360 from a new close upper-body contact, so it remains rejected."
+    },
+    {
+      "attemptId": "w1360-right-under-station-crowd-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1360-right-under-station-crowd",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1758,
+      "progressGain": 638,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8612,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1360-right-under-station-crowd",
+        "candidateTrial": "w1360-right-under-station-crowd",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9079,
+        "maxProgression": 1758,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery and forced right-up fire through the W1360 upper-body station crowd. It reached W1758 in the danger segment, but died at W1726 from low/side body contact during down-left fire, so it remains rejected."
     }
   ],
   "promotionGates": [

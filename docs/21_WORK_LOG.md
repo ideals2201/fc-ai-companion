@@ -2204,3 +2204,161 @@ tests 321
 pass 321
 fail 0
 ```
+
+## 2026-06-10 - W1360 right-under station crowd candidate rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` automated patch search after W1205 safe recovery.
+- Add one isolated headless-only candidate:
+
+```text
+w1360-right-under-station-crowd
+```
+
+- Keep default live `survival-v0` unchanged.
+
+Root-cause refinement:
+
+- `w1205-post-upper-safe-recovery` avoids the immediate W1151 death and reaches W1497/W1500 in short runs.
+- Its 8000-frame run died at W1360 because existing close-body arbitration changed from `right+up+B` to `left+A+B` while an upper enemy descended into the player.
+- Exact W1360 trace:
+
+```text
+frame 7104 W1364 buttons=uprightb  slot3 dx7 dy-39
+frame 7106 W1366 buttons=upab      slot3 dx3 dy-36
+frame 7108 W1366 buttons=upleftab  slot3 dx2 dy-34
+frame 7113 W1361 buttons=upleftab  slot3 dx3 dy-26
+frame 7114 W1360 deathFlag=1       slot3 dx4 dy-24
+```
+
+Candidate hypothesis:
+
+- In the W1356-W1370 station-crowd window, if a fixed target is overhead and a dynamic enemy enters the upper body line, do not left-jump.
+- Force:
+
+```text
+right+up+B, no A, no down, no left
+```
+
+- Also inherit the W1205 safe recovery behavior so the candidate can actually reach W1360 during runtime.
+
+TDD:
+
+- RED test added `headless route-plan probe can isolate W1360 right-under station crowd escape`.
+- The first RED verified that old behavior still set `left=true`.
+- A second RED verified that a W1360 candidate must inherit the W1205 safe recovery branch; otherwise runtime would only rediscover the earlier W1205 stall.
+- GREEN added:
+  - `w1360-right-under-station-crowd` candidate flag;
+  - W1360 fixed-target + upper-body crowd detector;
+  - W1205 safe-recovery inheritance for this candidate only.
+
+Targeted test:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+tests 29
+pass 29
+fail 0
+```
+
+Short runtime trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1360-right-under-station-crowd
+```
+
+```text
+status=active
+lostActiveFrame=null
+maxProgression=1500
+finalProgression=1471
+progressStallFrames=184
+```
+
+Extended runtime trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1360-right-under-station-crowd
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9079
+maxProgression=1758
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window trace:
+
+```text
+frame 9068 W1737 buttons=downleftb  slot13 dx-1 dy31; slot6 dx4 dy48
+frame 9073 W1732 buttons=downleftb  slot13 dx10 dy24; slot6 dx4 dy37
+frame 9076 W1729 buttons=downleftb  slot6 dx4 dy29; slot13 dx17 dy18
+frame 9078 W1727 buttons=downleftb  slot6 dx4 dy23; slot12 dx32 dy1
+frame 9079 W1726 deathFlag=1        slot6 dx4 dy20; slot12 dx32 dy-1
+```
+
+Decision:
+
+- `w1360-right-under-station-crowd` is rejected.
+- It is important evidence:
+  - it combines W1205 safe recovery and W1360 right-under escape successfully enough to reach W1758;
+  - it does not clear the later danger-segment crowd;
+  - it dies at W1726 from low/side body contact during `down+left+B`.
+- Do not promote it into live `survival-v0`.
+- Report updated:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 36
+pass 36
+fail 0
+```
+
+Next inference:
+
+- The next blocker is no longer W1205 or W1360.
+- The next candidate should target W1726 in the `danger-survive` segment:
+
+```text
+W1726 danger low-side body rule =
+  when airborne/landing and down-left fire places player into low-side contact:
+    stop down-left retreat;
+    prefer right/down-fire or neutral down-fire until slot6/slot13 clears
+```
+
+Final verification before saving version:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 323
+pass 323
+fail 0
+```
