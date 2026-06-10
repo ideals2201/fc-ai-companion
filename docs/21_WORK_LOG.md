@@ -2509,3 +2509,186 @@ tests 325
 pass 325
 fail 0
 ```
+
+## 2026-06-10 - Operation-training web research checkpoint
+
+Scope:
+
+- Re-check public operation-training, emulator-training, imitation-learning, and TAS references.
+- Decide what can be borrowed into the current FC/NES companion workflow.
+- Keep this checkpoint as research guidance only; no gameplay runtime change is made in this step.
+
+Primary references checked:
+
+- Gym Retro integration documentation: starting state, memory variables, reward function, and done condition are separate integration artifacts.
+- OpenAI Gym Retro article: movie/replay files store starting state plus button sequence and can be used as compact training data; reward farming can create loops.
+- FCEUX FM2 documentation: FM2 contains header plus input log; ROM checksum, GUID, movie length, and per-frame input rows are sync anchors.
+- FCEUX TAS Editor operations: TAS input can be recorded, imported, edited, and bookmarked at frame windows.
+- TASVideos emulator requirements/features: replay quality depends on movie files, sync-robust savestates, emulator settings, ROM checksum, emulator version, and frame-by-frame input data.
+- DAgger documentation: demonstration cloning is not enough; the trained policy must run, expose its own off-route states, then receive expert corrections.
+- DQfD paper: small demonstration sets can accelerate learning, but still need online/self-generated data and evaluation.
+
+Borrowed conclusions:
+
+- Keep our current default: strategy-fragment training, not generic neural-network training.
+- Use human/TAS/AI runs as baseline sources, not final controllers.
+- Preserve sync anchors for every replay-derived asset:
+  - ROM checksum;
+  - emulator/runtime identity;
+  - movie framecount;
+  - input row index;
+  - entry point;
+  - state snapshot or deterministic context.
+- Treat failure windows as valuable training data. The next candidate should be generated from the exact failed state, not from a full-stage guess.
+- Every TrainingScenario must keep variables, reward-like scoring, terminal conditions, and failure conditions separate.
+- Do not approve a strategy by score, kill count, or reward pickup alone; progress, survival, stuck-loop detection, and safety gates must pass.
+- Add perturbation checks before any future "verified" label: 1-2 frame offset, small coordinate offset, and alternate enemy-slot state where practical.
+
+Impact on current work:
+
+- The current W1660 blocker should be handled by segmented correction, not by replaying a whole TAS stream.
+- TAS data remains a high-value route knowledge source and test fixture.
+- The training UI should keep showing:
+  - baseline source;
+  - training method;
+  - trace/evidence status;
+  - validation quality gates;
+  - strategy result metrics.
+- The next engineering step remains the W1660 retreat/regression guard candidate, under `--candidate-trial`, with tests and runtime smoke before any promotion.
+
+## 2026-06-10 - W1660 retreat-regression guard rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` segmented strategy development.
+- Implement only an isolated candidate trial.
+- Do not change the default/live strategy.
+
+Root-cause evidence from previous rejected candidate:
+
+```text
+w1726-danger-low-side-body reached W2001 but died at W1660.
+frame 10400 W1670 buttons=upleftab slot6 dx14 dy-24; slot13 dx-22 dy-25
+frame 10409 W1661 buttons=uplefta  slot6 dx21 dy-2;  slot13 dx-13 dy-12
+frame 10410 W1660 deathFlag=1      slot13 dx-12 dy-10
+```
+
+Candidate added:
+
+```text
+w1660-retreat-regression-guard
+```
+
+Candidate behavior:
+
+- inherits W1205 safe recovery;
+- inherits W1360 station-crowd escape;
+- inherits W1726 low-side body escape;
+- adds W1658-W1672 rear/side retreat-regression guard;
+- adds W1638-W1650 left-edge overhead-body guard after trace showed the first runtime failure was earlier than W1660.
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+W1660 candidate initially failed because it did not inherit existing W1205/W1360/W1726 candidate behavior.
+After that passed, a second RED was added from runtime trace at W1641.
+The W1641 trace showed up-left retreat at the left screen edge with an overhead body threat.
+```
+
+GREEN:
+
+```text
+tests 31
+pass 31
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1660-retreat-regression-guard
+```
+
+Result:
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=9867
+maxProgression=1820
+finalProgression=811
+progressStallFrames=1848
+```
+
+Failure-window trace:
+
+```text
+frame 9848 W1645 X29 Y212 btn=ab       enemy slot6 dx37 dy-2
+frame 9850 W1645 X29 Y212 btn=upleftab enemy slot13 dx3 dy-34
+frame 9861 W1641 X25 Y212 btn=upleftab enemy slot13 dx7 dy-18
+frame 9866 W1645 X29 Y212 btn=downb    enemy slot13 dx3 dy-10
+frame 9867 W1644 X28 Y212 deathFlag=1  enemy slot13 dx4 dy-9
+```
+
+Decision:
+
+- `w1660-retreat-regression-guard` is rejected.
+- It delayed the left-edge death slightly and recovered after loss, but a strategy candidate that dies is not promotable.
+- The rejected attempt is archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 9
+pass 9
+fail 0
+```
+
+Final verification:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; existing chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 327
+pass 327
+fail 0
+```
+
+Next inference:
+
+- The next blocker is no longer the rear/side W1660 window alone.
+- The earlier root problem is W1641-W1645 left-edge overhead body compression:
+
+```text
+if player is grounded at left screen edge around W1640-W1648
+and a body threat descends at dx 3..8, dy -34..-9:
+  simple up-left retreat and simple prone fire both fail;
+  next candidate should test a stronger escape rule, probably earlier rightward jump/advance or fixed-target pressure reduction before the compression forms.
+```
+
+Do not promote this candidate into live `survival-v0`.

@@ -271,3 +271,20 @@ test("W1726 danger low-side body attempt is archived after W1660 regression deat
   assert.equal(attempt.runtimeEvidence.lostActiveFrame, 10410);
   assert.equal(attempt.maxProgression, 2001);
 });
+
+test("W1660 retreat-regression guard attempt is archived after left-edge body death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1660-retreat-regression-guard-candidate-trial");
+
+  assert.ok(attempt, "W1660 retreat-regression candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1660-retreat-regression-guard");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9867);
+  assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
+  assert.equal(attempt.maxProgression, 1820);
+});

@@ -501,6 +501,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery and W1360 station-crowd escape, then forced right/down fire at W1726 low-side contact. It pushed the run to W2001, but later died at W1660 from rear/side body contact while retreating up-left, so it remains rejected."
+    },
+    {
+      "attemptId": "w1660-retreat-regression-guard-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1660-retreat-regression-guard",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 811,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1820,
+      "progressGain": 700,
+      "progressStallFrames": 1848,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -8550,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1660-retreat-regression-guard",
+        "candidateTrial": "w1660-retreat-regression-guard",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 9867,
+        "maxProgression": 1820,
+        "finalProgression": 811,
+        "progressStallFrames": 1848,
+        "maxProgressStallFrames": 1848
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, and W1726 low-side body escape, then added a W1641-W1650 left-edge overhead body guard plus W1658-W1672 retreat-regression guard. It delayed the W1641 left-edge death to W1644 and recovered after the loss, but still died at frame 9867, so it remains rejected."
     }
   ],
   "bestAttempt": null,
@@ -976,6 +1011,41 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1205 safe recovery and W1360 station-crowd escape, then forced right/down fire at W1726 low-side contact. It pushed the run to W2001, but later died at W1660 from rear/side body contact while retreating up-left, so it remains rejected."
+    },
+    {
+      "attemptId": "w1660-retreat-regression-guard-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1660-retreat-regression-guard",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 811,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1820,
+      "progressGain": 700,
+      "progressStallFrames": 1848,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -8550,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1660-retreat-regression-guard",
+        "candidateTrial": "w1660-retreat-regression-guard",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 9867,
+        "maxProgression": 1820,
+        "finalProgression": 811,
+        "progressStallFrames": 1848,
+        "maxProgressStallFrames": 1848
+      },
+      "trialNote": "Headless-only candidate inherited W1205 safe recovery, W1360 station-crowd escape, and W1726 low-side body escape, then added a W1641-W1650 left-edge overhead body guard plus W1658-W1672 retreat-regression guard. It delayed the W1641 left-edge death to W1644 and recovered after the loss, but still died at frame 9867, so it remains rejected."
     }
   ],
   "promotionGates": [
