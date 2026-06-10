@@ -60,6 +60,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1440-descent-lower-body-right-carry"
     | "w1454-airborne-fixed-contact-right-carry"
     | "w1454-airborne-fixed-contact-pulse-carry"
+    | "w1456-air-route-hold-right"
     | "w1726-danger-low-side-body"
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
@@ -363,6 +364,29 @@ function hasW1454AirborneFixedContactRightCarry(snapshot: RoutePlanProbeSnapshot
     const dy = enemy.y - snapshot.playerY;
     return dx >= 8 && dx <= 24 && dy >= 40 && dy <= 72;
   });
+}
+
+function findW1456AirRouteFormationThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1444 || snapshot.worldX > 1464) return null;
+  if (snapshot.playerY < 140 || snapshot.playerY > 188) return null;
+
+  const hasForwardFixedTarget = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -8 && dx <= 28 && dy >= -90 && dy <= -10;
+  });
+  if (!hasForwardFixedTarget) return null;
+
+  return snapshot.enemies.find((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 10 && dx <= 34 && dy >= -45 && dy <= 34;
+  }) ?? null;
 }
 
 function hasW1726DangerLowSideBodyThreat(snapshot: RoutePlanProbeSnapshot) {
@@ -821,6 +845,24 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
+    candidateTrial === "w1456-air-route-hold-right"
+  ) {
+    const routeFormationThreat = findW1456AirRouteFormationThreat(snapshot);
+    if (routeFormationThreat) {
+      const dy = routeFormationThreat.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: dy >= 12,
+        left: false,
+        reason: "stage-one-air-route-hold-right",
+        right: true,
+        up: dy <= -12
+      });
+      return buttons;
+    }
+  }
+  if (
     candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
     && hasW1454AirborneFixedContactRightCarry(snapshot)
   ) {
@@ -837,7 +879,8 @@ export function decideHeadlessRoutePlanProbeButtons({
   }
   if (
     (
-      candidateTrial === "w1454-airborne-fixed-contact-right-carry"
+      candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
       || candidateTrial === "w1440-descent-lower-body-right-carry"
       || candidateTrial === "w1726-danger-low-side-body"
       || candidateTrial === "w1660-retreat-regression-guard"
@@ -866,7 +909,8 @@ export function decideHeadlessRoutePlanProbeButtons({
   }
   if (
     (
-      candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
+      candidateTrial === "w1456-air-route-hold-right"
+      || candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
       || candidateTrial === "w1440-descent-lower-body-right-carry"
       || candidateTrial === "w1726-danger-low-side-body"

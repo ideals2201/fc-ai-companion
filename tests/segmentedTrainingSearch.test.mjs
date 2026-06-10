@@ -432,6 +432,26 @@ test("W1454 airborne fixed-contact pulse carry attempt is archived after same-fr
   assert.ok(attempt.riskTags.includes("shot-slot-timing-risk"));
 });
 
+test("W1456 air-route hold-right attempt is archived after moving the first loss to W1735", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1456-air-route-hold-right-candidate-trial");
+
+  assert.ok(attempt, "W1456 air-route hold-right candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1456-air-route-hold-right");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 11978);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1751);
+  assert.equal(attempt.finalProgression, 1757);
+  assert.ok(attempt.riskTags.includes("route-formation-progress-gain"));
+  assert.ok(attempt.trialNote.includes("moved the first loss"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

@@ -947,6 +947,42 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate tested a W1454 right/down fire pulse that releases B for two frames before firing again, based on bullet evidence showing old shots drifting left of slot5. Runtime still died at frame 9414/W1445 with the same lower-body contact. It is rejected. Lesson: this blocker is not solved by B pulsing or late contact shooting; next work must change the earlier jump/landing route before W1436-W1454."
+    },
+    {
+      "attemptId": "w1456-air-route-hold-right-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1456-air-route-hold-right",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1757,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 631,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "route-formation-progress-gain",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -8619,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1456-air-route-hold-right",
+        "candidateTrial": "w1456-air-route-hold-right",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1757,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate moved the route-formation fix earlier to W1444-W1464 by suppressing airborne left pull around the fixed-target and slot5 convergence. Runtime eliminated the previous W9414/W1445 first death and moved the first loss to frame 11978/W1735 in the danger-survive segment. It is still rejected because the run dies, but the useful lesson is validated: route formation must preserve rightward air control before the lower-body contact forms. Next target is the W1735 danger-survive body-contact window."
     }
   ],
   "bestAttempt": null,
@@ -1868,6 +1904,42 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate tested a W1454 right/down fire pulse that releases B for two frames before firing again, based on bullet evidence showing old shots drifting left of slot5. Runtime still died at frame 9414/W1445 with the same lower-body contact. It is rejected. Lesson: this blocker is not solved by B pulsing or late contact shooting; next work must change the earlier jump/landing route before W1436-W1454."
+    },
+    {
+      "attemptId": "w1456-air-route-hold-right-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1456-air-route-hold-right",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1757,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1751,
+      "progressGain": 631,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "route-formation-progress-gain",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -8619,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1456-air-route-hold-right",
+        "candidateTrial": "w1456-air-route-hold-right",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 11978,
+        "maxProgression": 1751,
+        "finalProgression": 1757,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate moved the route-formation fix earlier to W1444-W1464 by suppressing airborne left pull around the fixed-target and slot5 convergence. Runtime eliminated the previous W9414/W1445 first death and moved the first loss to frame 11978/W1735 in the danger-survive segment. It is still rejected because the run dies, but the useful lesson is validated: route formation must preserve rightward air control before the lower-body contact forms. Next target is the W1735 danger-survive body-contact window."
     }
   ],
   "promotionGates": [

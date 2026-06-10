@@ -250,6 +250,96 @@ segmentedTrainingSearch: tests 21, pass 21, fail 0
 segment report json ok
 ```
 
+### W1456 air-route hold-right moves first loss to W1735
+
+Scope:
+
+- Stop adding late same-frame contact fixes after W1440/W1454 candidates failed.
+- Move the intervention earlier into route formation: W1444-W1464 airborne path, where the trace showed old logic repeatedly pulling `left` after the jump from W1456.
+- Keep the candidate isolated behind `--candidate-trial=w1456-air-route-hold-right`.
+
+Candidate:
+
+```text
+w1456-air-route-hold-right
+```
+
+Trace evidence behind the candidate:
+
+```text
+9365 W1460 X128 Y181 J49 buttons=up+left+B slot5 dx=23 dy=-34 fixed dx=8 dy=-53
+9366 W1459 X127 Y178 J81 buttons=up+left+B slot5 dx=23 dy=-30
+...
+9377 W1448 X116 Y149 J81 buttons=down+left+B slot5 dx=28 dy=14
+9381 W1444 X112 Y143 J81 buttons=down+left+B slot5 dx=29 dy=27
+```
+
+Root cause inference:
+
+- The previous death was not caused only by the final W1440/W1454 contact frame.
+- The AI had already lost the intended route by accepting airborne `left` pulls during the jump arc.
+- This caused it to descend into the lower slot5 enemy path.
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+W1456 air-route hold-right test first failed because the old decision still pressed left at the W1460/W1461 formation frames.
+```
+
+GREEN:
+
+```text
+tests 44
+pass 44
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1456-air-route-hold-right
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=11978
+maxProgression=1751
+finalProgression=1757
+lost W1735 X112 Y176 deathFlag=1
+nearest slot12 type1 dx=3 dy=10
+slot6 type5 dx=12 dy=20
+fixed slot11 type2 dx=24 dy=-48
+```
+
+Decision:
+
+- `w1456-air-route-hold-right` is rejected for promotion because the run still dies.
+- It is valuable evidence: it eliminated the earlier W9414/W1445 first loss and moved the first loss to W11978/W1735.
+- This confirms that route formation and airborne right-control are the correct class of fix.
+- The rejected attempt is archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Next inference:
+
+```text
+Target W1735 danger-survive body-contact window:
+  inspect frame 11940-11978;
+  fixed target remains ahead/up while same-lane enemies compress from dx 3..12 / dy 10..23;
+  test a candidate that clears or avoids the body stack without losing rightward route control.
+```
+
 ### 取消一次性交接文档
 
 删除：

@@ -39,6 +39,7 @@ export type StageOneRewardButtonPatch = {
     | "mid-weapon-turret-breakout"
     | "stage-one-airborne-fixed-contact-right-carry"
     | "stage-one-airborne-fixed-contact-pulse-carry"
+    | "stage-one-air-route-hold-right"
     | "stage-one-close-body-threat"
     | "stage-one-red-turret-low-threat"
     | "stage-one-boss-approach-close-body"

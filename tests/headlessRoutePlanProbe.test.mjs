@@ -1862,6 +1862,91 @@ test("headless route-plan probe can isolate W1454 airborne fixed-contact pulse c
   assert.equal(fireButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1456 air-route hold-right formation", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const ascentButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1456-air-route-hold-right",
+    frame: 9365,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 181,
+      worldX: 1460,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 151, y: 147, vx: -1, vy: 0 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 123, y: 112 }
+      ]
+    })
+  });
+
+  assert.equal(ascentButtons.left, false);
+  assert.equal(ascentButtons.right, true);
+  assert.equal(ascentButtons.up, true);
+  assert.equal(ascentButtons.down, false);
+  assert.equal(ascentButtons.a, false);
+  assert.equal(ascentButtons.b, true);
+
+  const descentButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1456-air-route-hold-right",
+    frame: 9378,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 81,
+      playerX: 115,
+      playerY: 148,
+      worldX: 1447,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 143, y: 164, vx: -1, vy: 1 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 123, y: 112 }
+      ]
+    })
+  });
+
+  assert.equal(descentButtons.left, false);
+  assert.equal(descentButtons.right, true);
+  assert.equal(descentButtons.up, false);
+  assert.equal(descentButtons.down, true);
+  assert.equal(descentButtons.a, false);
+  assert.equal(descentButtons.b, true);
+
+  const runtimeDescentButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1456-air-route-hold-right",
+    frame: 9378,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 126,
+      playerY: 148,
+      worldX: 1461,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 140, y: 164, vx: -1, vy: 1 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 123, y: 112 }
+      ]
+    })
+  });
+
+  assert.equal(runtimeDescentButtons.left, false);
+  assert.equal(runtimeDescentButtons.right, true);
+  assert.equal(runtimeDescentButtons.up, false);
+  assert.equal(runtimeDescentButtons.down, true);
+  assert.equal(runtimeDescentButtons.a, false);
+  assert.equal(runtimeDescentButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",
