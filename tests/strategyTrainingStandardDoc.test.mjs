@@ -69,3 +69,20 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /Frame-advance emulator control/, "training standard should map frame-advance bot loops to local runtime execution");
   assert.match(source, /A candidate is not promotable until all gates pass/, "training standard should state the promotion gate explicitly");
 });
+
+test("strategy training standard records external operation-training references as source material", () => {
+  const source = fs.readFileSync(docPath, "utf8");
+
+  assert.match(source, /## 13\. External Source Register/, "training standard should keep a source register for borrowed operation-training patterns");
+  assert.match(source, /Gym Retro/, "source register should cite Gym Retro style game integrations");
+  assert.match(source, /https:\/\/retro\.readthedocs\.io\/en\/latest\//, "source register should include the Gym Retro docs URL");
+  assert.match(source, /Stable-Retro/, "source register should cite Stable-Retro replay material");
+  assert.match(source, /https:\/\/stable-retro\.farama\.org\//, "source register should include the Stable-Retro docs URL");
+  assert.match(source, /FCEUX FM2/, "source register should cite the FM2 movie format");
+  assert.match(source, /https:\/\/fceux\.com\/web\/FM2\.html/, "source register should include the FCEUX FM2 URL");
+  assert.match(source, /FCEUX Lua/, "source register should cite FCEUX Lua scripting");
+  assert.match(source, /https:\/\/fceux\.com\/web\/help\/LuaScripting\.html/, "source register should include the FCEUX Lua URL");
+  assert.match(source, /DAgger/, "source register should cite DAgger as failure-state aggregation guidance");
+  assert.match(source, /Ross-AIStats11-NoRegret\.pdf/, "source register should include the DAgger paper URL");
+  assert.match(source, /Borrow patterns, not authority/, "source register should state that external projects are references rather than product authority");
+});

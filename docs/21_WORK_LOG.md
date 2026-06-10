@@ -47,6 +47,14 @@
 - 继续用 headless runtime smoke 和 segmented training report 做快速迭代；失败候选要归档，不允许靠感觉覆盖 live `survival-v0`。
 - 下一轮魂斗罗 US 稳健生存优先修 W1683-W1684 route formation，而不是继续给 W1726 加局部补丁。
 
+标准补充：
+
+- `docs/STRATEGY_TRAINING_STANDARD.md` 新增 `## 13. External Source Register`。
+- 第 13 节把 Gym Retro、Stable-Retro、FCEUX FM2、FCEUX Lua、DAgger 和 Gym Retro reward-farming 作为操作训练参考源登记。
+- 核心原则写入标准：`Borrow patterns, not authority`。外部项目只能提供工程模式，不能绕过本项目的 TraceEvidence、ValidationReport、ROMProfile、Safety Override、Negative Constraints 和本地 runtime 验证。
+- `tests/strategyTrainingStandardDoc.test.mjs` 新增测试，要求训练标准保留外部来源 URL、可借鉴模式和采纳边界。
+- 验证：`node --test tests\strategyTrainingStandardDoc.test.mjs`，2/2 通过。
+
 ### W1440 descent lower-body right carry rejected
 
 Scope:

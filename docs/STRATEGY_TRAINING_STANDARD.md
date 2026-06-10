@@ -502,3 +502,26 @@ Quality labels:
 - `rejected`: tested and blocked by evidence.
 
 The UI must show these labels plainly. A player should be able to tell whether a strategy is an experiment, a working local candidate, or a proven package before using it in live play.
+
+## 13. External Source Register
+
+Borrow patterns, not authority. External operation-training projects are source material for engineering design, but the local project standard remains the authority for runtime behavior, Strategy Pack format, safety gates, and promotion decisions.
+
+Registered references:
+
+| Source | Reference URL | Useful Pattern | Local Adoption |
+| --- | --- | --- | --- |
+| Gym Retro | https://retro.readthedocs.io/en/latest/ | Game integrations separate memory variables, scenario files, reward rules, done rules, and starting states. | Keep `GameProfile`, `condition-registry.json`, `training-scenarios.json`, and `ValidationReport` as separate artifacts. |
+| Stable-Retro | https://stable-retro.farama.org/ | Replay files and starting states can seed demonstration datasets. | Treat replay or movie input as `TraceEvidence`, TAS side baselines, or human demonstration traces, not as direct live strategy control. |
+| FCEUX FM2 | https://fceux.com/web/FM2.html | `.fm2` movie files preserve ROM checksum and frame-indexed controller input. | Preserve `romChecksum`, movie framecount, input row index, and entry-point metadata for TAS-derived training. |
+| FCEUX Lua | https://fceux.com/web/help/LuaScripting.html | Lua can read memory, write inputs, draw debug overlays, and drive frame-advance experiments. | Use local or emulator-side automation for segmented attempts, rollback, trace capture, and failure-window diagnosis. |
+| DAgger | https://www.cs.cmu.edu/~sross1/publications/Ross-AIStats11-NoRegret.pdf | Demonstration-only policies drift into states the expert trace never covered; aggregate failures from the learned policy and correct them. | Treat AI failure windows as first-class training data and require targeted correction traces before promotion. |
+| Gym Retro reward-farming notes | https://openai.com/index/gym-retro/ | Reward-only objectives can create exploit loops instead of useful play. | Validate progress, survival, loop exit, and strategy-specific objectives together; never promote by score, kills, or pickups alone. |
+
+Adoption rules:
+
+- A source reference can justify a standard pattern, but it cannot bypass local `TraceEvidence`, `ValidationReport`, ROMProfile matching, Safety Override, or Negative Constraints.
+- External movie files, emulator logs, papers, forum notes, and repos must be copied into a package `source-register.md` with date, URL, target ROMProfile, and intended use before they influence a distributable Strategy Pack.
+- If an external source assumes pixel input, neural-network training, or a different emulator timing model, translate only the useful contract into local RAM-state and frame-indexed evidence.
+- If an external source provides a full route or TAS, split it into side-owned baselines and candidate windows before using it for 1P, 2P, human+AI, or dual-AI training.
+- If the external source is not tied to the exact ROM checksum, mark it as research-only until a compatible ROMProfile and runtime validation prove it locally.
