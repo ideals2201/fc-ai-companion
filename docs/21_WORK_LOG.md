@@ -1690,3 +1690,90 @@ source trace -> side-owned baseline -> candidate fragment -> segmented validatio
   - package quality level;
   - strategy result metrics.
 - The next implementation step should continue improving the operation-training UI and then resume Contra Stage 1 `survival-v0` segmented validation.
+
+## 2026-06-10 - Validation quality gate reasons surfaced
+
+Scope:
+
+- Show each `ValidationReport.qualityGates[].reason` in the Operation Strategy Control panel.
+- Keep strategy runtime behavior unchanged.
+- Keep package save gating unchanged.
+
+TDD:
+
+- RED:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+```
+
+```text
+fail 1
+operation strategy control explains validation quality gate reasons
+quality gate cards should show the machine-readable validation reason
+```
+
+- GREEN:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+```
+
+```text
+tests 22
+pass 22
+fail 0
+```
+
+Implementation:
+
+- `apps/browser-cockpit/src/main.tsx`
+  - gate cards now render `gate.reason`;
+  - each reason exposes `data-testid="strategy-validation-gate-${gate.id}-reason"`.
+- `apps/browser-cockpit/src/styles.css`
+  - added compact two-line reason styling so the panel remains fixed and non-scroll.
+- `tests/trainingPanelLayout.test.mjs`
+  - added a source-level test requiring visible quality-gate reason rendering.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\strategyPackageEvidence.test.mjs tests\i18n.test.mjs
+```
+
+```text
+tests 33
+pass 33
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+```text
+tsc -b && vite build
+built in 2.31s
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 315
+pass 315
+fail 0
+```
+
+Browser check:
+
+- URL: `http://127.0.0.1:5173/?autoload=1`
+- `data-testid="strategy-validation-gates"` exists.
+- Waiting state is visible before a validation replay creates a report.
+
+Decision:
+
+- Validation gates are now not only pass/fail lights; they also explain why a gate passed, failed, is missing, or is not applicable.
+- This supports the objective that every strategy conclusion must be backed by visible TraceEvidence and ValidationReport evidence.
+- Next work should either wire an example failed ValidationReport into a replay path for visual inspection or resume Contra Stage 1 `survival-v0` segmented validation.

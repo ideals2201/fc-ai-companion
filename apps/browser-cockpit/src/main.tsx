@@ -7086,6 +7086,7 @@ function OperationStrategyControl({
             <div className={`quality-gate-card ${gate.status}`} data-testid={`strategy-validation-gate-${gate.id}`} key={gate.id}>
               <span>{gate.label}</span>
               <strong>{qualityGateStatusLabel(gate.status, language)}</strong>
+              <em className="quality-gate-reason" data-testid={`strategy-validation-gate-${gate.id}-reason`}>{gate.reason}</em>
             </div>
           )) : (
             <div className="quality-gate-card missing" data-testid="strategy-validation-gate-waiting">

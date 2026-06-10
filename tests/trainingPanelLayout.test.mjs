@@ -370,3 +370,9 @@ test("operation strategy control surfaces validation quality gates", () => {
   assert.match(mainSource, /training\.qualityGates/, "quality gate panel should use localized training labels");
   assert.match(mainSource, /quality-gate-card/, "quality gates should have dedicated card styling");
 });
+
+test("operation strategy control explains validation quality gate reasons", () => {
+  assert.match(mainSource, /gate\.reason/, "quality gate cards should show the machine-readable validation reason");
+  assert.match(mainSource, /data-testid=\{`strategy-validation-gate-\$\{gate\.id\}-reason`\}/, "quality gate reasons should expose a stable test id");
+  assert.match(mainSource, /quality-gate-reason/, "quality gate reasons should have dedicated styling");
+});
