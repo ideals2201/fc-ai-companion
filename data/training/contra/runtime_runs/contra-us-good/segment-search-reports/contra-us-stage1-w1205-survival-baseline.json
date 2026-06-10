@@ -874,6 +874,79 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate added a W1436-W1444 airborne descent lower-body right-carry response after the formal survival baseline died with down-left fire at W1439/W1440. Runtime changed the pre-loss input to down-right fire, but death still occurred on frame 9414 with the lower body contact at W1443. It is rejected. The useful lesson is that this blocker is not solved by swapping left retreat to right carry after descent; the route must prevent the lower-body contact earlier, likely by changing the jump/landing timing before W1436."
+    },
+    {
+      "attemptId": "w1454-airborne-fixed-contact-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1454-airborne-fixed-contact-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk",
+        "late-route-formation-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-right-carry",
+        "candidateTrial": "w1454-airborne-fixed-contact-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a W1448-W1456 airborne fixed-contact right/down fire response, then inherited the W1440 descent lower-body right-carry patch. Runtime still died at frame 9414/W1445 with slot5 lower-body contact dx=-1 dy=20. It is rejected. Lesson: entering W1454 with the lower soldier already below-forward is too late; right/down carry does not prevent the body collision."
+    },
+    {
+      "attemptId": "w1454-airborne-fixed-contact-pulse-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1454-airborne-fixed-contact-pulse-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk",
+        "late-route-formation-risk",
+        "shot-slot-timing-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-pulse-carry",
+        "candidateTrial": "w1454-airborne-fixed-contact-pulse-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate tested a W1454 right/down fire pulse that releases B for two frames before firing again, based on bullet evidence showing old shots drifting left of slot5. Runtime still died at frame 9414/W1445 with the same lower-body contact. It is rejected. Lesson: this blocker is not solved by B pulsing or late contact shooting; next work must change the earlier jump/landing route before W1436-W1454."
     }
   ],
   "bestAttempt": null,
@@ -1722,6 +1795,79 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate added a W1436-W1444 airborne descent lower-body right-carry response after the formal survival baseline died with down-left fire at W1439/W1440. Runtime changed the pre-loss input to down-right fire, but death still occurred on frame 9414 with the lower body contact at W1443. It is rejected. The useful lesson is that this blocker is not solved by swapping left retreat to right carry after descent; the route must prevent the lower-body contact earlier, likely by changing the jump/landing timing before W1436."
+    },
+    {
+      "attemptId": "w1454-airborne-fixed-contact-right-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1454-airborne-fixed-contact-right-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk",
+        "late-route-formation-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-right-carry",
+        "candidateTrial": "w1454-airborne-fixed-contact-right-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate added a W1448-W1456 airborne fixed-contact right/down fire response, then inherited the W1440 descent lower-body right-carry patch. Runtime still died at frame 9414/W1445 with slot5 lower-body contact dx=-1 dy=20. It is rejected. Lesson: entering W1454 with the lower soldier already below-forward is too late; right/down carry does not prevent the body collision."
+    },
+    {
+      "attemptId": "w1454-airborne-fixed-contact-pulse-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1454-airborne-fixed-contact-pulse-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1790,
+      "progressGain": 670,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "same-frame-death-risk",
+        "late-route-formation-risk",
+        "shot-slot-timing-risk"
+      ],
+      "score": -8580,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-pulse-carry",
+        "candidateTrial": "w1454-airborne-fixed-contact-pulse-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9414,
+        "maxProgression": 1790,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate tested a W1454 right/down fire pulse that releases B for two frames before firing again, based on bullet evidence showing old shots drifting left of slot5. Runtime still died at frame 9414/W1445 with the same lower-body contact. It is rejected. Lesson: this blocker is not solved by B pulsing or late contact shooting; next work must change the earlier jump/landing route before W1436-W1454."
     }
   ],
   "promotionGates": [

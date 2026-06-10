@@ -152,6 +152,104 @@ Target W1430-W1440 route formation:
   do not repeat a late horizontal-direction swap as the main fix.
 ```
 
+### W1454 fixed-contact carry / pulse rejected
+
+Scope:
+
+- Continue from the W1440 same-frame death evidence.
+- Test whether the unsafe descent can be recovered slightly earlier at W1448-W1456 by forcing `right+down+B`.
+- Test a second narrow hypothesis that releasing B for two frames then firing again can free bullet slots and hit the lower slot5 enemy.
+- Keep both changes isolated behind `--candidate-trial`; do not promote either into live `survival-v0`.
+
+Candidates:
+
+```text
+w1454-airborne-fixed-contact-right-carry
+w1454-airborne-fixed-contact-pulse-carry
+```
+
+Root cause evidence:
+
+Compact trace before the first loss showed the AI entered W1454 airborne with a fixed target ahead/up and a lower enemy already below-forward:
+
+```text
+frame 9393 W1454 X122 Y138 J49 enemy slot5 dx=11 dy=58 fixed dx=14 dy=-10
+frame 9413 W1444 X112 Y173 J81 enemy slot5 dx=1 dy=23 fixed dx=24 dy=-45
+frame 9414 W1445 X113 Y176 deathFlag=1 enemy slot5 dx=-1 dy=20
+```
+
+Bullet evidence before the pulse candidate showed existing shots had drifted left of slot5, so pure hold-B was not creating a useful fresh down shot:
+
+```text
+frame 9393 W1454 X122 Y138 buttons=down+right+B
+slot5 x=133 y=196 dx=11 dy=58
+player bullets: x=61/67/72, all left of slot5
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+W1454 pulse candidate first failed because the candidate did not exist and the current decision did not force right/down with B released.
+```
+
+GREEN:
+
+```text
+tests 43
+pass 43
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-right-carry
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1454-airborne-fixed-contact-pulse-carry
+```
+
+Both candidates:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9414
+maxProgression=1790
+finalProgression=82
+lost W1445 X113 Y176 deathFlag=1 enemy slot5 dx=-1 dy=20
+```
+
+Decision:
+
+- `w1454-airborne-fixed-contact-right-carry` is rejected.
+- `w1454-airborne-fixed-contact-pulse-carry` is rejected.
+- The useful lesson: the blocker is not a late firing cadence issue and not a late horizontal carry issue. The AI is already entering the landing/descent with slot5 too close to the body.
+- Next route work must move earlier to W1430-W1454 route formation: jump timing, jump-release timing, lower enemy pre-clear, or a higher/safer landing arc before the lower-body contact exists.
+- Both rejected attempts are archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('segment report json ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 43, pass 43, fail 0
+segmentedTrainingSearch: tests 21, pass 21, fail 0
+segment report json ok
+```
+
 ### 取消一次性交接文档
 
 删除：

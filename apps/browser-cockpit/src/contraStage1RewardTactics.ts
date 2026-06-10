@@ -37,6 +37,8 @@ export type StageOneRewardButtonPatch = {
   reason:
     | "reward-station-falling-threat"
     | "mid-weapon-turret-breakout"
+    | "stage-one-airborne-fixed-contact-right-carry"
+    | "stage-one-airborne-fixed-contact-pulse-carry"
     | "stage-one-close-body-threat"
     | "stage-one-red-turret-low-threat"
     | "stage-one-boss-approach-close-body"

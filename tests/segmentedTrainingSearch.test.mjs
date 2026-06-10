@@ -394,6 +394,44 @@ test("W1440 descent lower-body right carry attempt is archived after same-frame 
   assert.equal(attempt.finalProgression, 82);
 });
 
+test("W1454 airborne fixed-contact right carry attempt is archived after same-frame death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1454-airborne-fixed-contact-right-carry-candidate-trial");
+
+  assert.ok(attempt, "W1454 fixed-contact right-carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1454-airborne-fixed-contact-right-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9414);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1790);
+  assert.equal(attempt.finalProgression, 82);
+  assert.ok(attempt.riskTags.includes("late-route-formation-risk"));
+});
+
+test("W1454 airborne fixed-contact pulse carry attempt is archived after same-frame death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1454-airborne-fixed-contact-pulse-carry-candidate-trial");
+
+  assert.ok(attempt, "W1454 fixed-contact pulse-carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1454-airborne-fixed-contact-pulse-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9414);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1790);
+  assert.equal(attempt.finalProgression, 82);
+  assert.ok(attempt.riskTags.includes("shot-slot-timing-risk"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

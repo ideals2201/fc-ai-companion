@@ -58,6 +58,8 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-post-upper-safe-recovery"
     | "w1360-right-under-station-crowd"
     | "w1440-descent-lower-body-right-carry"
+    | "w1454-airborne-fixed-contact-right-carry"
+    | "w1454-airborne-fixed-contact-pulse-carry"
     | "w1726-danger-low-side-body"
     | "w1660-retreat-regression-guard"
     | "w1641-left-edge-right-jump"
@@ -337,6 +339,29 @@ function hasW1440DescentLowerBodyRightCarry(snapshot: RoutePlanProbeSnapshot) {
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= 0 && dx <= 14 && dy >= 16 && dy <= 32;
+  });
+}
+
+function hasW1454AirborneFixedContactRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1448 || snapshot.worldX > 1456) return false;
+  if (snapshot.playerY < 132 || snapshot.playerY > 150) return false;
+
+  const hasForwardFixedContact = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 8 && dx <= 24 && dy >= -20 && dy <= 0;
+  });
+  if (!hasForwardFixedContact) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 8 && dx <= 24 && dy >= 40 && dy <= 72;
   });
 }
 
@@ -796,8 +821,54 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
+    candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
+    && hasW1454AirborneFixedContactRightCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: !pulseWindow(frame, 6, 2),
+      down: true,
+      left: false,
+      reason: "stage-one-airborne-fixed-contact-pulse-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
     (
-      candidateTrial === "w1440-descent-lower-body-right-carry"
+      candidateTrial === "w1454-airborne-fixed-contact-right-carry"
+      || candidateTrial === "w1440-descent-lower-body-right-carry"
+      || candidateTrial === "w1726-danger-low-side-body"
+      || candidateTrial === "w1660-retreat-regression-guard"
+      || candidateTrial === "w1641-left-edge-right-jump"
+      || candidateTrial === "w1648-left-edge-precompression-advance"
+      || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
+      || candidateTrial === "w1664-same-lane-preclear-pulse"
+      || candidateTrial === "w1678-forward-body-duck-carry"
+      || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
+    )
+    && hasW1454AirborneFixedContactRightCarry(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-airborne-fixed-contact-right-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
+      || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
+      || candidateTrial === "w1440-descent-lower-body-right-carry"
       || candidateTrial === "w1726-danger-low-side-body"
       || candidateTrial === "w1660-retreat-regression-guard"
       || candidateTrial === "w1641-left-edge-right-jump"
