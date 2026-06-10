@@ -19,6 +19,7 @@ test("headless runtime smoke report keeps TAS as evidence-only, not controller",
 
 test("headless runtime smoke can optionally probe direct controller writes", () => {
   assert.match(scriptSource, /--strategy=/);
+  assert.match(scriptSource, /--candidate-trial=/);
   assert.match(scriptSource, /Math\.min\(value,\s*20000\)/);
   assert.match(scriptSource, /--probe=right-b/);
   assert.match(scriptSource, /--probe=route-plan/);
@@ -27,6 +28,7 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /\$\{specifier\}\.ts/);
   assert.match(scriptSource, /probeInput/);
   assert.match(scriptSource, /routeSegment/);
+  assert.match(scriptSource, /candidateTrial/);
   assert.match(scriptSource, /maxProgressSnapshot/);
   assert.match(scriptSource, /lastActiveSnapshot/);
   assert.match(scriptSource, /lostActiveSnapshot/);
@@ -51,4 +53,26 @@ test("headless runtime smoke can emit a compact trace window for failure analysi
   assert.match(scriptSource, /compactTraceFrame/);
   assert.match(scriptSource, /beforeSnapshot/);
   assert.match(scriptSource, /afterSnapshot/);
+});
+
+test("headless runtime smoke can emit a compact trace summary for button and threat review", () => {
+  assert.match(scriptSource, /traceSummary/);
+  assert.match(scriptSource, /summarizeTraceFrame/);
+  assert.match(scriptSource, /nearestEnemy/);
+  assert.match(scriptSource, /nearestBullet/);
+  assert.match(scriptSource, /buttonsText/);
+});
+
+test("headless runtime smoke trace summary can project player bullet threat intersections", () => {
+  assert.match(scriptSource, /playerBulletVectors/);
+  assert.match(scriptSource, /bulletThreatIntersections/);
+  assert.match(scriptSource, /projectBulletThreatIntersections/);
+  assert.match(scriptSource, /predictedHitFrame/);
+  assert.match(scriptSource, /closestDistance/);
+  assert.match(scriptSource, /movingToward/);
+  assert.match(scriptSource, /targetAfterHp/);
+  assert.match(scriptSource, /targetHpDelta/);
+  assert.match(scriptSource, /targetClearedAfter/);
+  assert.match(scriptSource, /ramConfirmedHit/);
+  assert.match(scriptSource, /predictedHitButNoRamEffect/);
 });

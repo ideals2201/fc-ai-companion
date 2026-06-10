@@ -244,7 +244,7 @@ export function findRewardStationFallingThreat<T extends StageOneRewardThreat>(
   snapshot: StageOneRewardThreatSnapshot<T>
 ): T | null {
   if (snapshot.level !== 0) return null;
-  if (snapshot.worldX < 1040 || snapshot.worldX > 1180) return null;
+  if (snapshot.worldX < 1040 || snapshot.worldX > 1210) return null;
   if (snapshot.playerY < 188) return null;
 
   return snapshot.enemies
@@ -292,6 +292,7 @@ export function stageOneCloseBodyThreatPatch<T extends StageOneRewardThreat>(
   const threat = snapshot.enemies
     .filter((enemy) => {
       if (!enemy.threat || enemy.fixed || enemy.hp <= 0) return false;
+      if (isGroundedLowLaneObjectResidue(snapshot, enemy, grounded)) return false;
       if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
       const dx = enemy.x - snapshot.playerX;
       const dy = enemy.y - snapshot.playerY;
@@ -328,6 +329,19 @@ export function stageOneCloseBodyThreatPatch<T extends StageOneRewardThreat>(
     right: grounded ? !threatAhead : !threatAhead,
     up: dy <= 10
   };
+}
+
+function isGroundedLowLaneObjectResidue<T extends StageOneRewardThreat>(
+  snapshot: StageOneRewardThreatSnapshot<T>,
+  enemy: T,
+  grounded: boolean
+) {
+  if (!grounded || snapshot.playerY < 188) return false;
+  if (enemy.fixed || enemy.kind !== "object" || enemy.routine !== 0) return false;
+  if (enemy.type !== 1 && enemy.type !== 5) return false;
+  const dx = enemy.x - snapshot.playerX;
+  const dy = enemy.y - snapshot.playerY;
+  return dx >= -48 && dx <= 56 && dy >= -8 && dy <= 32;
 }
 
 export function stageOneRedTurretLowThreatPatch<

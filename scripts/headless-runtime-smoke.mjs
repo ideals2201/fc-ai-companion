@@ -20,6 +20,7 @@ const buttonMap = {
 
 function parseArgs(argv) {
   const options = {
+    candidateTrial: null,
     dryRun: false,
     frames: 1800,
     probeInput: "none",
@@ -33,6 +34,10 @@ function parseArgs(argv) {
     else if (arg === "--two-player") options.twoPlayer = true;
     else if (arg === "--probe=right-b") options.probeInput = "right-b";
     else if (arg === "--probe=route-plan") options.probeInput = "route-plan";
+    else if (arg.startsWith("--candidate-trial=")) {
+      const value = arg.slice("--candidate-trial=".length).trim();
+      options.candidateTrial = value || null;
+    }
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--trace-start=")) {
       const value = Number.parseInt(arg.slice("--trace-start=".length), 10);
@@ -172,6 +177,22 @@ function nearbyBullets(snapshot) {
     .slice(0, 6);
 }
 
+function activePlayerBullets(snapshot, owner = 0) {
+  return snapshot.bullets
+    .filter((bullet) => bullet.owner === owner && bullet.routine === 1 && bullet.bulletSlotCode !== 0)
+    .map((bullet) => ({
+      slot: bullet.slot,
+      owner: bullet.owner,
+      routine: bullet.routine,
+      bulletSlotCode: bullet.bulletSlotCode,
+      spriteCode: bullet.spriteCode,
+      x: bullet.x,
+      y: bullet.y,
+      ...distanceToPlayer(bullet, snapshot)
+    }))
+    .sort((a, b) => a.slot - b.slot);
+}
+
 function compactSnapshot(snapshot) {
   if (!snapshot) return null;
   return {
@@ -190,7 +211,8 @@ function compactSnapshot(snapshot) {
     enemyCount: snapshot.enemies.length,
     bulletCount: snapshot.bullets.length,
     nearbyEnemies: nearbyEnemies(snapshot),
-    nearbyBullets: nearbyBullets(snapshot)
+    nearbyBullets: nearbyBullets(snapshot),
+    playerBullets: activePlayerBullets(snapshot, 0)
   };
 }
 
@@ -244,6 +266,127 @@ function compactTraceFrame({
   };
 }
 
+function playerBulletVectors(traceFrame) {
+  const beforeBullets = traceFrame.beforeSnapshot?.playerBullets ?? [];
+  const afterBySlot = new Map((traceFrame.afterSnapshot?.playerBullets ?? []).map((bullet) => [bullet.slot, bullet]));
+  return beforeBullets
+    .map((bullet) => {
+      const after = afterBySlot.get(bullet.slot);
+      const vx = after ? after.x - bullet.x : 0;
+      const vy = after ? after.y - bullet.y : 0;
+      return {
+        slot: bullet.slot,
+        owner: bullet.owner,
+        x: bullet.x,
+        y: bullet.y,
+        vx,
+        vy,
+        spriteCode: bullet.spriteCode
+      };
+    })
+    .filter((bullet) => bullet.vx !== 0 || bullet.vy !== 0);
+}
+
+function closestProjectedBulletDistance(bullet, enemy, maxFrames = 12) {
+  let bestFrame = 0;
+  let bestDx = enemy.x - bullet.x;
+  let bestDy = enemy.y - bullet.y;
+  let bestDistance = Math.abs(bestDx) + Math.abs(bestDy);
+  let predictedHitFrame = null;
+  for (let frame = 1; frame <= maxFrames; frame += 1) {
+    const dx = enemy.x - (bullet.x + bullet.vx * frame);
+    const dy = enemy.y - (bullet.y + bullet.vy * frame);
+    const distance = Math.abs(dx) + Math.abs(dy);
+    if (distance < bestDistance) {
+      bestFrame = frame;
+      bestDx = dx;
+      bestDy = dy;
+      bestDistance = distance;
+    }
+    if (predictedHitFrame === null && Math.abs(dx) <= 12 && Math.abs(dy) <= 12) {
+      predictedHitFrame = frame;
+    }
+  }
+  return {
+    closestFrame: bestFrame,
+    closestDx: bestDx,
+    closestDy: bestDy,
+    closestDistance: bestDistance,
+    predictedHitFrame
+  };
+}
+
+function projectBulletThreatIntersections(traceFrame, vectors = playerBulletVectors(traceFrame)) {
+  const enemies = (traceFrame.beforeSnapshot?.nearbyEnemies ?? [])
+    .filter((enemy) => enemy.threat && enemy.hp > 0);
+  const afterEnemiesBySlot = new Map((traceFrame.afterSnapshot?.nearbyEnemies ?? []).map((enemy) => [enemy.slot, enemy]));
+  const intersections = [];
+  for (const bullet of vectors) {
+    for (const enemy of enemies) {
+      const targetAfter = afterEnemiesBySlot.get(enemy.slot) ?? null;
+      const targetDx = enemy.x - bullet.x;
+      const targetDy = enemy.y - bullet.y;
+      const movingToward = (bullet.vx !== 0 && Math.sign(targetDx) === Math.sign(bullet.vx))
+        || (bullet.vy !== 0 && Math.sign(targetDy) === Math.sign(bullet.vy));
+      const projection = closestProjectedBulletDistance(bullet, enemy);
+      const targetHpDelta = targetAfter ? enemy.hp - targetAfter.hp : null;
+      const targetClearedAfter = targetAfter ? targetAfter.hp <= 0 || !targetAfter.threat : null;
+      const ramConfirmedHit = targetHpDelta !== null
+        ? targetHpDelta > 0 || targetClearedAfter === true
+        : null;
+      intersections.push({
+        bulletSlot: bullet.slot,
+        targetSlot: enemy.slot,
+        targetType: enemy.type,
+        targetHp: enemy.hp,
+        targetAfterHp: targetAfter?.hp ?? null,
+        targetAfterRoutine: targetAfter?.routine ?? null,
+        targetClearedAfter,
+        targetHpDelta,
+        ramConfirmedHit,
+        predictedHitButNoRamEffect: projection.predictedHitFrame !== null && ramConfirmedHit === false,
+        bulletX: bullet.x,
+        bulletY: bullet.y,
+        bulletVx: bullet.vx,
+        bulletVy: bullet.vy,
+        targetDx,
+        targetDy,
+        movingToward,
+        ...projection
+      });
+    }
+  }
+  return intersections
+    .sort((a, b) => a.closestDistance - b.closestDistance)
+    .slice(0, 8);
+}
+
+function summarizeTraceFrame(traceFrame) {
+  const beforeSnapshot = traceFrame.beforeSnapshot ?? {};
+  const nearestEnemy = beforeSnapshot.nearbyEnemies?.[0] ?? null;
+  const nearestBullet = beforeSnapshot.nearbyBullets?.[0] ?? null;
+  const vectors = playerBulletVectors(traceFrame);
+  return {
+    frame: traceFrame.frame,
+    active: traceFrame.active,
+    afterActive: traceFrame.afterActive,
+    worldX: beforeSnapshot.worldX ?? null,
+    playerX: beforeSnapshot.playerX ?? null,
+    playerY: beforeSnapshot.playerY ?? null,
+    jumpState: beforeSnapshot.jumpState ?? null,
+    p1State: beforeSnapshot.p1State ?? null,
+    deathFlag: beforeSnapshot.deathFlag ?? null,
+    progressStallFrames: traceFrame.progressStallFrames,
+    routeSegmentId: traceFrame.routeSegment?.id ?? "none",
+    buttons: traceFrame.buttons,
+    buttonsText: traceFrame.buttons.join(""),
+    nearestEnemy,
+    nearestBullet,
+    playerBulletVectors: vectors,
+    bulletThreatIntersections: projectBulletThreatIntersections(traceFrame, vectors)
+  };
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const env = readDotEnv(path.resolve(repoRoot, ".env.local"));
@@ -271,6 +414,7 @@ async function main() {
       tasIsController: false
     },
     maxFrames: options.frames,
+    candidateTrial: options.candidateTrial,
     probeInput: options.probeInput,
     strategyKey: options.strategy,
     strategyPlan: strategyPlan ? {
@@ -360,7 +504,13 @@ async function main() {
     const routeSegment = activeRouteSegmentForPlan(beforeSnapshot, strategyPlan);
     const progressStallFrames = currentProgressStallFrames(beforeSnapshot);
     const buttons = active && options.probeInput === "route-plan"
-      ? decideHeadlessRoutePlanProbeButtons({ frame, progressStallFrames, routeSegment, snapshot: beforeSnapshot })
+      ? decideHeadlessRoutePlanProbeButtons({
+          candidateTrial: options.candidateTrial,
+          frame,
+          progressStallFrames,
+          routeSegment,
+          snapshot: beforeSnapshot
+        })
       : active && options.probeInput !== "none"
         ? probeButtons(options.probeInput, createHeadlessButtonState)
         : startupButtons;
@@ -456,6 +606,14 @@ async function main() {
           endFrame: options.traceEnd,
           sampleCount: traceFrames.length,
           frames: traceFrames
+        }
+      : null,
+    traceSummary: options.traceStart !== null && options.traceEnd !== null
+      ? {
+          startFrame: options.traceStart,
+          endFrame: options.traceEnd,
+          sampleCount: traceFrames.length,
+          frames: traceFrames.map(summarizeTraceFrame)
         }
       : null
   }, null, 2));

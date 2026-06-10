@@ -150,6 +150,27 @@ test("reward station falling threat patch jumps and up-fires", () => {
   assert.equal(patch?.down, false);
 });
 
+test("reward station falling threat patch covers the later Contra US WorldX 1204 blocker", () => {
+  const patch = rewardStationFallingThreatPatch({
+    level: 0,
+    worldX: 1204,
+    playerX: 128,
+    playerY: 212,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 1, x: 168, y: 171 },
+      { fixed: true, hp: 8, kind: "durable", routine: 4, threat: true, type: 4, x: 188, y: 160 }
+    ]
+  }, true, 3100);
+
+  assert.equal(patch?.reason, "reward-station-falling-threat");
+  assert.equal(patch?.right, true);
+  assert.equal(patch?.left, false);
+  assert.equal(patch?.a, true);
+  assert.equal(patch?.b, true);
+  assert.equal(patch?.up, true);
+  assert.equal(patch?.down, false);
+});
+
 test("mid weapon turret breakout patch clears crouch lock and advances", () => {
   const patch = midWeaponTurretBreakoutPatch({
     level: 0,
@@ -478,6 +499,22 @@ test("stage one close body threat keeps right during spread pit airborne crossin
   assert.equal(patch?.down, true);
   assert.equal(patch?.up, false);
   assert.equal(patch?.b, true);
+});
+
+test("stage one close body threat ignores grounded low-lane object residue at the mid turret stall", () => {
+  const patch = stageOneCloseBodyThreatPatch({
+    level: 0,
+    worldX: 1319,
+    playerX: 128,
+    playerY: 212,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 1, x: 115, y: 232 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 5, x: 171, y: 218 },
+      { fixed: true, hp: 2, kind: "durable", routine: 4, threat: true, type: 4, x: 73, y: 160 }
+    ]
+  }, true, 4800);
+
+  assert.equal(patch, null);
 });
 
 test("stage one close body threat covers the boss approach airborne soldier", () => {

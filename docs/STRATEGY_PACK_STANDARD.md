@@ -164,6 +164,18 @@ Training artifacts indexed by the package should be separated by role:
 
 The package must never present raw TAS, raw human demonstration, or raw AI input as a validated playable StrategyFragment. They are source material. Promotion requires a schema-valid candidate fragment plus validation evidence.
 
+Replay and movie artifacts must preserve synchronization anchors when available:
+
+- source format, such as `fm2`, `bk2`, browser trace, or runtime trace.
+- ROM checksum and ROMProfile id.
+- emulator/runtime identity.
+- movie framecount and input row index.
+- initial state type: power-on, reset, savestate, checkpoint, or active-game entry point.
+- side split for 1P and 2P.
+- known input/RAM offset, if detected.
+
+Strategy Packs may index source files, derived baselines, or compact summaries, but they must not require redistribution of copyrighted ROM files. If a source movie or TAS archive cannot be redistributed, the pack should store metadata and a local import slot instead of embedding the file.
+
 Validation scenarios must include enough information to detect reward traps and dead loops:
 
 - progress metric
@@ -322,6 +334,43 @@ Validation scenarios should define:
 - fixed-threat clear score, when relevant
 - terminal success conditions
 - terminal failure conditions
+
+Training-origin gates:
+
+- Human demonstration sources must be converted into ObservationActionTrace before they can create a baseline.
+- TAS-derived sources must be converted into side-owned baselines or candidate fragments before they can affect runtime strategy.
+- Automated patch-search sources must record segment entry, segment exit, scoring function, rejected attempts, and rollback point.
+- AI-augmented sources must record the model-assisted suggestion as a proposal, not as validated behavior.
+- Any source that improves score but fails progress, survival, or loop-exit checks must be marked `reward-farming-risk`.
+
+### 8.1 Trust Pipeline
+
+Every imported or exported community Strategy Pack should pass a three-level trust pipeline.
+
+Level 1 structural integrity:
+
+- ZIP or folder structure is valid.
+- `manifest.json` exists and matches schema.
+- required files are present.
+- ROMProfile checksum is declared.
+- no commercial ROM file is embedded.
+- sideScope and sideArtifacts are internally consistent.
+
+Level 2 sandbox validation:
+
+- run the declared scenario in a sandboxed runtime or headless validator.
+- reject or downgrade packs that crash, desync, enter a dead loop within the minimum frame window, or reference undeclared conditions.
+- record ValidationReport output as package evidence.
+- keep all generated candidates in `candidate` status until a replay or runtime validation passes.
+
+Level 3 social or expert proof:
+
+- record successful validation count.
+- record mode coverage: single-ai, human-ai, dual-ai.
+- record reviewer or community rating when available.
+- do not treat popularity as validation unless runtime evidence also exists.
+
+The trust pipeline is a gate, not a marketing label. A package with attractive metadata but weak evidence remains candidate or research material.
 
 ## 9. Distribution Levels
 

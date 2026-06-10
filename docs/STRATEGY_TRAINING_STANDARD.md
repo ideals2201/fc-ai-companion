@@ -18,6 +18,14 @@ It works with:
 
 Training is not the same as neural-network training by default. Current project training means: select a baseline, capture real traces, compare behavior, create or modify StrategyFragments, archive evidence, and validate in runtime.
 
+External reference alignment:
+
+- Gym Retro style integrations separate starting state, reward function, done condition, and memory variables. This project follows the same separation through GameProfile, TrainingScenario, Condition Registry, and ValidationReport.
+- Stable-Retro style replay files prove that a compact starting state plus button sequence can be useful as training data. In this project, replay or movie input becomes trace evidence and baseline material, not a live controller.
+- FCEUX `.fm2` movies preserve ROM checksum and frame-by-frame input logs. TAS-derived training must keep those sync anchors and must not align only by visible screen frame.
+- FCEUX LuaBot style segmented attempts and rollback are the preferred local automation model for narrow patch search. The project should optimize one stage window at a time instead of brute-forcing a full stage.
+- DAgger and DQfD style demonstration learning are used as engineering guidance: demonstrations speed up development, but AI-induced failure states must be collected and corrected before a strategy can be trusted.
+
 ## 2. Training Sources
 
 Allowed training sources:
@@ -41,6 +49,15 @@ training source -> observation/action trace -> baseline -> candidate StrategyFra
 ```
 
 This mirrors mature retro-game training practice: replay files provide exact input demonstrations, RAM variables provide compact state observations, and scenario rules define progress, reward-like scoring, and terminal conditions. The project must keep these as separate layers so a good-looking replay cannot bypass runtime validation.
+
+Movie or replay source rules:
+
+- Record the source format, such as `fm2`, `bk2`, browser trace, or human capture.
+- Record `romChecksum`, emulator/runtime identity, movie framecount, and input row index when available.
+- Record the initial state type: power-on, reset, savestate, runtime checkpoint, or active-game entry point.
+- Record per-side input separately. A two-player movie must be split into side-owned baselines before it can train 1P or 2P strategy behavior.
+- Use RAM state as a validation checksum, not as the only timeline anchor. If movie framecount and RAM controller state disagree by one or more frames, keep both values and mark the offset.
+- Treat missing startup frames as an Entry Point problem. Define `Init Phase` and `Active Phase` explicitly instead of guessing from screen visuals.
 
 Every source must record:
 
@@ -76,6 +93,20 @@ Recommended progression:
 
 This is the project equivalent of DAgger-style dataset aggregation: do not expect one demonstration to cover all states. The AI must run, fail, collect those off-route states, and receive targeted correction.
 
+DAgger-style correction rule:
+
+- Do not copy a full human or TAS run into a controller script.
+- Let the current strategy run until it reaches a failure, drift, stuck loop, or low-quality decision window.
+- Capture a short correction window from a human, TAS baseline, validated strategy, or local patch search.
+- Add the corrected window to the aggregated trace set with its preconditions and failure context.
+- Re-run the strategy from before the failure window and verify that the correction survives the same scenario.
+
+DQfD-style demonstration rule:
+
+- Demonstration traces may seed a candidate baseline before automated exploration.
+- Demonstration actions should be stored with semantic intents and raw inputs.
+- A demonstration-derived candidate is useful if it improves initial behavior, but promotion still requires runtime validation and counterexample checks.
+
 ## 2.2 Reward And Terminal Design
 
 Training scenarios must avoid single-metric reward traps.
@@ -105,6 +136,37 @@ For strategy-specific scoring:
 - `guard`: teammate survival, spacing, and screen ownership are measured alongside personal survival.
 
 Every game Strategy Pack should define these variables in its own `training-scenarios.json` or equivalent package file. The core training standard does not hardcode game-specific variables.
+
+Reward-farming guard:
+
+- A strategy that gains score, kills, or rewards while failing progression must be marked `reward-farming-risk`.
+- A strategy that repeats an input loop while the progress metric is stalled must fail validation even if score increases.
+- A strategy that clears optional enemies but misses required blockers, fixed targets, or stage transitions must remain `candidate`.
+- A reward rule must be paired with a terminal or progress rule. No package may claim validation from a reward-only metric.
+
+## 2.3 Segmented Trial, Rollback, And Patch Search
+
+Local automated training should use segmented search.
+
+Segment definition:
+
+- A segment is a small game-specific progression window, such as a WorldX range, room id range, screen range, boss phase, or checkpoint-to-checkpoint interval.
+- A segment has a declared entry condition, end condition, scoring function, tie-breaker, and failure condition.
+- A segment may reference known fixed targets, reward objects, pits, enemy spawn windows, or teammate spacing rules through the Condition Registry.
+
+Attempt rules:
+
+- Each attempt starts from the segment entry state or a verified checkpoint.
+- The search space must be constrained by semantic intents and strategy type. Do not brute-force all raw buttons across long windows.
+- Keep the best attempt only if it improves the declared score without violating Safety Override, Negative Constraints, ROMProfile matching, or desync checks.
+- If every attempt reaches a dead end, roll back to the last validated segment and record a known failure instead of forcing a bad patch.
+
+Patch output rules:
+
+- Segment search outputs a candidate StrategyFragment, never a promoted strategy.
+- The candidate must include `sourceTraceIds`, `segmentId`, `scoreBefore`, `scoreAfter`, `fallback_fragment_id`, and a validation plan.
+- A candidate generated by automated search must be marked `Level 1 Automated`.
+- If an AI model or external analysis proposes the patch, the artifact must be marked `Level 2 Augmented` until converted into schema-valid data and validated.
 
 ## 3. Training Workflow Buttons
 
@@ -317,22 +379,22 @@ Level 2 output must remain a proposal until it is converted into schema-valid da
 
 This keeps training efficient while preventing unverified suggestions from entering playable strategy packs.
 
-## 9.1 训练资产自动化分级检查表
+## 9.1 Automated Training Asset Checklist
 
 Packaging or promotion must run an automated checklist:
 
 | Level | Name | Required Checks | Allowed Use |
 | --- | --- | --- | --- |
-| Level 0 | 初级 | Schema format check only; no runtime guarantee. | Personal development cache only. |
-| Level 1 | 可运行 | Schema valid, ROMProfile matched, shadow validation completed, no desync record, Negative Constraints passed. | Test baseline library and internal candidate packs. |
-| Level 2 | 专家级 | Level 1 plus human expert review, Provenance Graph complete, perturbation evidence, and 10 or more consecutive successful validation runs for the declared scenario. | Public sharing candidate or verified community package. |
+| Level 0 | Basic | Schema format check only; no runtime guarantee. | Personal development cache only. |
+| Level 1 | Runnable | Schema valid, ROMProfile matched, shadow validation completed, no desync record, Negative Constraints passed. | Test baseline library and internal candidate packs. |
+| Level 2 | Expert | Level 1 plus human expert review, Provenance Graph complete, perturbation evidence, and 10 or more consecutive successful validation runs for the declared scenario. | Public sharing candidate or verified community package. |
 
 An artifact can move down as well as up. If a later run finds desync, death loop, invalid deterministic context, or broken Negative Constraints, the package status must be downgraded or blocked.
 
 Engineering directive:
 
 ```text
-将策略视为代码，将 TAS 轨迹视为测试用例。
+Treat strategies as code, and treat TAS traces as test cases.
 ```
 
 This means:

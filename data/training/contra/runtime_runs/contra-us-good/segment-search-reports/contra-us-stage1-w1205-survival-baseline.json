@@ -1,0 +1,200 @@
+{
+  "schema": "fc-ai-segmented-training-search-report-v1",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-06-10T09:20:00.000Z",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-us-good",
+  "side": "1P",
+  "stageId": "stage-1",
+  "segment": {
+    "id": "contra-us-stage1-w1205-reward-station",
+    "progressionMetric": "progression.primary",
+    "progressionStart": 1120,
+    "progressionEnd": 1280,
+    "strategyKey": "survival-v0"
+  },
+  "status": "candidate-search",
+  "sourceLevel": "Level 1 Automated",
+  "validationStatus": "missing",
+  "syncAnchors": {
+    "runtime": "browser-headless-jsnes",
+    "inputClock": "nes.frame-before-step",
+    "initialStateType": "runtime-checkpoint",
+    "movieFramecount": null,
+    "inputRowIndex": null,
+    "knownInputRamOffsetFrames": 0
+  },
+  "deterministicContext": {
+    "rngStatus": "unknown",
+    "inputSamplingDelayFrames": 0,
+    "perturbationRequired": true
+  },
+  "attempts": [
+    {
+      "attemptId": "survival-v0-route-plan-baseline",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-baseline",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1154,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1205,
+      "progressGain": 85,
+      "progressStallFrames": 994,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -4365,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1205,
+        "finalProgression": 1154,
+        "progressStallFrames": 994,
+        "maxProgressStallFrames": 994
+      }
+    },
+    {
+      "attemptId": "falling-threat-priority-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-falling-threat-priority",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1174,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1759,
+      "progressGain": 639,
+      "progressStallFrames": 2929,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10561,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-priority",
+        "candidateTrial": "w1205-falling-threat-priority",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1759,
+        "finalProgression": 1174,
+        "progressStallFrames": 2929,
+        "maxProgressStallFrames": 2929
+      },
+      "trialNote": "Headless-only candidate gave reward-station falling threat priority over close-body at W1205. It improved max progression but caused gameplay loss/recovery, so it remains rejected and is not live strategy."
+    }
+  ],
+  "bestAttempt": null,
+  "rejectedAttempts": [
+    {
+      "attemptId": "survival-v0-route-plan-baseline",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-baseline",
+      "deathCount": 0,
+      "desynced": false,
+      "finalProgression": 1154,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1205,
+      "progressGain": 85,
+      "progressStallFrames": 994,
+      "rejectionReasons": [
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -4365,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan",
+        "status": "stalled-active",
+        "reason": "progress-stalled",
+        "lostActiveFrame": null,
+        "maxProgression": 1205,
+        "finalProgression": 1154,
+        "progressStallFrames": 994,
+        "maxProgressStallFrames": 994
+      }
+    },
+    {
+      "attemptId": "falling-threat-priority-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-falling-threat-priority",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1174,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1759,
+      "progressGain": 639,
+      "progressStallFrames": 2929,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10561,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-priority",
+        "candidateTrial": "w1205-falling-threat-priority",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1759,
+        "finalProgression": 1174,
+        "progressStallFrames": 2929,
+        "maxProgressStallFrames": 2929
+      },
+      "trialNote": "Headless-only candidate gave reward-station falling threat priority over close-body at W1205. It improved max progression but caused gameplay loss/recovery, so it remains rejected and is not live strategy."
+    }
+  ],
+  "promotionGates": [
+    {
+      "id": "trace-evidence",
+      "status": "missing"
+    },
+    {
+      "id": "validation-report",
+      "status": "missing"
+    },
+    {
+      "id": "mode-specific-runtime-replay",
+      "status": "missing"
+    },
+    {
+      "id": "deterministic-context",
+      "status": "missing"
+    },
+    {
+      "id": "negative-constraints",
+      "status": "missing"
+    }
+  ],
+  "requiredPromotionEvidence": [
+    "TraceEvidence",
+    "ValidationReport",
+    "mode-specific runtime replay"
+  ]
+}

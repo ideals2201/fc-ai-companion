@@ -55,9 +55,9 @@ test("strategy training standard document defines the training workflow", () => 
   assert.match(source, /Environment-Aware Validation/, "training standard should define environment-aware validation");
   assert.match(source, /Provenance Graph/, "training standard should define provenance graph training evidence");
   assert.match(source, /Negative Constraints/, "training standard should enforce negative constraints before packaging");
-  assert.match(source, /训练资产自动化分级检查表/, "training standard should include the automated training asset checklist");
+  assert.match(source, /Automated Training Asset Checklist/, "training standard should include the automated training asset checklist in English");
   assert.match(source, /Level 0/, "training standard should define Level 0 asset quality");
   assert.match(source, /Level 1/, "training standard should define Level 1 asset quality");
   assert.match(source, /Level 2/, "training standard should define Level 2 asset quality");
-  assert.match(source, /将策略视为代码，将 TAS 轨迹视为测试用例/, "training standard should preserve the engineering directive");
+  assert.match(source, /Treat strategies as code, and treat TAS traces as test cases/, "training standard should preserve the engineering directive in English");
 });

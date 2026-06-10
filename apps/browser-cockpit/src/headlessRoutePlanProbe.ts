@@ -1,4 +1,6 @@
 import {
+  rewardStationFallingThreatPatch,
+  stageOneCloseBodyThreatPatch,
   stageOneOpeningLowFixedThreatPatch,
   type StageOneRewardButtonPatch
 } from "./contraStage1RewardTactics";
@@ -42,6 +44,7 @@ function createProbeButtonState(): HeadlessButtonState {
 }
 
 export type HeadlessRoutePlanProbeOptions = {
+  candidateTrial?: "w1205-falling-threat-priority" | null;
   frame: number;
   progressStallFrames?: number;
   routeSegment: Pick<StageRouteSegment, "id" | "action" | "fire" | "jumpEvery" | "worldStart" | "worldEnd"> | null;
@@ -60,8 +63,21 @@ function isIgnoredEnemy(enemy: RoutePlanProbeEnemy) {
   return !enemy.threat || enemy.hp <= 0 || enemy.x <= 4 || enemy.x >= 252 || enemy.y <= 4 || enemy.y >= 236;
 }
 
+function isGroundedLowLaneObjectResidue(snapshot: RoutePlanProbeSnapshot, enemy: RoutePlanProbeEnemy) {
+  if (!isGrounded(snapshot) || snapshot.playerY < 188) return false;
+  if (enemy.fixed || enemy.kind !== "object" || (enemy.routine ?? 0) !== 0) return false;
+  if (enemy.type !== 1 && enemy.type !== 5) return false;
+  const dx = enemy.x - snapshot.playerX;
+  const dy = enemy.y - snapshot.playerY;
+  return dx >= -48 && dx <= 56 && dy >= -8 && dy <= 32;
+}
+
+function isIgnoredThreatForSnapshot(snapshot: RoutePlanProbeSnapshot, enemy: RoutePlanProbeEnemy) {
+  return isIgnoredEnemy(enemy) || isGroundedLowLaneObjectResidue(snapshot, enemy);
+}
+
 function isCloseThreat(snapshot: RoutePlanProbeSnapshot, enemy: RoutePlanProbeEnemy) {
-  if (isIgnoredEnemy(enemy)) return false;
+  if (isIgnoredThreatForSnapshot(snapshot, enemy)) return false;
   const dx = enemy.x - snapshot.playerX;
   const dy = enemy.y - snapshot.playerY;
   return dx >= -16 && dx <= 52 && dy >= -36 && dy <= 56;
@@ -69,7 +85,7 @@ function isCloseThreat(snapshot: RoutePlanProbeSnapshot, enemy: RoutePlanProbeEn
 
 function hasThreatAhead(snapshot: RoutePlanProbeSnapshot) {
   return snapshot.enemies.some((enemy) => {
-    if (isIgnoredEnemy(enemy)) return false;
+    if (isIgnoredThreatForSnapshot(snapshot, enemy)) return false;
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -8 && dx <= 160 && dy >= -92 && dy <= 72;
@@ -93,7 +109,7 @@ function hasAirborneLowerEscapeThreat(snapshot: RoutePlanProbeSnapshot) {
 function findDirectBodyOverlapThreat(snapshot: RoutePlanProbeSnapshot) {
   return snapshot.enemies
     .filter((enemy) => {
-    if (isIgnoredEnemy(enemy)) return false;
+    if (isIgnoredThreatForSnapshot(snapshot, enemy)) return false;
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -8 && dx <= 14 && dy >= -24 && dy <= 12;
@@ -125,6 +141,32 @@ function stageOneOpeningLowFixedThreatProbePatch(
   frame: number
 ) {
   return stageOneOpeningLowFixedThreatPatch({
+    ...snapshot,
+    enemies: snapshot.enemies.map((enemy) => ({
+      ...enemy,
+      routine: enemy.routine ?? 0
+    }))
+  }, isGrounded(snapshot), frame);
+}
+
+function rewardStationFallingThreatProbePatch(
+  snapshot: RoutePlanProbeSnapshot,
+  frame: number
+) {
+  return rewardStationFallingThreatPatch({
+    ...snapshot,
+    enemies: snapshot.enemies.map((enemy) => ({
+      ...enemy,
+      routine: enemy.routine ?? 0
+    }))
+  }, isGrounded(snapshot), frame);
+}
+
+function stageOneCloseBodyThreatProbePatch(
+  snapshot: RoutePlanProbeSnapshot,
+  frame: number
+) {
+  return stageOneCloseBodyThreatPatch({
     ...snapshot,
     enemies: snapshot.enemies.map((enemy) => ({
       ...enemy,
@@ -199,7 +241,7 @@ function hasEarlyBridgePassedFixedEscapeWindow(
 
 function aimAtNearestThreat(buttons: HeadlessButtonState, snapshot: RoutePlanProbeSnapshot) {
   const target = snapshot.enemies
-    .filter((enemy) => !isIgnoredEnemy(enemy))
+    .filter((enemy) => !isIgnoredThreatForSnapshot(snapshot, enemy))
     .sort((a, b) => {
       const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
       const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
@@ -237,6 +279,7 @@ function applyRouteJump(buttons: HeadlessButtonState, routeSegment: HeadlessRout
 }
 
 export function decideHeadlessRoutePlanProbeButtons({
+  candidateTrial = null,
   frame,
   progressStallFrames = 0,
   routeSegment,
@@ -253,6 +296,23 @@ export function decideHeadlessRoutePlanProbeButtons({
   const openingLowFixedThreatPatch = stageOneOpeningLowFixedThreatProbePatch(snapshot, frame);
   if (openingLowFixedThreatPatch) {
     applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
+    return buttons;
+  }
+  if (candidateTrial === "w1205-falling-threat-priority") {
+    const fallingThreatPatch = rewardStationFallingThreatProbePatch(snapshot, frame);
+    if (fallingThreatPatch) {
+      applyStageOneRewardPatch(buttons, fallingThreatPatch);
+      return buttons;
+    }
+  }
+  const closeBodyThreatPatch = stageOneCloseBodyThreatProbePatch(snapshot, frame);
+  if (closeBodyThreatPatch) {
+    applyStageOneRewardPatch(buttons, closeBodyThreatPatch);
+    return buttons;
+  }
+  const fallingThreatPatch = rewardStationFallingThreatProbePatch(snapshot, frame);
+  if (fallingThreatPatch) {
+    applyStageOneRewardPatch(buttons, fallingThreatPatch);
     return buttons;
   }
   if (hasEarlyBridgeLowFixedAdvanceWindow(routeSegment, snapshot)) {

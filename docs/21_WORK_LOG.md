@@ -369,3 +369,688 @@ maxProgressStallFrames: 12884
 - 已确认 W609/W624/W647 桥段阻塞被后移，不是通关。
 - 当前第一处 no-death 阻塞变为 W1192，后续还出现长时间停滞。
 - 下一阶段必须针对 W1192/W1395 建立新的 TraceEvidence 或 trace window，再做局部策略补丁。
+
+## 2026-06-10: Contra US survival-v0 W1205 安全基线与失败实验归档
+
+目标：
+
+- 继续推进 Contra US `survival-v0` 第一关稳健生存策略。
+- 必须避免死亡和死循环；所有策略结论必须由单测或 headless runtime smoke 支撑。
+
+本轮保留的代码结论：
+
+- `rewardStationFallingThreatPatch` 的 WorldX 覆盖从 `1040..1180` 扩到 `1040..1210`，用于覆盖 W1204 附近奖励站落兵窗口。
+- `headlessRoutePlanProbe` 接入共享的：
+  - `rewardStationFallingThreatPatch`
+  - `stageOneCloseBodyThreatPatch`
+- `stageOneCloseBodyThreatPatch` 和 headless threat scan 增加 grounded low-lane object residue 过滤：
+  - grounded；
+  - playerY >= 188；
+  - `kind=object`；
+  - `routine=0`；
+  - `type=1/5`；
+  - 位于玩家低位贴近窗口。
+- 目的：避免 W1319 附近把低位残留对象当成真实近身威胁，造成无意义后退或停滞。
+
+验证：
+
+```powershell
+node --test tests\contraStage1RewardTactics.test.mjs tests\headlessRoutePlanProbe.test.mjs
+```
+
+结果：
+
+```text
+75 tests
+75 pass
+0 fail
+```
+
+运行证据：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+当前安全基线结果：
+
+```text
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=
+maxW=1205
+finalW=1154
+progressStall=994
+maxStall=994
+```
+
+判断：
+
+- 当前保留版本没有在 8000 帧 smoke 中死亡。
+- 但仍未通关，且在奖励站 / 中段窗口附近出现 no-death stall。
+- 不能标记为 validated StrategyFragment 或 passing ValidationReport。
+
+本轮拒绝的失败实验：
+
+1. `rewardStation pre-contact yield`
+   - 思路：W1190-W1206 落兵未贴身时，让 close-body 放手给 falling-threat 继续右上射击。
+   - 结果：
+     ```text
+     status=recovered-after-loss
+     reason=gameplay-loss-recovered
+     lostActiveFrame=2698
+     maxW=1470
+     finalW=1470
+     ```
+   - 结论：虽然后续能推进到 W1470，但中途死亡，不可保留。
+
+2. `rewardStation no-hold-A`
+   - 思路：奖励站未贴身阶段不持续按 A，让 close-body 接管时产生新的跳跃边沿。
+   - 结果仍为：
+     ```text
+     lostActiveFrame=2698
+     ```
+   - 结论：死亡点没有解除，说明“持续按 A 导致跳跃边沿失效”不是充分根因。
+
+3. `rewardStation front interception`
+   - 思路：贴身阶段不再向左后退，而是正面右上/平射截击落兵。
+   - 结果：
+     ```text
+     status=lost-active
+     reason=gameplay-lost
+     lostActiveFrame=2677
+     maxW=1206
+     finalW=82
+     ```
+   - 结论：正面截击会更早死亡，不可保留。
+
+下一步：
+
+- 不再在 W1190-W1206 窗口继续盲调单个按钮组合。
+- 需要建立更强的局部证据：
+  - 记录 W1180-W1210 连续窗口的玩家、敌人、子弹、按钮和 HP 变化；
+  - 判断奖励站落兵是否能被当前武器实际击中；
+  - 若不能击中，策略应优先规避或改站位，而不是继续射击；
+  - 若能击中，必须定位当前射击方向、子弹轨迹或射击时机为何失败。
+- 下一轮建议先做 `TraceEvidence` 或局部弹道/命中观测工具，再做新的 StrategyFragment。
+
+### W1180-W1210 traceSummary 观测能力
+
+新增：
+
+- `scripts/headless-runtime-smoke.mjs` 在 `--trace-start` / `--trace-end` 时，除完整 `traceWindow` 外，额外输出 `traceSummary`。
+- `traceSummary.frames[]` 包含：
+  - frame；
+  - active / afterActive；
+  - worldX / playerX / playerY；
+  - jumpState / p1State / deathFlag；
+  - routeSegmentId；
+  - buttons / buttonsText；
+  - nearestEnemy；
+  - nearestBullet。
+
+验证：
+
+```powershell
+node --test tests\headlessRuntimeSmokeScript.test.mjs
+```
+
+结果：
+
+```text
+5 tests
+5 pass
+0 fail
+```
+
+实际观测命令：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=7100 --strategy=survival-v0 --probe=route-plan --trace-start=6880 --trace-end=6890
+```
+
+`traceSummary` 摘要显示：
+
+```text
+f=6880 W=1191 x=115 y=212 btn=upleftab e=t1/hp1/r2/enemy/dx28/dy-27
+f=6885 W=1186 x=110 y=212 btn=upleftab e=t1/hp1/r2/enemy/dx27/dy-23
+f=6890 W=1181 x=105 y=212 btn=upleftab e=t1/hp1/r2/enemy/dx25/dy-19
+```
+
+判断：
+
+- 当前 W1180-W1210 问题不是缺少数据，而是 close-body safety 在奖励站落兵前方时持续左撤并朝左上射击。
+- 但本轮尝试的 pre-contact yield、no-hold-A、front interception 都已被 smoke 证明会死亡，不能保留。
+- 下一步必须增加命中/弹道观测，确认子弹是否有机会命中奖励站落兵，再决定是改射击、改站位，还是把该点列为强制规避路线。
+
+### W1180-W1210 命中/弹道观测补强
+
+新增：
+
+- `traceSummary.frames[]` 增加：
+  - `playerBulletVectors`：基于 before/after 两帧的 1P 活动子弹速度；
+  - `bulletThreatIntersections`：子弹对附近威胁目标的投影交叉分析；
+  - `predictedHitFrame` / `closestDistance` / `movingToward`；
+  - `targetAfterHp` / `targetHpDelta` / `targetClearedAfter`；
+  - `ramConfirmedHit`；
+  - `predictedHitButNoRamEffect`。
+
+验证：
+
+```powershell
+node --test tests\headlessRuntimeSmokeScript.test.mjs
+```
+
+结果：
+
+```text
+6 tests
+6 pass
+0 fail
+```
+
+局部观测 1：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=2800 --strategy=survival-v0 --probe=route-plan --trace-start=2660 --trace-end=2670
+```
+
+摘要：
+
+```text
+f=2660 W=1190 btn=upleftab e=s14/dx34/dy-30 hit=3 dist=12 ramHit=False noEffect=True afterHp=1 hpDelta=0
+f=2663 W=1187 btn=upleftab e=s14/dx33/dy-27 hit=1 dist=9 ramHit=False noEffect=True afterHp=1 hpDelta=0
+f=2665 W=1185 btn=upleftab e=s14/dx33/dy-26 hit=1 dist=9 ramHit=False noEffect=True afterHp=1 hpDelta=0
+```
+
+判断：
+
+- 几何投影看似能命中，但 RAM 后一帧没有 HP 下降，也没有清槽。
+- 不能用“预测几何相交”直接判定子弹可消灭敌人。
+
+局部观测 2：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=7100 --strategy=survival-v0 --probe=route-plan --trace-start=6880 --trace-end=6890
+```
+
+摘要：
+
+```text
+f=6880 W=1191 btn=upleftab e=s15/dx28/dy-27 hit= dist=38 toward=False ramHit=False afterHp=1
+f=6885 W=1186 btn=upleftab e=s15/dx27/dy-23 hit= dist=70 toward=False ramHit=False afterHp=1
+f=6890 W=1181 btn=upleftab e=s15/dx25/dy-19 hit= dist=47 toward=False ramHit=False afterHp=1
+```
+
+判断：
+
+- 后段 W1181-W1191 对最近落兵没有预测命中，也没有 RAM 命中。
+- 当前按钮组合无法证明能清掉奖励站落兵。
+
+拒绝实验：
+
+- `controlledAdvanceBias override close-body retreat`
+  - 思路：W1154 卡住时，让已有 `controlledAdvanceBias` 跳过 close-body 退避，强制回到向右推进。
+  - 单测可变绿，但真实 smoke 结果为：
+    ```text
+    status=lost-active
+    reason=gameplay-lost
+    lostActiveFrame=5407
+    maxW=1203
+    finalW=82
+    ```
+  - 结论：不能保留。它把 no-death stall 变成死亡。
+
+当前保留基线：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=
+maxW=1205
+finalW=1154
+progressStall=994
+maxStall=994
+```
+
+下一步判断：
+
+- W1205 的正确方向不是简单强推，也不是继续右上射击。
+- 应先把奖励站落兵处理从“按钮试错”升级为“站位/规避/命中确认”三选一：
+  1. 若 RAM 证明能命中：再做射击方向和时机补丁；
+  2. 若 RAM 证明不能命中：路线应提前避让或改变站位；
+  3. 若命中和规避都不稳定：该窗口应变成 StagePlan 中的特殊风险节点，不交给通用 close-body safety。
+
+### 2026-06-10: 操作训练外部资料调研标准化
+
+触发：
+
+- 用户要求查询网络上关于操作训练的信息，判断我们是否可以借鉴。
+- 当前目标仍是形成 FC/NES 训练 AI 陪玩的标准化程序，并以魂斗罗作为首个验证对象。
+
+查证资料：
+
+- Gym Retro / Stable-Retro：
+  - 游戏集成应分离起始状态、奖励函数、终止条件、内存变量。
+  - replay/movie 文件可作为训练数据，因为它们保存起始状态和按键序列，而不是完整视频。
+- FCEUX / FM2：
+  - `.fm2` 保留 `romChecksum` 和逐帧输入日志。
+  - TAS 对齐必须保留 movie framecount、input row index、ROM checksum 和 entry point。
+- FCEUX LuaBot：
+  - 采用 segment / attempt / score / tie / rollback 的分段试错模式。
+  - 这比全关按钮暴力搜索更适合本项目。
+- DAgger / DQfD：
+  - 人类、TAS、已验证策略可作为示范数据。
+  - 不能指望一次示范覆盖 AI 自己跑出来的坏状态；必须收集失败窗口并聚合修正。
+- Gym Retro reward farming 经验：
+  - 单纯优化分数会导致刷分死循环。
+  - 本项目必须把进度、生存、固定目标、终止条件和 loop-exit 纳入同一训练场景。
+
+本次文档修改：
+
+- `docs/STRATEGY_TRAINING_STANDARD.md`
+  - 增加 External reference alignment。
+  - 增加 movie/replay source rules。
+  - 增加 DAgger-style correction rule。
+  - 增加 DQfD-style demonstration rule。
+  - 增加 reward-farming guard。
+  - 新增 `2.3 Segmented Trial, Rollback, And Patch Search`。
+- `docs/STRATEGY_PACK_STANDARD.md`
+  - 增加 replay/movie 同步锚点要求。
+  - 增加不可打包商业 ROM 的本地导入槽说明。
+  - 增加 training-origin gates。
+  - 新增 `8.1 Trust Pipeline`，包含 structural integrity、sandbox validation、social/expert proof。
+
+工程判断：
+
+- 当前不切换为纯神经网络训练。
+- 当前最高效训练路线仍是：
+
+```text
+TAS / human / AI trace
+-> side-owned baseline
+-> segmented local patch search
+-> candidate StrategyFragment
+-> shadow/runtime validation
+-> StrategyPack promotion
+```
+
+后续执行约束：
+
+- 不再把“看人打一遍”理解为复制整关输入。
+- 不再用单一分数、击杀数或奖励数量判断策略有效。
+- 不再用未经 ROMProfile / movie frame / input row 对齐的 TAS 数据作为基准。
+- 所有训练候选必须带 TraceEvidence、ValidationReport 或明确的 `candidate` 状态。
+
+验证：
+
+```powershell
+npm test
+```
+
+结果：
+
+```text
+tests 300
+pass 300
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+结果：
+
+```text
+tsc -b && vite build
+built in 2.26s
+```
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+status=stalled-active
+reason=progress-stalled
+maxW=1205
+finalW=1154
+progressStall=994
+maxStall=994
+```
+
+判断：
+
+- 标准文档和当前代码测试通过。
+- 当前 `survival-v0` 仍未通关，不能发布为 validated。
+- 后续应按新补强的训练标准继续做 W1205 分段搜索和失败窗口修正。
+
+### 2026-06-10: Contra US W1205 分段训练搜索基线
+
+触发：
+
+- `survival-v0` 在 Contra US Stage 1 稳定复现 W1205 附近进度卡死。
+- 之前多次直接改按钮会产生死亡回归，所以本次不继续猜操作，而是先建立可比较的分段训练搜索能力。
+
+新增模块：
+
+- `apps/browser-cockpit/src/segmentedTrainingSearch.ts`
+
+能力：
+
+- `rankSegmentAttempt(...)`
+  - 输入一个分段尝试结果。
+  - 输出 `score`、`gateStatus`、`rejectionReasons`、`riskTags`、`progressGain`。
+  - 会把死亡、desync、stuck loop 拒绝。
+  - 会把有分数/奖励但进度失败的尝试标记为 `reward-farming-risk`。
+- `createSegmentedTrainingSearchReport(...)`
+  - 输出 `fc-ai-segmented-training-search-report-v1`。
+  - 报告状态固定为 `candidate-search`。
+  - `validationStatus` 固定为 `missing`，防止搜索结果被误当作 validated。
+  - 必须要求后续 `TraceEvidence`、`ValidationReport`、`mode-specific runtime replay`。
+
+新增证据：
+
+- `data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json`
+
+基线数据来源：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+status=stalled-active
+reason=progress-stalled
+maxW=1205
+finalW=1154
+progressStall=994
+maxStall=994
+```
+
+归档判断：
+
+- `attemptId`: `survival-v0-route-plan-baseline`
+- `gateStatus`: `rejected`
+- `rejectionReasons`: `stuck-loop`
+- `riskTags`: `progress-stall-risk`
+- `bestAttempt`: `null`
+
+新增测试：
+
+- `tests/segmentedTrainingSearch.test.mjs`
+  - 验证安全进度尝试会排在死亡、卡死和 reward-only loop 前面。
+  - 验证搜索报告只输出 candidate evidence，不输出 validated。
+- `tests/contraUSSegmentedTrainingSearchEvidence.test.mjs`
+  - 验证 W1205 baseline 报告存在。
+  - 验证它记录当前卡死，并且没有被误标记为 validated。
+
+验证：
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs tests\contraUSSegmentedTrainingSearchEvidence.test.mjs
+```
+
+结果：
+
+```text
+tests 3
+pass 3
+fail 0
+```
+
+```powershell
+npm test
+```
+
+结果：
+
+```text
+tests 303
+pass 303
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+结果：
+
+```text
+tsc -b && vite build
+built in 2.19s
+```
+
+下一步：
+
+- 用该分段搜索报告作为比较基线。
+- 每个 W1205 候选补丁必须先成为一个 segment attempt，再比较 `maxProgression`、`finalProgression`、`deathCount`、`progressStallFrames`。
+- 只有候选尝试产生 `candidate` 且通过真实 replay，才进入 StrategyFragment proposal。
+
+### 2026-06-10: W1205 候选试验隔离机制
+
+触发：
+
+- 直接修改 live 策略测试 W1205 会带来死亡回归风险。
+- 需要让候选补丁可以被 headless smoke 单独运行、单独记录，而不污染正式策略。
+
+新增能力：
+
+- `apps/browser-cockpit/src/headlessRoutePlanProbe.ts`
+  - `decideHeadlessRoutePlanProbeButtons(...)` 增加 `candidateTrial` 参数。
+  - 当前支持 `w1205-falling-threat-priority`。
+  - 默认不传 `candidateTrial` 时，正式策略行为不变。
+- `scripts/headless-runtime-smoke.mjs`
+  - 增加 `--candidate-trial=<id>` 参数。
+  - report 顶层输出 `candidateTrial`，方便直接归档到 segment-search-report。
+
+候选试验：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-priority
+```
+
+结果：
+
+```text
+candidate=w1205-falling-threat-priority
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=2677
+maxW=1759
+finalW=1174
+progressStall=2929
+maxStall=2929
+```
+
+正式基线复核：
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+结果：
+
+```text
+candidate=
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=
+maxW=1205
+finalW=1154
+progressStall=994
+maxStall=994
+```
+
+判断：
+
+- `w1205-falling-threat-priority` 可以突破 W1205，最高到 W1759。
+- 但它触发了 gameplay loss/recovery，不能进入 live survival 策略。
+- 已作为 rejected attempt 归档到：
+  - `data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json`
+
+新增/更新测试：
+
+- `tests/headlessRoutePlanProbe.test.mjs`
+  - 验证默认 close-body 行为不变。
+  - 验证 candidateTrial 可隔离触发 W1205 falling-priority 候选。
+- `tests/headlessRuntimeSmokeScript.test.mjs`
+  - 验证 `--candidate-trial=` 被脚本支持并进入报告。
+- `tests/contraUSSegmentedTrainingSearchEvidence.test.mjs`
+  - 验证 W1205 rejected candidate 已入库。
+
+验证：
+
+```powershell
+npm test
+```
+
+结果：
+
+```text
+tests 304
+pass 304
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+结果：
+
+```text
+tsc -b && vite build
+built in 2.24s
+```
+
+下一步：
+
+- 不再通过 live 改动试候选。
+- 后续每个 W1205 候选都走 `--candidate-trial` 或等价隔离入口。
+- 下一个候选不应再单纯“右上穿过”，而应针对 W1759 之后的 gameplay loss 做 trace window 分析，或设计 W1205 到 W1840 的二段候选链。
+
+### 2026-06-10: Training references converted into report gates
+
+Trigger:
+
+- The owner asked to research operation-training practices on the web and decide what can be reused.
+- The useful pattern is not raw neural-network training. It is structured game integration, replay/movie sync anchors, segmented local search, demonstration correction, and validation gates.
+
+References applied:
+
+- Stable-Retro / Gym Retro style separation: state variables, reward rules, terminal conditions, replay sources, and starting state are separate artifacts.
+- FCEUX FM2 style sync: movie framecount, input row index, ROM checksum, and entry-state type must be preserved when replay/TAS data is used.
+- FCEUX LuaBot style search: candidate patches should be tried inside a small segment window and rolled back when they fail.
+- DAgger / DQfD style demonstration usage: TAS or human input can seed baselines, but AI failure windows must be collected and corrected before promotion.
+
+Code update:
+
+- `apps/browser-cockpit/src/segmentedTrainingSearch.ts`
+  - added `syncAnchors`.
+  - added `deterministicContext`.
+  - added `promotionGates`.
+  - default promotion gates are all `missing`, so a segment-search report cannot be confused with validated strategy behavior.
+
+Evidence update:
+
+- `data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json`
+  - now records the headless runtime sync clock: `browser-headless-jsnes`, `nes.frame-before-step`, `runtime-checkpoint`.
+  - now records deterministic context: RNG unknown, input sampling delay `0`, perturbation still required.
+  - now records missing gates for TraceEvidence, ValidationReport, mode-specific replay, deterministic context, and negative constraints.
+
+Standard update:
+
+- `docs/STRATEGY_TRAINING_STANDARD.md`
+  - kept the external-reference alignment section.
+  - kept segmented trial / rollback / patch-search rules.
+  - changed the automated asset checklist heading and directive to English to avoid internal encoding drift.
+
+Tests:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs tests\contraUSSegmentedTrainingSearchEvidence.test.mjs tests\strategyTrainingStandardDoc.test.mjs
+```
+
+Result:
+
+```text
+tests 5
+pass 5
+fail 0
+```
+
+Full verification:
+
+```powershell
+npm test
+```
+
+Result:
+
+```text
+tests 305
+pass 305
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+Result:
+
+```text
+tsc -b && vite build
+built in 2.24s
+```
+
+Runtime smoke:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status=stalled-active
+reason=progress-stalled
+maxW=1205
+finalW=1154
+progressStall=994
+```
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-falling-threat-priority
+```
+
+Result:
+
+```text
+candidate=w1205-falling-threat-priority
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=2677
+maxW=1759
+finalW=1174
+progressStall=2929
+```
+
+Decision:
+
+- The live `survival-v0` strategy is unchanged in outcome: it still stalls at W1205 and is not validated.
+- The isolated falling-threat candidate remains rejected because it causes gameplay loss.
+- The training system is now more rigorous: every future segment attempt must carry sync anchors, deterministic context, and explicit promotion gates before it can move toward StrategyFragment promotion.
