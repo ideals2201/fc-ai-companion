@@ -84,5 +84,11 @@ test("strategy training standard records external operation-training references 
   assert.match(source, /https:\/\/fceux\.com\/web\/help\/LuaScripting\.html/, "source register should include the FCEUX Lua URL");
   assert.match(source, /DAgger/, "source register should cite DAgger as failure-state aggregation guidance");
   assert.match(source, /Ross-AIStats11-NoRegret\.pdf/, "source register should include the DAgger paper URL");
+  assert.match(source, /OpenAI retro-movies/, "source register should cite demonstration movie datasets");
+  assert.match(source, /https:\/\/github\.com\/openai\/retro-movies/, "source register should include the retro-movies URL");
+  assert.match(source, /TASVideos emulator requirements/, "source register should cite deterministic replay requirements");
+  assert.match(source, /https:\/\/tasvideos\.org\/EmulatorResources\/Requirements/, "source register should include the TASVideos emulator requirements URL");
+  assert.match(source, /TASVideos console verification/, "source register should cite movie-input dump and verification practices");
+  assert.match(source, /https:\/\/tasvideos\.org\/ConsoleVerification\/Guide/, "source register should include the TASVideos console verification URL");
   assert.match(source, /Borrow patterns, not authority/, "source register should state that external projects are references rather than product authority");
 });

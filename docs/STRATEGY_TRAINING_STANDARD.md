@@ -517,6 +517,9 @@ Registered references:
 | FCEUX Lua | https://fceux.com/web/help/LuaScripting.html | Lua can read memory, write inputs, draw debug overlays, and drive frame-advance experiments. | Use local or emulator-side automation for segmented attempts, rollback, trace capture, and failure-window diagnosis. |
 | DAgger | https://www.cs.cmu.edu/~sross1/publications/Ross-AIStats11-NoRegret.pdf | Demonstration-only policies drift into states the expert trace never covered; aggregate failures from the learned policy and correct them. | Treat AI failure windows as first-class training data and require targeted correction traces before promotion. |
 | Gym Retro reward-farming notes | https://openai.com/index/gym-retro/ | Reward-only objectives can create exploit loops instead of useful play. | Validate progress, survival, loop exit, and strategy-specific objectives together; never promote by score, kills, or pickups alone. |
+| OpenAI retro-movies | https://github.com/openai/retro-movies | Human demonstration movies can provide input traces, extracted states, and random mid-route starting points. | Use demonstration movies to seed side baselines and segment entry states, then validate every extracted window locally. |
+| TASVideos emulator requirements | https://tasvideos.org/EmulatorResources/Requirements | Replayable movie files and sync-robust savestates are basic requirements for trustworthy tool-assisted workflows. | A training run must preserve deterministic entry state, emulator/runtime identity, and repeated-run reproducibility before promotion. |
+| TASVideos console verification | https://tasvideos.org/ConsoleVerification/Guide | Movie inputs are often dumped through scripts, and dump tools can have lag-frame or off-by-one quirks. | TAS conversion must keep movie framecount, input row index, dump tool identity, and observed offset notes as evidence. |
 
 Adoption rules:
 
@@ -525,3 +528,4 @@ Adoption rules:
 - If an external source assumes pixel input, neural-network training, or a different emulator timing model, translate only the useful contract into local RAM-state and frame-indexed evidence.
 - If an external source provides a full route or TAS, split it into side-owned baselines and candidate windows before using it for 1P, 2P, human+AI, or dual-AI training.
 - If the external source is not tied to the exact ROM checksum, mark it as research-only until a compatible ROMProfile and runtime validation prove it locally.
+- If an external source provides mid-route states or extracted checkpoints, treat them as segment entry candidates. They must still pass the local deterministic replay gate and may not replace full-route validation.

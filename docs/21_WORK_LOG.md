@@ -28,7 +28,7 @@
 - Stable-Baselines3 RL tips：`https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html`
 - Gym Retro game integration：`https://retro.readthedocs.io/en/latest/integration.html`
 - Stable-Retro Python API：`https://stable-retro.farama.org/python/`
-- FCEUX FM2 format：`https://fceux.com/web/help/fm2.html`
+- FCEUX FM2 format：`https://fceux.com/web/FM2.html`
 - TASVideos movie format notes：`https://tasvideos.org/LawsOfTAS/OnMovieFileFormats`
 
 结论：
@@ -54,6 +54,13 @@
 - 核心原则写入标准：`Borrow patterns, not authority`。外部项目只能提供工程模式，不能绕过本项目的 TraceEvidence、ValidationReport、ROMProfile、Safety Override、Negative Constraints 和本地 runtime 验证。
 - `tests/strategyTrainingStandardDoc.test.mjs` 新增测试，要求训练标准保留外部来源 URL、可借鉴模式和采纳边界。
 - 验证：`node --test tests\strategyTrainingStandardDoc.test.mjs`，2/2 通过。
+
+二次补充：
+
+- OpenAI `retro-movies` 的关键启发不是“完整复制演示”，而是从演示电影中导出输入、状态和中途起点，让 agent 接触路线中段状态；这支持本项目的失败窗口训练、segment entry state 和候选基准抽取。
+- TASVideos emulator requirements 强调 replayable input movie 和 sync-robust savestate；这支持本项目要求记录 deterministic entry state、emulator/runtime identity、重复运行可复现性。
+- TASVideos console verification guide 提到 movie input dump 依赖脚本，并可能存在 lag-frame 或 off-by-one 问题；这支持本项目要求保存 movie framecount、input row index、dump tool identity 和 offset notes。
+- 标准更新：`docs/STRATEGY_TRAINING_STANDARD.md` 的 `External Source Register` 新增 OpenAI retro-movies、TASVideos emulator requirements、TASVideos console verification，并增加 mid-route checkpoint 只能作为 segment entry candidate、不能替代完整路线验证的采纳规则。
 
 ### W1440 descent lower-body right carry rejected
 
