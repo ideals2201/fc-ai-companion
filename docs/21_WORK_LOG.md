@@ -2362,3 +2362,150 @@ tests 323
 pass 323
 fail 0
 ```
+
+## 2026-06-10 - W1726 danger low-side body candidate rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` automated patch search after W1360 station-crowd rejection.
+- Add one isolated headless-only candidate:
+
+```text
+w1726-danger-low-side-body
+```
+
+- Keep default live `survival-v0` unchanged.
+
+Root-cause refinement:
+
+- `w1360-right-under-station-crowd` reached W1758 but died at W1726.
+- The failure was not a W1205/W1360 issue anymore; it was in `danger-survive`.
+- Exact W1726 trace:
+
+```text
+frame 9068 W1737 buttons=downleftb  slot13 dx-1 dy31; slot6 dx4 dy48
+frame 9073 W1732 buttons=downleftb  slot13 dx10 dy24; slot6 dx4 dy37
+frame 9076 W1729 buttons=downleftb  slot6 dx4 dy29; slot13 dx17 dy18
+frame 9078 W1727 buttons=downleftb  slot6 dx4 dy23; slot12 dx32 dy1
+frame 9079 W1726 deathFlag=1        slot6 dx4 dy20; slot12 dx32 dy-1
+```
+
+Candidate hypothesis:
+
+- In W1720-W1740, when a low/side dynamic body threat is under or near the player, stop the `down+left+B` retreat.
+- Force:
+
+```text
+right+down+B, no A, no up, no left
+```
+
+- Also inherit W1205 safe recovery and W1360 right-under station-crowd behavior so the candidate can reach the W1726 window.
+
+TDD:
+
+- RED test added `headless route-plan probe can isolate W1726 danger low-side body escape`.
+- The test asserts three required behaviors:
+  - inherited W1205 safe recovery;
+  - inherited W1360 right-under station-crowd escape;
+  - W1726 low-side body threat switches to `right+down+B`.
+- RED failed before implementation because the candidate was absent.
+- GREEN added:
+  - `w1726-danger-low-side-body` candidate flag;
+  - W1726 low/side body detector;
+  - W1205 and W1360 inheritance for this candidate only.
+
+Targeted test:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+tests 30
+pass 30
+fail 0
+```
+
+Runtime candidate trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1726-danger-low-side-body
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=10410
+maxProgression=2001
+finalProgression=1873
+progressStallFrames=0
+```
+
+Failure-window trace:
+
+```text
+frame 10400 W1670 buttons=upleftab  slot6 dx14 dy-24; slot13 dx-22 dy-25
+frame 10404 W1666 buttons=uplefta   slot6 dx16 dy-2;  slot13 dx-18 dy-19
+frame 10408 W1662 buttons=upleftab  slot6 dx20 dy-2;  slot13 dx-14 dy-13
+frame 10409 W1661 buttons=uplefta   slot6 dx21 dy-2;  slot13 dx-13 dy-12
+frame 10410 W1660 deathFlag=1       slot13 dx-12 dy-10; slot6 dx22 dy-2
+```
+
+Decision:
+
+- `w1726-danger-low-side-body` is rejected.
+- It is strong evidence:
+  - it chains through W1205, W1360, and W1726;
+  - it improves the best observed max progression from W1758 to W2001;
+  - it still dies at W1660 after a retreat/regression state, so it is not promotable.
+- Do not promote it into live `survival-v0`.
+- Report updated:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 38
+pass 38
+fail 0
+```
+
+Next inference:
+
+- The next blocker is W1660 retreat/regression after reaching deeper danger-segment progress.
+- The next candidate should not weaken W1726. It should add a recovery guard around W1658-W1672:
+
+```text
+W1660 retreat-regression guard =
+  if current progression regresses into W1658-W1672 and rear/side enemy is dx -24..0, dy -28..0:
+    do not keep up-left retreat;
+    prefer right-up or neutral up-fire until rear body clears
+```
+
+Final verification before saving version:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 325
+pass 325
+fail 0
+```

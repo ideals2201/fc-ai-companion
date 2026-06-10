@@ -1050,6 +1050,93 @@ test("headless route-plan probe can isolate W1360 right-under station crowd esca
   assert.equal(buttons.b, true);
 });
 
+test("headless route-plan probe can isolate W1726 danger low-side body escape", () => {
+  const w1205RecoveryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-danger-low-side-body",
+    frame: 2830,
+    progressStallFrames: 0,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 69,
+      playerY: 212,
+      worldX: 1151,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(w1205RecoveryButtons.right, true);
+  assert.equal(w1205RecoveryButtons.up, true);
+  assert.equal(w1205RecoveryButtons.b, true);
+
+  const w1360Buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-danger-low-side-body",
+    frame: 7113,
+    progressStallFrames: 7,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 123,
+      playerY: 212,
+      worldX: 1361,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 126, y: 186 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(w1360Buttons.right, true);
+  assert.equal(w1360Buttons.left, false);
+  assert.equal(w1360Buttons.up, true);
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-danger-low-side-body",
+    frame: 9078,
+    progressStallFrames: 0,
+    routeSegment: {
+      id: "danger-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 1550,
+      worldEnd: 2048
+    },
+    snapshot: snapshot({
+      jumpState: 81,
+      playerX: 111,
+      playerY: 173,
+      worldX: 1727,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 115, y: 196 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 143, y: 174 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 133, y: 186 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe ignores grounded low-lane object residue instead of stalling at the mid turret", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 4800,

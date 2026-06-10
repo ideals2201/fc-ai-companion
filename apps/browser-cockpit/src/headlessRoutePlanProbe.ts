@@ -57,6 +57,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-post-upper-recovery"
     | "w1205-post-upper-safe-recovery"
     | "w1360-right-under-station-crowd"
+    | "w1726-danger-low-side-body"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -314,6 +315,18 @@ function hasW1360RightUnderStationCrowd(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1726DangerLowSideBodyThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (snapshot.worldX < 1720 || snapshot.worldX > 1740) return false;
+  if (snapshot.playerY < 140 || snapshot.playerY > 188) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -6 && dx <= 12 && dy >= 16 && dy <= 52;
+  });
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -526,7 +539,11 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
-    (candidateTrial === "w1205-post-upper-safe-recovery" || candidateTrial === "w1360-right-under-station-crowd")
+    (
+      candidateTrial === "w1205-post-upper-safe-recovery"
+      || candidateTrial === "w1360-right-under-station-crowd"
+      || candidateTrial === "w1726-danger-low-side-body"
+    )
     && hasW1205PostUpperRecoveryStation(snapshot)
     && !hasW1205PostUpperSameLaneBodyThreat(snapshot)
   ) {
@@ -541,7 +558,10 @@ export function decideHeadlessRoutePlanProbeButtons({
     });
     return buttons;
   }
-  if (candidateTrial === "w1360-right-under-station-crowd" && hasW1360RightUnderStationCrowd(snapshot)) {
+  if (
+    (candidateTrial === "w1360-right-under-station-crowd" || candidateTrial === "w1726-danger-low-side-body")
+    && hasW1360RightUnderStationCrowd(snapshot)
+  ) {
     applyStageOneRewardPatch(buttons, {
       a: false,
       b: true,
@@ -550,6 +570,18 @@ export function decideHeadlessRoutePlanProbeButtons({
       reason: "stage-one-mid-fixed-threat-recovery",
       right: true,
       up: true
+    });
+    return buttons;
+  }
+  if (candidateTrial === "w1726-danger-low-side-body" && hasW1726DangerLowSideBodyThreat(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-danger-low-lane-fall",
+      right: true,
+      up: false
     });
     return buttons;
   }
