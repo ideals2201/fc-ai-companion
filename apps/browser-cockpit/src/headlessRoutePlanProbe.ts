@@ -62,6 +62,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1641-left-edge-right-jump"
     | "w1648-left-edge-precompression-advance"
     | "w1658-overhead-guard-preclear"
+    | "w1726-grounded-overhead-duck-advance"
     | "w1664-same-lane-preclear-pulse"
     | "w1678-forward-body-duck-carry"
     | "w1678-forward-body-level-carry"
@@ -333,6 +334,29 @@ function hasW1726DangerLowSideBodyThreat(snapshot: RoutePlanProbeSnapshot) {
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
     return dx >= -6 && dx <= 12 && dy >= 16 && dy <= 52;
+  });
+}
+
+function hasW1726GroundedOverheadDuckAdvance(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1720 || snapshot.worldX > 1732) return false;
+  if (snapshot.playerY < 204) return false;
+
+  const hasOverheadContact = snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -10 && dx <= 8 && dy >= -30 && dy <= -8;
+  });
+  if (!hasOverheadContact) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -20 && dx <= -6 && dy >= -4 && dy <= 16;
   });
 }
 
@@ -707,6 +731,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
@@ -735,6 +760,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
@@ -761,6 +787,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1641-left-edge-right-jump"
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
@@ -781,7 +808,25 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
-    candidateTrial === "w1658-overhead-guard-preclear"
+    candidateTrial === "w1726-grounded-overhead-duck-advance"
+    && hasW1726GroundedOverheadDuckAdvance(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-grounded-overhead-duck-advance",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (
+    (
+      candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
+    )
     && hasW1658OverheadBodyGuardPreclear(snapshot)
   ) {
     applyStageOneRewardPatch(buttons, {
@@ -796,7 +841,10 @@ export function decideHeadlessRoutePlanProbeButtons({
     return buttons;
   }
   if (
-    candidateTrial === "w1658-overhead-guard-preclear"
+    (
+      candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
+    )
     && hasW1664SameLanePreclearPulse(snapshot)
   ) {
     applyStageOneRewardPatch(buttons, {
@@ -919,6 +967,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
@@ -942,6 +991,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
@@ -1013,6 +1063,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     (
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1658-overhead-guard-preclear"
+      || candidateTrial === "w1726-grounded-overhead-duck-advance"
       || candidateTrial === "w1664-same-lane-preclear-pulse"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"

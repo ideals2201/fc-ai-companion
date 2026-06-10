@@ -1135,6 +1135,7 @@ test("headless route-plan probe can isolate W1726 danger low-side body escape", 
   assert.equal(buttons.up, false);
   assert.equal(buttons.a, false);
   assert.equal(buttons.b, true);
+
 });
 
 test("headless route-plan probe can isolate W1660 retreat-regression guard", () => {
@@ -1597,6 +1598,112 @@ test("headless route-plan probe can isolate W1658 overhead body guard before sam
   assert.equal(preclearButtons.up, false);
   assert.equal(preclearButtons.a, false);
   assert.equal(preclearButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1726 grounded overhead duck advance after W1658 guard", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+
+  const overheadGuardButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-grounded-overhead-duck-advance",
+    frame: 9861,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 42,
+      playerY: 212,
+      worldX: 1658,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 32, y: 194 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 11, threat: true, type: 0x05, x: 66, y: 218 }
+      ]
+    })
+  });
+
+  assert.equal(overheadGuardButtons.left, false);
+  assert.equal(overheadGuardButtons.right, true);
+  assert.equal(overheadGuardButtons.down, true);
+  assert.equal(overheadGuardButtons.up, false);
+  assert.equal(overheadGuardButtons.a, false);
+  assert.equal(overheadGuardButtons.b, true);
+
+  const preclearButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-grounded-overhead-duck-advance",
+    frame: 10934,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 50,
+      playerY: 212,
+      worldX: 1666,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 0, threat: true, type: 0x05, x: 66, y: 218 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 43, y: 232 }
+      ]
+    })
+  });
+
+  assert.equal(preclearButtons.left, false);
+  assert.equal(preclearButtons.right, true);
+  assert.equal(preclearButtons.down, true);
+  assert.equal(preclearButtons.up, false);
+  assert.equal(preclearButtons.a, false);
+  assert.equal(preclearButtons.b, true);
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-grounded-overhead-duck-advance",
+    frame: 10192,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 110,
+      playerY: 212,
+      worldX: 1726,
+      enemies: [
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 98, y: 218 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 11, threat: true, type: 0x01, x: 109, y: 194 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+
+  const heldButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1726-grounded-overhead-duck-advance",
+    frame: 10196,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 111,
+      playerY: 212,
+      worldX: 1727,
+      enemies: [
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 98, y: 218 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 104, y: 197 }
+      ]
+    })
+  });
+
+  assert.equal(heldButtons.left, false);
+  assert.equal(heldButtons.right, true);
+  assert.equal(heldButtons.down, true);
+  assert.equal(heldButtons.up, false);
+  assert.equal(heldButtons.a, false);
+  assert.equal(heldButtons.b, true);
 });
 
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {

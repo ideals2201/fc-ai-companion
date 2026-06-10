@@ -16,6 +16,37 @@
 
 ## 2026-06-10
 
+### 操作训练网络复核
+
+触发：
+
+- 用户要求再次查询网络上关于操作训练的信息，判断本项目是否可以借鉴。
+
+参考资料：
+
+- DAgger / imitation learning：`https://arxiv.org/abs/1011.0686`
+- Stable-Baselines3 RL tips：`https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html`
+- Gym Retro game integration：`https://retro.readthedocs.io/en/latest/integration.html`
+- Stable-Retro Python API：`https://stable-retro.farama.org/python/`
+- FCEUX FM2 format：`https://fceux.com/web/help/fm2.html`
+- TASVideos movie format notes：`https://tasvideos.org/LawsOfTAS/OnMovieFileFormats`
+
+结论：
+
+- 当前主线不改成纯神经网络训练。公开资料也显示，RL 需要大量样本、奖励函数反复调参，并且结果会受随机种子影响；这不适合现在急需完成稳健生存通关策略的阶段。
+- 最适合本项目的是 DAgger-style 工作流：先用人类、TAS 或已验证策略提供示范基准，再让当前 AI 自己跑局，收集失败窗口，针对失败窗口生成短片段修正，再通过 runtime replay 验证。
+- Gym Retro / Stable-Retro 的可借鉴点是工程结构，而不是直接替换运行时：每个游戏都应独立声明 starting state、RAM variables、reward-like scoring、done / terminal conditions、ROMProfile 和可复现入口。
+- FCEUX FM2 / TASVideos 的可借鉴点是 TAS 作为 frame-indexed input log 和同步证据：必须保留 ROM checksum、movie framecount、input row index、entry point、emulator/runtime 信息；不能只看屏幕帧数猜对齐。
+- 奖励设计不能只看分数、杀敌或奖励拾取。必须同时检查 progress、survival、fixed-target clearance、reward pickup、stuck-loop、death、desync 和 terminal condition，否则容易产生 reward farming 或死循环。
+- 训练结果必须落成项目标准资产：TraceEvidence、candidate StrategyFragment、ValidationReport、StrategyPack promotion gate。人类演示、AI 跑局和 TAS 都是训练来源，不是批准来源。
+
+对当前工作的影响：
+
+- 继续使用 `STRATEGY_TRAINING_STANDARD.md` 规定的 Baseline -> TraceEvidence -> Candidate Fragment -> ValidationReport -> StrategyPack 流程。
+- 继续把 TAS 定位为路线知识库和训练基准，不作为生产控制器。
+- 继续用 headless runtime smoke 和 segmented training report 做快速迭代；失败候选要归档，不允许靠感觉覆盖 live `survival-v0`。
+- 下一轮魂斗罗 US 稳健生存优先修 W1683-W1684 route formation，而不是继续给 W1726 加局部补丁。
+
 ### 取消一次性交接文档
 
 删除：
@@ -2689,6 +2720,121 @@ if player is grounded at left screen edge around W1640-W1648
 and a body threat descends at dx 3..8, dy -34..-9:
   simple up-left retreat and simple prone fire both fail;
   next candidate should test a stronger escape rule, probably earlier rightward jump/advance or fixed-target pressure reduction before the compression forms.
+```
+
+Do not promote this candidate into live `survival-v0`.
+
+## 2026-06-10 - W1726 grounded overhead duck advance rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` candidate search after `w1658-overhead-guard-preclear` still failed around W1726.
+- Test whether a grounded W1726 low-lane / overhead body compression can be held with down-right fire instead of falling back to generic up-left jump.
+- Keep all behavior isolated behind `--candidate-trial`.
+
+Candidate added:
+
+```text
+w1726-grounded-overhead-duck-advance
+```
+
+Root cause:
+
+```text
+The previous W1726 detector only covered airborne/landing low-side body threats.
+The W1658/W1664 combined route reached W1726 grounded at Y212.
+Low-lane object residue was ignored, then the overhead close body won generic close-body arbitration and produced up-left jump.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1726 grounded overhead test first failed because the candidate did not exist.
+After first implementation, a second RED showed the hold window was too narrow at W1727 when the overhead object shifted to dx -7.
+```
+
+GREEN:
+
+```text
+tests 40
+pass 40
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1726-grounded-overhead-duck-advance
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=10744
+maxProgression=1784
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window evidence:
+
+```text
+preLost frame 10743:
+  W1684 X66 Y212 buttons=up+left+a+b
+  slot5 type5 dx0 dy-26
+  slot12 type1 dx-36 dy9
+  slot13 type1 dx32 dy-13
+
+lost frame 10744:
+  W1683 X65 Y212 deathFlag=1
+  slot5 type5 dx1 dy-24
+  slot12 type1 dx-35 dy11
+  slot13 type1 dx32 dy-12
+```
+
+Decision:
+
+- `w1726-grounded-overhead-duck-advance` is rejected.
+- It can force the W1726 grounded compression frame into down-right fire, but the combined route regresses into an earlier W1683/W1684 close-body death.
+- It is worse than the current useful partial `w1648-left-edge-precompression-advance` and does not solve the stage segment.
+- The useful lesson: local W1726 holding is not enough. The next candidate should prevent entering the W1683 low/upper body stack before the fixed-threat platform, not add another single-frame W1726 hold.
+
+Archived:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 40, pass 40, fail 0
+segmentedTrainingSearch: tests 18, pass 18, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Stop adding late W1726-only holds.
+Target W1683-W1684 route formation:
+  prevent up-left jump into the close upper body;
+  avoid the low/upper body stack before it reaches direct contact;
+  keep the fixed-threat platform route from collapsing back to spawn.
 ```
 
 Do not promote this candidate into live `survival-v0`.

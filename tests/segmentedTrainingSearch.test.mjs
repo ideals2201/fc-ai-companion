@@ -358,6 +358,24 @@ test("W1658 overhead guard preclear attempt is archived after recovered loss", (
   assert.ok(attempt.riskTags.includes("progress-stall-risk"));
 });
 
+test("W1726 grounded overhead duck advance attempt is archived after earlier route regression", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1726-grounded-overhead-duck-advance-candidate-trial");
+
+  assert.ok(attempt, "W1726 grounded overhead duck advance candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1726-grounded-overhead-duck-advance");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 10744);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1784);
+  assert.equal(attempt.finalProgression, 82);
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,
