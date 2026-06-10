@@ -2270,6 +2270,43 @@
         "maxProgressStallFrames": 1112
       },
       "trialNote": "Headless-only candidate narrowed the rear-contact duck to grounded W1762-W1768 so it would not flatten the airborne setup. It only shifts the same-lane slot5 death from frame 12409 to frame 12413/W1769, with slot5 still at dx=-6 dy=0, then recovers after loss and stalls back near W338. It is rejected because it still dies, introduces a stall-loop signal, and lowers max progression to W1804 versus the previous W1765 reentry candidate's W1960. Lesson: crouch alone does not solve the rear-contact; the next search needs either earlier spacing or a different route line before slot5 reaches same-lane contact."
+    },
+    {
+      "attemptId": "w1769-reentry-right-extend-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1769-reentry-right-extend",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1856,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1878,
+      "progressGain": 758,
+      "progressStallFrames": 304,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "reentry-right-extension-progress-gain",
+        "left-edge-contact-regression",
+        "progress-regression"
+      ],
+      "score": -8000,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1769-reentry-right-extend",
+        "candidateTrial": "w1769-reentry-right-extend",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 12877,
+        "maxProgression": 1878,
+        "finalProgression": 1856,
+        "progressStallFrames": 304,
+        "maxProgressStallFrames": 304
+      },
+      "trialNote": "Headless-only candidate extended the W1765 reentry right/up-fire window through W1769 to prevent the immediate up-left retreat that lets slot5 reach same-lane contact. It changes the route and reaches W1878, but still dies first at frame 12877/W1686 after a later left-edge collapse: slot14 is at dx=7 dy=1 while inputs are up-left+A+B. It is rejected because any death violates survival and max progression remains below the previous W1765 reentry candidate's W1960. Lesson: extending right carry helps spacing but still needs a later left-edge guard before W1686."
     }
   ],
   "promotionGates": [

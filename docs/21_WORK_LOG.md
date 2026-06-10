@@ -4113,6 +4113,100 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - Contra US survival W1769 reentry right extension rejected
+
+Scope:
+
+- Investigate why slot5 reaches same-lane contact after W1765.
+- Trace showed W1769-W1759 includes a fallback to up-left retreat, pulling the player back and letting slot5 close the gap.
+- Test a candidate that extends the W1765 right/up-fire reentry through W1769.
+
+Candidate:
+
+```text
+w1769-reentry-right-extend
+```
+
+Hypothesis:
+
+```text
+If W1769-W1770 still has forward body/fixed-target pressure, keep right+up+fire instead of falling back to up-left.
+This should preserve spacing and prevent slot5 from becoming same-lane contact.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1769 reentry extension test failed because the candidate did not exist and the old W1765 candidate returned left.
+```
+
+GREEN:
+
+```text
+tests 52
+pass 52
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1769-reentry-right-extend
+```
+
+Result:
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=12877
+maxProgression=1878
+finalProgression=1856
+progressStallFrames=304
+```
+
+Failure evidence:
+
+```text
+preLost frame 12876 W1686 X25 Y212 buttons=up+left+a+b slot14 dx=8 dy=0
+lost    frame 12877 W1686 X25 Y212 deathFlag=1       slot14 dx=7 dy=1
+```
+
+Decision:
+
+- `w1769-reentry-right-extend` is rejected.
+- It changes the route and avoids the immediate slot5 contact pattern, but still dies later at W1686 after left-edge collapse.
+- It reaches W1878, which is below the previous W1765 reentry candidate's W1960, so it is not a better survival candidate.
+- The useful lesson is that extended right carry helps spacing but exposes a later W1686 left-edge guard problem.
+
+Archived evidence:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+node --test tests\headlessRoutePlanProbe.test.mjs
+npm run build
+```
+
+```text
+segmented training search: tests 30, pass 30, fail 0
+headless route-plan probe: tests 52, pass 52, fail 0
+npm run build: pass
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 ## 2026-06-10 - Contra US survival W1765 grounded rear micro-duck rejected
 
 Scope:

@@ -2309,6 +2309,52 @@ test("headless route-plan probe can isolate W1765 grounded rear-contact micro du
   assert.equal(airborneButtons.down, false);
 });
 
+test("headless route-plan probe can isolate W1769 reentry right-carry extension", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const reentryExtensionSnapshot = snapshot({
+    jumpState: 177,
+    playerX: 108,
+    playerY: 147,
+    worldX: 1769,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 134, y: 153, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 162, y: 228, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+      { fixed: true, hp: 8, kind: "durable", routine: 4, threat: true, type: 0x04, x: 148, y: 128 }
+    ]
+  });
+
+  const previousReentryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-reentry-right-fire-carry",
+    frame: 12390,
+    routeSegment,
+    snapshot: reentryExtensionSnapshot
+  });
+
+  assert.equal(previousReentryButtons.left, true, "the W1765 reentry candidate expires at W1769 and falls back to retreat");
+  assert.equal(previousReentryButtons.right, false);
+
+  const extendedReentryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1769-reentry-right-extend",
+    frame: 12390,
+    routeSegment,
+    snapshot: reentryExtensionSnapshot
+  });
+
+  assert.equal(extendedReentryButtons.left, false);
+  assert.equal(extendedReentryButtons.right, true);
+  assert.equal(extendedReentryButtons.up, true);
+  assert.equal(extendedReentryButtons.down, false);
+  assert.equal(extendedReentryButtons.a, false);
+  assert.equal(extendedReentryButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

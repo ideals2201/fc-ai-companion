@@ -596,6 +596,27 @@ test("W1765 grounded rear micro-duck attempt is archived after contact only shif
   assert.ok(attempt.trialNote.includes("slot5"));
 });
 
+test("W1769 reentry right extension attempt is archived after left-edge regression death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1769-reentry-right-extend-candidate-trial");
+
+  assert.ok(attempt, "W1769 reentry right extension candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1769-reentry-right-extend");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12877);
+  assert.equal(attempt.runtimeEvidence.status, "recovered-after-loss");
+  assert.equal(attempt.maxProgression, 1878);
+  assert.equal(attempt.finalProgression, 1856);
+  assert.ok(attempt.riskTags.includes("reentry-right-extension-progress-gain"));
+  assert.ok(attempt.riskTags.includes("left-edge-contact-regression"));
+  assert.ok(attempt.trialNote.includes("W1686"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,
