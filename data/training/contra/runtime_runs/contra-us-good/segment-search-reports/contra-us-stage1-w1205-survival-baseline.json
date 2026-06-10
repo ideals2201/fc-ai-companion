@@ -163,6 +163,144 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate released A before the contact jump window, then pressed A with left-up fire. Runtime still showed no safe jump and died from body contact at frame 2677, so W1205 needs earlier standing/clearance rather than a late contact jump."
+    },
+    {
+      "attemptId": "precontact-station-clear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-precontact-station-clear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1188,
+      "progressGain": 68,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10188,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-precontact-station-clear",
+        "candidateTrial": "w1205-precontact-station-clear",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 2691,
+        "maxProgression": 1188,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate stopped at W1188 with up-fire to clear the pre-contact soldier. Runtime showed the soldier continued into body contact and killed the player at frame 2691, so standing clear is rejected."
+    },
+    {
+      "attemptId": "force-upright-through-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-force-upright-through",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1147,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1207,
+      "progressGain": 87,
+      "progressStallFrames": 5324,
+      "rejectionReasons": [
+        "death",
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10677,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-force-upright-through",
+        "candidateTrial": "w1205-force-upright-through",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1207,
+        "finalProgression": 1147,
+        "progressStallFrames": 5324,
+        "maxProgressStallFrames": 5324
+      },
+      "trialNote": "Headless-only candidate forced right-up fire through W1205. It still died from body contact at frame 2677 and then recovered into a long stall, so right-up through is rejected."
+    },
+    {
+      "attemptId": "duck-under-contact-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-duck-under-contact",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1071,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1198,
+      "progressGain": 78,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10208,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-duck-under-contact",
+        "candidateTrial": "w1205-duck-under-contact",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 2688,
+        "maxProgression": 1198,
+        "finalProgression": 1071,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate held right/down/fire in the contact window. Runtime still collided with the soldier at frame 2688, so waterline duck-under is rejected."
+    },
+    {
+      "attemptId": "pulsed-right-fire-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-pulsed-right-fire",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1147,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1207,
+      "progressGain": 87,
+      "progressStallFrames": 5324,
+      "rejectionReasons": [
+        "death",
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10677,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-pulsed-right-fire",
+        "candidateTrial": "w1205-pulsed-right-fire",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1207,
+        "finalProgression": 1147,
+        "progressStallFrames": 5324,
+        "maxProgressStallFrames": 5324
+      },
+      "trialNote": "Headless-only candidate released B, then pulsed straight right-fire. It generated new straight bullets but they passed under/after the soldier and the player still died at frame 2677, so pulsed straight fire is rejected."
     }
   ],
   "bestAttempt": null,
@@ -300,6 +438,144 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate released A before the contact jump window, then pressed A with left-up fire. Runtime still showed no safe jump and died from body contact at frame 2677, so W1205 needs earlier standing/clearance rather than a late contact jump."
+    },
+    {
+      "attemptId": "precontact-station-clear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-precontact-station-clear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1188,
+      "progressGain": 68,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10188,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-precontact-station-clear",
+        "candidateTrial": "w1205-precontact-station-clear",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 2691,
+        "maxProgression": 1188,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate stopped at W1188 with up-fire to clear the pre-contact soldier. Runtime showed the soldier continued into body contact and killed the player at frame 2691, so standing clear is rejected."
+    },
+    {
+      "attemptId": "force-upright-through-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-force-upright-through",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1147,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1207,
+      "progressGain": 87,
+      "progressStallFrames": 5324,
+      "rejectionReasons": [
+        "death",
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10677,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-force-upright-through",
+        "candidateTrial": "w1205-force-upright-through",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1207,
+        "finalProgression": 1147,
+        "progressStallFrames": 5324,
+        "maxProgressStallFrames": 5324
+      },
+      "trialNote": "Headless-only candidate forced right-up fire through W1205. It still died from body contact at frame 2677 and then recovered into a long stall, so right-up through is rejected."
+    },
+    {
+      "attemptId": "duck-under-contact-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-duck-under-contact",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1071,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1198,
+      "progressGain": 78,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -10208,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-duck-under-contact",
+        "candidateTrial": "w1205-duck-under-contact",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 2688,
+        "maxProgression": 1198,
+        "finalProgression": 1071,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate held right/down/fire in the contact window. Runtime still collided with the soldier at frame 2688, so waterline duck-under is rejected."
+    },
+    {
+      "attemptId": "pulsed-right-fire-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1205-pulsed-right-fire",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1147,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 8000,
+      "gateStatus": "rejected",
+      "maxProgression": 1207,
+      "progressGain": 87,
+      "progressStallFrames": 5324,
+      "rejectionReasons": [
+        "death",
+        "stuck-loop"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "progress-stall-risk"
+      ],
+      "score": -10677,
+      "scoreDelta": 0,
+      "stuckLoop": true,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-pulsed-right-fire",
+        "candidateTrial": "w1205-pulsed-right-fire",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 2677,
+        "maxProgression": 1207,
+        "finalProgression": 1147,
+        "progressStallFrames": 5324,
+        "maxProgressStallFrames": 5324
+      },
+      "trialNote": "Headless-only candidate released B, then pulsed straight right-fire. It generated new straight bullets but they passed under/after the soldier and the player still died at frame 2677, so pulsed straight fire is rejected."
     }
   ],
   "promotionGates": [

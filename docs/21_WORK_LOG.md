@@ -1195,3 +1195,176 @@ Decision:
   - clear the soldier/fixed object before body contact,
   - or use a fixed StagePlan node with deliberate pause/aim instead of reactive close-body handling.
 - Do not promote either rejected branch into live `survival-v0`.
+
+## 2026-06-10 - W1205 additional rejected candidates and root-cause narrowing
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` W1205 candidate search.
+- Keep every new attempt behind `--candidate-trial`.
+- Do not change default live `survival-v0` unless a candidate passes runtime evidence.
+
+Baseline trace recap:
+
+- Default live route reaches `maxW=1205`, then retreats and stalls.
+- Default smoke remains:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan
+```
+
+```text
+status=stalled-active
+reason=progress-stalled
+lostActiveFrame=null
+maxW=1205
+finalW=1154
+progressStall=994
+```
+
+Rejected candidate 1: `w1205-precontact-station-clear`
+
+- Hypothesis: stop around W1188 and clear the incoming soldier with up-fire before body contact.
+- Result:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-precontact-station-clear
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=2691
+maxW=1188
+finalW=82
+```
+
+- Evidence: W1188 standing up-fire did not kill the soldier; the soldier closed from `dx=39 dy=-31` to body contact.
+- Decision: rejected.
+
+Rejected candidate 2: `w1205-force-upright-through`
+
+- Hypothesis: ignore the retreat and force right-up fire through the W1205 contact window.
+- Result:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-force-upright-through
+```
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=2677
+maxW=1207
+finalW=1147
+progressStall=5324
+```
+
+- Evidence: the player still dies from body contact, then later recovers into a long stall.
+- Decision: rejected.
+
+Rejected candidate 3: `w1205-duck-under-contact`
+
+- Hypothesis: in the low waterline contact window, hold right/down/fire instead of left-up escape.
+- Result:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-duck-under-contact
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=2688
+maxW=1198
+finalW=1071
+```
+
+- Evidence: pre-death frame had `downrightb`, but the soldier still collided at `dx=-11 dy=-9`.
+- Decision: rejected.
+
+Rejected candidate 4: `w1205-pulsed-right-fire`
+
+- Hypothesis: release B, then pulse straight right-fire to create fresh bullets instead of keeping one early right-up bullet.
+- Result:
+
+```powershell
+node scripts/headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-pulsed-right-fire
+```
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=2677
+maxW=1207
+finalW=1147
+progressStall=5324
+```
+
+- Evidence: fresh straight bullets were generated, but they passed under/after the soldier and did not prevent contact.
+- Decision: rejected.
+
+Trace conclusion:
+
+- W1205 is not solved by late contact reaction:
+  - late jump does not create a safe lift,
+  - late left/up retreat dies or stalls,
+  - late right-up rush dies,
+  - late down/right waterline duck dies,
+  - late straight-fire pulse still misses the soldier.
+- The next viable model must intervene earlier than W1188:
+  - choose a safer entry lane,
+  - change the approach timing before the soldier spawn,
+  - or set a StagePlan node that prevents the soldier from reaching the body lane before W1205.
+
+Code/data changes:
+
+- `apps/browser-cockpit/src/headlessRoutePlanProbe.ts`
+  - added isolated candidate-trial branches:
+    - `w1205-precontact-station-clear`
+    - `w1205-force-upright-through`
+    - `w1205-duck-under-contact`
+    - `w1205-pulsed-right-fire`
+  - default live behavior remains unchanged unless `--candidate-trial` is passed.
+- `tests/headlessRoutePlanProbe.test.mjs`
+  - added isolation tests for all four candidates.
+- `data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json`
+  - archived all four as rejected attempts.
+- `tests/contraUSSegmentedTrainingSearchEvidence.test.mjs`
+  - verifies the four attempts are rejected and not validated.
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\contraUSSegmentedTrainingSearchEvidence.test.mjs
+```
+
+```text
+tests 25
+pass 25
+fail 0
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 311
+pass 311
+fail 0
+```
+
+```powershell
+npm run build
+```
+
+```text
+tsc -b && vite build
+built in 2.23s
+```
+
+Decision:
+
+- Do not promote any of the four candidates to live `survival-v0`.
+- Next work should stop trying W1205 contact-window variants and move to an earlier route-entry intervention before W1188.

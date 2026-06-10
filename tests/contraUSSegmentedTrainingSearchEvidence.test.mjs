@@ -73,4 +73,42 @@ test("Contra US W1205 segmented search baseline archives the current stall witho
   assert.equal(jumpPreload.finalProgression, 82);
   assert.equal(jumpPreload.runtimeEvidence.candidateTrial, "w1205-contact-jump-preload");
   assert.equal(jumpPreload.runtimeEvidence.status, "lost-active");
+
+  const precontactStation = report.attempts.find((attempt) => attempt.attemptId === "precontact-station-clear-candidate-trial");
+  assert.ok(precontactStation, "precontact station-clear trial should be archived as a rejected candidate");
+  assert.equal(precontactStation.gateStatus, "rejected");
+  assert.ok(precontactStation.rejectionReasons.includes("death"));
+  assert.equal(precontactStation.maxProgression, 1188);
+  assert.equal(precontactStation.finalProgression, 82);
+  assert.equal(precontactStation.runtimeEvidence.candidateTrial, "w1205-precontact-station-clear");
+  assert.equal(precontactStation.runtimeEvidence.status, "lost-active");
+
+  const forceUpright = report.attempts.find((attempt) => attempt.attemptId === "force-upright-through-candidate-trial");
+  assert.ok(forceUpright, "force-upright-through trial should be archived as a rejected candidate");
+  assert.equal(forceUpright.gateStatus, "rejected");
+  assert.ok(forceUpright.rejectionReasons.includes("death"));
+  assert.ok(forceUpright.rejectionReasons.includes("stuck-loop"));
+  assert.equal(forceUpright.maxProgression, 1207);
+  assert.equal(forceUpright.finalProgression, 1147);
+  assert.equal(forceUpright.runtimeEvidence.candidateTrial, "w1205-force-upright-through");
+  assert.equal(forceUpright.runtimeEvidence.status, "recovered-after-loss");
+
+  const duckUnder = report.attempts.find((attempt) => attempt.attemptId === "duck-under-contact-candidate-trial");
+  assert.ok(duckUnder, "duck-under contact trial should be archived as a rejected candidate");
+  assert.equal(duckUnder.gateStatus, "rejected");
+  assert.ok(duckUnder.rejectionReasons.includes("death"));
+  assert.equal(duckUnder.maxProgression, 1198);
+  assert.equal(duckUnder.finalProgression, 1071);
+  assert.equal(duckUnder.runtimeEvidence.candidateTrial, "w1205-duck-under-contact");
+  assert.equal(duckUnder.runtimeEvidence.status, "lost-active");
+
+  const pulsedRightFire = report.attempts.find((attempt) => attempt.attemptId === "pulsed-right-fire-candidate-trial");
+  assert.ok(pulsedRightFire, "pulsed right-fire trial should be archived as a rejected candidate");
+  assert.equal(pulsedRightFire.gateStatus, "rejected");
+  assert.ok(pulsedRightFire.rejectionReasons.includes("death"));
+  assert.ok(pulsedRightFire.rejectionReasons.includes("stuck-loop"));
+  assert.equal(pulsedRightFire.maxProgression, 1207);
+  assert.equal(pulsedRightFire.finalProgression, 1147);
+  assert.equal(pulsedRightFire.runtimeEvidence.candidateTrial, "w1205-pulsed-right-fire");
+  assert.equal(pulsedRightFire.runtimeEvidence.status, "recovered-after-loss");
 });

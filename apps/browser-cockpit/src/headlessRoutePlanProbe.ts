@@ -48,6 +48,10 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1205-falling-threat-priority"
     | "w1205-falling-threat-contact-interrupt"
     | "w1205-contact-jump-preload"
+    | "w1205-precontact-station-clear"
+    | "w1205-force-upright-through"
+    | "w1205-duck-under-contact"
+    | "w1205-pulsed-right-fire"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -211,6 +215,25 @@ function findW1205ContactPreloadThreat(snapshot: RoutePlanProbeSnapshot) {
     })[0] ?? null;
 }
 
+function findW1205PrecontactThreat(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1188 || snapshot.worldX > 1212) return null;
+  if (snapshot.playerY < 188) return null;
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8 && dx <= 52 && dy >= -56 && dy <= 8;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -333,6 +356,71 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (openingLowFixedThreatPatch) {
     applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
     return buttons;
+  }
+  if (candidateTrial === "w1205-force-upright-through") {
+    const precontactThreat = findW1205PrecontactThreat(snapshot);
+    if (precontactThreat) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "reward-station-falling-threat",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
+  }
+  if (candidateTrial === "w1205-duck-under-contact") {
+    const precontactThreat = findW1205PrecontactThreat(snapshot);
+    if (precontactThreat) {
+      const dx = precontactThreat.x - snapshot.playerX;
+      const dy = precontactThreat.y - snapshot.playerY;
+      const shouldDuck = dx <= 16 && dy >= -30;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: shouldDuck,
+        left: false,
+        reason: "stage-one-danger-low-lane-fall",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+  }
+  if (candidateTrial === "w1205-pulsed-right-fire") {
+    const precontactThreat = findW1205PrecontactThreat(snapshot);
+    if (precontactThreat) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: snapshot.worldX >= 1192 && pulseWindow(frame, 8, 2),
+        down: false,
+        left: false,
+        reason: "reward-station-falling-threat",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+  }
+  if (candidateTrial === "w1205-precontact-station-clear") {
+    const precontactThreat = findW1205PrecontactThreat(snapshot);
+    if (precontactThreat) {
+      const dx = precontactThreat.x - snapshot.playerX;
+      const dy = precontactThreat.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: dx <= 10,
+        b: true,
+        down: false,
+        left: dx <= 10,
+        reason: dx <= 10 ? "stage-one-close-body-threat" : "reward-station-falling-threat",
+        right: false,
+        up: dy <= 8
+      });
+      return buttons;
+    }
   }
   if (candidateTrial === "w1205-contact-jump-preload") {
     const preloadThreat = findW1205ContactPreloadThreat(snapshot);
