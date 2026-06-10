@@ -2693,6 +2693,126 @@ and a body threat descends at dx 3..8, dy -34..-9:
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - W1678 low-stack jump-clear rejected
+
+Scope:
+
+- Continue the Contra US Stage 1 `survival-v0` segment-search loop.
+- Test whether a route-level jump clear can escape the W1685-W1700 low-stack contact after the W1678 stance candidates failed.
+- Keep the candidate isolated behind `--candidate-trial`.
+- Do not change the default/live strategy.
+
+Candidate added:
+
+```text
+w1678-low-stack-jump-clear
+```
+
+Hypothesis:
+
+```text
+Instead of crouching or level-carrying through W1685-W1693,
+jump clear the low-stack contact with right+up+A+B.
+```
+
+Candidate behavior:
+
+- inherits W1205 safe recovery;
+- inherits W1360 station-crowd escape;
+- inherits W1726 low-side body escape;
+- inherits W1660 rear/side retreat guard;
+- inherits W1641/W1648 precompression escape work;
+- changes the W1680-W1700 grounded low-stack contact response to right+up+jump+fire.
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New candidate initially failed because it did not exist and the low-stack window still allowed left/retreat behavior.
+```
+
+GREEN:
+
+```text
+tests 36
+pass 36
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-low-stack-jump-clear
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9254
+maxProgression=1812
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window evidence:
+
+```text
+frame 9253 W1700 X84 Y212 btn=uprightab nearest threats:
+  slot12 type1 dx9 dy-8
+  slot3 type5 dx14 dy6
+  slot13 type1 dx9 dy21
+
+frame 9254 W1701 X85 Y212 deathFlag=1 nearest threats:
+  slot12 dx6 dy-8
+  slot3 dx13 dy6
+  slot13 dx8 dy21
+```
+
+Decision:
+
+- `w1678-low-stack-jump-clear` is rejected.
+- It regresses versus `w1648-left-edge-precompression-advance` (`lostActiveFrame=11000`, `maxProgression=1931`).
+- The useful lesson is timing: jumping after the W1692 stack forms is too late.
+- Keep W1648 precompression as a useful sub-fragment, but the next route work must start before W1685-W1693.
+
+Archived:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 36, pass 36, fail 0
+segmentedTrainingSearch: tests 14, pass 14, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Do not test more late stance toggles inside W1685-W1700.
+Next useful hypothesis:
+  pre-clear the same-lane runner before W1685, or
+  alter the approach route so the W1692 low-stack never forms around the player.
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 Final verification:
 
 ```powershell

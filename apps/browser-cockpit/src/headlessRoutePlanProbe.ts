@@ -63,6 +63,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1648-left-edge-precompression-advance"
     | "w1678-forward-body-duck-carry"
     | "w1678-forward-body-level-carry"
+    | "w1678-low-stack-jump-clear"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -423,6 +424,25 @@ function hasW1678ForwardUpperBodyDuckCarry(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1678LowStackJumpClear(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1680 || snapshot.worldX > 1700) return false;
+  if (snapshot.playerY < 204) return false;
+  const activeBodies = snapshot.enemies.filter((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    const sameLaneContact = dx >= 4 && dx <= 24 && dy >= -10 && dy <= 12;
+    const lowLanePile = dx >= 12 && dx <= 28 && dy >= 12 && dy <= 28;
+    return sameLaneContact || lowLanePile;
+  });
+  return activeBodies.length >= 2 || activeBodies.some((enemy) => {
+    const dx = enemy.x - snapshot.playerX;
+    return dx >= 4 && dx <= 12;
+  });
+}
+
 function hasEarlyBridgeLowLaneContactWindow(
   routeSegment: HeadlessRoutePlanProbeOptions["routeSegment"],
   snapshot: RoutePlanProbeSnapshot
@@ -644,6 +664,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1205PostUpperRecoveryStation(snapshot)
     && !hasW1205PostUpperSameLaneBodyThreat(snapshot)
@@ -668,6 +689,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1360RightUnderStationCrowd(snapshot)
   ) {
@@ -690,6 +712,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1726DangerLowSideBodyThreat(snapshot)
   ) {
@@ -701,6 +724,21 @@ export function decideHeadlessRoutePlanProbeButtons({
       reason: "stage-one-danger-low-lane-fall",
       right: true,
       up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-low-stack-jump-clear"
+    && hasW1678LowStackJumpClear(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: true,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-low-stack-jump-clear",
+      right: true,
+      up: true
     });
     return buttons;
   }
@@ -769,6 +807,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1648LeftEdgePrecompressionAdvance(snapshot)
   ) {
@@ -788,6 +827,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1641LeftEdgeRightJumpThreat(snapshot)
   ) {
@@ -855,6 +895,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       candidateTrial === "w1648-left-edge-precompression-advance"
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
+      || candidateTrial === "w1678-low-stack-jump-clear"
     )
     && hasW1660RetreatRegressionBodyThreat(snapshot)
   ) {

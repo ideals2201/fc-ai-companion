@@ -59,6 +59,7 @@ export type StageOneRewardButtonPatch = {
     | "stage-one-retreat-regression-guard"
     | "stage-one-forward-body-duck-carry"
     | "stage-one-forward-body-level-carry"
+    | "stage-one-low-stack-jump-clear"
     | "stage-one-spread-exit-jump"
     | "stage-one-spread-jump-edge"
     | "stage-one-spread-turret-suppression"

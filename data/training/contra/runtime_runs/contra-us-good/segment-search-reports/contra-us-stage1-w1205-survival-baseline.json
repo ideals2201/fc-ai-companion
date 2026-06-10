@@ -670,6 +670,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression escape and replaced W1678 crouch carry with level fire advance. Runtime regressed: the player died at frame 9260 around W1692/W1693 from a same-lane contact threat, so it remains rejected."
+    },
+    {
+      "attemptId": "w1678-low-stack-jump-clear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-low-stack-jump-clear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-low-stack-jump-clear",
+        "candidateTrial": "w1678-low-stack-jump-clear",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9254,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to jump-clear the W1685-W1700 low-stack contact window with right+up+A+B. Runtime regressed: the player still died at frame 9254 around W1700/W1701 from same-lane/low-stack body contact, so late stack jump is rejected. Next route work must start earlier than the W1692 stack."
     }
   ],
   "bestAttempt": null,
@@ -1314,6 +1347,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression escape and replaced W1678 crouch carry with level fire advance. Runtime regressed: the player died at frame 9260 around W1692/W1693 from a same-lane contact threat, so it remains rejected."
+    },
+    {
+      "attemptId": "w1678-low-stack-jump-clear-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-low-stack-jump-clear",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-low-stack-jump-clear",
+        "candidateTrial": "w1678-low-stack-jump-clear",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9254,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to jump-clear the W1685-W1700 low-stack contact window with right+up+A+B. Runtime regressed: the player still died at frame 9254 around W1700/W1701 from same-lane/low-stack body contact, so late stack jump is rejected. Next route work must start earlier than the W1692 stack."
     }
   ],
   "promotionGates": [
