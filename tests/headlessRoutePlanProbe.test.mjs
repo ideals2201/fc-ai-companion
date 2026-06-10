@@ -1737,6 +1737,81 @@ test("headless route-plan probe can isolate W1678 low-stack jump clear", () => {
   assert.equal(lowStackButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1678 upper-body jump edge", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const upperBodySnapshot = snapshot({
+    jumpState: 0,
+    playerX: 63,
+    playerY: 212,
+    worldX: 1679,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 69, y: 186 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 43, y: 232 }
+    ]
+  });
+
+  const releaseButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1678-upper-body-jump-edge",
+    frame: 10998,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: upperBodySnapshot
+  });
+
+  assert.equal(releaseButtons.left, false);
+  assert.equal(releaseButtons.right, true);
+  assert.equal(releaseButtons.down, false);
+  assert.equal(releaseButtons.up, true);
+  assert.equal(releaseButtons.a, false);
+  assert.equal(releaseButtons.b, true);
+
+  const jumpButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1678-upper-body-jump-edge",
+    frame: 10999,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: upperBodySnapshot
+  });
+
+  assert.equal(jumpButtons.left, false);
+  assert.equal(jumpButtons.right, true);
+  assert.equal(jumpButtons.down, false);
+  assert.equal(jumpButtons.up, true);
+  assert.equal(jumpButtons.a, true);
+  assert.equal(jumpButtons.b, true);
+
+  const carryThroughButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1678-upper-body-jump-edge",
+    frame: 10892,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 67,
+      playerY: 212,
+      worldX: 1683,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 85, y: 208 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 68, y: 186 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 43, y: 232 }
+      ]
+    })
+  });
+
+  assert.equal(carryThroughButtons.left, false);
+  assert.equal(carryThroughButtons.right, true);
+  assert.equal(carryThroughButtons.down, false);
+  assert.equal(carryThroughButtons.up, true);
+  assert.equal(carryThroughButtons.a, true);
+  assert.equal(carryThroughButtons.b, true);
+});
+
 test("headless route-plan probe ignores grounded low-lane object residue instead of stalling at the mid turret", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 4800,

@@ -64,6 +64,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1678-forward-body-duck-carry"
     | "w1678-forward-body-level-carry"
     | "w1678-low-stack-jump-clear"
+    | "w1678-upper-body-jump-edge"
     | null;
   frame: number;
   progressStallFrames?: number;
@@ -424,6 +425,21 @@ function hasW1678ForwardUpperBodyDuckCarry(snapshot: RoutePlanProbeSnapshot) {
   });
 }
 
+function hasW1678UpperBodyJumpEdge(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1676 || snapshot.worldX > 1686) return false;
+  if (snapshot.playerY < 204) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    const upperBody = dx >= 0 && dx <= 14 && dy >= -34 && dy <= -18;
+    const sameLaneClose = dx >= 10 && dx <= 22 && dy >= -8 && dy <= 8;
+    return upperBody || sameLaneClose;
+  });
+}
+
 function hasW1678LowStackJumpClear(snapshot: RoutePlanProbeSnapshot) {
   if (!isGrounded(snapshot)) return false;
   if (snapshot.worldX < 1680 || snapshot.worldX > 1700) return false;
@@ -665,6 +681,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1205PostUpperRecoveryStation(snapshot)
     && !hasW1205PostUpperSameLaneBodyThreat(snapshot)
@@ -690,6 +707,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1360RightUnderStationCrowd(snapshot)
   ) {
@@ -713,6 +731,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1726DangerLowSideBodyThreat(snapshot)
   ) {
@@ -724,6 +743,21 @@ export function decideHeadlessRoutePlanProbeButtons({
       reason: "stage-one-danger-low-lane-fall",
       right: true,
       up: false
+    });
+    return buttons;
+  }
+  if (
+    candidateTrial === "w1678-upper-body-jump-edge"
+    && hasW1678UpperBodyJumpEdge(snapshot)
+  ) {
+    applyStageOneRewardPatch(buttons, {
+      a: frame % 4 !== 2,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-upper-body-jump-edge",
+      right: true,
+      up: true
     });
     return buttons;
   }
@@ -808,6 +842,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1648LeftEdgePrecompressionAdvance(snapshot)
   ) {
@@ -828,6 +863,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1641LeftEdgeRightJumpThreat(snapshot)
   ) {
@@ -896,6 +932,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1678-forward-body-duck-carry"
       || candidateTrial === "w1678-forward-body-level-carry"
       || candidateTrial === "w1678-low-stack-jump-clear"
+      || candidateTrial === "w1678-upper-body-jump-edge"
     )
     && hasW1660RetreatRegressionBodyThreat(snapshot)
   ) {

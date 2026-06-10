@@ -703,6 +703,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to jump-clear the W1685-W1700 low-stack contact window with right+up+A+B. Runtime regressed: the player still died at frame 9254 around W1700/W1701 from same-lane/low-stack body contact, so late stack jump is rejected. Next route work must start earlier than the W1692 stack."
+    },
+    {
+      "attemptId": "w1678-upper-body-jump-edge-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-upper-body-jump-edge",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-upper-body-jump-edge",
+        "candidateTrial": "w1678-upper-body-jump-edge",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9264,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression and tried to create a jump edge for the W1678 upper-body threat by releasing A before right+up+A+B. The first narrow version reached maxProgression 1942 but died earlier at W1682; the extended version regressed to maxProgression 1812 and died at frame 9264 around W1687 from same-lane body contact. The useful lesson is that W1686 is already too late; the route needs earlier pre-clear or approach correction before the same-lane stack forms."
     }
   ],
   "bestAttempt": null,
@@ -1380,6 +1413,39 @@
         "maxProgressStallFrames": 0
       },
       "trialNote": "Headless-only candidate inherited W1648 precompression escape and tried to jump-clear the W1685-W1700 low-stack contact window with right+up+A+B. Runtime regressed: the player still died at frame 9254 around W1700/W1701 from same-lane/low-stack body contact, so late stack jump is rejected. Next route work must start earlier than the W1692 stack."
+    },
+    {
+      "attemptId": "w1678-upper-body-jump-edge-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1678-upper-body-jump-edge",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 12000,
+      "gateStatus": "rejected",
+      "maxProgression": 1812,
+      "progressGain": 692,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [],
+      "score": -8558,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-upper-body-jump-edge",
+        "candidateTrial": "w1678-upper-body-jump-edge",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 9264,
+        "maxProgression": 1812,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate inherited W1648 precompression and tried to create a jump edge for the W1678 upper-body threat by releasing A before right+up+A+B. The first narrow version reached maxProgression 1942 but died earlier at W1682; the extended version regressed to maxProgression 1812 and died at frame 9264 around W1687 from same-lane body contact. The useful lesson is that W1686 is already too late; the route needs earlier pre-clear or approach correction before the same-lane stack forms."
     }
   ],
   "promotionGates": [

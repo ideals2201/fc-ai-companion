@@ -2693,6 +2693,141 @@ and a body threat descends at dx 3..8, dy -34..-9:
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - W1678 upper-body jump-edge rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` candidate search after `w1648-left-edge-precompression-advance` remained the best partial route.
+- Investigate the W1678/W1679 death window from current runtime trace before changing default strategy.
+- Keep all behavior isolated behind `--candidate-trial`.
+
+Root-cause evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1648-left-edge-precompression-advance --trace-start=10940 --trace-end=11005
+```
+
+Important trace:
+
+```text
+preLost frame 10999:
+  W1679 X63 Y212 buttons=up+left+a+b
+  nearest slot4 type5 dx6 dy-26
+
+lost frame 11000:
+  W1678 X62 Y212 deathFlag=1
+  nearest slot4 type5 dx6 dy-24
+```
+
+Inference:
+
+```text
+The W1648 route was not dying to terrain or fixed targets.
+It held/returned to left-up fire against an upper-body threat,
+and the held A input did not produce a fresh jump edge.
+```
+
+Candidate added:
+
+```text
+w1678-upper-body-jump-edge
+```
+
+Hypothesis:
+
+```text
+At W1676-W1686, when grounded and an upper/same-lane body threat closes in,
+release A for a jump edge, then continue right+up+A+B instead of left retreat.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+Initial W1678 upper-body test failed because candidate did not exist and kept left=true.
+Second W1683 carry-through test failed because the narrow first version fell back to left retreat after one frame.
+```
+
+GREEN:
+
+```text
+tests 37
+pass 37
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=12000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1678-upper-body-jump-edge
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=9264
+maxProgression=1812
+finalProgression=82
+progressStallFrames=0
+```
+
+Failure-window evidence:
+
+```text
+preLost frame 9263:
+  W1686 X70 Y212 buttons=up+left+a+b
+  slot12 type1 dx10 dy-1
+
+lost frame 9264:
+  W1687 X71 Y212 deathFlag=1
+  slot12 type1 dx7 dy0
+```
+
+Decision:
+
+- `w1678-upper-body-jump-edge` is rejected.
+- The narrow first version briefly raised `maxProgression` to W1942 but died earlier around W1682.
+- The extended version regressed to W1812 and still died from same-lane body contact.
+- The useful lesson is stronger than the previous late-jump result: W1686 is already too late to recover with input shaping.
+
+Archived:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+node --test tests\segmentedTrainingSearch.test.mjs
+node -e "JSON.parse(require('fs').readFileSync('data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json','utf8')); console.log('json-ok')"
+```
+
+```text
+headlessRoutePlanProbe: tests 37, pass 37, fail 0
+segmentedTrainingSearch: tests 15, pass 15, fail 0
+json-ok
+```
+
+Next inference:
+
+```text
+Stop testing recovery actions at W1686+.
+Next candidate must start earlier:
+  1. pre-clear slot12/same-lane runner before W1680, or
+  2. bias the route before W1670 so the player does not meet slot12 at dx <= 10.
+```
+
+Do not promote this candidate into live `survival-v0`.
+
 ## 2026-06-10 - W1678 low-stack jump-clear rejected
 
 Scope:

@@ -373,3 +373,20 @@ test("W1678 low-stack jump clear attempt is archived after same-lane death", () 
   assert.equal(attempt.runtimeEvidence.status, "lost-active");
   assert.equal(attempt.maxProgression, 1812);
 });
+
+test("W1678 upper-body jump-edge attempt is archived after same-lane death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1678-upper-body-jump-edge-candidate-trial");
+
+  assert.ok(attempt, "W1678 upper-body jump-edge candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1678-upper-body-jump-edge");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 9264);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1812);
+});
