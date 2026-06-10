@@ -2195,6 +2195,43 @@
         "maxProgressStallFrames": 117
       },
       "trialNote": "Headless-only candidate suppressed the later W1765 up-left retreat and pushed the route to W1960, but it still dies first at frame 12409/W1765. Lost snapshot shows same-lane slot5 contact at dx=-7 dy=0 while the candidate is holding up-right fire. It recovered after loss, so it remains rejected for survival. Lesson: the next candidate must handle grounded or near-grounded W1760-W1768 same-lane reentry contact, not only forward-body retreat."
+    },
+    {
+      "attemptId": "w1765-rear-contact-duck-carry-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1765-rear-contact-duck-carry",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1820,
+      "progressGain": 700,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "rear-contact-duck-regression",
+        "left-edge-contact-regression",
+        "danger-survive-body-contact-risk"
+      ],
+      "score": -9780,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1765-rear-contact-duck-carry",
+        "candidateTrial": "w1765-rear-contact-duck-carry",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 12546,
+        "maxProgression": 1820,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate changed the W1765 rear same-lane contact response from up-right jump/fire to right-down fire. It removes the prior frame-12409/W1765 same-lane death, but regresses the route into a left-edge sequence and dies at frame 12546/W1700 after repeated up-left inputs against slot14 at dx 10..7 dy -15..-8. It is rejected because its max progression W1820 is lower than the previous W1765 reentry candidate's W1960 and still violates no-death survival. Lesson: duck-carry is too costly here; the next search should avoid left-edge collapse after rear-contact handling."
     }
   ],
   "promotionGates": [

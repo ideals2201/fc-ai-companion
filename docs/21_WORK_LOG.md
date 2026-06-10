@@ -4112,3 +4112,115 @@ W1641 pre-compression escape =
 ```
 
 Do not promote this candidate into live `survival-v0`.
+
+## 2026-06-10 - Contra US survival W1765 rear-contact duck candidate rejected
+
+Scope:
+
+- Continue the W1760-W1768 same-lane reentry contact search after `w1765-reentry-right-fire-carry`.
+- Keep the experiment behind `--candidate-trial=w1765-rear-contact-duck-carry`.
+- Reject if any death occurs or if progress regresses below the prior best candidate.
+
+Root-cause trace:
+
+```text
+w1765-reentry-right-fire-carry:
+frame 12403 W1760 X99  Y179 btn=downrightb nearest slot5 dx=-10 dy=17
+frame 12404 W1761 X100 Y183 btn=downright  nearest slot5 dx=-10 dy=13
+frame 12405 W1762 X101 Y186 btn=uprightb   nearest slot5 dx=-9  dy=10
+frame 12406 W1763 X102 Y190 btn=uprightb   nearest slot5 dx=-9  dy=6
+frame 12407 W1764 X103 Y194 btn=uprightb   nearest slot5 dx=-9  dy=2
+frame 12408 W1765 X104 Y196 btn=uprightab  nearest slot5 dx=-9  dy=0
+frame 12409 W1765 X104 Y196 deathFlag=1    nearest slot5 dx=-7  dy=0
+```
+
+Hypothesis:
+
+```text
+Treat W1758-W1768 rear same-lane pressure as a local duck-carry window:
+right + down + fire, no up aim, no jump.
+```
+
+TDD evidence:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+RED:
+
+```text
+New W1765 rear same-lane duck-carry test failed because the candidate did not exist and still produced up aim.
+```
+
+GREEN:
+
+```text
+tests 50
+pass 50
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1765-rear-contact-duck-carry
+```
+
+Result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=12546
+maxProgression=1820
+finalProgression=82
+```
+
+New failure trace:
+
+```text
+frame 12536 W1710 X47 Y212 btn=upleftab nearest slot14 dx=10 dy=-15
+frame 12537 W1709 X46 Y212 btn=upleftab nearest slot14 dx=10 dy=-14
+frame 12538 W1708 X45 Y212 btn=upleftab nearest slot14 dx=10 dy=-14
+frame 12539 W1707 X44 Y212 btn=uplefta  nearest slot14 dx=9  dy=-13
+frame 12540 W1706 X43 Y212 btn=upleftab nearest slot14 dx=9  dy=-12
+frame 12541 W1705 X42 Y212 btn=upleftab nearest slot14 dx=9  dy=-11
+frame 12542 W1704 X41 Y212 btn=upleftab nearest slot14 dx=8  dy=-11
+frame 12543 W1703 X40 Y212 btn=upleftab nearest slot14 dx=8  dy=-10
+frame 12544 W1702 X39 Y212 btn=uplefta  nearest slot14 dx=8  dy=-9
+frame 12545 W1701 X38 Y212 btn=upleftab nearest slot14 dx=8  dy=-8
+frame 12546 W1700 X37 Y212 deathFlag=1  nearest slot14 dx=7  dy=-8
+```
+
+Decision:
+
+- `w1765-rear-contact-duck-carry` is rejected.
+- It removes the immediate W1765 same-lane death, but creates a worse left-edge regression and reduces max progression from W1960 to W1820.
+- The rejected attempt is archived in:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\segmentedTrainingSearch.test.mjs
+npm run build
+```
+
+```text
+segmented training search: tests 28, pass 28, fail 0
+combined route/segmented tests: tests 78, pass 78, fail 0
+npm run build: pass
+```
+
+Next inference:
+
+```text
+Do not continue stacking fixes on the duck-carry branch.
+Return to the W1765 reentry branch and search for a lower-cost rear-contact handling action that avoids slot5 without causing left-edge collapse.
+```
+
+Do not promote this candidate into live `survival-v0`.

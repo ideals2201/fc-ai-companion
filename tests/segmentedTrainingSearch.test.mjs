@@ -554,6 +554,27 @@ test("W1765 reentry right-fire carry attempt is archived after same-lane contact
   assert.ok(attempt.trialNote.includes("slot5"));
 });
 
+test("W1765 rear-contact duck carry attempt is archived after left-edge regression death", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "w1765-rear-contact-duck-carry-candidate-trial");
+
+  assert.ok(attempt, "W1765 rear-contact duck carry candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1765-rear-contact-duck-carry");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 12546);
+  assert.equal(attempt.runtimeEvidence.status, "lost-active");
+  assert.equal(attempt.maxProgression, 1820);
+  assert.equal(attempt.finalProgression, 82);
+  assert.ok(attempt.riskTags.includes("rear-contact-duck-regression"));
+  assert.ok(attempt.riskTags.includes("left-edge-contact-regression"));
+  assert.ok(attempt.trialNote.includes("W1700"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

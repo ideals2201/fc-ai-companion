@@ -64,6 +64,7 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1751-precontact-right-fire"
     | "w1755-descent-right-fire-carry"
     | "w1765-reentry-right-fire-carry"
+    | "w1765-rear-contact-duck-carry"
     | "w1735-danger-stack-right-carry"
     | "w1735-same-lane-right-carry"
     | "w1726-danger-low-side-body"
@@ -508,6 +509,25 @@ function findW1765ReentryForwardBody(snapshot: RoutePlanProbeSnapshot) {
       const dx = enemy.x - snapshot.playerX;
       const dy = enemy.y - snapshot.playerY;
       return dx >= 24 && dx <= 42 && dy >= -18 && dy <= 12;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function findW1765RearSameLaneContact(snapshot: RoutePlanProbeSnapshot) {
+  if (snapshot.worldX < 1758 || snapshot.worldX > 1768) return null;
+  if (snapshot.playerY < 170 || snapshot.playerY > 204) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -20 && dx <= -4 && dy >= -14 && dy <= 20;
     })
     .sort((a, b) => {
       const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
@@ -964,6 +984,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     || candidateTrial === "w1751-precontact-right-fire"
     || candidateTrial === "w1755-descent-right-fire-carry"
     || candidateTrial === "w1765-reentry-right-fire-carry"
+    || candidateTrial === "w1765-rear-contact-duck-carry"
     || candidateTrial === "w1735-danger-stack-right-carry"
     || candidateTrial === "w1735-same-lane-right-carry"
   ) {
@@ -1003,6 +1024,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1751-precontact-right-fire"
       || candidateTrial === "w1755-descent-right-fire-carry"
       || candidateTrial === "w1765-reentry-right-fire-carry"
+      || candidateTrial === "w1765-rear-contact-duck-carry"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-right-carry"
@@ -1038,6 +1060,7 @@ export function decideHeadlessRoutePlanProbeButtons({
       || candidateTrial === "w1751-precontact-right-fire"
       || candidateTrial === "w1755-descent-right-fire-carry"
       || candidateTrial === "w1765-reentry-right-fire-carry"
+      || candidateTrial === "w1765-rear-contact-duck-carry"
       || candidateTrial === "w1735-danger-stack-right-carry"
       || candidateTrial === "w1735-same-lane-right-carry"
       || candidateTrial === "w1454-airborne-fixed-contact-pulse-carry"
@@ -1072,6 +1095,7 @@ export function decideHeadlessRoutePlanProbeButtons({
     candidateTrial === "w1751-precontact-right-fire"
     || candidateTrial === "w1755-descent-right-fire-carry"
     || candidateTrial === "w1765-reentry-right-fire-carry"
+    || candidateTrial === "w1765-rear-contact-duck-carry"
   ) {
     const precontactBody = findW1751PrecontactForwardBody(snapshot);
     if (precontactBody) {
@@ -1091,6 +1115,7 @@ export function decideHeadlessRoutePlanProbeButtons({
   if (
     candidateTrial === "w1755-descent-right-fire-carry"
     || candidateTrial === "w1765-reentry-right-fire-carry"
+    || candidateTrial === "w1765-rear-contact-duck-carry"
   ) {
     const descentBody = findW1755DescentRightFireBody(snapshot);
     if (descentBody) {
@@ -1106,7 +1131,25 @@ export function decideHeadlessRoutePlanProbeButtons({
       return buttons;
     }
   }
-  if (candidateTrial === "w1765-reentry-right-fire-carry") {
+  if (candidateTrial === "w1765-rear-contact-duck-carry") {
+    const rearContact = findW1765RearSameLaneContact(snapshot);
+    if (rearContact) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: true,
+        left: false,
+        reason: "stage-one-w1765-rear-contact-duck-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+  }
+  if (
+    candidateTrial === "w1765-reentry-right-fire-carry"
+    || candidateTrial === "w1765-rear-contact-duck-carry"
+  ) {
     const reentryBody = findW1765ReentryForwardBody(snapshot);
     if (reentryBody) {
       applyStageOneRewardPatch(buttons, {

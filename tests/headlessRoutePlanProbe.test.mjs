@@ -2200,6 +2200,52 @@ test("headless route-plan probe can isolate W1765 reentry right-fire carry", () 
   assert.equal(reentryButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1765 rear same-lane duck carry", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const rearContactSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 104,
+    playerY: 196,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 95, y: 196, vx: 1, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 110, y: 168, vx: -2, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const previousReentryButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-reentry-right-fire-carry",
+    frame: 12408,
+    routeSegment,
+    snapshot: rearContactSnapshot
+  });
+
+  assert.equal(previousReentryButtons.up, true, "the W1765 reentry carry keeps aiming upward at the same-lane rear contact");
+  assert.equal(previousReentryButtons.down, false);
+  assert.equal(previousReentryButtons.a, true);
+
+  const rearContactButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1765-rear-contact-duck-carry",
+    frame: 12408,
+    routeSegment,
+    snapshot: rearContactSnapshot
+  });
+
+  assert.equal(rearContactButtons.left, false);
+  assert.equal(rearContactButtons.right, true);
+  assert.equal(rearContactButtons.up, false);
+  assert.equal(rearContactButtons.down, true);
+  assert.equal(rearContactButtons.a, false);
+  assert.equal(rearContactButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",
