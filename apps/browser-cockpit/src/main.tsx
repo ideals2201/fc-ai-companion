@@ -164,6 +164,7 @@ type AiLoopExitState = {
 type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "error";
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
 type ControlMode = "human" | "ai" | "hybrid";
+type StartupLaunchPreset = "wait" | "auto-1p" | "auto-2p";
 type StrategyPackageSideScope = "none" | "1p-only" | "2p-only" | "1p-2p";
 type StrategyResourcePackId = "contra-stage1-strategy-v0" | "personal-contra-draft";
 
@@ -812,6 +813,28 @@ const modeStrategyLabels: Record<ControlMode, string> = {
   ai: "AI 根据策略写入手柄",
   hybrid: "人类优先，AI 补助写入"
 };
+
+const startupPresetOptions: Array<{
+  key: StartupLaunchPreset;
+  label: Record<UiLanguage, string>;
+  detail: Record<UiLanguage, string>;
+}> = [
+  {
+    key: "wait",
+    label: { "zh-CN": "等待玩家", "en-US": "Wait" },
+    detail: { "zh-CN": "只开机，不代按 Start", "en-US": "Power only; no menu input" }
+  },
+  {
+    key: "auto-1p",
+    label: { "zh-CN": "自动单人", "en-US": "Auto 1P" },
+    detail: { "zh-CN": "标题菜单自动 Start", "en-US": "Auto Start at title" }
+  },
+  {
+    key: "auto-2p",
+    label: { "zh-CN": "自动双人", "en-US": "Auto 2P" },
+    detail: { "zh-CN": "自动 Select 后 Start", "en-US": "Auto Select then Start" }
+  }
+];
 
 const modeLastInputLabels: Record<ControlMode, string> = {
   human: "等待人类输入",
@@ -7403,6 +7426,7 @@ function ConsoleDeck({
   romLibraryStatus,
   selectedRomEntry,
   selectedTasMovieId,
+  startupLaunchPreset,
   tasCommentaryMode,
   tasPlaybackState,
   uiLanguage,
@@ -7423,6 +7447,7 @@ function ConsoleDeck({
   onRun,
   onPause,
   onReset,
+  onStartupLaunchPresetChange,
   onTrainingSaveStrategy,
   onTrainingSavePathSelected,
   onTrainingValidateStrategy,
@@ -7439,6 +7464,7 @@ function ConsoleDeck({
   romLibraryStatus: RomLibraryStatusState;
   selectedRomEntry: RomLibraryEntry | null;
   selectedTasMovieId: string;
+  startupLaunchPreset: StartupLaunchPreset;
   tasCommentaryMode: TasCommentaryMode;
   tasPlaybackState: TasPlaybackUiState;
   uiLanguage: UiLanguage;
@@ -7459,6 +7485,7 @@ function ConsoleDeck({
   onRun: () => void;
   onPause: () => void;
   onReset: () => void;
+  onStartupLaunchPresetChange: (preset: StartupLaunchPreset) => void;
   onTrainingSaveStrategy: () => void;
   onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
@@ -7608,13 +7635,29 @@ function ConsoleDeck({
           </div>
         </div>
       </div>
-      <div className="console-controls">
-        <button disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button"><Upload size={15} /> {t(uiLanguage, "console.loadCartridge")}</button>
-        <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
-          <Power size={15} />
-          {isRunning ? t(uiLanguage, "console.pause") : t(uiLanguage, "console.continue")}
-        </button>
-        <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
+      <div className="console-power-panel">
+        <div className="startup-preset-row" aria-label={uiLanguage === "en-US" ? "Startup preset" : "开局预设"}>
+          <span>{uiLanguage === "en-US" ? "Startup" : "开局预设"}</span>
+          {startupPresetOptions.map((option) => (
+            <button
+              className={option.key === startupLaunchPreset ? "startup-preset-button active" : "startup-preset-button"}
+              key={option.key}
+              onClick={() => onStartupLaunchPresetChange(option.key)}
+              type="button"
+            >
+              <strong>{option.label[uiLanguage]}</strong>
+              <small>{option.detail[uiLanguage]}</small>
+            </button>
+          ))}
+        </div>
+        <div className="console-controls">
+          <button disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button"><Upload size={15} /> {t(uiLanguage, "console.loadCartridge")}</button>
+          <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
+            <Power size={15} />
+            {isRunning ? t(uiLanguage, "console.pause") : t(uiLanguage, "console.continue")}
+          </button>
+          <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
+        </div>
       </div>
       <TasWindow
         commentaryMode={tasCommentaryMode}
@@ -8051,6 +8094,7 @@ function App() {
   const autoSmokeStartedRef = useRef(false);
   const autoRecordStartedRef = useRef(false);
   const botRunStartedRef = useRef(false);
+  const startupLaunchPresetRef = useRef<StartupLaunchPreset>("wait");
   const romSelectionTouchedRef = useRef(false);
   const audioBlockedLoggedRef = useRef(false);
   const audioOnLoggedRef = useRef(false);
@@ -8091,6 +8135,7 @@ function App() {
     "2P": gamepadLabel(null, 1)
   });
   const [status, setStatus] = useState<RuntimeStatus>("no-rom");
+  const [startupLaunchPreset, setStartupLaunchPreset] = useState<StartupLaunchPreset>("wait");
   const [audioStatus, setAudioStatus] = useState<AudioStatus>("off");
   const [message, setMessage] = useState("加载本地用户自有 ROM 后开始真实模拟器测试。");
   const [romMetadata, setRomMetadata] = useState<RomMetadata | null>(null);
@@ -8641,6 +8686,26 @@ function App() {
     appendLog(`${side} AI 策略：${getAiStrategyLabel(strategy)}`);
   }, [appendLog]);
 
+  const changeStartupLaunchPreset = useCallback((preset: StartupLaunchPreset) => {
+    startupLaunchPresetRef.current = preset;
+    setStartupLaunchPreset(preset);
+
+    if (preset === "auto-1p") {
+      changeControlMode("1P", "ai");
+      changeControlMode("2P", "human");
+      changeStrategyModel("1P", defaultAiStrategyForSide("1P"));
+    }
+
+    if (preset === "auto-2p") {
+      changeControlMode("1P", "human");
+      changeControlMode("2P", "ai");
+      changeStrategyModel("2P", defaultAiStrategyForSide("2P"));
+    }
+
+    const label = startupPresetOptions.find((option) => option.key === preset)?.label["zh-CN"] ?? preset;
+    appendLog(`Startup preset: ${label}`);
+  }, [appendLog, changeControlMode, changeStrategyModel]);
+
   const applyTasBaselineToSide = useCallback((baseline: TasStrategyBaseline, side: PlayerSide) => {
     const strategy = tasBaselineStrategyMap[baseline];
     if (baseline === "special-reference" || !strategy) {
@@ -8826,10 +8891,14 @@ function App() {
   ), []);
 
   const applyRuntimeStartupInputs = useCallback((snapshot: GameRamSnapshot | null, runtimeStatus: RuntimeStatus, active: boolean) => {
-    const twoPlayerRequested = controlModesRef.current["2P"] !== "human";
-    const startupButtons = strategyRuntimeCanWrite(runtimeStatus, active)
-      ? createButtonState()
-      : runtimeStartupButtons(snapshot, frameRef.current, twoPlayerRequested, Boolean(snapshot?.twoPlayerActive));
+    const startupAutomationEnabled = startupLaunchPresetRef.current !== "wait";
+    const twoPlayerRequested = startupLaunchPresetRef.current === "auto-2p";
+    let startupButtons = createButtonState();
+    if (!strategyRuntimeCanWrite(runtimeStatus, active)) {
+      startupButtons = startupAutomationEnabled
+        ? runtimeStartupButtons(snapshot, frameRef.current, twoPlayerRequested, Boolean(snapshot?.twoPlayerActive))
+        : createButtonState();
+    }
     setSourceButtons("1P", "system", startupButtons);
     setSourceButtons("2P", "system", createButtonState());
   }, [setSourceButtons]);
@@ -10031,6 +10100,8 @@ function App() {
     }
     if (params.get("autorun") === "1" && !autoRunStartedRef.current) {
       autoRunStartedRef.current = true;
+      startupLaunchPresetRef.current = "auto-1p";
+      setStartupLaunchPreset("auto-1p");
       setRunning(true);
     }
     if (params.get("smoke") === "1") {
@@ -10292,6 +10363,7 @@ function App() {
             onReset={resetRuntime}
             onRun={() => setRunning(true)}
             onSelectRom={selectRomEntry}
+            onStartupLaunchPresetChange={changeStartupLaunchPreset}
             onTasCommentaryModeChange={setTasCommentaryMode}
             onTasLoad={() => { void loadSelectedTasMovie(); }}
             onTasMovieSelect={selectTasMovie}
@@ -10313,6 +10385,7 @@ function App() {
             romMetadata={romMetadata}
             selectedTasMovieId={selectedTasMovieId}
             selectedRomEntry={selectedRomEntry}
+            startupLaunchPreset={startupLaunchPreset}
             status={status}
             tasCommentaryMode={tasCommentaryMode}
             tasPlaybackState={tasPlaybackState}

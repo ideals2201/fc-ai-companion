@@ -310,6 +310,23 @@ test("strategy input only writes after gameplay starts and stops on pause", () =
   assert.match(mainSource, /runtimeStatus: runtimeStatus === "running" \? "running" : "paused"/, "training trace samples should not label paused frames as running");
 });
 
+test("normal cartridge launch waits unless a startup preset explicitly enables menu input", () => {
+  assert.match(mainSource, /type StartupLaunchPreset = "wait" \| "auto-1p" \| "auto-2p"/, "startup preset should model wait, auto 1P, and auto 2P modes");
+  assert.match(mainSource, /const \[startupLaunchPreset, setStartupLaunchPreset\] = useState<StartupLaunchPreset>\("wait"\)/, "manual cartridge launches should default to waiting for player input");
+  assert.match(mainSource, /startupLaunchPresetRef\.current = "auto-1p"/, "autorun URLs should opt into 1P startup automation explicitly");
+  assert.match(mainSource, /const startupAutomationEnabled = startupLaunchPresetRef\.current !== "wait"/, "runtime startup inputs should be gated by the selected preset");
+  assert.match(mainSource, /startupAutomationEnabled\s+\?\s+runtimeStartupButtons\(/, "system should only press Start or Select when automation is enabled");
+});
+
+test("console host controls expose compact launch preset controls and one-row machine buttons", () => {
+  assert.match(mainSource, /startupLaunchPreset: StartupLaunchPreset/, "console deck should receive the startup preset");
+  assert.match(mainSource, /onStartupLaunchPresetChange: \(preset: StartupLaunchPreset\) => void/, "console deck should route startup preset changes");
+  assert.match(mainSource, /className="startup-preset-row"/, "launch preset controls should have a dedicated compact row");
+  assert.match(mainSource, /startupPresetOptions\.map/, "launch preset row should render the wait, auto 1P, and auto 2P options");
+  assert.match(cssSource, /\.console-controls\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/, "machine buttons should stay in one equal-width row");
+  assert.match(cssSource, /\.console-controls button\s*\{[\s\S]*min-height: 32px/, "machine buttons should be compact instead of oversized");
+});
+
 test("botrun stop path clears runtime inputs before publishing the final paused report", () => {
   assert.match(mainSource, /runningRef\.current = false;\s*clearRuntimeOwnedInputs\(\);/, "botrun completion should clear AI/TAS/system inputs before reporting paused state");
   assert.match(mainSource, /const terminalRuntime = lastRuntime;/, "botrun should preserve the last active frame separately for evidence review");

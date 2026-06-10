@@ -4245,6 +4245,71 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - Host Startup Preset And Compact Machine Controls
+
+Goal:
+
+```text
+Manual cartridge reload/run must not unexpectedly enter one-player mode.
+The host control area should keep Change Cartridge / Continue / Reset in one compact row, with an explicit startup preset above it.
+```
+
+Implemented:
+
+- Added `StartupLaunchPreset = wait | auto-1p | auto-2p`.
+- Default preset is `wait`: the browser runtime powers/runs the emulator but does not write system Start/Select input at the title menu.
+- `auto-1p`: system menu input presses Start only.
+- `auto-2p`: system menu input presses Select then Start.
+- User selecting `auto-1p` configures 1P as AI and 2P as human/inactive.
+- User selecting `auto-2p` configures 1P as human and 2P as AI partner.
+- URL `autorun=1` still opts into `auto-1p` startup input for existing smoke/record links, without changing player ownership.
+- Console host UI now has one startup preset row and one compact three-button machine row.
+
+Files:
+
+```text
+apps/browser-cockpit/src/main.tsx
+apps/browser-cockpit/src/styles.css
+tests/trainingPanelLayout.test.mjs
+docs/21_WORK_LOG.md
+```
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+npm test
+npm run build
+```
+
+Result:
+
+```text
+trainingPanelLayout: tests 24, pass 24, fail 0
+npm test: tests 388, pass 388, fail 0
+npm run build: pass
+```
+
+Browser verification:
+
+```text
+http://127.0.0.1:5173/?autoload=1
+Default active startup preset: wait
+Machine buttons: Change Cartridge / Continue / Reset in one row
+Button height: 32px
+Auto 2P preset switches visible ownership to 1P human + 2P AI partner
+Returned visible preset to wait after validation
+```
+
+Decision:
+
+```text
+Changing cartridge remains an insert/load action.
+Continue/Reset are the only actions that run frames.
+Startup preset only controls whether the system source writes title-menu Start/Select.
+This keeps the behavior close to a real FC console while preserving automated run/test entry points.
+```
+
 ## 2026-06-10 - Contra US survival W1769 reentry right extension rejected
 
 Scope:
