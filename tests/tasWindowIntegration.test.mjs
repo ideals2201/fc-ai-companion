@@ -32,6 +32,25 @@ test("TAS playback status is attached to the window title", () => {
   assert.match(cssSource, /\.tas-header-status\s*\{/, "title-level TAS status should have compact header styling");
 });
 
+test("TAS browser separates file selection from Chinese detail and watch modes", () => {
+  assert.match(mainSource, /const movieFileLabel = .*movie\.fileName/, "TAS list should use the file name as the compact label");
+  assert.match(mainSource, /<div className="tas-sidebar">[\s\S]*className="tas-movie-list"[\s\S]*className="tas-mode-strip"/, "TAS file list and watch-mode buttons should live in the left sidebar");
+  assert.match(mainSource, /<strong>\{movieFileLabel\(movie\)\}<\/strong>/, "TAS list items should only render the file label");
+  assert.doesNotMatch(mainSource, /className=\{movie\.id === selectedMovieId \? "tas-movie-item active" : "tas-movie-item"\}[\s\S]*<small>\{movieSubtitle\(movie\)\}<\/small>/, "TAS list should not duplicate Chinese subtitles");
+  assert.match(mainSource, /className="tas-subtitle-row"[\s\S]*movieSubtitle\(selectedMovie\)[\s\S]*selectedMovie\.fileName/, "right-side detail should show bilingual title and file name");
+  assert.match(cssSource, /\.tas-sidebar\s*\{/, "TAS sidebar should have dedicated layout");
+  assert.match(cssSource, /\.tas-mode-strip\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/, "watch-mode buttons should be compact in the sidebar");
+  assert.match(cssSource, /\.tas-movie-list\s*\{[\s\S]*height:\s*132px/, "TAS movie list should be tall enough for several files");
+});
+
+test("TAS detail facts use compact label colon value rows", () => {
+  assert.match(mainSource, /className="tas-fact-label"[\s\S]*\{t\(language, "tas\.source"\)\}：[\s\S]*className="tas-fact-value"[\s\S]*selectedMovie\.sourceNote/, "source should render as 来源：value in one compact fact row");
+  assert.match(mainSource, /className="tas-fact-label"[\s\S]*\{t\(language, "tas\.trainingBase"\)\}：[\s\S]*recommendationLabel\(selectedMovie\)/, "training base should render as label colon value");
+  assert.doesNotMatch(mainSource, /<span>\{t\(language, "tas\.source"\)\}<\/span>\s*<b>\{selectedMovie\.sourceNote\}<\/b>/, "TAS detail should not split labels and values into two vertical rows");
+  assert.match(cssSource, /\.tas-fact-row\s*\{[\s\S]*grid-template-columns:\s*auto minmax\(0, 1fr\)/, "TAS fact rows should keep label and value on one line");
+  assert.match(cssSource, /\.tas-fact-label\s*\{[\s\S]*white-space:\s*nowrap/, "TAS fact labels should stay compact");
+});
+
 test("ROM TAS matching does not auto-enter or visually select TAS playback", () => {
   assert.match(mainSource, /messageKey:\s*entry \? "matched-available" : "no-match-current"/, "ROM matching should report TAS availability instead of auto-selection");
   assert.match(mainSource, /setSelectedTasMovieId\(""\)/, "ROM matching should not silently select a TAS movie");

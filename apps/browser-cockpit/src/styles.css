@@ -2011,8 +2011,16 @@ dd {
 
 .tas-window-body {
   display: grid;
-  grid-template-columns: minmax(150px, 0.85fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(150px, 0.72fr) minmax(0, 1.55fr);
   gap: 8px;
+  min-height: 0;
+}
+
+.tas-sidebar {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -2020,7 +2028,8 @@ dd {
   display: grid;
   align-content: start;
   gap: 5px;
-  max-height: 82px;
+  height: 132px;
+  max-height: 132px;
   overflow: auto;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
@@ -2030,8 +2039,8 @@ dd {
 
 .tas-movie-item {
   display: grid;
-  gap: 2px;
-  min-height: 30px;
+  align-items: center;
+  min-height: 28px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
   background: #0c1219;
@@ -2052,6 +2061,10 @@ dd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tas-movie-item strong {
+  font-size: 10px;
 }
 
 .tas-movie-item small,
@@ -2087,6 +2100,33 @@ dd {
   font-size: 12px;
 }
 
+.tas-subtitle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.tas-subtitle-row span,
+.tas-subtitle-row b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tas-subtitle-row span {
+  color: #8ee7ff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tas-subtitle-row b {
+  color: #ffe17a;
+  font-size: 10px;
+}
+
 .tas-title-row span,
 .tas-detail p {
   color: #94a3b5;
@@ -2104,22 +2144,25 @@ dd {
   gap: 5px;
 }
 
-.tas-info-grid div {
+.tas-info-grid .tas-fact-row {
   display: grid;
-  gap: 2px;
-  min-height: 30px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
+  min-height: 28px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
   background: #070a0e;
   padding: 4px 5px;
 }
 
-.tas-info-grid span {
+.tas-fact-label {
   color: #94a3b5;
   font-size: 10px;
+  white-space: nowrap;
 }
 
-.tas-info-grid b {
+.tas-fact-value {
   min-width: 0;
   color: #ffe17a;
   font-size: 10px;
@@ -2135,9 +2178,11 @@ dd {
   gap: 5px;
 }
 
-.tas-meta-grid div {
+.tas-meta-grid .tas-fact-row {
   display: grid;
-  gap: 2px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
   min-height: 28px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
@@ -2145,23 +2190,18 @@ dd {
   padding: 4px 5px;
 }
 
-.tas-meta-grid span {
-  color: #94a3b5;
-  font-size: 10px;
-}
-
-.tas-meta-grid b {
-  color: #e9f3ff;
-  font-size: 10px;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
 .tas-mode-strip,
 .tas-control-row {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 5px;
+}
+
+.tas-mode-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tas-control-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .tas-mode-strip button,
@@ -2176,7 +2216,7 @@ dd {
   background: #0f1721;
   color: #e9f3ff;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -2222,10 +2262,6 @@ dd {
   cursor: not-allowed;
   border-color: rgba(104, 214, 140, 0.16);
   box-shadow: none;
-}
-
-.tas-control-row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .tas-control-row button:disabled {

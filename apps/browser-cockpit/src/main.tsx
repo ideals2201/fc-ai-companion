@@ -7254,6 +7254,7 @@ function TasWindow({
   const movieSubtitle = (movie: NonNullable<typeof selectedMovie>) => (
     language === "en-US" ? movie.title.zh : movie.title.en
   );
+  const movieFileLabel = (movie: NonNullable<typeof selectedMovie>) => movie.fileName;
 
   return (
     <div className="tas-window" aria-label={t(language, "tas.windowTitle")}>
@@ -7267,20 +7268,33 @@ function TasWindow({
         </span>
       </div>
       <div className="tas-window-body">
-        <div className="tas-movie-list" aria-label={t(language, "tas.fileList")}>
-          {movies.length > 0 ? movies.map((movie) => (
-            <button
-              className={movie.id === selectedMovieId ? "tas-movie-item active" : "tas-movie-item"}
-              key={movie.id}
-              onClick={() => onMovieSelect(movie.id)}
-              type="button"
-            >
-              <strong>{movieTitle(movie)}</strong>
-              <small>{movieSubtitle(movie)}</small>
-            </button>
-          )) : (
-            <div className="tas-empty">{t(language, "tas.noMatch")}</div>
-          )}
+        <div className="tas-sidebar">
+          <div className="tas-movie-list" aria-label={t(language, "tas.fileList")}>
+            {movies.length > 0 ? movies.map((movie) => (
+              <button
+                className={movie.id === selectedMovieId ? "tas-movie-item active" : "tas-movie-item"}
+                key={movie.id}
+                onClick={() => onMovieSelect(movie.id)}
+                type="button"
+              >
+                <strong>{movieFileLabel(movie)}</strong>
+              </button>
+            )) : (
+              <div className="tas-empty">{t(language, "tas.noMatch")}</div>
+            )}
+          </div>
+          <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
+            {modes.map((mode) => (
+              <button
+                className={mode === commentaryMode ? "active" : ""}
+                key={mode}
+                onClick={() => onCommentaryModeChange(mode)}
+                type="button"
+              >
+                {commentaryModeLabel(mode)}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="tas-detail">
           {selectedMovie ? (
@@ -7289,58 +7303,50 @@ function TasWindow({
                 <strong>{movieTitle(selectedMovie)}</strong>
                 <span>{selectedMovie.players} / {selectedMovie.category}</span>
               </div>
+              <div className="tas-subtitle-row">
+                <span>{movieSubtitle(selectedMovie)}</span>
+                <b>{selectedMovie.fileName}</b>
+              </div>
               <p>{selectedMovie.summaryZh}</p>
               <div className="tas-info-grid">
-                <div>
-                  <span>{t(language, "tas.source")}</span>
-                  <b>{selectedMovie.sourceNote}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.source")}：</span>
+                  <b className="tas-fact-value">{selectedMovie.sourceNote}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.keyMoments")}</span>
-                  <b>{selectedMovie.keyMoments.slice(0, 2).join(" / ")}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.keyMoments")}：</span>
+                  <b className="tas-fact-value">{selectedMovie.keyMoments.slice(0, 2).join(" / ")}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.risk")}</span>
-                  <b>{selectedMovie.riskNotes[0]}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.risk")}：</span>
+                  <b className="tas-fact-value">{selectedMovie.riskNotes[0]}</b>
                 </div>
               </div>
               <div className="tas-meta-grid">
-                <div>
-                  <span>{t(language, "tas.trainingBase")}</span>
-                  <b>{recommendationLabel(selectedMovie)}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.trainingBase")}：</span>
+                  <b className="tas-fact-value">{recommendationLabel(selectedMovie)}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.artifact")}</span>
-                  <b>{tasEntry?.trainingBasePath ?? "-"}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.artifact")}：</span>
+                  <b className="tas-fact-value">{tasEntry?.trainingBasePath ?? "-"}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.checksum")}</span>
-                  <b>{playback.checksumStatus}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.checksum")}：</span>
+                  <b className="tas-fact-value">{playback.checksumStatus}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.progress")}</span>
-                  <b>{progress}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.progress")}：</span>
+                  <b className="tas-fact-value">{progress}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.phase")}</span>
-                  <b>{tasPhaseLabel(playback.phase)}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.phase")}：</span>
+                  <b className="tas-fact-value">{tasPhaseLabel(playback.phase)}</b>
                 </div>
-                <div>
-                  <span>{t(language, "tas.currentInput")}</span>
-                  <b>{playback.currentInput}</b>
+                <div className="tas-fact-row">
+                  <span className="tas-fact-label">{t(language, "tas.currentInput")}：</span>
+                  <b className="tas-fact-value">{playback.currentInput}</b>
                 </div>
-              </div>
-              <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
-                {modes.map((mode) => (
-                  <button
-                    className={mode === commentaryMode ? "active" : ""}
-                    key={mode}
-                    onClick={() => onCommentaryModeChange(mode)}
-                    type="button"
-                  >
-                    {commentaryModeLabel(mode)}
-                  </button>
-                ))}
               </div>
               <div className="tas-baseline-actions" aria-label={t(language, "tas.applyBaseline")}>
                 {selectedMovie.recommendedBaselines.map((baseline) => {

@@ -16,6 +16,57 @@
 
 ## 2026-06-10
 
+### TAS 观赏 / 训练基座窗口重新设计
+
+触发：
+
+- 用户指出 TAS 列表看不全，且列表同时显示文件名和中文说明，信息重复、压缩严重。
+- 用户要求左侧只显示 TAS 文件名，中文说明放到右侧；“专家观赏”等按钮放到列表下面，缩小并合理放置；下方播放控制继续保留。
+
+修改：
+
+- `TasWindow` 新增 `movieFileLabel()`，左侧 TAS 列表只渲染 `.fm2` 文件名。
+- 新增 `.tas-sidebar`，把 TAS 文件列表和观赏模式按钮放在同一侧栏。
+- 右侧详情新增 `.tas-subtitle-row`，集中显示中文/英文标题和原始文件名。
+- TAS 列表高度从 82px 调整为 132px，减少 4 个 TAS 文件需要滚动或看不全的问题。
+- 观赏模式按钮改为两列紧凑布局，播放控制仍为独立四列按钮区。
+- TAS 详情里的来源、关键点、风险、训练基准、制品路径、校验、进度、阶段、当前输入统一改为 `标签：内容` 单行显示。
+- 增加集成测试，防止后续再次把中文说明塞回文件列表，或把观赏按钮放回右侧详情区。
+
+验证：
+
+```powershell
+node --test tests\tasWindowIntegration.test.mjs
+npm run build
+npm test
+```
+
+```text
+tasWindowIntegration: 7 pass, 0 fail
+npm run build: pass
+npm test: 394 pass, 0 fail
+```
+
+浏览器验证：
+
+```text
+URL: http://127.0.0.1:5173/?autoload=1&rom=contra-j%2FContra%20(J).nes
+TAS 匹配: 4 个
+列表样例:
+- mars608,aiqiyou-contraj-1p.fm2
+- mars608,aiqiyou5-contra-nes-2players.fm2
+- mars608,aiqiyou6-contra-pacifist.fm2
+- mars608_aiqiyou-contraj-nes-2p,lowp.fm2
+DOM: hasSidebar=true, hasModesInSidebar=true, hasDetailSubtitle=true, listHeight=132
+事实项: 9 个，均为 `来源：内容` 这类单行结构
+```
+
+提交目标：
+
+```text
+fix: compact TAS watch training window
+```
+
 ### Contra US 批量候选搜索工具落地
 
 触发：
