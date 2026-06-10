@@ -207,3 +207,19 @@ test("W1205 vertical fixed-target station attempt is archived as rejected eviden
   assert.equal(attempt.runtimeEvidence.candidateTrial, "w1205-vertical-fixed-station");
   assert.equal(attempt.runtimeEvidence.lostActiveFrame, 4581);
 });
+
+test("W1205 post-upper recovery attempt is archived despite progress gain", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempt = report.rejectedAttempts.find((entry) => entry.attemptId === "post-upper-recovery-candidate-trial");
+
+  assert.ok(attempt, "W1205 post-upper recovery candidate should be kept as rejected evidence");
+  assert.equal(attempt.gateStatus, "rejected");
+  assert.deepEqual(attempt.rejectionReasons, ["death"]);
+  assert.equal(attempt.runtimeEvidence.candidateTrial, "w1205-post-upper-recovery");
+  assert.equal(attempt.runtimeEvidence.lostActiveFrame, 2802);
+  assert.equal(attempt.maxProgression, 1555);
+});

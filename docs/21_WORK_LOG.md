@@ -1942,3 +1942,132 @@ Next inference:
   - post-retreat recovery;
   - vertical fixed-target station.
 - The next candidate should treat the upper soldier at `dx~8 dy~-18` as the real blocker before any fixed-target station can run.
+
+## 2026-06-10 - W1205 post-upper recovery candidate rejected
+
+Scope:
+
+- Continue Contra US Stage 1 `survival-v0` W1205 segmented validation.
+- Test a second isolated recovery candidate:
+
+```text
+w1205-post-upper-recovery
+```
+
+- Keep default live `survival-v0` unchanged.
+
+Root-cause refinement:
+
+- Baseline avoids death at W1205 by retreating left, but then loops.
+- The previous `w1205-vertical-fixed-station` candidate died because it ignored the upper soldier and stood still.
+- A compressed baseline trace showed that after the upper soldier leaves the immediate upper-contact lane, the AI still fails to recover right because low/side body threats keep winning action arbitration.
+
+Candidate hypothesis:
+
+- After the upper-contact threat passes, force:
+
+```text
+right+up+B, no A, no down, no left
+```
+
+- Expected benefit: recover from W1145-W1168 back toward the fixed target before the long stall begins.
+
+TDD:
+
+- RED was created from a real W7065 baseline frame containing the low/side enemies that caused old left retreat.
+- GREEN added `w1205-post-upper-recovery` as an isolated `--candidate-trial` branch only.
+
+Targeted test:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+```text
+tests 27
+pass 27
+fail 0
+```
+
+Runtime candidate trial:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=8000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1205-post-upper-recovery
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=2802
+maxProgression=1555
+finalProgression=1427
+progressStallFrames=0
+```
+
+Failure-window trace:
+
+```text
+frame 2788 W1151 buttons=upleftab  slot15 dx18 dy-10
+frame 2789 W1150 buttons=uprightb  slot15 dx18 dy-9
+frame 2794 W1151 buttons=uplefta   slot15 dx13 dy-5
+frame 2799 W1150 buttons=uprightb  slot15 dx10 dy-1
+frame 2801 W1150 buttons=uprightb  slot15 dx8  dy1
+frame 2802 W1151 deathFlag=1       slot15 dx6  dy2
+```
+
+Decision:
+
+- `w1205-post-upper-recovery` is rejected.
+- It is still useful evidence:
+  - it breaks the W1205 stall and reaches `maxProgression=1555`;
+  - but it dies from same-lane body contact at W1151.
+- Do not promote it into live `survival-v0`.
+- Report updated:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs tests\segmentedTrainingSearch.test.mjs
+```
+
+```text
+tests 32
+pass 32
+fail 0
+```
+
+Next inference:
+
+- The promising direction is not "retreat forever" and not "right recovery unconditionally".
+- The next candidate should be:
+
+```text
+post-upper safe recovery =
+  if same-lane body threat is closing: keep survival bailout
+  else recover right-up fire toward fixed target
+```
+
+Final verification before saving version:
+
+```powershell
+npm run build
+```
+
+```text
+exit 0
+vite build completed; chunk-size warning only
+```
+
+```powershell
+npm test
+```
+
+```text
+tests 319
+pass 319
+fail 0
+```

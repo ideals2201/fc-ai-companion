@@ -895,6 +895,41 @@ test("headless route-plan probe can isolate W1205 vertical fixed-target station"
   assert.equal(buttons.a, false);
 });
 
+test("headless route-plan probe can isolate W1205 post-upper recovery", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1205-post-upper-recovery",
+    frame: 7065,
+    progressStallFrames: 59,
+    routeSegment: {
+      id: "mid-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 930,
+      worldEnd: 1550
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 69,
+      playerY: 212,
+      worldX: 1146,
+      enemies: [
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 61, y: 222 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 79, y: 222 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 77, y: 232 },
+        { fixed: false, hp: 0, kind: "object", routine: 0, threat: true, type: 0x05, x: 72, y: 140 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.down, false);
+});
+
 test("headless route-plan probe ignores grounded low-lane object residue instead of stalling at the mid turret", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 4800,
