@@ -617,6 +617,43 @@ test("W1769 reentry right extension attempt is archived after left-edge regressi
   assert.ok(attempt.trialNote.includes("W1686"));
 });
 
+test("W1686 left-edge local guard attempts are archived after repeated death regressions", () => {
+  const reportPath = path.join(
+    repoRoot,
+    "data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json"
+  );
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  const attempts = Object.fromEntries(report.rejectedAttempts.map((entry) => [entry.attemptId, entry]));
+
+  const rightGuard = attempts["w1686-left-edge-close-body-right-guard-candidate-trial"];
+  assert.ok(rightGuard, "W1686 right guard candidate should be archived");
+  assert.equal(rightGuard.gateStatus, "rejected");
+  assert.deepEqual(rightGuard.rejectionReasons, ["death"]);
+  assert.equal(rightGuard.runtimeEvidence.candidateTrial, "w1686-left-edge-close-body-right-guard");
+  assert.equal(rightGuard.runtimeEvidence.lostActiveFrame, 12745);
+  assert.equal(rightGuard.maxProgression, 1865);
+  assert.ok(rightGuard.trialNote.includes("overhead soldier"));
+
+  const overheadDuck = attempts["w1686-left-edge-overhead-duck-guard-candidate-trial"];
+  assert.ok(overheadDuck, "W1686 overhead duck candidate should be archived");
+  assert.equal(overheadDuck.gateStatus, "rejected");
+  assert.deepEqual(overheadDuck.rejectionReasons, ["death"]);
+  assert.equal(overheadDuck.runtimeEvidence.candidateTrial, "w1686-left-edge-overhead-duck-guard");
+  assert.equal(overheadDuck.runtimeEvidence.lostActiveFrame, 12770);
+  assert.equal(overheadDuck.maxProgression, 1932);
+  assert.ok(overheadDuck.trialNote.includes("released too early"));
+
+  const duckHold = attempts["w1686-left-edge-duck-hold-guard-candidate-trial"];
+  assert.ok(duckHold, "W1686 duck-hold candidate should be archived");
+  assert.equal(duckHold.gateStatus, "rejected");
+  assert.deepEqual(duckHold.rejectionReasons, ["death"]);
+  assert.equal(duckHold.runtimeEvidence.candidateTrial, "w1686-left-edge-duck-hold-guard");
+  assert.equal(duckHold.runtimeEvidence.lostActiveFrame, 12853);
+  assert.equal(duckHold.maxProgression, 1942);
+  assert.ok(duckHold.riskTags.includes("three-local-fixes-failed"));
+  assert.ok(duckHold.trialNote.includes("no further local W1686 if-patches"));
+});
+
 test("W1678 forward-body duck carry attempt is archived after stall", () => {
   const reportPath = path.join(
     repoRoot,

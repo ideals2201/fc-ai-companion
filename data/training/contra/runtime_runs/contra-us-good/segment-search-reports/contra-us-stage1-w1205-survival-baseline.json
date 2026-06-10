@@ -2307,6 +2307,117 @@
         "maxProgressStallFrames": 304
       },
       "trialNote": "Headless-only candidate extended the W1765 reentry right/up-fire window through W1769 to prevent the immediate up-left retreat that lets slot5 reach same-lane contact. It changes the route and reaches W1878, but still dies first at frame 12877/W1686 after a later left-edge collapse: slot14 is at dx=7 dy=1 while inputs are up-left+A+B. It is rejected because any death violates survival and max progression remains below the previous W1765 reentry candidate's W1960. Lesson: extending right carry helps spacing but still needs a later left-edge guard before W1686."
+    },
+    {
+      "attemptId": "w1686-left-edge-close-body-right-guard-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1686-left-edge-close-body-right-guard",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1865,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1865,
+      "progressGain": 745,
+      "progressStallFrames": 104,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "left-edge-right-guard-regression",
+        "overhead-contact-risk",
+        "progress-regression"
+      ],
+      "score": -9000,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-close-body-right-guard",
+        "candidateTrial": "w1686-left-edge-close-body-right-guard",
+        "status": "recovered-after-loss",
+        "reason": "gameplay-loss-recovered",
+        "lostActiveFrame": 12745,
+        "maxProgression": 1865,
+        "finalProgression": 1865,
+        "progressStallFrames": 104,
+        "maxProgressStallFrames": 104
+      },
+      "trialNote": "Headless-only candidate converted the W1686 left-edge close-body retreat into right+up fire. It prevents the long up-left drift to X25, but it dies earlier at frame 12745/W1706 by running into slot5 overhead contact at dx=9 dy=-24. It is rejected because it still dies and regresses below the previous W1765 reentry candidate's W1960. Lesson: escaping the left edge by pushing right is insufficient while the overhead soldier is still inside the collision lane."
+    },
+    {
+      "attemptId": "w1686-left-edge-overhead-duck-guard-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1686-left-edge-overhead-duck-guard",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 82,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1932,
+      "progressGain": 812,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "overhead-duck-progress-gain",
+        "same-lane-release-regression",
+        "still-below-best-partial"
+      ],
+      "score": -8200,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-overhead-duck-guard",
+        "candidateTrial": "w1686-left-edge-overhead-duck-guard",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 12770,
+        "maxProgression": 1932,
+        "finalProgression": 82,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate ducked under the W1686 overhead soldier, but released too early when slot5 settled into same-lane contact. It reaches W1932, then dies at frame 12770/W1701 with slot5 at dx=9 dy=5 after inputs return to up+right+A+B. It is rejected because it still dies and remains below the W1765 reentry candidate's W1960. Lesson: a one-phase overhead duck is too short; same-lane release must be treated as a separate threat or solved earlier."
+    },
+    {
+      "attemptId": "w1686-left-edge-duck-hold-guard-candidate-trial",
+      "candidateFragmentId": "candidate-fragment-1p-survival-v0-w1686-left-edge-duck-hold-guard",
+      "deathCount": 1,
+      "desynced": false,
+      "finalProgression": 1899,
+      "fixedTargetsDestroyed": 0,
+      "frameCount": 14000,
+      "gateStatus": "rejected",
+      "maxProgression": 1942,
+      "progressGain": 822,
+      "progressStallFrames": 0,
+      "rejectionReasons": [
+        "death"
+      ],
+      "rewardsCollected": 0,
+      "riskTags": [
+        "duck-hold-progress-gain",
+        "late-left-retreat-regression",
+        "three-local-fixes-failed"
+      ],
+      "score": -8100,
+      "scoreDelta": 0,
+      "stuckLoop": false,
+      "runtimeEvidence": {
+        "command": "node scripts/headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-duck-hold-guard",
+        "candidateTrial": "w1686-left-edge-duck-hold-guard",
+        "status": "lost-active",
+        "reason": "gameplay-lost",
+        "lostActiveFrame": 12853,
+        "maxProgression": 1942,
+        "finalProgression": 1899,
+        "progressStallFrames": 0,
+        "maxProgressStallFrames": 0
+      },
+      "trialNote": "Headless-only candidate extended the W1686 duck until the same-lane soldier settled, raising max progression to W1942. It still dies at frame 12853/W1719 after a later up-left close-body retreat lets slot14 reach dx=5 dy=-17. This is the third local W1686 button-shaping failure, so no further local W1686 if-patches should be attempted before changing the upstream route or pre-clear plan."
     }
   ],
   "promotionGates": [

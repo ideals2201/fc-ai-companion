@@ -2355,6 +2355,140 @@ test("headless route-plan probe can isolate W1769 reentry right-carry extension"
   assert.equal(extendedReentryButtons.b, true);
 });
 
+test("headless route-plan probe can isolate W1686 left-edge close-body right guard", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const leftEdgeCloseBodySnapshot = snapshot({
+    jumpState: 0,
+    playerX: 25,
+    playerY: 212,
+    worldX: 1686,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 33, y: 212, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 19, y: 232, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 46, y: 132, vx: -1, vy: 0 }
+    ]
+  });
+
+  const defaultButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12876,
+    routeSegment,
+    snapshot: leftEdgeCloseBodySnapshot
+  });
+
+  assert.equal(defaultButtons.left, true, "the current close-body rule still retreats left into the stage edge");
+  assert.equal(defaultButtons.right, false);
+
+  const guardedButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1686-left-edge-close-body-right-guard",
+    frame: 12876,
+    routeSegment,
+    snapshot: leftEdgeCloseBodySnapshot
+  });
+
+  assert.equal(guardedButtons.left, false);
+  assert.equal(guardedButtons.right, true);
+  assert.equal(guardedButtons.up, true);
+  assert.equal(guardedButtons.down, false);
+  assert.equal(guardedButtons.a, true);
+  assert.equal(guardedButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1686 left-edge overhead duck guard", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const overheadContactSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 44,
+    playerY: 212,
+    worldX: 1705,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 55, y: 187, vx: -1, vy: 0 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 19, y: 232, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 139, y: 196, vx: 1, vy: 0 }
+    ]
+  });
+
+  const rightGuardButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1686-left-edge-close-body-right-guard",
+    frame: 12744,
+    routeSegment,
+    snapshot: overheadContactSnapshot
+  });
+
+  assert.equal(rightGuardButtons.right, true, "the first W1686 guard still runs into the overhead soldier");
+  assert.equal(rightGuardButtons.up, true);
+
+  const duckGuardButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1686-left-edge-overhead-duck-guard",
+    frame: 12744,
+    routeSegment,
+    snapshot: overheadContactSnapshot
+  });
+
+  assert.equal(duckGuardButtons.left, false);
+  assert.equal(duckGuardButtons.right, false);
+  assert.equal(duckGuardButtons.up, false);
+  assert.equal(duckGuardButtons.down, true);
+  assert.equal(duckGuardButtons.a, false);
+  assert.equal(duckGuardButtons.b, true);
+});
+
+test("headless route-plan probe can isolate W1686 left-edge duck hold guard", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const sameLaneSettledSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 39,
+    playerY: 212,
+    worldX: 1700,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 11, threat: true, type: 0x05, x: 49, y: 217, vx: -1, vy: 0 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 19, y: 232, vx: -2, vy: 0 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 7, y: 132, vx: -1, vy: 0 }
+    ]
+  });
+
+  const overheadDuckButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1686-left-edge-overhead-duck-guard",
+    frame: 12769,
+    routeSegment,
+    snapshot: sameLaneSettledSnapshot
+  });
+
+  assert.equal(overheadDuckButtons.right, true, "the overhead-only duck guard releases too early once the enemy settles same-lane");
+  assert.equal(overheadDuckButtons.up, true);
+
+  const duckHoldButtons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w1686-left-edge-duck-hold-guard",
+    frame: 12769,
+    routeSegment,
+    snapshot: sameLaneSettledSnapshot
+  });
+
+  assert.equal(duckHoldButtons.left, false);
+  assert.equal(duckHoldButtons.right, false);
+  assert.equal(duckHoldButtons.up, false);
+  assert.equal(duckHoldButtons.down, true);
+  assert.equal(duckHoldButtons.a, false);
+  assert.equal(duckHoldButtons.b, true);
+});
+
 test("headless route-plan probe can isolate W1678 forward-body duck carry", () => {
   const inheritedPrecompressionButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1678-forward-body-duck-carry",

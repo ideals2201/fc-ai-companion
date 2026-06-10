@@ -4207,6 +4207,120 @@ npm run build: pass
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-10 - Contra US survival W1686 local guard attempts rejected
+
+Scope:
+
+- Continue from `w1769-reentry-right-extend`, which died at frame 12877/W1686 after extended right carry still collapsed into a left-edge close-body contact.
+- Investigate root cause before writing another strategy patch.
+- Keep all behavior behind `--candidate-trial`; do not promote anything into live `survival-v0`.
+
+Root-cause trace:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1769-reentry-right-extend --trace-start=12830 --trace-end=12880
+```
+
+Key frames:
+
+```text
+frame 12830 W1719 X58 Y212 btn=upab     slot14 dx=35 dy=-35
+frame 12840 W1710 X49 Y212 btn=upleftab slot14 dx=31 dy=-27
+frame 12860 W1690 X29 Y212 btn=upleftab slot14 dx=25 dy=-12
+frame 12876 W1686 X25 Y212 btn=upleftab slot14 dx=8  dy=0
+frame 12877 W1686 X25 Y212 deathFlag=1 slot14 dx=7  dy=1
+```
+
+Diagnosis:
+
+- The generic close-body rule interprets the right-side/upper-right soldier as "threat ahead" and retreats left.
+- At the left edge, this creates a negative loop: the player keeps walking left, stops progressing, then the right-side soldier reaches same-lane collision.
+- This is not a missing jump edge. It is a route/control arbitration problem: close-body retreat has no left-edge exit condition and no upstream pre-clear guarantee.
+
+TDD RED/GREEN:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+- Added isolated RED/GREEN tests for:
+  - `w1686-left-edge-close-body-right-guard`
+  - `w1686-left-edge-overhead-duck-guard`
+  - `w1686-left-edge-duck-hold-guard`
+
+Runtime candidates:
+
+1. `w1686-left-edge-close-body-right-guard`
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-close-body-right-guard
+```
+
+```text
+status=recovered-after-loss
+reason=gameplay-loss-recovered
+lostActiveFrame=12745
+maxProgression=1865
+finalProgression=1865
+progressStallFrames=104
+```
+
+Rejected:
+
+- It converts left-edge retreat to right+up fire, but runs into slot5 overhead contact at W1706.
+- It is worse than the previous best partial `w1765-reentry-right-fire-carry` at W1960.
+
+2. `w1686-left-edge-overhead-duck-guard`
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-overhead-duck-guard
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=12770
+maxProgression=1932
+finalProgression=82
+```
+
+Rejected:
+
+- It ducks under the overhead soldier, but releases when slot5 settles into same-lane contact.
+- Death occurs at W1701 with slot5 at dx=9 dy=5 after inputs return to up+right+A+B.
+
+3. `w1686-left-edge-duck-hold-guard`
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=14000 --strategy=survival-v0 --probe=route-plan --candidate-trial=w1686-left-edge-duck-hold-guard
+```
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=12853
+maxProgression=1942
+finalProgression=1899
+```
+
+Rejected:
+
+- It improves over the first two W1686 variants and reaches W1942.
+- It still dies at W1719 after a later up-left close-body retreat lets slot14 reach dx=5 dy=-17.
+- This remains below the previous W1960 partial route and still violates the no-death survival gate.
+
+Archive:
+
+```text
+data/training/contra/runtime_runs/contra-us-good/segment-search-reports/contra-us-stage1-w1205-survival-baseline.json
+```
+
+Decision:
+
+- Do not promote any W1686 local guard candidate into live `survival-v0`.
+- Stop adding local W1686 button-shaping if-patches. Three local hypotheses failed.
+- Next work must move upstream: route formation, pre-clear timing, or a small stateful route-line plan that prevents slot14/slot5 from coexisting inside the left-edge collision lane.
+
 ## 2026-06-10 - Contra US survival W1765 grounded rear micro-duck rejected
 
 Scope:
