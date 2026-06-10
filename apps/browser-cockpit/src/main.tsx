@@ -588,7 +588,7 @@ type TasPlaybackMessageKey =
   | "paused"
   | "load-rom-first"
   | "fast-forwarded"
-  | "auto-selected"
+  | "matched-available"
   | "no-match-current";
 
 type TasPlaybackUiState = {
@@ -1887,7 +1887,7 @@ function tasPlaybackMessageLabel(playback: TasPlaybackUiState, language: UiLangu
     if (playback.messageKey === "paused") return "TAS paused";
     if (playback.messageKey === "load-rom-first") return "Load a matched ROM before TAS replay";
     if (playback.messageKey === "fast-forwarded") return detail ? `TAS fast-forwarded: ${detail}` : "TAS fast-forwarded to entry";
-    if (playback.messageKey === "auto-selected") return "Matched TAS selected automatically";
+    if (playback.messageKey === "matched-available") return "Matched TAS available";
     return "Current ROM has no matched TAS";
   }
 
@@ -1905,7 +1905,7 @@ function tasPlaybackMessageLabel(playback: TasPlaybackUiState, language: UiLangu
   if (playback.messageKey === "paused") return "TAS 已暂停";
   if (playback.messageKey === "load-rom-first") return "请先更换卡带并载入匹配 ROM";
   if (playback.messageKey === "fast-forwarded") return detail ? `TAS 已快进：${detail}` : "TAS 已快进到入口";
-  if (playback.messageKey === "auto-selected") return "已自动选择匹配 TAS";
+  if (playback.messageKey === "matched-available") return "已匹配 TAS，可手动载入/回放";
   return "当前 ROM 无匹配 TAS";
 }
 
@@ -7270,7 +7270,7 @@ function TasWindow({
         <div className="tas-movie-list" aria-label={t(language, "tas.fileList")}>
           {movies.length > 0 ? movies.map((movie) => (
             <button
-              className={movie.id === selectedMovie?.id ? "tas-movie-item active" : "tas-movie-item"}
+              className={movie.id === selectedMovieId ? "tas-movie-item active" : "tas-movie-item"}
               key={movie.id}
               onClick={() => onMovieSelect(movie.id)}
               type="button"
@@ -10138,19 +10138,18 @@ function App() {
 
   useEffect(() => {
     const entry = identifyTasForRom(romMetadata);
-    const defaultMovie = selectDefaultTasMovie(entry);
     tasMovieRef.current = null;
     tasPlaybackRef.current = {
       active: false,
-      movieId: defaultMovie?.id ?? "",
+      movieId: "",
       frameIndex: 0
     };
-    setSelectedTasMovieId(defaultMovie?.id ?? "");
+    setSelectedTasMovieId("");
     setTasPlaybackState({
       ...createIdleTasPlaybackState(),
-      movieId: defaultMovie?.id ?? "",
-      messageKey: defaultMovie ? "auto-selected" : "no-match-current",
-      message: defaultMovie ? "Matched TAS selected automatically" : "Current ROM has no matched TAS"
+      movieId: "",
+      messageKey: entry ? "matched-available" : "no-match-current",
+      message: entry ? "Matched TAS available" : "Current ROM has no matched TAS"
     });
   }, [romMetadata?.md5, romMetadata?.romProfileId]);
 

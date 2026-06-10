@@ -4287,6 +4287,39 @@ DOM check: `.screen-frame` does not contain `.tv-controls`, and keeps aspect-rat
 Automation fullscreen click was blocked by browser permission policy with "Permissions check failed", so real fullscreen entry must be user-click verified in the visible browser.
 ```
 
+## 2026-06-10 - TAS match no longer looks like active TAS mode
+
+Scope:
+
+- Clarify the difference between a matched TAS resource and active TAS replay.
+- Prevent ROM load from visually selecting a TAS movie.
+
+Root cause:
+
+```text
+When ROM metadata matched a TAS registry entry, the cockpit set `selectedTasMovieId` to the default movie and displayed "Matched TAS selected automatically".
+This did not start playback, but the highlighted TAS row and wording made the UI look like it had entered TAS mode.
+```
+
+Fix:
+
+- Changed the idle ROM-match message to `matched-available`.
+- ROM matching now clears `selectedTasMovieId` instead of selecting a movie.
+- TAS movie list active styling now requires explicit user selection.
+- TAS controller lock remains derived only from `tasPlaybackState.status === "playing"`.
+
+Verification:
+
+```powershell
+node --test tests\tasWindowIntegration.test.mjs
+npm run build
+```
+
+```text
+tas window integration tests: tests 5, pass 5, fail 0
+npm run build: pass
+```
+
 ## 2026-06-10 - Host Startup Preset And Compact Machine Controls
 
 Goal:

@@ -32,6 +32,13 @@ test("TAS playback status is attached to the window title", () => {
   assert.match(cssSource, /\.tas-header-status\s*\{/, "title-level TAS status should have compact header styling");
 });
 
+test("ROM TAS matching does not auto-enter or visually select TAS playback", () => {
+  assert.match(mainSource, /messageKey:\s*entry \? "matched-available" : "no-match-current"/, "ROM matching should report TAS availability instead of auto-selection");
+  assert.match(mainSource, /setSelectedTasMovieId\(""\)/, "ROM matching should not silently select a TAS movie");
+  assert.match(mainSource, /className=\{movie\.id === selectedMovieId \? "tas-movie-item active" : "tas-movie-item"\}/, "TAS movie active styling should require explicit user selection");
+  assert.doesNotMatch(mainSource, /messageKey:\s*defaultMovie \? "auto-selected"/, "old auto-selected TAS state should not remain");
+});
+
 test("pilot controller bays enter a visible locked TAS replay state", () => {
   assert.match(mainSource, /tasLocked: boolean/, "PilotPanel should receive an explicit TAS lock state");
   assert.match(mainSource, /tasPlaybackState\.status === "playing"/, "runtime should derive TAS lock from active playback");
