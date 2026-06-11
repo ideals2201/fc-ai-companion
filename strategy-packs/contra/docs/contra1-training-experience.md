@@ -649,3 +649,32 @@ Next weapon16 work:
 - Move the search earlier than W2884 and alter the W2804-W2884 arc itself, not the final W2939 frame.
 - Focus on lower-amplitude pulse timing or earlier release/repress combinations that enter W2918-W2935 at a lower fall speed or higher platform contact margin.
 - Keep boss-wall validation disabled until a candidate reaches W2960+ without death.
+
+## 2026-06-12 Contra Japan W2941 P8 Arc Increment
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2941-p8-arc-rejected-20260612`.
+- Arc batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2939-earlier-arc-batch-20260612.summary.json`.
+- Post-control batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2941-post-batch-20260612.summary.json`.
+- Repro trace report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2941-p8-repro-trace-20260612.json`.
+- Saved continuation state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2941-weapon16-20260612.json`.
+
+Accepted facts:
+
+- Changing the W2804-W2884 arc from p6/w1 to p8/w1 `pulse_jump_right_fire` reproducibly advanced the weapon16 branch from no-death W2939 to no-death W2941.
+- The W2941 candidate still preserves `weapon = 16`, but it immediately loses at W2942/Y236 and is not a boss-wall clear or Stage 1 clear.
+- The W2941 save state is useful for inspection only unless a future route can alter the approach before W2942.
+
+Rejected facts:
+
+- Earlier/later W2804-W2884 p6 variants, p4/p5/p7/p10 single-frame pulses, and p6/p8 two-frame pulse variants did not beat W2941; p8/w2 tied W2941 but did not improve it.
+- Adding W2884-W2964 `right_fire`, `jump_right_fire`, p6/p8 pulse, or split right-then-jump controls after the p8 arc did not exceed W2941.
+- Extending the p8 pulse through W2896, W2910, W2924, or W2936 also stayed at W2941, so the remaining blocker is still an earlier terrain/height curve issue rather than a late one-button rescue.
+
+Next weapon16 work:
+
+- Search before W2804 or rebuild the W2735-W2884 trajectory so the player reaches W2918-W2942 with more vertical margin.
+- Treat W2941 as a measured incremental candidate, not as validated strategy-pack clear evidence.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
