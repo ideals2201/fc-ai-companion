@@ -621,3 +621,31 @@ Next weapon16 work:
 - Continue from the saved W2939 state only for inspection; do not treat it as a local rescue point unless the first action can happen before W2940.
 - Rebuild the W2884-W2940 descent with a shorter or later pulse window, or add a pre-W2920 release/repress pattern that lands before Y230.
 - If a candidate reaches W2960+ no-death, re-enable boss-wall-specific validation and compare against the existing W3208 all-route branch.
+
+## 2026-06-12 Contra Japan W2939 Local And Descent Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2939-local-descent-sweep-rejected-20260612`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2939-local-and-descent-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2939-rightfire2884-2964-20260612.json`.
+
+Accepted facts:
+
+- The saved W2939 state is one frame before the W2940/Y236 loss, but local `right_fire`, `jump_right_fire`, `right_up_fire`, and `left_jump_fire` all still died immediately.
+- Extending the W2804 pulse window to W2908 or W2924 did not change the no-death ceiling; both still lost at W2940/Y236.
+- Forcing W2884-W2964 `right_fire`, `jump_right_fire`, or `right_up_fire` also failed to exceed no-death W2939.
+- W2884-W2920 or W2884-W2935 right-fire followed by a later jump did not recover the descent.
+
+Rejected facts:
+
+- W2939 is not a usable local rescue point for the tested one-frame inputs.
+- The W2939 blocker is not solved by simply preserving right movement or by holding jump after W2884.
+- All tested variants reported post-death max progress around W2942, but zero-death progress remains W2939 and must not be promoted.
+
+Next weapon16 work:
+
+- Move the search earlier than W2884 and alter the W2804-W2884 arc itself, not the final W2939 frame.
+- Focus on lower-amplitude pulse timing or earlier release/repress combinations that enter W2918-W2935 at a lower fall speed or higher platform contact margin.
+- Keep boss-wall validation disabled until a candidate reaches W2960+ without death.
