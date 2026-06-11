@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fc-ai.local/schemas/training-progress-ledger-1.1.0.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "packId",
+    "gameProfileId",
+    "romProfileId",
+    "stageId",
+    "status",
+    "updatedAt",
+    "policy",
+    "stageSummary",
+    "progressByStrategy",
+    "runs",
+    "strategyDescriptions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.1.0" },
+    "packId": { "type": "string", "minLength": 1 },
+    "gameProfileId": { "type": "string", "minLength": 1 },
+    "romProfileId": { "type": "string", "minLength": 1 },
+    "stageId": { "type": "string", "pattern": "^stage-[1-8]$" },
+    "status": {
+      "enum": [
+        "unstarted",
+        "candidate",
+        "candidate-clear",
+        "validated",
+        "retired"
+      ]
+    },
+    "updatedAt": { "type": "string", "minLength": 1 },
+    "policy": {
+      "type": "object",
+      "required": [
+        "appendOnlyRuns",
+        "summaryDerivedFromRuns",
+        "timeUnit",
+        "exactRomValidationRequired",
+        "tasIsEvidenceNotController",
+        "failureRunsMustBeRecorded"
+      ],
+      "properties": {
+        "appendOnlyRuns": { "const": true },
+        "summaryDerivedFromRuns": { "const": true },
+        "timeUnit": { "const": "seconds" },
+        "frameRate": { "type": "number" },
+        "exactRomValidationRequired": { "const": true },
+        "tasIsEvidenceNotController": { "const": true },
+        "failureRunsMustBeRecorded": { "const": true }
+      },
+      "additionalProperties": true
+    },
+    "stageSummary": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/stageSummary" }
+    },
+    "progressByStrategy": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/strategyProgress" }
+    },
+    "runs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/run" }
+    },
+    "strategyDescriptions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/strategyDescription" }
+    },
+    "legacyNotes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "required": ["value", "status"],
+      "properties": {
+        "value": {
+          "type": ["number", "string", "boolean", "null"]
+        },
+        "status": {
+          "enum": [
+            "unverified",
+            "candidate",
+            "candidate-stalled",
+            "candidate-failed",
+            "candidate-clear",
+            "validated"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "stageSummary": {
+      "type": "object",
+      "required": ["status", "dataMode", "summary", "historicalEstimate"],
+      "properties": {
+        "status": { "type": "string", "minLength": 1 },
+        "dataMode": {
+          "enum": [
+            "measured-ledger-only",
+            "migration-with-estimate"
+          ]
+        },
+        "summary": {
+          "type": "object",
+          "required": [
+            "trainingRuns",
+            "knownDeaths",
+            "unknownDeathRuns",
+            "recordedRunTimeSeconds",
+            "clearProgress",
+            "clearTimeSeconds",
+            "clearTimeFrames",
+            "kills",
+            "fixedTargetsDestroyed",
+            "rewardsCollected",
+            "maxProgress"
+          ],
+          "properties": {
+            "trainingRuns": { "$ref": "#/$defs/metric" },
+            "knownDeaths": { "$ref": "#/$defs/metric" },
+            "unknownDeathRuns": { "$ref": "#/$defs/metric" },
+            "recordedRunTimeSeconds": { "$ref": "#/$defs/metric" },
+            "clearProgress": { "$ref": "#/$defs/metric" },
+            "clearTimeSeconds": { "$ref": "#/$defs/metric" },
+            "clearTimeFrames": { "$ref": "#/$defs/metric" },
+            "kills": { "$ref": "#/$defs/metric" },
+            "fixedTargetsDestroyed": { "$ref": "#/$defs/metric" },
+            "rewardsCollected": { "$ref": "#/$defs/metric" },
+            "maxProgress": { "$ref": "#/$defs/metric" }
+          },
+          "additionalProperties": true
+        },
+        "historicalEstimate": {
+          "type": ["object", "null"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "strategyProgress": {
+      "type": "object",
+      "required": ["status", "summary", "evidence"],
+      "properties": {
+        "status": { "type": "string", "minLength": 1 },
+        "summary": {
+          "type": "object",
+          "required": [
+            "trainingRuns",
+            "deaths",
+            "trainingTimeSeconds",
+            "clearProgress",
+            "kills",
+            "fixedTargetsDestroyed",
+            "rewardsCollected",
+            "clearTimeFrames",
+            "clearTimeSeconds",
+            "maxProgress"
+          ],
+          "properties": {
+            "trainingRuns": { "$ref": "#/$defs/metric" },
+            "deaths": { "$ref": "#/$defs/metric" },
+            "trainingTimeSeconds": { "$ref": "#/$defs/metric" },
+            "clearProgress": { "$ref": "#/$defs/metric" },
+            "kills": { "$ref": "#/$defs/metric" },
+            "fixedTargetsDestroyed": { "$ref": "#/$defs/metric" },
+            "rewardsCollected": { "$ref": "#/$defs/metric" },
+            "clearTimeFrames": { "$ref": "#/$defs/metric" },
+            "clearTimeSeconds": { "$ref": "#/$defs/metric" },
+            "maxProgress": { "$ref": "#/$defs/metric" }
+          },
+          "additionalProperties": true
+        },
+        "evidence": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "runId",
+        "stageId",
+        "strategyKey",
+        "side",
+        "source",
+        "startedAt",
+        "runCount",
+        "frames",
+        "durationSeconds",
+        "maxWorldX",
+        "targetWorldX",
+        "deaths",
+        "status"
+      ],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "stageId": { "type": "string", "pattern": "^stage-[1-8]$" },
+        "strategyKey": { "type": "string", "minLength": 1 },
+        "side": { "enum": ["1P", "2P"] },
+        "source": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "minLength": 1 },
+        "runCount": { "type": "number" },
+        "frames": { "type": "number" },
+        "durationSeconds": { "type": "number" },
+        "activeFrame": { "type": ["number", "null"] },
+        "lostActiveFrame": { "type": ["number", "null"] },
+        "maxWorldX": { "type": ["number", "null"] },
+        "maxWorldFrame": { "type": ["number", "null"] },
+        "finalWorldX": { "type": ["number", "null"] },
+        "finalFrame": { "type": ["number", "null"] },
+        "targetWorldX": { "type": "number" },
+        "deaths": { "type": ["number", "null"] },
+        "status": { "type": "string", "minLength": 1 },
+        "reason": { "type": ["string", "null"] },
+        "rom": { "type": ["object", "null"] },
+        "candidateTrial": { "type": ["string", "null"] },
+        "candidateConfig": { "type": ["object", "null"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "strategyDescription": {
+      "type": "object",
+      "required": ["label", "summary", "playStyle", "riskPolicy"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "playStyle": { "type": "string", "minLength": 1 },
+        "riskPolicy": { "type": "string", "minLength": 1 },
+        "dataSource": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

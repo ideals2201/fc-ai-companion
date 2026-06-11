@@ -66,7 +66,8 @@ export function inferRuntimeReportDeaths(report) {
   return null;
 }
 
-function runStatusFromReport(report) {
+function runStatusFromReport(report, deaths = inferRuntimeReportDeaths(report)) {
+  if (report?.status === "recovered-after-loss" && deaths > 0) return "candidate-failed";
   if (report?.status === "active" || report?.status === "recovered-after-loss") return "candidate";
   if (report?.status === "stalled-active") return "candidate-stalled";
   if (report?.status === "lost-active") return "candidate-failed";
@@ -87,6 +88,7 @@ function createRunFromRuntimeReport(report, options = {}) {
   const targetWorldX = options.targetWorldX ?? 2960;
   const runId = options.runId
     ?? `${strategyKey}-${options.side ?? "1P"}-${new Date(options.now ?? Date.now()).toISOString().replace(/[:.]/g, "-")}`;
+  const deaths = inferRuntimeReportDeaths(report);
   return {
     runId,
     stageId,
@@ -106,8 +108,8 @@ function createRunFromRuntimeReport(report, options = {}) {
     finalWorldX: Number.isFinite(report?.finalSnapshot?.worldX) ? report.finalSnapshot.worldX : null,
     finalFrame: Number.isFinite(report?.finalSnapshot?.frame) ? report.finalSnapshot.frame : null,
     targetWorldX,
-    deaths: inferRuntimeReportDeaths(report),
-    status: runStatusFromReport(report),
+    deaths,
+    status: runStatusFromReport(report, deaths),
     reason: report?.reason ?? null,
     rom: report?.rom ?? null,
     candidateTrial: report?.candidateTrial ?? null,
@@ -156,6 +158,27 @@ export function summarizeTrainingProgress(runs, strategyKey, fallbackTargetWorld
 
 export function buildStageSummary(progress, stageId = "stage-1", fallbackTargetWorldX = 2960) {
   const runs = Array.isArray(progress.runs) ? progress.runs : [];
+  const historicalEstimate = progress.stageSummary?.[stageId]?.historicalEstimate ?? null;
+  if (runs.length === 0) {
+    return {
+      status: progress.status ?? "unstarted",
+      dataMode: historicalEstimate ? "migration-with-estimate" : "measured-ledger-only",
+      summary: {
+        trainingRuns: metric(null, "unverified"),
+        knownDeaths: metric(null, "unverified"),
+        unknownDeathRuns: metric(null, "unverified"),
+        recordedRunTimeSeconds: metric(null, "unverified"),
+        clearProgress: metric(null, "unverified"),
+        clearTimeSeconds: metric(null, "unverified"),
+        clearTimeFrames: metric(null, "unverified"),
+        kills: metric(null, "unverified"),
+        fixedTargetsDestroyed: metric(null, "unverified"),
+        rewardsCollected: metric(null, "unverified"),
+        maxProgress: metric(null, "unverified")
+      },
+      historicalEstimate
+    };
+  }
   const trainingRuns = runs.reduce((total, run) => total + (Number.isFinite(run.runCount) ? run.runCount : 1), 0);
   const knownDeathRuns = runs.filter((run) => Number.isFinite(run.deaths));
   const knownDeaths = knownDeathRuns.reduce((total, run) => total + run.deaths, 0);
@@ -171,7 +194,6 @@ export function buildStageSummary(progress, stageId = "stage-1", fallbackTargetW
   const maxWorldX = runs.reduce((max, run) => (
     Number.isFinite(run.maxWorldX) ? Math.max(max, run.maxWorldX) : max
   ), 0);
-  const historicalEstimate = progress.stageSummary?.[stageId]?.historicalEstimate ?? null;
   return {
     status: maxWorldX >= targetWorldX && unknownDeathRuns === 0 && knownDeaths === 0 ? "candidate-clear" : "candidate",
     dataMode: historicalEstimate ? "migration-with-estimate" : "measured-ledger-only",

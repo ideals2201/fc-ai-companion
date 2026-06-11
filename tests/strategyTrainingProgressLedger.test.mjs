@@ -7,12 +7,14 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ledgerScriptPath = path.join(repoRoot, "scripts", "strategy-training-progress.mjs");
 const progressArtifactPath = path.join(repoRoot, "strategy-packs", "contra", "stages", "stage-1", "training-progress.json");
+const progressSchemaPath = path.join(repoRoot, "strategy-packs", "contra", "schemas", "training-progress.schema.json");
 const scriptSource = fs.readFileSync(ledgerScriptPath, "utf8");
 const progressArtifact = JSON.parse(fs.readFileSync(progressArtifactPath, "utf8"));
 const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, "strategy-packs", "contra", "manifest.json"), "utf8"));
 
 const {
   appendRuntimeTrainingReport,
+  buildStageSummary,
   formatSecondsForProgress,
   inferRuntimeReportDeaths,
   summarizeTrainingProgress
@@ -21,6 +23,53 @@ const {
 function metric(value, status = "candidate") {
   return { value, status };
 }
+
+test("training progress ledger schema locks the shared stage structure", () => {
+  assert.equal(fs.existsSync(progressSchemaPath), true, "training progress ledger schema should exist");
+
+  const schema = JSON.parse(fs.readFileSync(progressSchemaPath, "utf8"));
+  assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
+  assert.equal(schema.$id, "https://fc-ai.local/schemas/training-progress-ledger-1.1.0.json");
+  assert.equal(schema.properties.schemaVersion.const, "1.1.0");
+  assert.deepEqual(schema.required, [
+    "schemaVersion",
+    "packId",
+    "gameProfileId",
+    "romProfileId",
+    "stageId",
+    "status",
+    "updatedAt",
+    "policy",
+    "stageSummary",
+    "progressByStrategy",
+    "runs",
+    "strategyDescriptions"
+  ]);
+  assert.deepEqual(schema.properties.policy.required, [
+    "appendOnlyRuns",
+    "summaryDerivedFromRuns",
+    "timeUnit",
+    "exactRomValidationRequired",
+    "tasIsEvidenceNotController",
+    "failureRunsMustBeRecorded"
+  ]);
+  assert.deepEqual(schema.$defs.run.required, [
+    "runId",
+    "stageId",
+    "strategyKey",
+    "side",
+    "source",
+    "startedAt",
+    "runCount",
+    "frames",
+    "durationSeconds",
+    "maxWorldX",
+    "targetWorldX",
+    "deaths",
+    "status"
+  ]);
+  assert.ok(schema.$defs.metric, "schema should define reusable metric records");
+});
 
 test("strategy training progress artifact is append-only and stage scoped", () => {
   assert.equal(progressArtifact.schemaVersion, "1.1.0");
@@ -97,6 +146,22 @@ test("contra pack exposes stage-scoped training progress ledgers for all eight s
       assert.equal(progress.stageSummary[stageId].summary.trainingRuns.value, null);
       assert.equal(progress.progressByStrategy["survival-v0"].summary.trainingRuns.value, null);
     }
+  }
+});
+
+test("stage summaries are derived from runs without inventing progress for unstarted stages", () => {
+  for (let stageNumber = 1; stageNumber <= 8; stageNumber += 1) {
+    const stageId = `stage-${stageNumber}`;
+    const progressPath = path.join(repoRoot, "strategy-packs", "contra", "stages", stageId, "training-progress.json");
+    const progress = JSON.parse(fs.readFileSync(progressPath, "utf8"));
+    const targetWorldX = progress.progressByStrategy["survival-v0"].summary.clearProgress.targetWorldX ?? 2960;
+    const derivedSummary = buildStageSummary(progress, stageId, targetWorldX);
+
+    assert.deepEqual(
+      progress.stageSummary[stageId],
+      derivedSummary,
+      `${stageId} stageSummary should be reproducible from runs`
+    );
   }
 });
 
@@ -267,6 +332,50 @@ test("ledger prefers no-death progress over post-death max progress", () => {
   assert.equal(updated.runs[0].maxWorldX, 1762);
   assert.equal(updated.runs[0].maxWorldFrame, 2499);
   assert.equal(updated.progressByStrategy["survival-v0"].summary.clearProgress.value, "W1762 / W3300");
+});
+
+test("ledger records recovered-after-loss runtime reports with death evidence as failed candidates", () => {
+  const progress = {
+    schemaVersion: "1.1.0",
+    packId: "test-pack",
+    gameProfileId: "contra",
+    romProfileId: "contra-j-good",
+    stageId: "stage-1",
+    policy: {},
+    stageSummary: {},
+    progressByStrategy: {
+      "survival-v0": {
+        status: "candidate",
+        summary: {
+          clearProgress: { targetWorldX: 3300 }
+        }
+      }
+    },
+    runs: []
+  };
+  const report = {
+    schema: "fc-ai-headless-runtime-smoke-v1",
+    source: { kind: "headless-jsnes-runtime-smoke", tasIsController: false },
+    status: "recovered-after-loss",
+    reason: "gameplay-loss-recovered",
+    frameCount: 1200,
+    lostActiveFrame: 8597,
+    strategyKey: "survival-v0",
+    maxNoDeathProgressSnapshot: { frame: 7940, worldX: 3208, deathFlag: 0 },
+    lostActiveSnapshot: { frame: 8597, worldX: 3204, deathFlag: 1 },
+    finalSnapshot: { frame: 9140, worldX: 3147, deathFlag: 0 }
+  };
+
+  const updated = appendRuntimeTrainingReport(progress, report, {
+    now: "2026-06-12T01:00:00.000Z",
+    runId: "boss-wall-recovered-death",
+    side: "1P",
+    targetWorldX: 3300
+  });
+
+  assert.equal(updated.runs[0].deaths, 1);
+  assert.equal(updated.runs[0].status, "candidate-failed");
+  assert.equal(updated.progressByStrategy["survival-v0"].summary.deaths.value, 1);
 });
 
 test("death inference is conservative", () => {

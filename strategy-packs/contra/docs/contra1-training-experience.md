@@ -438,11 +438,24 @@ Boss-wall candidate findings:
 - Right-moving or broad right-up overlays regressed entrance safety or produced recovered-after-loss traces without core progress.
 - Conclusion: do not keep patching the W3208 boss wall while arriving with default rifle only. The boss wall needs either verified weapon acquisition before entry or a boss phase scheduler that uses bullet-slot state, fixed-target HP, and body-threat escape together.
 
+Bounded 2026-06-12 unattended boss-wall batch:
+
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-stage1-boss-wall-bounded-batch-20260612.json`.
+- Candidate limit: 12 segment-first candidates, no blind full-run.
+- Start states: `jp-stage1-w3120-boss-entry-20260612.json` and `jp-stage1-w3208-boss-core-contact-20260612.json`.
+- Result: no Stage 1 clear, no boss-wall clear, no no-death progress beyond W3208.
+- Best representative failure: `jp-s1-bw-core-air-up-low-duck-bounded-20260612`, recorded in the official Stage 1 ledger.
+- Best failure facts: `maxWorldX = 3208`, lost at frame 8597 from W3204 low-lane body contact, `weapon = 0`, core HP still 31.
+- Rejected entry candidates from W3120: early right-up/up/neutral/pulse station plans lost before W3208 at W3156-W3175.
+- Rejected core candidates from W3208: air left-up/up/neutral/right-up/left-fire/left-jump variants either died before useful core damage or stalled at W3208 and then died.
+- Do not promote these overlays as validated fragments. They are comparison evidence proving that simple local stance overlays are insufficient.
+
 Next high-value route work:
 
 - Reopen weapon acquisition before the boss. TAS/jsnes evidence points to useful windows near W344 and W1591, but every pickup must be validated in the single-player `survival-v0` state.
 - Treat late W2260-W2368 weapon rescue as rejected unless a new RAM trace proves a weapon transition.
 - Record every failed weapon or boss candidate in the v1.1.0 training ledger.
+- If continuing default-rifle boss work, wire/test the existing boss-wall phase scheduler in headless replay before creating more stance-only overlays.
 
 ## 2026-06-11 Contra Japan Stage 1 Weapon Route Evidence
 
