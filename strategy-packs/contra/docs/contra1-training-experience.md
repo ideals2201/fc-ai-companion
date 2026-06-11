@@ -526,15 +526,21 @@ Accepted facts:
 - From saved state `jp-stage1-w674-weapon16-predeath-20260612.json`, the only accepted W674 escape candidate in this batch was `left_jump_fire`.
 - `jp-s1-w674-weapon16-escape-left-jump-fire-20260612` reached no-death W1210 with `weapon = 16` preserved. This is accepted as a segment fragment only, not as a Stage 1 clear.
 - From saved state `jp-stage1-w1210-weapon16-20260612.json`, `jump_right_fire` over W1160-W1235 improved the no-death weapon route to W1461 with `weapon = 16`.
+- Follow-up W1450/W1715 batches did not validate a clear fragment, but they moved the reproducible no-death weapon16 analysis state forward to W1753.
 
 Rejected facts:
 
 - W674 variants `neutral_fire`, `left_fire`, `left_up_fire`, `right_fire`, `right_up_fire`, `jump_right_fire`, `pulse_jump_right_fire`, and `right_duck_fire` all died or lost active after the saved W674 state.
 - The W1210 `jump_right_fire` connector is not accepted as a clear fragment because it later lost active at frame 4931, even though it produced the current best saved weapon16 continuation state.
 - Recovered-after-loss progress after a weapon-route death must not be counted as zero-death route progress; the useful value is the saved no-death W1461 state.
+- W1450 immediate Spread-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-weapon16-spread-window-batch-20260612.json`.
+- W1450 variants `baseline`, `neutral_fire`, `up_fire`, `right_fire`, `right_up_fire`, `right_duck_fire`, `duck_fire`, `jump_right_fire`, `left_jump_fire`, `left_fire`, `pulse_right_fire`, and `pulse_jump_right_fire` produced no accepted fragment. `pulse_right_fire-5x2` is useful only as rejected evidence because it reached no-death W1722 with `weapon = 16`, then died at frame 5467.
+- W1715 danger-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1715-weapon16-danger-window-batch-20260612.json`.
+- W1715 variants `right_fire`, `right_up_fire`, `right_duck_fire`, `duck_fire`, `up_fire`, `neutral_fire`, `jump_right_fire`, `pulse_jump_right_fire`, `left_fire`, `left_jump_fire`, and `left` did not clear the danger window. The baseline route reached no-death W1753 with `weapon = 16`, then died at frame 5604, so it is recorded as rejected ledger run `jp-s1-w1715-weapon16-danger-window-rejected-20260612`.
 
 Next weapon16 work:
 
-- Resume from `jp-stage1-w1461-weapon16-20260612.json` and train the W1500-W1630 Spread window before returning to boss-wall work.
+- Resume from `jp-stage1-w1753-weapon16-20260612.json` or an earlier W1715 trace point and train the W1715-W1760 same-lane body blocker before returning to boss-wall work.
+- No single-player RAM trace in this batch confirmed a Spread upgrade; `weapon` stayed `16` through the best no-death state.
 - Accept a candidate only if RAM confirms `weapon` improves or remains useful and the segment stays zero-death.
 - Do not promote any weapon16 or Spread route to the strategy pack unless it reconnects to the boss approach without deaths.
