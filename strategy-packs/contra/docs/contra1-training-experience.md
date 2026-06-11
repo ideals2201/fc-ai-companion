@@ -510,3 +510,31 @@ Next weapon-route work:
 - Build a bounded candidate search around W300-W390 and W1500-W1630 using saved states once available.
 - Track reward pickup by RAM transition, not by visual assumption or enemy-slot labels.
 - Keep all failed weapon-route runs in the v1.1.0 ledger so future training avoids repeated late-window rescue attempts.
+
+## 2026-06-12 Contra Japan Weapon16 Segment Evidence
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger runs: `jp-s1-w674-weapon16-left-jump-accepted-20260612` and `jp-s1-w1210-weapon16-jump-right-rejected-20260612`.
+- Runtime batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w674-weapon16-escape-batch-20260612.json`.
+- Saved continuation state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1461-weapon16-20260612.json`.
+
+Accepted facts:
+
+- Earlier W300-W390 opening overlays can produce a live `weapon = 16` state by W674, but the old route immediately died near W674 and lost the weapon on recovery.
+- From saved state `jp-stage1-w674-weapon16-predeath-20260612.json`, the only accepted W674 escape candidate in this batch was `left_jump_fire`.
+- `jp-s1-w674-weapon16-escape-left-jump-fire-20260612` reached no-death W1210 with `weapon = 16` preserved. This is accepted as a segment fragment only, not as a Stage 1 clear.
+- From saved state `jp-stage1-w1210-weapon16-20260612.json`, `jump_right_fire` over W1160-W1235 improved the no-death weapon route to W1461 with `weapon = 16`.
+
+Rejected facts:
+
+- W674 variants `neutral_fire`, `left_fire`, `left_up_fire`, `right_fire`, `right_up_fire`, `jump_right_fire`, `pulse_jump_right_fire`, and `right_duck_fire` all died or lost active after the saved W674 state.
+- The W1210 `jump_right_fire` connector is not accepted as a clear fragment because it later lost active at frame 4931, even though it produced the current best saved weapon16 continuation state.
+- Recovered-after-loss progress after a weapon-route death must not be counted as zero-death route progress; the useful value is the saved no-death W1461 state.
+
+Next weapon16 work:
+
+- Resume from `jp-stage1-w1461-weapon16-20260612.json` and train the W1500-W1630 Spread window before returning to boss-wall work.
+- Accept a candidate only if RAM confirms `weapon` improves or remains useful and the segment stays zero-death.
+- Do not promote any weapon16 or Spread route to the strategy pack unless it reconnects to the boss approach without deaths.

@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-11T22:12:57.901Z",
+  "updatedAt": "2026-06-11T22:29:20.817Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 39,
+          "value": 41,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 36,
+          "value": 37,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 3176.7,
+          "value": 3305.03,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 26,
+          "value": 28,
           "status": "candidate"
         },
         "deaths": {
-          "value": 24,
+          "value": 25,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 2019.36,
+          "value": 2147.69,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-zero-death-bosswall-rejected-batch-20260612; latest status candidate-failed."
+      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w1210-weapon16-jump-right-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -1642,6 +1642,72 @@
       "candidateTrial": "jp-s1-phase-w3208-final-current-20260612",
       "candidateConfig": null,
       "notes": "Zero-death Stage 1 boss-wall batch: 12 segment-first candidates/comparisons tested from W3120/W3208; no candidate exceeded W3208 or cleared boss wall. Representative rejected evidence is phase-enabled W3208 rerun; see docs for candidate list."
+    },
+    {
+      "runId": "jp-s1-w674-weapon16-left-jump-accepted-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T22:29:10.891Z",
+      "runCount": 1,
+      "frames": 1200,
+      "durationSeconds": 20,
+      "activeFrame": 2424,
+      "lostActiveFrame": null,
+      "maxWorldX": 1210,
+      "maxWorldFrame": 3473,
+      "finalWorldX": 1179,
+      "finalFrame": 3624,
+      "targetWorldX": 3300,
+      "deaths": 0,
+      "status": "candidate",
+      "reason": "gameplay-detected",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-s1-w674-weapon16-escape-left-jump-fire-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-w674-weapon16-escape-left-jump-fire-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w674-weapon16-escape-left-jump-fire-20260612.json"
+      },
+      "notes": "Accepted segment-first weapon route evidence: from saved W674 weapon16 state, left_jump_fire escaped the body contact and reached no-death W1210 with weapon16 preserved; not a Stage 1 clear."
+    },
+    {
+      "runId": "jp-s1-w1210-weapon16-jump-right-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T22:29:20.815Z",
+      "runCount": 1,
+      "frames": 6500,
+      "durationSeconds": 108.33,
+      "activeFrame": 3473,
+      "lostActiveFrame": 4931,
+      "maxWorldX": 1461,
+      "maxWorldFrame": 4930,
+      "finalWorldX": 82,
+      "finalFrame": 9973,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-s1-w1210-weapon16-escape-jump-right-fire-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-w1210-weapon16-escape-jump-right-fire-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1210-weapon16-escape-jump-right-fire-20260612.json"
+      },
+      "notes": "Rejected connector with useful best state: W1160-W1235 jump_right_fire carried weapon16 no-death to W1461, but later lost active at frame 4931; save state jp-stage1-w1461-weapon16-20260612 is the next segment-first starting point."
     }
   ],
   "strategyDescriptions": {
