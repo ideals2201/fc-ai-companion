@@ -450,6 +450,22 @@ Bounded 2026-06-12 unattended boss-wall batch:
 - Rejected core candidates from W3208: air left-up/up/neutral/right-up/left-fire/left-jump variants either died before useful core damage or stalled at W3208 and then died.
 - Do not promote these overlays as validated fragments. They are comparison evidence proving that simple local stance overlays are insufficient.
 
+Zero-death 2026-06-12 boss-wall phase replay batch:
+
+- Scope: `survival-v0`, 1P, Contra Japan `contra-j-good`, saved-state segment replay only.
+- Start states: `jp-stage1-w3120-boss-entry-20260612.json` and `jp-stage1-w3208-boss-core-contact-20260612.json`.
+- Headless infrastructure accepted: `headless-runtime-smoke.mjs` now refreshes a full RAM snapshot after `--start-state` restore, because saved state files store compact report snapshots without full `enemies`. The same script can emit boss-wall phase telemetry and can disable the phase scheduler with `--boss-wall-phase=off`.
+- Strategy result: no Stage 1 clear, no boss-wall clear, and no no-death progress beyond W3208.
+- Ledger run: `jp-s1-zero-death-bosswall-rejected-batch-20260612`.
+- Representative ledger evidence: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-phase-w3208-final-current-20260612.json`.
+- Representative facts: phase enabled, max no-death progress W3208, lost active at frame 8128 after falling back to W3142, last phase decision `station-crowd-gate-clear` with `down`.
+- Baseline comparison: `jp-s1-w3208-route-plan-phase-off-20260612` lost active at frame 7974 and also did not exceed W3208.
+- Rejected phase candidate from W3120: `jp-s1-phase-from-w3120-20260612` died before the best point, max W3188.
+- Rejected W3208 force overlays: `jp-s1-w3208-force-right-up-20260612`, `jp-s1-w3208-force-right-fire-20260612`, `jp-s1-w3208-force-neutral-fire-20260612`, `jp-s1-w3208-force-up-fire-20260612`, `jp-s1-w3208-force-right-duck-20260612`, `jp-s1-w3208-turn-jump-right-20260612`, `jp-s1-w3208-turn-early-right-20260612`, and `jp-s1-w3208-landing-jump-right-20260612`.
+- `jp-s1-w3208-turn-early-right-20260612` reported `recovered-after-loss`; reject it because the loss happened before the later recovery and it does not satisfy zero-death validation.
+- A temporary recovery-bypass phase logic trial died earlier at frame 8023 and was not retained as strategy logic.
+- Do not treat any result in this batch as accepted strategy progress. The only accepted work is replay infrastructure and rejection evidence.
+
 Next high-value route work:
 
 - Reopen weapon acquisition before the boss. TAS/jsnes evidence points to useful windows near W344 and W1591, but every pickup must be validated in the single-player `survival-v0` state.

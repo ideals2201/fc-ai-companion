@@ -170,6 +170,7 @@ function parseArgs(argv) {
     candidateConfigPath: "",
     forceCandidateOverlay: false,
     candidateTrial: null,
+    bossWallPhase: true,
     dryRun: false,
     frames: 1800,
     probeInput: "none",
@@ -185,6 +186,8 @@ function parseArgs(argv) {
   for (const arg of argv) {
     if (arg === "--dry-run") options.dryRun = true;
     else if (arg === "--two-player") options.twoPlayer = true;
+    else if (arg === "--boss-wall-phase=off") options.bossWallPhase = false;
+    else if (arg === "--boss-wall-phase=on") options.bossWallPhase = true;
     else if (arg === "--probe=right-b") options.probeInput = "right-b";
     else if (arg === "--probe=route-plan") options.probeInput = "route-plan";
     else if (arg.startsWith("--candidate-trial=")) {
@@ -426,6 +429,15 @@ function compactRouteSegment(segment) {
   };
 }
 
+function compactBossWallPhaseDecision(decision) {
+  if (!decision) return null;
+  return {
+    phase: decision.phase,
+    reason: decision.reason,
+    buttons: buttonSummary(decision.buttons)
+  };
+}
+
 function buttonSummary(buttons) {
   return buttonOrder.filter((button) => buttons[button]);
 }
@@ -596,10 +608,28 @@ async function main() {
   const {
     decideHeadlessRoutePlanProbeButtons
   } = await importTypeScriptModule("apps/browser-cockpit/src/headlessRoutePlanProbe.ts");
+  const {
+    decideBossWallMicroAction
+  } = await importTypeScriptModule("apps/browser-cockpit/src/contraStage1BossWall.ts");
+  const {
+    applyBossWallPhaseContainmentClamp,
+    createBossWallPhaseState,
+    describeBossWallPhaseTelemetry,
+    decideBossWallPhaseAction,
+    shouldBypassAiActionLockForBossWallPhase,
+    shouldUseBossWallPhaseSafetyOverride,
+    updateBossWallPhaseState
+  } = await importTypeScriptModule("apps/browser-cockpit/src/contraStage1BossWallPhase.ts");
   const strategyPlan = planForStrategy(options.strategy, defaultStrategyPlans);
   const candidateConfig = readCandidateConfig(options.candidateConfigPath);
   const candidateOverlay = candidateConfig?.overlay ?? null;
   const candidateTrial = options.candidateTrial ?? candidateConfig?.id ?? null;
+  const bossWallPhaseEnabled = Boolean(
+    options.bossWallPhase
+    && options.strategy === "survival-v0"
+    && options.probeInput === "route-plan"
+    && !(options.forceCandidateOverlay && candidateOverlay)
+  );
 
   const baseReport = {
     schema: "fc-ai-headless-runtime-smoke-v1",
@@ -622,6 +652,7 @@ async function main() {
       strategy: strategyPlan.strategy,
       segmentCount: strategyPlan.segments.length
     } : null,
+    bossWallPhaseEnabled,
     twoPlayerRequested: options.twoPlayer
   };
 
@@ -690,8 +721,8 @@ async function main() {
       return;
     }
     startFrame = Number.isFinite(savedState.frame) ? Math.max(0, savedState.frame) : 0;
-    startStateSnapshot = savedState.snapshot ?? null;
     nes.fromJSON(savedState.state);
+    startStateSnapshot = readHeadlessGameRamSnapshot(nes, startFrame);
   }
 
   let completedFrames = 0;
@@ -718,6 +749,11 @@ async function main() {
   let maxNoDeathProgressRouteSegment = startStateSnapshot
     ? activeRouteSegmentForPlan(startStateSnapshot, strategyPlan)
     : null;
+  let bossWallPhaseState = createBossWallPhaseState();
+  let bossWallPhaseTelemetry = describeBossWallPhaseTelemetry(startStateSnapshot, bossWallPhaseState);
+  let lastBossWallPhaseTelemetry = bossWallPhaseTelemetry;
+  let lastBossWallPhaseDecision = null;
+  let lastBossWallPhaseDecisionFrame = null;
   const traceFrames = [];
 
   function shouldReplaceProgressSnapshot(snapshot, currentSnapshot) {
@@ -753,19 +789,50 @@ async function main() {
     );
     const routeSegment = activeRouteSegmentForPlan(beforeSnapshot, strategyPlan);
     const progressStallFrames = currentProgressStallFrames(beforeSnapshot);
-    const buttons = active && options.probeInput === "route-plan"
-        ? decideHeadlessRoutePlanProbeButtons({
-            candidateTrial,
-            candidateOverlay,
-            forceCandidateOverlay: options.forceCandidateOverlay,
-            frame,
-            progressStallFrames,
+    const routePlanButtons = active && options.probeInput === "route-plan"
+      ? decideHeadlessRoutePlanProbeButtons({
+          candidateTrial,
+          candidateOverlay,
+          forceCandidateOverlay: options.forceCandidateOverlay,
+          frame,
+          progressStallFrames,
           routeSegment,
           snapshot: beforeSnapshot
         })
       : active && options.probeInput !== "none"
         ? probeButtons(options.probeInput, createHeadlessButtonState)
         : startupButtons;
+    let buttons = routePlanButtons;
+    if (active && bossWallPhaseEnabled) {
+      bossWallPhaseState = updateBossWallPhaseState(bossWallPhaseState, beforeSnapshot, frame);
+      bossWallPhaseTelemetry = describeBossWallPhaseTelemetry(beforeSnapshot, bossWallPhaseState);
+      lastBossWallPhaseTelemetry = bossWallPhaseTelemetry;
+      const phaseDecision = decideBossWallPhaseAction(beforeSnapshot, bossWallPhaseState, frame);
+      const phaseOwnsControl = shouldBypassAiActionLockForBossWallPhase(beforeSnapshot, bossWallPhaseState);
+      const safetyAction = decideBossWallMicroAction(beforeSnapshot, frame);
+      let appliedBossWallPhaseDecision = null;
+      if (phaseOwnsControl && phaseDecision) {
+        buttons = phaseDecision.buttons;
+        appliedBossWallPhaseDecision = phaseDecision;
+      } else if (safetyAction && shouldUseBossWallPhaseSafetyOverride(safetyAction.reason)) {
+        buttons = applyBossWallPhaseContainmentClamp(beforeSnapshot, bossWallPhaseState, safetyAction.buttons);
+        appliedBossWallPhaseDecision = {
+          phase: bossWallPhaseState.phase,
+          reason: `safety:${safetyAction.reason}`,
+          buttons
+        };
+      } else if (phaseDecision) {
+        buttons = phaseDecision.buttons;
+        appliedBossWallPhaseDecision = phaseDecision;
+      }
+      if (appliedBossWallPhaseDecision) {
+        lastBossWallPhaseDecision = compactBossWallPhaseDecision(appliedBossWallPhaseDecision);
+        lastBossWallPhaseDecisionFrame = frame;
+      }
+    } else if (!active) {
+      bossWallPhaseState = createBossWallPhaseState();
+      bossWallPhaseTelemetry = describeBossWallPhaseTelemetry(beforeSnapshot, bossWallPhaseState);
+    }
     applyButtonStateToNes(nes, 1, buttons);
     applyButtonStateToNes(nes, 2, createHeadlessButtonState());
     nes.frame();
@@ -858,6 +925,11 @@ async function main() {
     maxProgressStallFrames,
     stallThresholdFrames,
     routeSegment: compactRouteSegment(activeRouteSegmentForPlan(finalSnapshot, strategyPlan)),
+    bossWallPhaseState,
+    bossWallPhaseTelemetry: describeBossWallPhaseTelemetry(finalSnapshot, bossWallPhaseState),
+    lastBossWallPhaseTelemetry,
+    lastBossWallPhaseDecision,
+    lastBossWallPhaseDecisionFrame,
     rom: {
       fileName: path.basename(romPath),
       ...hashRom(romBytes)

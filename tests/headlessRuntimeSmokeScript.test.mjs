@@ -24,6 +24,13 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /--probe=right-b/);
   assert.match(scriptSource, /--probe=route-plan/);
   assert.match(scriptSource, /headlessRoutePlanProbe\.ts/);
+  assert.match(scriptSource, /contraStage1BossWall\.ts/);
+  assert.match(scriptSource, /contraStage1BossWallPhase\.ts/);
+  assert.match(scriptSource, /bossWallPhaseEnabled/);
+  assert.match(scriptSource, /bossWallPhaseTelemetry/);
+  assert.match(scriptSource, /lastBossWallPhaseDecision/);
+  assert.match(scriptSource, /updateBossWallPhaseState/);
+  assert.match(scriptSource, /decideBossWallPhaseAction/);
   assert.match(scriptSource, /transpileLocalTypeScriptModule/);
   assert.match(scriptSource, /\$\{specifier\}\.ts/);
   assert.match(scriptSource, /probeInput/);
@@ -90,6 +97,7 @@ test("headless runtime smoke can save and resume jsnes state for segment-first t
   assert.match(scriptSource, /--stop-after-save/);
   assert.match(scriptSource, /nes\.toJSON\(\)/);
   assert.match(scriptSource, /nes\.fromJSON/);
+  assert.match(scriptSource, /nes\.fromJSON\(savedState\.state\);\s*startStateSnapshot = readHeadlessGameRamSnapshot\(nes, startFrame\);/);
   assert.match(scriptSource, /fc-ai-jsnes-headless-state-v1/);
   assert.match(scriptSource, /startFrame/);
   assert.match(scriptSource, /completedFrames/);
