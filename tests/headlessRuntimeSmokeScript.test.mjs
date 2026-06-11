@@ -8,7 +8,7 @@ test("headless runtime smoke script reads local ROM configuration without embedd
   assert.match(scriptSource, /FC_AI_COMPANION_ROM_PATH/);
   assert.match(scriptSource, /headlessRuntimeCore\.ts/);
   assert.match(scriptSource, /stageOneStrategyPlan\.ts/);
-  assert.doesNotMatch(scriptSource, /writeFileSync|createWriteStream/);
+  assert.doesNotMatch(scriptSource, /createWriteStream/);
   assert.doesNotMatch(scriptSource, /\.nes["']/);
 });
 
@@ -31,8 +31,11 @@ test("headless runtime smoke can optionally probe direct controller writes", () 
   assert.match(scriptSource, /candidateTrial/);
   assert.match(scriptSource, /--candidate-config=/);
   assert.match(scriptSource, /readCandidateConfig/);
+  assert.match(scriptSource, /\\uFEFF/);
   assert.match(scriptSource, /candidateOverlay/);
   assert.match(scriptSource, /maxProgressSnapshot/);
+  assert.match(scriptSource, /maxNoDeathProgressSnapshot/);
+  assert.match(scriptSource, /maxNoDeathProgressRouteSegment/);
   assert.match(scriptSource, /lastActiveSnapshot/);
   assert.match(scriptSource, /lostActiveSnapshot/);
   assert.match(scriptSource, /preLostActiveSnapshot/);
@@ -78,4 +81,23 @@ test("headless runtime smoke trace summary can project player bullet threat inte
   assert.match(scriptSource, /targetClearedAfter/);
   assert.match(scriptSource, /ramConfirmedHit/);
   assert.match(scriptSource, /predictedHitButNoRamEffect/);
+});
+
+test("headless runtime smoke can save and resume jsnes state for segment-first training", () => {
+  assert.match(scriptSource, /--save-state-at=/);
+  assert.match(scriptSource, /--save-state=/);
+  assert.match(scriptSource, /--start-state=/);
+  assert.match(scriptSource, /--stop-after-save/);
+  assert.match(scriptSource, /nes\.toJSON\(\)/);
+  assert.match(scriptSource, /nes\.fromJSON/);
+  assert.match(scriptSource, /fc-ai-jsnes-headless-state-v1/);
+  assert.match(scriptSource, /startFrame/);
+  assert.match(scriptSource, /completedFrames/);
+  assert.match(scriptSource, /endFrame/);
+});
+
+test("headless runtime smoke registers mapper 23 for Contra Japan runs", () => {
+  assert.match(scriptSource, /registerHeadlessMapper23/);
+  assert.match(scriptSource, /Mappers\[23\]\s*=\s*Mapper23/);
+  assert.match(scriptSource, /Konami VRC2\/VRC4/);
 });

@@ -44,19 +44,19 @@ test("primary cockpit windows keep stable outer dimensions", () => {
   assertDeclaration(controllerBay, "overflow", /^hidden$/);
 
   const centerColumn = ruleFor(".center-column");
-  assertDeclaration(centerColumn, "grid-template-rows", /^620px 1520px$/);
+  assertDeclaration(centerColumn, "grid-template-rows", /^620px 1460px$/);
 
   const tvShell = ruleFor(".tv-shell");
   assertDeclaration(tvShell, "height", /^620px$/);
   assertDeclaration(tvShell, "overflow", /^hidden$/);
 
   const consoleDeck = ruleFor(".console-deck");
-  assertDeclaration(consoleDeck, "grid-template-rows", /^570px 360px 520px$/);
-  assertDeclaration(consoleDeck, "height", /^1520px$/);
+  assertDeclaration(consoleDeck, "grid-template-rows", /^420px 360px 620px$/);
+  assertDeclaration(consoleDeck, "height", /^1460px$/);
   assertDeclaration(consoleDeck, "overflow", /^hidden$/);
 
   const consoleMachineFrame = ruleFor(".console-machine-frame");
-  assertDeclaration(consoleMachineFrame, "grid-template-rows", /^auto minmax\(0, 1fr\) auto$/);
+  assertDeclaration(consoleMachineFrame, "grid-template-rows", /^minmax\(0, 1fr\) auto$/);
 
   const dataDashboard = ruleFor(".data-dashboard");
   assertDeclaration(dataDashboard, "height", /^700px$/);
@@ -90,23 +90,45 @@ test("training controls extend downward without turning the panel into a scroll 
   assertDeclaration(strategyControl, "padding", /^10px$/);
   assertNoDeclaration(strategyControl, "overflow");
 
-  const trainingPackBanner = ruleFor(".training-pack-banner");
-  assertDeclaration(trainingPackBanner, "min-height", /^38px$/);
+  const strategyPackageBrowser = ruleFor(".strategy-package-browser-frame");
+  assertDeclaration(strategyPackageBrowser, "padding", /^9px$/);
+
+  const strategyPackageMainGrid = ruleFor(".strategy-package-main-grid");
+  assertDeclaration(strategyPackageMainGrid, "grid-template-columns", /^minmax\(260px, 0\.46fr\) minmax\(0, 1fr\)$/);
 
   const strategyResourceRouting = ruleFor(".strategy-resource-routing");
   assertDeclaration(strategyResourceRouting, "grid-template-columns", /^repeat\(2, minmax\(0, 1fr\)\) minmax\(88px, auto\)$/);
 
-  const strategyResourceInfo = ruleFor(".strategy-resource-info");
-  assertDeclaration(strategyResourceInfo, "grid-template-columns", /^repeat\(6, minmax\(0, 1fr\)\)$/);
+  const strategyPackStatusStrip = ruleFor(".strategy-pack-status-strip");
+  assertDeclaration(strategyPackStatusStrip, "grid-template-columns", /^repeat\(4, minmax\(0, 1fr\)\)$/);
+
+  const strategyOperationsResultsGrid = ruleFor(".strategy-operations-results-grid");
+  assertDeclaration(strategyOperationsResultsGrid, "grid-template-columns", /^minmax\(330px, 0\.42fr\) minmax\(0, 1fr\)$/);
+
+  const strategyCommandColumn = ruleFor(".strategy-command-column");
+  assertDeclaration(strategyCommandColumn, "grid-template-rows", /^auto minmax\(0, 1fr\)$/);
 
   const strategyPackageSavePanel = ruleFor(".strategy-package-save-panel");
-  assertDeclaration(strategyPackageSavePanel, "grid-template-columns", /^96px minmax\(0, 1fr\) minmax\(0, 1\.1fr\) minmax\(0, 1fr\) minmax\(0, 1fr\)$/);
+  assertDeclaration(strategyPackageSavePanel, "grid-template-columns", /^86px minmax\(0, 1fr\)$/);
+  assertDeclaration(strategyPackageSavePanel, "grid-template-areas", /"scope actions"/);
+
+  const strategyPackageActionGrid = ruleFor(".strategy-package-action-grid");
+  assertDeclaration(strategyPackageActionGrid, "grid-template-columns", /^repeat\(2, minmax\(0, 1fr\)\)$/);
+
+  const strategyPackageSaveMeta = ruleFor(".strategy-package-save-meta");
+  assertDeclaration(strategyPackageSaveMeta, "grid-template-columns", /^1fr$/);
 
   const strategyResultBoard = ruleFor(".strategy-result-board");
-  assertDeclaration(strategyResultBoard, "grid-template-columns", /^repeat\(5, minmax\(0, 1fr\)\)$/);
+  assertDeclaration(strategyResultBoard, "grid-template-columns", /^repeat\(2, minmax\(0, 1fr\)\)$/);
 
   const packageScope = ruleFor(".package-scope-control");
-  assertDeclaration(packageScope, "min-height", /^82px$/);
+  assertDeclaration(packageScope, "min-height", /^0$/);
+
+  const sideTrainingStrategySelector = ruleFor(".side-training-strategy-selector");
+  assertDeclaration(sideTrainingStrategySelector, "grid-template-columns", /^minmax\(0, 1fr\)$/);
+
+  const newPackageSourceSelector = ruleFor(".new-package-source-selector");
+  assertDeclaration(newPackageSourceSelector, "grid-template-columns", /^1fr$/);
 
   const packageScopeToggleStack = ruleFor(".package-scope-toggle-stack");
   assertDeclaration(packageScopeToggleStack, "grid-template-rows", /^repeat\(2, 1fr\)$/);

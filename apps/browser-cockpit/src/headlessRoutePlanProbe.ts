@@ -4,7 +4,8 @@ import {
   stageOneOpeningLowFixedThreatPatch,
   type StageOneRewardButtonPatch
 } from "./contraStage1RewardTactics";
-import { routeActionOverlayPatch, type RouteActionOverlay } from "./routeActionOverlay";
+import { decideBossWallMicroAction, type BossWallEnemy, type BossWallSnapshot } from "./contraStage1BossWall";
+import { routeActionOverlayPatch, type RouteActionOverlayInput } from "./routeActionOverlay";
 import type { StageRouteSegment } from "./stageOneStrategyPlan";
 
 type HeadlessButtonName = "up" | "down" | "left" | "right" | "a" | "b" | "start" | "select";
@@ -14,6 +15,7 @@ type RoutePlanProbeEnemy = {
   fixed: boolean;
   hp: number;
   kind: string;
+  priority?: number;
   routine?: number;
   threat: boolean;
   type: number;
@@ -22,6 +24,8 @@ type RoutePlanProbeEnemy = {
 };
 
 type RoutePlanProbeSnapshot = {
+  bulletCount?: number;
+  bullets?: unknown[];
   enemies: RoutePlanProbeEnemy[];
   jumpState: number;
   level: number;
@@ -45,7 +49,8 @@ function createProbeButtonState(): HeadlessButtonState {
 }
 
 export type HeadlessRoutePlanProbeOptions = {
-  candidateOverlay?: RouteActionOverlay | null;
+  candidateOverlay?: RouteActionOverlayInput;
+  forceCandidateOverlay?: boolean;
   candidateTrial?:
     | "w1205-falling-threat-priority"
     | "w1205-falling-threat-contact-interrupt"
@@ -69,6 +74,8 @@ export type HeadlessRoutePlanProbeOptions = {
     | "w1765-rear-contact-duck-carry"
     | "w1765-grounded-rear-micro-duck"
     | "w1769-reentry-right-extend"
+    | "w2287-weapon-gate-jump-suppress"
+    | "w2331-air-preclear-up-fire"
     | "w1686-left-edge-close-body-right-guard"
     | "w1686-left-edge-overhead-duck-guard"
     | "w1686-left-edge-duck-hold-guard"
@@ -99,6 +106,102 @@ function pulseWindow(frame: number, period: number, width: number) {
 
 function isGrounded(snapshot: RoutePlanProbeSnapshot) {
   return snapshot.jumpState === 0;
+}
+
+function hasBossWallImmediateAirBodyOverlap(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.jumpState !== 0
+    && snapshot.worldX >= 3183
+    && snapshot.worldX <= 3198
+    && snapshot.playerX >= 108
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 150
+    && snapshot.playerY <= 176
+    && snapshot.enemies.some((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 8
+        && dy >= -8
+        && dy <= 8;
+    });
+}
+
+function hasBossWallImmediateRearAirBodyOverlap(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.jumpState !== 0
+    && snapshot.worldX >= 3193
+    && snapshot.worldX <= 3198
+    && snapshot.playerX >= 108
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 150
+    && snapshot.playerY <= 176
+    && snapshot.enemies.some((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 0
+        && dy >= -8
+        && dy <= 8;
+    });
+}
+
+function hasBossWallForwardFallingBodyCorridor(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.jumpState !== 0
+    && snapshot.worldX >= 3194
+    && snapshot.worldX <= 3200
+    && snapshot.playerX >= 122
+    && snapshot.playerX <= 128
+    && snapshot.playerY >= 176
+    && snapshot.playerY <= 194
+    && snapshot.enemies.some((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 0
+        && dx <= 6
+        && dy >= -42
+        && dy <= 4;
+    });
+}
+
+function hasBossWallRearFallingBodyCorridor(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.jumpState !== 0
+    && snapshot.worldX >= 3194
+    && snapshot.worldX <= 3200
+    && snapshot.playerX >= 122
+    && snapshot.playerX <= 128
+    && snapshot.playerY >= 176
+    && snapshot.playerY <= 194
+    && snapshot.enemies.some((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 0
+        && dy >= -42
+        && dy <= 4;
+    });
+}
+
+function hasBossWallUpperStationRearBodyOverlap(snapshot: RoutePlanProbeSnapshot) {
+  return snapshot.jumpState !== 0
+    && snapshot.worldX >= 3204
+    && snapshot.worldX <= 3212
+    && snapshot.playerX >= 132
+    && snapshot.playerX <= 146
+    && snapshot.playerY >= 128
+    && snapshot.playerY <= 154
+    && snapshot.enemies.some((enemy) => {
+      if (!enemy.threat || enemy.hp <= 0 || enemy.fixed) return false;
+      if ((enemy.routine ?? 0) === 0) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -12
+        && dx <= 0
+        && dy >= -12
+        && dy <= 8;
+    });
 }
 
 function isIgnoredEnemy(enemy: RoutePlanProbeEnemy) {
@@ -176,6 +279,22 @@ function applyStageOneRewardPatch(buttons: HeadlessButtonState, patch: StageOneR
   if (typeof patch.right === "boolean") buttons.right = patch.right;
   if (typeof patch.a === "boolean") buttons.a = patch.a;
   if (typeof patch.b === "boolean") buttons.b = patch.b;
+}
+
+function routePlanProbeEnemyPriority(enemy: RoutePlanProbeEnemy) {
+  return enemy.priority ?? (enemy.threat ? Math.max(1, Math.min(9, enemy.hp)) : 0);
+}
+
+function asBossWallSnapshot(snapshot: RoutePlanProbeSnapshot): BossWallSnapshot {
+  return {
+    ...snapshot,
+    bossDefeated: 0,
+    enemies: snapshot.enemies.map((enemy): BossWallEnemy => ({
+      ...enemy,
+      priority: routePlanProbeEnemyPriority(enemy),
+      routine: enemy.routine ?? 0
+    }))
+  };
 }
 
 function stageOneOpeningLowFixedThreatProbePatch(
@@ -376,7 +495,7 @@ function hasW1454AirborneFixedContactRightCarry(snapshot: RoutePlanProbeSnapshot
     if (enemy.type !== 5 && enemy.type !== 1 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
     const dx = enemy.x - snapshot.playerX;
     const dy = enemy.y - snapshot.playerY;
-    return dx >= 8 && dx <= 24 && dy >= 40 && dy <= 72;
+    return dx >= 4 && dx <= 24 && dy >= 40 && dy <= 72;
   });
 }
 
@@ -401,6 +520,22 @@ function findW1456AirRouteFormationThreat(snapshot: RoutePlanProbeSnapshot) {
     const dy = enemy.y - snapshot.playerY;
     return dx >= 10 && dx <= 34 && dy >= -45 && dy <= 34;
   }) ?? null;
+}
+
+function hasW1465GroundedStallRightUpFire(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.weapon !== 0) return false;
+  if (snapshot.worldX < 1450 || snapshot.worldX > 1488) return false;
+  if (snapshot.playerX < 118 || snapshot.playerX > 136) return false;
+  if (snapshot.playerY < 188 || snapshot.playerY > 204) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -24 && dx <= -8 && dy >= 24 && dy <= 44;
+  });
 }
 
 function hasW1726DangerLowSideBodyThreat(snapshot: RoutePlanProbeSnapshot) {
@@ -648,6 +783,231 @@ function findW1765GroundedRearSameLaneContact(snapshot: RoutePlanProbeSnapshot) 
       const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
       return distanceA - distanceB;
     })[0] ?? null;
+}
+
+function findW1769LowerLaneRightClearContact(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1686 || snapshot.worldX > 1820) return null;
+  if (snapshot.playerY < 190 || snapshot.playerY > 216) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -12 && dx <= 34 && dy >= -44 && dy <= 24;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function hasW241AirCloseType5NeutralFire(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 232 || snapshot.worldX > 246) return false;
+  if (snapshot.playerX < 74 || snapshot.playerX > 90) return false;
+  if (snapshot.playerY < 78 || snapshot.playerY > 94) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed || !enemy.threat || enemy.hp <= 0) return false;
+    if (enemy.type !== 5 && enemy.kind !== "enemy") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 5 && dx <= 16 && dy >= 10 && dy <= 24;
+  });
+}
+
+function hasW1787LowerLaneSpawnPreclearCue(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1784 || snapshot.worldX > 1804) return false;
+  if (snapshot.playerY < 190 || snapshot.playerY > 204) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (!enemy.threat || enemy.fixed) return false;
+    if (enemy.kind !== "object" || enemy.type !== 5 || enemy.hp !== 0) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0 && dx <= 12 && dy >= -36 && dy <= -24;
+  });
+}
+
+function hasW1812UpperAirFixedRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1790 || snapshot.worldX > 1924) return false;
+  if (snapshot.playerY < 132 || snapshot.playerY > 204) return false;
+
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0 && dx <= 44 && dy >= -76 && dy <= 8;
+  });
+}
+
+function findW1835AirSameLaneRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return null;
+  if (snapshot.worldX < 1830 || snapshot.worldX > 1845) return null;
+  if (snapshot.playerY < 148 || snapshot.playerY > 184) return null;
+
+  return snapshot.enemies
+    .filter((enemy) => {
+      if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+      if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -4 && dx <= 12 && dy >= -28 && dy <= 8;
+    })
+    .sort((a, b) => {
+      const distanceA = Math.abs(a.x - snapshot.playerX) + Math.abs(a.y - snapshot.playerY);
+      const distanceB = Math.abs(b.x - snapshot.playerX) + Math.abs(b.y - snapshot.playerY);
+      return distanceA - distanceB;
+    })[0] ?? null;
+}
+
+function hasW1914LowLaneFallBrake(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1914 || snapshot.worldX > 1952) return false;
+  return snapshot.playerY >= 196 && snapshot.playerY <= 240;
+}
+
+function hasW1986PitAirRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1986 || snapshot.worldX > 2020) return false;
+  return snapshot.playerY >= 100 && snapshot.playerY <= 236;
+}
+
+function hasW1730UpperAirRightFireCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1730 || snapshot.worldX > 1775) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 70 && snapshot.playerY <= 130;
+}
+
+function hasW1930PitEntryAirRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1920 || snapshot.worldX > 1985) return false;
+  return snapshot.playerY >= 112 && snapshot.playerY <= 192;
+}
+
+function hasW1940PitEntryEarlyGroundCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1940 || snapshot.worldX > 1958) return false;
+  return snapshot.playerY >= 148 && snapshot.playerY <= 188;
+}
+
+function hasW1959PitEntryDelayedJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 1959 || snapshot.worldX > 1972) return false;
+  return snapshot.playerY >= 148 && snapshot.playerY <= 188;
+}
+
+function hasW2018PitExitPlatformRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2018 || snapshot.worldX > 2025) return false;
+  return snapshot.playerY >= 148 && snapshot.playerY <= 188;
+}
+
+function hasW2026PitExitPlatformJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2026 || snapshot.worldX > 2040) return false;
+  return snapshot.playerY >= 148 && snapshot.playerY <= 188;
+}
+
+function hasW2068GroundedPlatformJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2068 || snapshot.worldX > 2092) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 100 && snapshot.playerY <= 160;
+}
+
+function hasW2148WeaponGateAirCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2148 || snapshot.worldX > 2172) return false;
+  return snapshot.playerY >= 12 && snapshot.playerY <= 236;
+}
+
+function hasW2468BossApproachMidPlatformEdgeJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2438 || snapshot.worldX > 2700) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 148 && snapshot.playerY <= 232;
+}
+
+function hasW2812BossApproachLateEdgeJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2812 || snapshot.worldX > 2842) return false;
+  if (snapshot.playerX < 120 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 190 && snapshot.playerY <= 236;
+}
+
+function hasW2763BossApproachGroundRun(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2763 || snapshot.worldX > 2782) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 126 && snapshot.playerY <= 180;
+}
+
+function hasW2738BossApproachAirRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2738 || snapshot.worldX > 2768) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 72 && snapshot.playerY <= 150;
+}
+
+function hasW2782BossApproachHeldJump(snapshot: RoutePlanProbeSnapshot) {
+  if (snapshot.worldX < 2782 || snapshot.worldX > 2812) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 70 && snapshot.playerY <= 230;
+}
+
+function hasW2813BossApproachAirRightCarry(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2813 || snapshot.worldX > 2880) return false;
+  if (snapshot.playerX < 116 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 70 && snapshot.playerY <= 236;
+}
+
+function hasW2896BossApproachEntryJump(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2896 || snapshot.worldX > 2964) return false;
+  if (snapshot.playerX < 118 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 140 && snapshot.playerY <= 236;
+}
+
+function hasW3145BossEntryDuckFire(snapshot: RoutePlanProbeSnapshot) {
+  if (snapshot.worldX < 3145 || snapshot.worldX > 3185) return false;
+  if (snapshot.playerX < 112 || snapshot.playerX > 136) return false;
+  return snapshot.playerY >= 96 && snapshot.playerY <= 150;
+}
+
+function hasW2287WeaponGateJumpSuppress(snapshot: RoutePlanProbeSnapshot) {
+  if (!isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2280 || snapshot.worldX > 2300) return false;
+  if (snapshot.playerY < 80 || snapshot.playerY > 112) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || !enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 2 && enemy.kind !== "durable") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 4 && dx <= 16 && dy >= 20 && dy <= 56;
+  });
+}
+
+function hasW2331WeaponGateAirPreclear(snapshot: RoutePlanProbeSnapshot) {
+  if (isGrounded(snapshot)) return false;
+  if (snapshot.worldX < 2331 || snapshot.worldX > 2342) return false;
+  if (snapshot.playerY < 52 || snapshot.playerY > 86) return false;
+  return snapshot.enemies.some((enemy) => {
+    if (isIgnoredEnemy(enemy) || enemy.fixed || enemy.hp <= 0) return false;
+    if (enemy.type !== 1 && enemy.type !== 5 && enemy.kind !== "enemy" && enemy.kind !== "object") return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 2 && dx <= 24 && dy >= 8 && dy <= 56;
+  });
 }
 
 function hasW1726GroundedOverheadDuckAdvance(snapshot: RoutePlanProbeSnapshot) {
@@ -930,6 +1290,7 @@ function applyRouteJump(buttons: HeadlessButtonState, routeSegment: HeadlessRout
 export function decideHeadlessRoutePlanProbeButtons({
   candidateOverlay = null,
   candidateTrial = null,
+  forceCandidateOverlay = false,
   frame,
   progressStallFrames = 0,
   routeSegment,
@@ -943,14 +1304,112 @@ export function decideHeadlessRoutePlanProbeButtons({
   const airborneLowerEscapeThreat = hasAirborneLowerEscapeThreat(snapshot);
   const directBodyOverlapThreat = findDirectBodyOverlapThreat(snapshot);
   const controlledAdvanceBias = progressStallFrames >= 900;
+  const shouldUsePromotedDefaultRoute = !candidateTrial
+    || Boolean(candidateOverlay)
+    || candidateTrial === "w2287-weapon-gate-jump-suppress"
+    || candidateTrial === "w2331-air-preclear-up-fire";
+  const overlayPatch = routeActionOverlayPatch(snapshot, candidateOverlay, frame);
   const openingLowFixedThreatPatch = stageOneOpeningLowFixedThreatProbePatch(snapshot, frame);
   if (openingLowFixedThreatPatch) {
     applyStageOneRewardPatch(buttons, openingLowFixedThreatPatch);
     return buttons;
   }
-  const overlayPatch = routeActionOverlayPatch(snapshot, candidateOverlay, frame);
+  if (forceCandidateOverlay && overlayPatch) {
+    applyStageOneRewardPatch(buttons, overlayPatch);
+    return buttons;
+  }
+  if (hasBossWallImmediateRearAirBodyOverlap(snapshot)) {
+    return {
+      ...buttons,
+      b: true,
+      up: true,
+      right: true
+    };
+  }
+  if (hasBossWallImmediateAirBodyOverlap(snapshot)) {
+    return {
+      ...buttons,
+      b: true,
+      up: true,
+      left: true
+    };
+  }
+  if (hasBossWallForwardFallingBodyCorridor(snapshot)) {
+    return {
+      ...buttons,
+      b: true,
+      up: true,
+      right: true
+    };
+  }
+  if (hasBossWallRearFallingBodyCorridor(snapshot)) {
+    return {
+      ...buttons,
+      b: true,
+      up: true,
+      right: true
+    };
+  }
+  if (hasBossWallUpperStationRearBodyOverlap(snapshot)) {
+    return {
+      ...buttons,
+      b: true,
+      up: true,
+      right: true
+    };
+  }
+  if (hasW3145BossEntryDuckFire(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-boss-entry-duck-fire",
+      right: false,
+      up: false
+    });
+    return buttons;
+  }
+  const bossWallMicroAction = decideBossWallMicroAction(asBossWallSnapshot(snapshot), frame);
+  if (bossWallMicroAction) return bossWallMicroAction.buttons;
   if (overlayPatch) {
     applyStageOneRewardPatch(buttons, overlayPatch);
+    return buttons;
+  }
+  if (hasW241AirCloseType5NeutralFire(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-w241-air-close-type5-neutral-fire",
+      right: false,
+      up: false
+    });
+    return buttons;
+  }
+  if (candidateTrial === "w2331-air-preclear-up-fire" && hasW2331WeaponGateAirPreclear(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-weapon-gate-air-preclear",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (candidateTrial === "w2287-weapon-gate-jump-suppress" && hasW2287WeaponGateJumpSuppress(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-weapon-gate-jump-suppress",
+      right: true,
+      up: false
+    });
     return buttons;
   }
   if (candidateTrial === "w1205-force-upright-through") {
@@ -1802,6 +2261,379 @@ export function decideHeadlessRoutePlanProbeButtons({
       applyStageOneRewardPatch(buttons, fallingThreatPatch);
       return buttons;
     }
+  }
+  if (hasW1465GroundedStallRightUpFire(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-w1465-grounded-stall-right-up-fire",
+      right: true,
+      up: true
+    });
+    return buttons;
+  }
+  if (shouldUsePromotedDefaultRoute && hasW1730UpperAirRightFireCarry(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: false,
+      left: false,
+      reason: "stage-one-w1730-upper-air-right-fire-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  const routeFormationThreat = findW1456AirRouteFormationThreat(snapshot);
+  if (routeFormationThreat) {
+    const dy = routeFormationThreat.y - snapshot.playerY;
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: dy >= 12,
+      left: false,
+      reason: "stage-one-air-route-hold-right",
+      right: true,
+      up: dy <= -12
+    });
+    return buttons;
+  }
+  if (shouldUsePromotedDefaultRoute) {
+    if (hasW1730UpperAirRightFireCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1730-upper-air-right-fire-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    const precontactBody = findW1751PrecontactForwardBody(snapshot);
+    if (precontactBody) {
+      const dy = precontactBody.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: dy > 12,
+        left: false,
+        reason: "stage-one-w1751-precontact-right-fire",
+        right: true,
+        up: dy <= 12
+      });
+      return buttons;
+    }
+    const descentBody = findW1755DescentRightFireBody(snapshot);
+    if (descentBody) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: true,
+        left: false,
+        reason: "stage-one-w1755-descent-right-fire-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    const reentryBody = findW1765ReentryForwardBody(snapshot);
+    if (reentryBody) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1765-reentry-right-fire-carry",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
+    const reentryExtensionBody = findW1769ReentryRightCarryBody(snapshot);
+    if (reentryExtensionBody) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1769-reentry-right-extend",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
+    if (hasW1787LowerLaneSpawnPreclearCue(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1769-reentry-right-extend",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
+    if (hasW1812UpperAirFixedRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1769-reentry-right-extend",
+        right: true,
+        up: true
+      });
+      return buttons;
+    }
+    const airSameLaneContact = findW1835AirSameLaneRightCarry(snapshot);
+    if (airSameLaneContact) {
+      const dy = airSameLaneContact.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-w1769-reentry-right-extend",
+        right: true,
+        up: dy <= -12
+      });
+      return buttons;
+    }
+    const lowerLaneContact = findW1769LowerLaneRightClearContact(snapshot);
+    if (lowerLaneContact) {
+      const dy = lowerLaneContact.y - snapshot.playerY;
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: dy > -14,
+        left: false,
+        reason: "stage-one-w1765-grounded-rear-micro-duck",
+        right: true,
+        up: dy <= -14
+      });
+      return buttons;
+    }
+    if (hasW1986PitAirRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-danger-low-lane-fall",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2068GroundedPlatformJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-weapon-gate-platform-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2148WeaponGateAirCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: snapshot.playerY >= 190,
+        b: true,
+        down: snapshot.playerY < 120,
+        left: false,
+        reason: "stage-one-weapon-gate-air-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2738BossApproachAirRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-high-air-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2782BossApproachHeldJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-held-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2763BossApproachGroundRun(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-ground-run",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2813BossApproachAirRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-high-air-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2468BossApproachMidPlatformEdgeJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: pulseWindow(frame, 14, 1),
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-mid-platform-edge-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2812BossApproachLateEdgeJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-late-edge-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2896BossApproachEntryJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-boss-approach-entry-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2026PitExitPlatformJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-pit-exit-platform-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW2018PitExitPlatformRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-pit-exit-platform-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW1959PitEntryDelayedJump(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-pit-entry-delayed-jump",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW1940PitEntryEarlyGroundCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: false,
+        left: false,
+        reason: "stage-one-pit-entry-ground-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW1930PitEntryAirRightCarry(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: false,
+        b: true,
+        down: snapshot.playerY < 132,
+        left: false,
+        reason: "stage-one-pit-entry-right-carry",
+        right: true,
+        up: false
+      });
+      return buttons;
+    }
+    if (hasW1914LowLaneFallBrake(snapshot)) {
+      applyStageOneRewardPatch(buttons, {
+        a: true,
+        b: true,
+        down: false,
+        left: true,
+        reason: "stage-one-danger-low-lane-fall",
+        right: false,
+        up: false
+      });
+      return buttons;
+    }
+  }
+  if (hasW1454AirborneFixedContactRightCarry(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-airborne-fixed-contact-right-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
+  }
+  if (hasW1440DescentLowerBodyRightCarry(snapshot)) {
+    applyStageOneRewardPatch(buttons, {
+      a: false,
+      b: true,
+      down: true,
+      left: false,
+      reason: "stage-one-descent-lower-body-right-carry",
+      right: true,
+      up: false
+    });
+    return buttons;
   }
   const closeBodyThreatPatch = stageOneCloseBodyThreatProbePatch(snapshot, frame);
   if (closeBodyThreatPatch) {

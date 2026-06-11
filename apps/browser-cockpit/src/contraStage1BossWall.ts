@@ -24,6 +24,8 @@ export type BossWallSnapshot = {
   playerY: number;
   jumpState: number;
   enemies: BossWallEnemy[];
+  bullets?: unknown[];
+  bulletCount?: number;
 };
 
 export type BossWallMicroDecision = {
@@ -31,6 +33,7 @@ export type BossWallMicroDecision = {
     | "ground-contact-breakout"
     | "ground-contact-fire"
     | "ground-contact-jump"
+    | "ground-carry"
     | "ground-fixed-fire"
     | "ground-low-projectile-jump"
     | "ground-prejump"
@@ -114,7 +117,7 @@ function findBossWallFixedTarget(snapshot: BossWallSnapshot) {
       && enemy.x >= snapshot.playerX - 24
       && enemy.x <= snapshot.playerX + 220
       && enemy.y >= snapshot.playerY - 96
-      && enemy.y <= snapshot.playerY + 96
+      && enemy.y <= snapshot.playerY + (enemy.type === 0x04 ? 128 : 96)
     ))
     .sort((a, b) => {
       const turretA = a.type === 0x10 ? 360 : 0;
@@ -265,9 +268,64 @@ function bossWallNearbyDynamicThreatCount(snapshot: BossWallSnapshot) {
   )).length;
 }
 
+function bossWallForwardCloseBodyThreatCount(snapshot: BossWallSnapshot) {
+  return snapshot.enemies.filter((enemy) => {
+    if (!isBossWallContactHazard(enemy)) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0
+      && dx <= 20
+      && dy >= -36
+      && dy <= 12;
+  }).length;
+}
+
+function bossWallForwardApproachBodyThreatCount(snapshot: BossWallSnapshot) {
+  return snapshot.enemies.filter((enemy) => {
+    if (!isBossWallContactHazard(enemy)) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 0
+      && dx <= 24
+      && dy >= -24
+      && dy <= 12;
+  }).length;
+}
+
+function hasBossWallUpperForwardTurret(snapshot: BossWallSnapshot) {
+  return snapshot.enemies.some((enemy) => {
+    if (!enemy.fixed || enemy.hp <= 0 || enemy.type !== 0x10) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= 12
+      && dx <= 30
+      && dy >= -28
+      && dy <= -4;
+  });
+}
+
+function isBossWallUpperForwardCloseBodyClusterTrap(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && hasBossWallUpperForwardTurret(snapshot)
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3198
+    && snapshot.worldX <= 3224
+    && snapshot.playerX >= 124
+    && snapshot.playerX <= 146
+    && snapshot.playerY >= 128
+    && snapshot.playerY <= 154
+    && (
+      bossWallForwardCloseBodyThreatCount(snapshot) >= 3
+      || bossWallForwardApproachBodyThreatCount(snapshot) >= 2
+    )
+  );
+}
+
 function isBossWallUpperSwarmTrap(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
   return Boolean(
     fixedTarget
+    && snapshot.jumpState >= 120
     && snapshot.worldX >= 3204
     && snapshot.worldX <= 3224
     && snapshot.playerX >= 132
@@ -285,7 +343,7 @@ function isBossWallOverextendedFixedStation(snapshot: BossWallSnapshot, fixedTar
     && snapshot.worldX >= 3198
     && snapshot.worldX <= 3224
     && snapshot.playerX >= 128
-    && snapshot.playerY >= 124
+    && snapshot.playerY >= 72
     && snapshot.playerY <= 150
   );
 }
@@ -298,9 +356,9 @@ function isBossWallMidEntryBodyTrap(
   if (!fixedTarget || !contactHazard) return false;
   const dx = contactHazard.x - snapshot.playerX;
   const dy = contactHazard.y - snapshot.playerY;
-  return snapshot.worldX >= 3198
+  return snapshot.worldX >= 3195
     && snapshot.worldX <= 3224
-    && snapshot.playerX >= 124
+    && snapshot.playerX >= 120
     && snapshot.playerX <= 132
     && snapshot.playerY >= 150
     && snapshot.playerY <= 170
@@ -308,6 +366,163 @@ function isBossWallMidEntryBodyTrap(
     && dx <= 8
     && dy >= -18
     && dy <= 18;
+}
+
+function isBossWallUpperEntryCloseBodyTrap(
+  snapshot: BossWallSnapshot,
+  fixedTarget: BossWallEnemy | null,
+  contactHazard: BossWallEnemy | null
+) {
+  if (!fixedTarget || snapshot.jumpState === 0) return false;
+  const inEntryWindow = snapshot.worldX >= 3183
+    && snapshot.worldX <= 3194
+    && snapshot.playerX >= 108
+    && snapshot.playerX <= 124
+    && snapshot.playerY >= 124
+    && snapshot.playerY <= 176;
+  if (!inEntryWindow) return false;
+
+  const hasCloseBody = snapshot.enemies.some((enemy) => {
+    if (!isBossWallContactHazard(enemy)) return false;
+    const dx = enemy.x - snapshot.playerX;
+    const dy = enemy.y - snapshot.playerY;
+    return dx >= -14
+      && dx <= 16
+      && dy >= -16
+      && dy <= 14;
+  });
+  return Boolean(contactHazard && hasCloseBody);
+}
+
+function isBossWallGroundedUpperRetreatBodyTrap(
+  snapshot: BossWallSnapshot,
+  fixedTarget: BossWallEnemy | null,
+  contactHazard: BossWallEnemy | null
+) {
+  if (!fixedTarget || !contactHazard || snapshot.jumpState !== 0) return false;
+  const dx = contactHazard.x - snapshot.playerX;
+  const dy = contactHazard.y - snapshot.playerY;
+  return snapshot.worldX >= 3178
+    && snapshot.worldX <= 3190
+    && snapshot.playerX >= 106
+    && snapshot.playerX <= 118
+    && snapshot.playerY >= 156
+    && snapshot.playerY <= 176
+    && dx >= -16
+    && dx <= 2
+    && dy >= -24
+    && dy <= 8;
+}
+
+function isBossWallImmediateAirBodyOverlap(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3183
+    && snapshot.worldX <= 3198
+    && snapshot.playerX >= 108
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 150
+    && snapshot.playerY <= 176
+    && snapshot.enemies.some((enemy) => {
+      if (!isBossWallContactHazard(enemy)) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 8
+        && dy >= -8
+        && dy <= 8;
+    })
+  );
+}
+
+function isBossWallImmediateRearAirBodyOverlap(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3193
+    && snapshot.worldX <= 3198
+    && snapshot.playerX >= 108
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 150
+    && snapshot.playerY <= 176
+    && snapshot.enemies.some((enemy) => {
+      if (!isBossWallContactHazard(enemy)) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 0
+        && dy >= -8
+        && dy <= 8;
+    })
+  );
+}
+
+function isBossWallForwardFallingBodyCorridor(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3194
+    && snapshot.worldX <= 3200
+    && snapshot.playerX >= 122
+    && snapshot.playerX <= 128
+    && snapshot.playerY >= 176
+    && snapshot.playerY <= 194
+    && snapshot.enemies.some((enemy) => {
+      if (!isBossWallContactHazard(enemy)) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= 0
+        && dx <= 6
+        && dy >= -42
+        && dy <= 4;
+    })
+  );
+}
+
+function isBossWallRearFallingBodyCorridor(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3194
+    && snapshot.worldX <= 3200
+    && snapshot.playerX >= 122
+    && snapshot.playerX <= 128
+    && snapshot.playerY >= 176
+    && snapshot.playerY <= 194
+    && snapshot.enemies.some((enemy) => {
+      if (!isBossWallContactHazard(enemy)) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -8
+        && dx <= 0
+        && dy >= -42
+        && dy <= 4;
+    })
+  );
+}
+
+function isBossWallUpperStationRearBodyOverlap(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
+  return Boolean(
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 3204
+    && snapshot.worldX <= 3212
+    && snapshot.playerX >= 132
+    && snapshot.playerX <= 146
+    && snapshot.playerY >= 128
+    && snapshot.playerY <= 154
+    && snapshot.enemies.some((enemy) => {
+      if (!isBossWallContactHazard(enemy)) return false;
+      if ((enemy.routine ?? 0) === 0) return false;
+      const dx = enemy.x - snapshot.playerX;
+      const dy = enemy.y - snapshot.playerY;
+      return dx >= -12
+        && dx <= 0
+        && dy >= -12
+        && dy <= 8;
+    })
+  );
 }
 
 function isBossWallPreEntrySuppressionStation(snapshot: BossWallSnapshot, fixedTarget: BossWallEnemy | null) {
@@ -333,9 +548,11 @@ export function isBossWallBailoutInput(snapshot: BossWallSnapshot, buttons: Boss
   const retreatBailout = (
     (
       isBossWallLowLaneSpawnTrap(snapshot, fixedTarget)
+      || isBossWallUpperForwardCloseBodyClusterTrap(snapshot, fixedTarget)
       || isBossWallUpperSwarmTrap(snapshot, fixedTarget)
       || isBossWallOverextendedFixedStation(snapshot, fixedTarget)
       || isBossWallMidEntryBodyTrap(snapshot, fixedTarget, contactHazard)
+      || isBossWallUpperEntryCloseBodyTrap(snapshot, fixedTarget, contactHazard)
       || isBossWallCoreCollisionForecast(snapshot, coreCollisionTarget)
       || highHpCrowdedLowLaneGate
     )
@@ -372,6 +589,96 @@ export function decideBossWallMicroAction(
     contactHazard = null;
   }
 
+  if (isBossWallGroundedUpperRetreatBodyTrap(snapshot, fixedTarget, contactHazard)) {
+    return {
+      reason: "ground-contact-jump",
+      buttons: bossWallButtons({
+        a: true,
+        b: true,
+        right: true
+      })
+    };
+  }
+
+  if (isBossWallImmediateRearAirBodyOverlap(snapshot, fixedTarget)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        right: true
+      })
+    };
+  }
+
+  if (isBossWallImmediateAirBodyOverlap(snapshot, fixedTarget)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        left: true
+      })
+    };
+  }
+
+  if (isBossWallForwardFallingBodyCorridor(snapshot, fixedTarget)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        right: true
+      })
+    };
+  }
+
+  if (isBossWallRearFallingBodyCorridor(snapshot, fixedTarget)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        right: true
+      })
+    };
+  }
+
+  if (isBossWallUpperStationRearBodyOverlap(snapshot, fixedTarget)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        right: true
+      })
+    };
+  }
+
+  if (
+    contactHazard
+    && fixedTarget
+    && snapshot.jumpState === 0
+    && snapshot.worldX >= 3204
+    && snapshot.worldX <= 3224
+    && snapshot.playerX >= 128
+    && snapshot.playerX <= 146
+    && snapshot.playerY >= 188
+  ) {
+    const dx = contactHazard.x - snapshot.playerX;
+    const dy = contactHazard.y - snapshot.playerY;
+    if (dx >= -12 && dx <= 2 && dy >= -12 && dy <= 18) {
+      return {
+        reason: "ground-contact-breakout",
+        buttons: bossWallButtons({
+          a: true,
+          b: true,
+          left: true
+        })
+      };
+    }
+  }
+
   if (isBossWallFallingSoldierConvergence(snapshot, contactHazard, fixedTarget)) {
     return {
       reason: "air-contact-hold",
@@ -403,6 +710,31 @@ export function decideBossWallMicroAction(
     };
   }
 
+  if (
+    fixedTarget
+    && snapshot.jumpState !== 0
+    && snapshot.worldX >= 2960
+    && snapshot.worldX <= 3156
+    && snapshot.playerX >= 124
+    && snapshot.playerX <= 176
+    && snapshot.playerY >= 72
+    && snapshot.playerY <= 140
+    && (fixedTarget.type === 0x04 || fixedTarget.kind === "durable")
+    && fixedTarget.y >= snapshot.playerY + 36
+  ) {
+    const dx = fixedTarget.x - snapshot.playerX;
+    const dy = fixedTarget.y - snapshot.playerY;
+    if (dx >= -96 && dx <= 64 && dy >= 36 && dy <= 128) {
+      return {
+        reason: "air-carry",
+        buttons: bossWallButtons({
+          b: pulseWindow(frame, 6, 3),
+          right: true
+        })
+      };
+    }
+  }
+
   if (lowProjectile && snapshot.worldX >= BOSS_WALL_MICRO_ENGAGE_WORLD_X) {
     return {
       reason: "ground-low-projectile-jump",
@@ -420,6 +752,111 @@ export function decideBossWallMicroAction(
       buttons: bossWallButtons({
         b: true,
         left: true
+      })
+    };
+  }
+
+  if (isBossWallUpperEntryCloseBodyTrap(snapshot, fixedTarget, contactHazard)) {
+    return {
+      reason: "boss-wall-bailout",
+      buttons: bossWallButtons({
+        b: true,
+        up: true,
+        left: true
+      })
+    };
+  }
+
+  if (
+    contactHazard
+    && fixedTarget
+    && snapshot.jumpState === 0
+    && snapshot.worldX >= 2960
+    && snapshot.worldX <= 3156
+    && snapshot.playerX >= 124
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 72
+    && snapshot.playerY <= 140
+  ) {
+    const dx = contactHazard.x - snapshot.playerX;
+    const dy = contactHazard.y - snapshot.playerY;
+    if (dx >= -4 && dx <= 12 && dy >= -2 && dy <= 22) {
+      return {
+        reason: "ground-contact-breakout",
+        buttons: bossWallButtons({
+          a: true,
+          b: true,
+          left: true
+        })
+      };
+    }
+  }
+
+  if (
+    fixedTarget
+    && snapshot.jumpState === 0
+    && snapshot.worldX >= 2960
+    && snapshot.worldX <= 3067
+    && snapshot.playerX >= 124
+    && snapshot.playerX <= 176
+    && snapshot.playerY >= 72
+    && snapshot.playerY <= 140
+    && (fixedTarget.type === 0x04 || fixedTarget.kind === "durable")
+    && fixedTarget.y >= snapshot.playerY + 36
+  ) {
+    const dx = fixedTarget.x - snapshot.playerX;
+    const dy = fixedTarget.y - snapshot.playerY;
+    if (dx >= -96 && dx <= 64 && dy >= 36 && dy <= 128) {
+      return {
+        reason: "ground-prejump",
+        buttons: bossWallButtons({
+          a: true,
+          b: pulseWindow(frame, 6, 3),
+          right: true
+        })
+      };
+    }
+  }
+
+  if (
+    snapshot.worldX >= 3068
+    && snapshot.worldX <= 3144
+    && snapshot.playerX < 166
+    && snapshot.playerY >= 40
+    && snapshot.playerY <= 140
+    && snapshot.enemies.some((enemy) => (
+      enemy.hp > 0
+      && enemy.type === 0x04
+      && (enemy.fixed || enemy.kind === "durable")
+      && enemy.y >= snapshot.playerY + 80
+    ))
+  ) {
+    return {
+      reason: snapshot.jumpState === 0 ? "ground-carry" : "air-carry",
+      buttons: bossWallButtons({
+        b: pulseWindow(frame, 6, 3),
+        right: true
+      })
+    };
+  }
+
+  if (
+    fixedTarget
+    && snapshot.jumpState === 0
+    && snapshot.worldX >= 2960
+    && snapshot.worldX <= 2964
+    && snapshot.playerX >= 124
+    && snapshot.playerX <= 132
+    && snapshot.playerY >= 124
+    && snapshot.playerY <= 140
+    && fixedTarget.y >= snapshot.playerY + 36
+  ) {
+    return {
+      reason: "ground-fixed-fire",
+      buttons: bossWallButtons({
+        b: pulseWindow(frame, 6, 5),
+        down: true,
+        right: true
       })
     };
   }
@@ -458,6 +895,32 @@ export function decideBossWallMicroAction(
         left: true
       })
     };
+  }
+
+  if (
+    contactHazard
+    && fixedTarget
+    && snapshot.jumpState === 0
+    && snapshot.worldX >= 3150
+    && snapshot.worldX <= 3198
+    && snapshot.playerX >= 112
+    && snapshot.playerX <= 128
+    && snapshot.playerY >= 116
+    && snapshot.playerY <= 150
+  ) {
+    const dx = contactHazard.x - snapshot.playerX;
+    const dy = contactHazard.y - snapshot.playerY;
+    if (dx >= -4 && dx <= 18 && dy >= -18 && dy <= 18) {
+      return {
+        reason: "ground-contact-breakout",
+        buttons: bossWallButtons({
+          a: true,
+          b: true,
+          left: dx >= 0,
+          right: dx < 0
+        })
+      };
+    }
   }
 
   if (isBossWallPreEntrySuppressionStation(snapshot, fixedTarget)) {
@@ -665,6 +1128,25 @@ export function decideBossWallMicroAction(
   }
 
   if (
+    contactHazard
+    && fixedTarget
+    && snapshot.worldX >= 3180
+    && snapshot.worldX <= 3202
+    && snapshot.jumpState !== 0
+    && snapshot.playerX <= 136
+    && snapshot.playerY >= 70
+    && snapshot.playerY <= 124
+  ) {
+    return {
+      reason: "air-contact-hold",
+      buttons: bossWallButtons({
+        b: true,
+        right: true
+      })
+    };
+  }
+
+  if (
     snapshot.worldX >= BOSS_WALL_MICRO_ENGAGE_WORLD_X
     && snapshot.worldX <= 3224
     && snapshot.jumpState !== 0
@@ -672,11 +1154,45 @@ export function decideBossWallMicroAction(
     const dx = contactHazard ? contactHazard.x - snapshot.playerX : 0;
     const dy = contactHazard ? contactHazard.y - snapshot.playerY : 0;
     const fixedDy = fixedTarget ? fixedTarget.y - snapshot.playerY : 0;
+    const underfootLandingBody = Boolean(
+      contactHazard
+      && fixedTarget
+      && snapshot.worldX >= 3204
+      && snapshot.worldX <= 3224
+      && snapshot.playerX >= 132
+      && snapshot.playerX <= 146
+      && snapshot.playerY >= 170
+      && snapshot.playerY <= 198
+      && dx >= -4
+      && dx <= 6
+      && dy >= 10
+      && dy <= 38
+    );
+    if (underfootLandingBody) {
+      return {
+        reason: "air-contact-hold",
+        buttons: bossWallButtons({
+          b: true,
+          down: true,
+          left: true
+        })
+      };
+    }
     if (isBossWallLowLaneSpawnTrap(snapshot, fixedTarget)) {
       return {
         reason: "boss-wall-bailout",
         buttons: bossWallButtons({
           b: true,
+          left: true
+        })
+      };
+    }
+    if (isBossWallUpperForwardCloseBodyClusterTrap(snapshot, fixedTarget)) {
+      return {
+        reason: "boss-wall-bailout",
+        buttons: bossWallButtons({
+          b: true,
+          up: true,
           left: true
         })
       };
@@ -775,8 +1291,8 @@ export function decideBossWallMicroAction(
       && snapshot.playerX >= 132
       && snapshot.playerY >= 132
       && snapshot.playerY <= 150
-      && dx >= -6
-      && dx <= 18
+      && dx >= 0
+      && dx <= 12
       && dy >= -24
       && dy <= 4
     );
@@ -789,6 +1305,16 @@ export function decideBossWallMicroAction(
       && dx <= 18
       && dy >= -24
       && dy <= 8
+    );
+    const rearUpperAirStationRight = Boolean(
+      contactHazard
+      && fixedTarget
+      && snapshot.playerY < 170
+      && snapshot.playerX < 142
+      && dx >= -8
+      && dx <= -1
+      && dy >= -36
+      && dy <= 4
     );
     const lateUpperDescentStationRight = Boolean(
       contactHazard
@@ -815,7 +1341,7 @@ export function decideBossWallMicroAction(
             ? coreCollisionDy <= 4
             : ((contactHazard && (dy < -18 || highLandingBodyStrafe || upperAirStationRight || lateUpperDescentStationRight)) || (!contactHazard && fixedTarget && fixedDy < -8))),
         down: Boolean(!directBodyOverlapBreakout && !coreCollisionStationFire && (rearLowBodyFire || (contactHazard && dy > 10) || (!contactHazard && fixedTarget && fixedDy > 26))),
-        right: directBodyOverlapBreakout || (coreCollisionStationFire || (!rearLowBodyFire && (lateUpperDescentStationRight || fixedTargetLandingStationHold || (!fallingSoldierStrafe && !landingBodyStrafe && !highLandingBodyStrafe && (!contactHazard || dx < -4 || stationRecoveryRight || upperAirStationRight))))),
+        right: directBodyOverlapBreakout || (coreCollisionStationFire || (!rearLowBodyFire && (lateUpperDescentStationRight || fixedTargetLandingStationHold || rearUpperAirStationRight || (!fallingSoldierStrafe && !landingBodyStrafe && !highLandingBodyStrafe && (!contactHazard || dx < -4 || stationRecoveryRight || upperAirStationRight))))),
         left: !directBodyOverlapBreakout && (!coreCollisionStationFire && (rearLowBodyFire || (!lateUpperDescentStationRight && !fixedTargetLandingStationHold && (fallingSoldierStrafe || landingBodyStrafe || highLandingBodyStrafe))))
       })
     };

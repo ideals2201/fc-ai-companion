@@ -126,6 +126,164 @@ test("headless route-plan probe holds fire in boss-wall route segment", () => {
   assert.equal(buttons.down, true);
 });
 
+test("headless route-plan probe preserves boss-wall close body bailout at W3194", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8266,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 123, y: 169 },
+        { fixed: true, hp: 32, kind: "durable", routine: 2, threat: true, type: 0x11, x: 161, y: 176 },
+        { fixed: true, hp: 10, kind: "durable", routine: 2, threat: true, type: 0x10, x: 153, y: 128 }
+      ],
+      jumpState: 81,
+      playerX: 122,
+      playerY: 172,
+      weapon: 0,
+      worldX: 3194
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+});
+
+test("headless route-plan probe uses boss-wall right-up fire while forward falling body is still above", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8260,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 130, y: 154 },
+        { fixed: true, hp: 32, kind: "durable", routine: 2, threat: true, type: 0x11, x: 161, y: 176 },
+        { fixed: true, hp: 10, kind: "durable", routine: 2, threat: true, type: 0x10, x: 153, y: 128 }
+      ],
+      jumpState: 49,
+      playerX: 128,
+      playerY: 192,
+      weapon: 0,
+      worldX: 3200
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+});
+
+test("headless route-plan probe moves right from a rear falling body in the boss-wall lane", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8328,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 124, y: 154 },
+        { fixed: true, hp: 31, kind: "durable", routine: 2, threat: true, type: 0x11, x: 161, y: 176 },
+        { fixed: true, hp: 9, kind: "durable", routine: 2, threat: true, type: 0x10, x: 153, y: 128 }
+      ],
+      jumpState: 81,
+      playerX: 127,
+      playerY: 189,
+      weapon: 0,
+      worldX: 3199
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+});
+
+test("headless route-plan probe moves right-up when upper boss-wall station has rear overlap", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8414,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 130, y: 137 },
+        { fixed: true, hp: 3, kind: "durable", routine: 2, threat: true, type: 0x10, x: 153, y: 128 },
+        { fixed: true, hp: 14, kind: "durable", routine: 2, threat: true, type: 0x10, x: 177, y: 128 },
+        { fixed: true, hp: 30, kind: "durable", routine: 2, threat: true, type: 0x11, x: 161, y: 176 }
+      ],
+      jumpState: 49,
+      playerX: 136,
+      playerY: 142,
+      weapon: 0,
+      worldX: 3208
+    })
+  });
+
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+});
+
+test("headless route-plan probe lets boss-wall safety override candidate right-fire at W3208", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateOverlay: {
+      id: "w3180-3230-right-fire-core-station",
+      action: "right_fire",
+      guard: {
+        playerX: [118, 150],
+        playerY: [90, 210],
+        worldX: [3180, 3230]
+      }
+    },
+    frame: 14317,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", threat: true, type: 0x01, x: 131, y: 192 },
+        { fixed: true, hp: 32, kind: "durable", threat: true, type: 0x11, x: 161, y: 176 }
+      ],
+      jumpState: 0,
+      playerX: 136,
+      playerY: 196,
+      weapon: 0,
+      worldX: 3208
+    })
+  });
+
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+});
+
 test("headless route-plan probe carries right while down-firing airborne close lower soldiers", () => {
   const buttons = decideHeadlessRoutePlanProbeButtons({
     frame: 878,
@@ -256,6 +414,36 @@ test("headless route-plan probe uses the opening low fixed-threat route fragment
   assert.equal(buttons.b, false);
   assert.equal(buttons.down, false);
   assert.equal(buttons.up, false);
+});
+
+test("headless route-plan probe stops advancing at the Contra Japan W241 air-close type5 contact", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 1707,
+    routeSegment: {
+      id: "start-survive",
+      action: "survive",
+      fire: "threat",
+      worldStart: 0,
+      worldEnd: 520
+    },
+    snapshot: snapshot({
+      jumpState: 177,
+      playerX: 83,
+      playerY: 84,
+      worldX: 240,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 92, y: 100, vx: -1, vy: 0 },
+        { fixed: true, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x02, x: 180, y: 160, vx: 0, vy: 0 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, false);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
 });
 
 test("headless route-plan probe carries right through the early bridge low-lane contact window", () => {
@@ -1751,6 +1939,40 @@ test("headless route-plan probe can isolate W1440 descent lower-body right carry
   assert.equal(buttons.b, true);
 });
 
+test("headless route-plan probe applies W1440 descent carry in the default survival route", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 9413,
+    progressStallFrames: 48,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 81,
+      playerX: 108,
+      playerY: 173,
+      worldX: 1440,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 113, y: 196 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 87, y: 218 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1454 airborne fixed-contact right carry", () => {
   const routeSegment = {
     id: "mid-survive",
@@ -1809,6 +2031,74 @@ test("headless route-plan probe can isolate W1454 airborne fixed-contact right c
   assert.equal(descentButtons.up, false);
   assert.equal(descentButtons.a, false);
   assert.equal(descentButtons.b, true);
+});
+
+test("headless route-plan probe applies W1454 fixed-contact carry in the default survival route", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 9393,
+    progressStallFrames: 28,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 122,
+      playerY: 138,
+      worldX: 1454,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 133, y: 196 },
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 87, y: 218 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps W1454 carry when the lower soldier is barely ahead", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 9395,
+    progressStallFrames: 30,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 124,
+      playerY: 139,
+      worldX: 1456,
+      enemies: [
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 131, y: 196 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 163, y: 94 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
 });
 
 test("headless route-plan probe can isolate W1454 airborne fixed-contact pulse carry", () => {
@@ -1957,6 +2247,74 @@ test("headless route-plan probe can isolate W1456 air-route hold-right formation
   assert.equal(runtimeDescentButtons.b, true);
 });
 
+test("headless route-plan probe applies W1456 air-route hold-right in the default survival route", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 9365,
+    progressStallFrames: 0,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 181,
+      worldX: 1460,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 151, y: 147, vx: -1, vy: 0 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 123, y: 112 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe breaks the Contra Japan W1471 grounded stall with right-up fire", () => {
+  const routeSegment = {
+    id: "mid-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 930,
+    worldEnd: 1550
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 11924,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 128,
+      playerY: 196,
+      weapon: 0,
+      worldX: 1471,
+      enemies: [
+        { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 114, y: 232 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 198, y: 176 },
+        { fixed: true, hp: 8, kind: "durable", routine: 0, threat: true, type: 0x04, x: 22, y: 160 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1735 danger stack right carry after W1456 route formation", () => {
   const routeSegment = {
     id: "danger-survive",
@@ -2093,6 +2451,40 @@ test("headless route-plan probe can isolate W1751 precontact right-fire route co
   assert.equal(correctedButtons.b, true);
 });
 
+test("headless route-plan probe applies W1751 precontact right-fire in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 11940,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 151,
+      worldX: 1751,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 164, y: 158, vx: -2, vy: 0 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 102, y: 173, vx: 1, vy: 0 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 162, y: 196, vx: -1, vy: 0 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1755 extended descent right-fire carry", () => {
   const routeSegment = {
     id: "danger-survive",
@@ -2164,6 +2556,39 @@ test("headless route-plan probe can isolate W1755 extended descent right-fire ca
   assert.equal(extendedLateButtons.b, true);
 });
 
+test("headless route-plan probe applies W1755 descent right-fire in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 11944,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 145,
+      worldX: 1755,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 155, y: 161, vx: -2, vy: 0 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 104, y: 176, vx: 1, vy: 0 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1765 reentry right-fire carry", () => {
   const routeSegment = {
     id: "danger-survive",
@@ -2208,6 +2633,40 @@ test("headless route-plan probe can isolate W1765 reentry right-fire carry", () 
   assert.equal(reentryButtons.down, false);
   assert.equal(reentryButtons.a, false);
   assert.equal(reentryButtons.b, true);
+});
+
+test("headless route-plan probe applies W1765 reentry right-fire in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12386,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 209,
+      playerX: 104,
+      playerY: 142,
+      worldX: 1765,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 139, y: 150, vx: -2, vy: 0 },
+        { fixed: false, hp: 0, kind: "object", routine: 0, threat: true, type: 0x05, x: 81, y: 165, vx: -1, vy: -1 },
+        { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 68, y: 196, vx: 1, vy: 0 },
+        { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
 });
 
 test("headless route-plan probe can isolate W1765 rear same-lane duck carry", () => {
@@ -2365,6 +2824,918 @@ test("headless route-plan probe can isolate W1769 reentry right-carry extension"
   assert.equal(extendedReentryButtons.b, true);
 });
 
+test("headless route-plan probe applies W1769 reentry extension in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const reentryExtensionSnapshot = snapshot({
+    jumpState: 177,
+    playerX: 108,
+    playerY: 144,
+    worldX: 1769,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 137, y: 152, vx: -2, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const defaultButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12388,
+    routeSegment,
+    snapshot: reentryExtensionSnapshot
+  });
+
+  assert.equal(defaultButtons.left, false);
+  assert.equal(defaultButtons.right, true);
+  assert.equal(defaultButtons.up, true);
+  assert.equal(defaultButtons.down, false);
+  assert.equal(defaultButtons.a, false);
+  assert.equal(defaultButtons.b, true);
+});
+
+test("headless route-plan probe keeps upper-air right carry near W1812 in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const upperAirFixedSnapshot = snapshot({
+    jumpState: 209,
+    playerX: 116,
+    playerY: 138,
+    worldX: 1812,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const defaultButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12380,
+    routeSegment,
+    snapshot: upperAirFixedSnapshot
+  });
+
+  assert.equal(defaultButtons.left, false);
+  assert.equal(defaultButtons.right, true);
+  assert.equal(defaultButtons.up, true);
+  assert.equal(defaultButtons.down, false);
+  assert.equal(defaultButtons.a, false);
+  assert.equal(defaultButtons.b, true);
+});
+
+test("headless route-plan probe keeps upper-air right carry near W1835 in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const upperAirFixedSnapshot = snapshot({
+    jumpState: 177,
+    playerX: 104,
+    playerY: 144,
+    worldX: 1824,
+    enemies: [
+      { fixed: true, hp: 8, kind: "durable", routine: 4, threat: true, type: 0x04, x: 120, y: 128 }
+    ]
+  });
+  const sameLaneAirSnapshot = snapshot({
+    jumpState: 81,
+    playerX: 115,
+    playerY: 151,
+    worldX: 1835,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 120, y: 148, vx: -1, vy: 1 }
+    ]
+  });
+  const lateUpperAirFixedSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 187,
+    worldX: 1919,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+
+  const fixedButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12742,
+    routeSegment,
+    snapshot: upperAirFixedSnapshot
+  });
+
+  assert.equal(fixedButtons.left, false);
+  assert.equal(fixedButtons.right, true);
+  assert.equal(fixedButtons.up, true);
+  assert.equal(fixedButtons.down, false);
+  assert.equal(fixedButtons.a, false);
+  assert.equal(fixedButtons.b, true);
+
+  const sameLaneButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12778,
+    routeSegment,
+    snapshot: sameLaneAirSnapshot
+  });
+
+  assert.equal(sameLaneButtons.left, false);
+  assert.equal(sameLaneButtons.right, true);
+  assert.equal(sameLaneButtons.up, false);
+  assert.equal(sameLaneButtons.down, false);
+  assert.equal(sameLaneButtons.a, false);
+  assert.equal(sameLaneButtons.b, true);
+
+  const lateFixedButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 15315,
+    routeSegment,
+    snapshot: lateUpperAirFixedSnapshot
+  });
+
+  assert.equal(lateFixedButtons.left, false);
+  assert.equal(lateFixedButtons.right, true);
+  assert.equal(lateFixedButtons.up, true);
+  assert.equal(lateFixedButtons.down, false);
+  assert.equal(lateFixedButtons.a, false);
+  assert.equal(lateFixedButtons.b, true);
+});
+
+test("headless route-plan probe applies lower-lane right clear after W1769 in the default survival route", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const landingContactSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 104,
+    playerY: 196,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 95, y: 196, vx: 1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128 }
+    ]
+  });
+  const leftRegressionSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 25,
+    playerY: 212,
+    worldX: 1686,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 44, y: 206, vx: -2, vy: 0 }
+    ]
+  });
+  const forwardOverheadSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 62,
+    playerY: 212,
+    worldX: 1728,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 92, y: 175, vx: -2, vy: 0 }
+    ]
+  });
+  const closeOverheadSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 196,
+    worldX: 1811,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 131, y: 172, vx: -1, vy: 1 }
+    ]
+  });
+  const spawnPreclearSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 121,
+    playerY: 196,
+    worldX: 1787,
+    enemies: [
+      { fixed: false, hp: 0, kind: "object", routine: 0, threat: true, type: 0x05, x: 129, y: 165, vx: 0, vy: -1 }
+    ]
+  });
+
+  for (const routeSnapshot of [landingContactSnapshot, leftRegressionSnapshot]) {
+    const buttons = decideHeadlessRoutePlanProbeButtons({
+      frame: 12408,
+      routeSegment,
+      snapshot: routeSnapshot
+    });
+
+    assert.equal(buttons.left, false);
+    assert.equal(buttons.right, true);
+    assert.equal(buttons.up, false);
+    assert.equal(buttons.down, true);
+    assert.equal(buttons.a, false);
+    assert.equal(buttons.b, true);
+  }
+
+  for (const routeSnapshot of [forwardOverheadSnapshot, closeOverheadSnapshot, spawnPreclearSnapshot]) {
+    const buttons = decideHeadlessRoutePlanProbeButtons({
+      frame: 12346,
+      routeSegment,
+      snapshot: routeSnapshot
+    });
+
+    assert.equal(buttons.left, false);
+    assert.equal(buttons.right, true);
+    assert.equal(buttons.up, true);
+    assert.equal(buttons.down, false);
+    assert.equal(buttons.a, false);
+    assert.equal(buttons.b, true);
+  }
+});
+
+test("headless route-plan probe left-jump brakes through the W1943 low-lane fall window", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const lowEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 231,
+    worldX: 1942,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x01, x: 163, y: 232, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 14381,
+    routeSegment,
+    snapshot: lowEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right carry through the W1941 pit-entry descent", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const pitEntryAirSnapshot = snapshot({
+    jumpState: 34,
+    playerX: 108,
+    playerY: 152,
+    worldX: 1941,
+    enemies: []
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 13032,
+    routeSegment,
+    snapshot: pitEntryAirSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe ignores W1925 rear fixed-body overlap during pit entry", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const pitEntryFixedOverlapSnapshot = snapshot({
+    jumpState: 82,
+    playerX: 128,
+    playerY: 141,
+    worldX: 1925,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12663,
+    routeSegment,
+    snapshot: pitEntryFixedOverlapSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe suppresses the early W1946 pit-entry jump", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048,
+    jumpEvery: 72
+  };
+  const earlyGroundedPitSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 164,
+    worldX: 1946,
+    enemies: []
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12676,
+    routeSegment,
+    snapshot: earlyGroundedPitSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe commits the delayed W1961 pit-entry jump", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048,
+    jumpEvery: 72
+  };
+  const delayedGroundedPitSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 164,
+    worldX: 1961,
+    enemies: []
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12690,
+    routeSegment,
+    snapshot: delayedGroundedPitSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right carry through the W2006 pit fall window", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const pitAirSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 183,
+    worldX: 1996,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 76, y: 160, vx: -1, vy: 1 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 13100,
+    routeSegment,
+    snapshot: pitAirSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right carry through W2001 high pit fixed overlap", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const highPitFixedOverlapSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 117,
+    worldX: 2001,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12732,
+    routeSegment,
+    snapshot: highPitFixedOverlapSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right carry through W2011 low pit exit", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const lowPitExitSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 231,
+    worldX: 2011,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12762,
+    routeSegment,
+    snapshot: lowPitExitSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right after landing on the W2018 pit-exit platform", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const pitExitPlatformSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 164,
+    worldX: 2018,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12749,
+    routeSegment,
+    snapshot: pitExitPlatformSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe jumps from the W2028 pit-exit platform edge", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const pitExitEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 164,
+    worldX: 2028,
+    enemies: []
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12759,
+    routeSegment,
+    snapshot: pitExitEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right through W2150 weapon-gate high fixed overlap", () => {
+  const routeSegment = {
+    id: "weapon-gate-survive",
+    action: "loot",
+    fire: "always",
+    worldStart: 2048,
+    worldEnd: 2366
+  };
+  const highWeaponGateSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 91,
+    worldX: 2150,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 12958,
+    routeSegment,
+    snapshot: highWeaponGateSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right through the Contra Japan W2160 high-air body contact", () => {
+  const routeSegment = {
+    id: "weapon-gate-survive",
+    action: "loot",
+    fire: "always",
+    worldStart: 2048,
+    worldEnd: 2366
+  };
+  const highAirContactSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 20,
+    worldX: 2160,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 133, y: 48, vx: -2, vy: -1 },
+      { fixed: true, hp: 8, kind: "durable", routine: 4, threat: true, type: 0x07, x: 159, y: 64 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7340,
+    routeSegment,
+    snapshot: highAirContactSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe keeps right-jump through W2162 weapon-gate low object", () => {
+  const routeSegment = {
+    id: "weapon-gate-survive",
+    action: "loot",
+    fire: "always",
+    worldStart: 2048,
+    worldEnd: 2366
+  };
+  const lowWeaponGateSnapshot = snapshot({
+    jumpState: 81,
+    playerX: 127,
+    playerY: 209,
+    worldX: 2162,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 138, y: 232, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 13004,
+    routeSegment,
+    snapshot: lowWeaponGateSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe jumps at the Contra Japan W2480 boss-approach mid-platform edge", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const midPlatformEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 182,
+    worldX: 2480,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 109, y: 217, vx: -1, vy: 0 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 106, y: 232, vx: -1, vy: 3 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7663,
+    routeSegment,
+    snapshot: midPlatformEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe uses the Contra Japan 14-frame mid-platform pulse", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const preEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 196,
+    worldX: 2516,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 109, y: 217, vx: -1, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7700,
+    routeSegment,
+    snapshot: preEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe repeats jump through the Contra Japan W2564 mid-platform chain", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const chainLandingSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 148,
+    worldX: 2557,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x03, x: 75, y: 156, vx: 1, vy: 2 },
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 109, y: 217, vx: -1, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7742,
+    routeSegment,
+    snapshot: chainLandingSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe jumps at the Contra Japan W2838 late boss-approach edge", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const lateEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 230,
+    worldX: 2838,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 109, y: 217, vx: -1, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8140,
+    routeSegment,
+    snapshot: lateEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe jumps through the Contra Japan W2939 boss-entry approach", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const bossEntrySnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 216,
+    worldX: 2939,
+    enemies: [
+      { fixed: false, hp: 1, kind: "object", routine: 0, threat: true, type: 0x05, x: 109, y: 217, vx: -1, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 8242,
+    routeSegment,
+    snapshot: bossEntrySnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe can isolate W2331 weapon-gate air preclear up-fire", () => {
+  const routeSegment = {
+    id: "weapon-gate-survive",
+    action: "loot",
+    fire: "always",
+    worldStart: 2048,
+    worldEnd: 2366
+  };
+  const incomingAirBodySnapshot = snapshot({
+    jumpState: 49,
+    playerX: 128,
+    playerY: 56,
+    worldX: 2331,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 146, y: 103, vx: -1, vy: -2 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w2331-air-preclear-up-fire",
+    frame: 13142,
+    routeSegment,
+    snapshot: incomingAirBodySnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe can isolate W2287 weapon-gate jump suppression", () => {
+  const routeSegment = {
+    id: "weapon-gate-survive",
+    action: "loot",
+    fire: "always",
+    worldStart: 2048,
+    worldEnd: 2366
+  };
+  const fixedTargetJumpTrapSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 100,
+    worldX: 2287,
+    enemies: [
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w2287-weapon-gate-jump-suppress",
+    frame: 13097,
+    routeSegment,
+    snapshot: fixedTargetJumpTrapSnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("late candidate trials inherit promoted default survival route corrections", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const reentryBodySnapshot = snapshot({
+    jumpState: 177,
+    playerX: 108,
+    playerY: 144,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 136, y: 156, vx: -1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateTrial: "w2331-air-preclear-up-fire",
+    frame: 12408,
+    routeSegment,
+    snapshot: reentryBodySnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("data-driven overlay candidates inherit defaults when their guard does not match", () => {
+  const routeSegment = {
+    id: "danger-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 1550,
+    worldEnd: 2048
+  };
+  const reentryBodySnapshot = snapshot({
+    jumpState: 177,
+    playerX: 108,
+    playerY: 144,
+    worldX: 1765,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 3, threat: true, type: 0x05, x: 136, y: 156, vx: -1, vy: 0 },
+      { fixed: true, hp: 240, kind: "durable", routine: 0, threat: true, type: 0x02, x: 136, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateOverlay: {
+      id: "late-window-neutral-fire",
+      action: "neutral_fire",
+      guard: {
+        airborne: true,
+        worldX: [2328, 2360]
+      }
+    },
+    candidateTrial: "late-window-neutral-fire",
+    frame: 12408,
+    routeSegment,
+    snapshot: reentryBodySnapshot
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
 test("headless route-plan probe can isolate W1686 left-edge close-body right guard", () => {
   const routeSegment = {
     id: "danger-survive",
@@ -2391,8 +3762,11 @@ test("headless route-plan probe can isolate W1686 left-edge close-body right gua
     snapshot: leftEdgeCloseBodySnapshot
   });
 
-  assert.equal(defaultButtons.left, true, "the current close-body rule still retreats left into the stage edge");
-  assert.equal(defaultButtons.right, false);
+  assert.equal(defaultButtons.left, false, "the default lower-lane clear no longer retreats left into the stage edge");
+  assert.equal(defaultButtons.right, true);
+  assert.equal(defaultButtons.down, true);
+  assert.equal(defaultButtons.a, false);
+  assert.equal(defaultButtons.b, true);
 
   const guardedButtons = decideHeadlessRoutePlanProbeButtons({
     candidateTrial: "w1686-left-edge-close-body-right-guard",
@@ -2589,6 +3963,105 @@ test("headless route-plan probe applies a data-driven candidate overlay before h
   assert.equal(buttons.up, true);
   assert.equal(buttons.down, false);
   assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe can force an overlay before boss-wall micro for training search", () => {
+  const routeSegment = {
+    id: "boss-wall-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2960,
+    worldEnd: 3300
+  };
+  const bossWallUpperStationSnapshot = snapshot({
+    jumpState: 49,
+    playerX: 136,
+    playerY: 153,
+    worldX: 3208,
+    enemies: [
+      { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 135, y: 130, vx: -1, vy: 0 },
+      { fixed: true, hp: 5, kind: "durable", routine: 2, threat: true, type: 0x10, x: 153, y: 128, vx: 0, vy: 0 }
+    ]
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateOverlay: {
+      id: "training-left-up-preclear",
+      action: "left_up_fire",
+      guard: {
+        airborne: true,
+        playerX: [134, 140],
+        playerY: [146, 156],
+        worldX: [3208, 3212],
+        enemy: {
+          fixed: false,
+          hpMin: 1,
+          threat: true,
+          type: 0x01,
+          dx: [-8, 0],
+          dy: [-28, -10]
+        }
+      }
+    },
+    forceCandidateOverlay: true,
+    frame: 8407,
+    routeSegment,
+    snapshot: bossWallUpperStationSnapshot
+  });
+
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+  assert.equal(buttons.up, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe applies the first matching overlay from a multi-step candidate", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "cautious",
+    fire: "always",
+    worldStart: 2366,
+    worldEnd: 2960
+  };
+  const lowEdgeSnapshot = snapshot({
+    jumpState: 0,
+    playerX: 128,
+    playerY: 220,
+    worldX: 2388,
+    enemies: []
+  });
+
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    candidateOverlay: [
+      {
+        id: "w2280-2360-right-fire",
+        action: "right_fire",
+        guard: {
+          playerX: [96, 132],
+          playerY: [36, 120],
+          worldX: [2280, 2360]
+        }
+      },
+      {
+        id: "w2380-2392-left-jump-fire",
+        action: "left_jump_fire",
+        guard: {
+          grounded: true,
+          playerX: [120, 132],
+          playerY: [200, 236],
+          worldX: [2380, 2392]
+        }
+      }
+    ],
+    frame: 15000,
+    routeSegment,
+    snapshot: lowEdgeSnapshot
+  });
+
+  assert.equal(buttons.left, true);
+  assert.equal(buttons.right, false);
+  assert.equal(buttons.a, true);
   assert.equal(buttons.b, true);
 });
 
@@ -2938,5 +4411,166 @@ test("headless route-plan probe ignores grounded low-lane object residue instead
   assert.equal(buttons.right, true);
   assert.equal(buttons.left, false);
   assert.equal(buttons.down, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe promotes Contra Japan W1730 upper-air carry", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 6302,
+    routeSegment: {
+      id: "danger-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 1550,
+      worldEnd: 2048
+    },
+    snapshot: snapshot({
+      jumpState: 177,
+      playerX: 128,
+      playerY: 101,
+      worldX: 1769,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 138, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe promotes Contra Japan W2068 platform jump", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7000,
+    routeSegment: {
+      id: "danger-survive",
+      action: "survive",
+      fire: "always",
+      worldStart: 2048,
+      worldEnd: 2438
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 128,
+      playerY: 132,
+      worldX: 2078
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, true);
+  assert.equal(buttons.down, false);
+  assert.equal(buttons.a, true);
+  assert.equal(buttons.b, true);
+});
+
+test("headless route-plan probe holds Contra Japan W2782 boss-approach jump through the platform chain", () => {
+  const routeSegment = {
+    id: "boss-approach-survive",
+    action: "survive",
+    fire: "always",
+    worldStart: 2438,
+    worldEnd: 2960
+  };
+  const airCarryButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7443,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 116,
+      worldX: 2758
+    })
+  });
+
+  assert.equal(airCarryButtons.left, false);
+  assert.equal(airCarryButtons.right, true);
+  assert.equal(airCarryButtons.down, false);
+  assert.equal(airCarryButtons.a, false);
+  assert.equal(airCarryButtons.b, true);
+
+  const groundRunButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7458,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 128,
+      playerY: 132,
+      worldX: 2774
+    })
+  });
+
+  assert.equal(groundRunButtons.left, false);
+  assert.equal(groundRunButtons.right, true);
+  assert.equal(groundRunButtons.down, false);
+  assert.equal(groundRunButtons.a, false);
+  assert.equal(groundRunButtons.b, true);
+
+  const heldJumpButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7467,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 128,
+      playerY: 132,
+      worldX: 2782
+    })
+  });
+
+  assert.equal(heldJumpButtons.left, false);
+  assert.equal(heldJumpButtons.right, true);
+  assert.equal(heldJumpButtons.down, false);
+  assert.equal(heldJumpButtons.a, true);
+  assert.equal(heldJumpButtons.b, true);
+
+  const lateAirCarryButtons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7510,
+    routeSegment,
+    snapshot: snapshot({
+      jumpState: 49,
+      playerX: 128,
+      playerY: 93,
+      worldX: 2820
+    })
+  });
+
+  assert.equal(lateAirCarryButtons.left, false);
+  assert.equal(lateAirCarryButtons.right, true);
+  assert.equal(lateAirCarryButtons.down, false);
+  assert.equal(lateAirCarryButtons.a, false);
+  assert.equal(lateAirCarryButtons.b, true);
+});
+
+test("headless route-plan probe uses Contra Japan boss-entry duck fire before the core wall", () => {
+  const buttons = decideHeadlessRoutePlanProbeButtons({
+    frame: 7870,
+    routeSegment: {
+      id: "boss-wall-survive",
+      action: "hold-fire",
+      fire: "always",
+      worldStart: 2960,
+      worldEnd: 9999
+    },
+    snapshot: snapshot({
+      jumpState: 0,
+      playerX: 127,
+      playerY: 132,
+      worldX: 3164,
+      enemies: [
+        { fixed: false, hp: 1, kind: "enemy", routine: 2, threat: true, type: 0x01, x: 135, y: 144 },
+        { fixed: true, hp: 16, kind: "durable", routine: 2, threat: true, type: 0x10, x: 177, y: 128 }
+      ]
+    })
+  });
+
+  assert.equal(buttons.left, false);
+  assert.equal(buttons.right, false);
+  assert.equal(buttons.down, true);
+  assert.equal(buttons.up, false);
+  assert.equal(buttons.a, false);
   assert.equal(buttons.b, true);
 });

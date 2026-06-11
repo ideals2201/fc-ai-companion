@@ -367,7 +367,7 @@ test("Boss wall airborne descent targets rear low soldier before fixed wall part
   assert.equal(decision?.reason, "air-contact-hold");
 });
 
-test("Boss wall airborne core collision lane overrides low body noise", () => {
+test("Boss wall airborne underfoot body threat overrides core station fire", () => {
   const decision = decideBossWallMicroAction(snapshot({
     worldX: 3208,
     playerX: 136,
@@ -417,10 +417,10 @@ test("Boss wall airborne core collision lane overrides low body noise", () => {
   }), 5719);
 
   assert.equal(decision?.buttons.b, true);
-  assert.equal(decision?.buttons.up, true);
-  assert.equal(decision?.buttons.down, false);
-  assert.equal(decision?.buttons.left, false);
-  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.up, false);
+  assert.equal(decision?.buttons.down, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
   assert.equal(decision?.reason, "air-contact-hold");
 });
 
@@ -1074,6 +1074,191 @@ test("Boss wall upper airborne close body keeps left bailout instead of snapping
   assert.equal(decision?.reason, "air-contact-hold");
 });
 
+test("Boss wall Japan upper station holds right-up fire when body threat is not yet overlapping", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 134,
+    jumpState: 177,
+    enemies: [
+      enemy({
+        slot: 4,
+        type: 0x01,
+        hp: 1,
+        x: 154,
+        y: 122,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 15,
+        x: 153,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      }),
+      enemy({
+        slot: 13,
+        type: 0x11,
+        hp: 32,
+        x: 161,
+        y: 176,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 8041);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan upper station moves right away from rear close soldier", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 160,
+    jumpState: 49,
+    enemies: [
+      enemy({
+        slot: 10,
+        type: 0x01,
+        hp: 1,
+        x: 133,
+        y: 133,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 15,
+        x: 153,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      }),
+      enemy({
+        slot: 13,
+        type: 0x11,
+        hp: 32,
+        x: 161,
+        y: 176,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 8074);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan upper station ignores rear low noise swarm and keeps right-up fire", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 160,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 4, type: 0x01, hp: 1, x: 101, y: 155, kind: "enemy", routine: 2 }),
+      enemy({ slot: 5, type: 0x01, hp: 1, x: 85, y: 209, kind: "enemy", routine: 3 }),
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 87, y: 210, kind: "object", routine: 0 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 133, y: 133, kind: "enemy", routine: 2 }),
+      enemy({ slot: 11, type: 0x10, hp: 16, x: 177, y: 128, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 12, type: 0x06, hp: 1, x: 165, y: 84, kind: "durable", fixed: true, priority: 5 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 15, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8074);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan upper station bails out from a forward close body cluster", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 138,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 6, type: 0x01, hp: 1, x: 141, y: 110, kind: "enemy", routine: 2 }),
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 143, y: 127, kind: "enemy", routine: 2 }),
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 151, y: 141, kind: "enemy", routine: 2 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 142, y: 135, kind: "enemy", routine: 2 }),
+      enemy({ slot: 11, type: 0x10, hp: 15, x: 177, y: 128, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 11, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8153);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper station starts bailout before the forward body cluster reaches contact", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3201,
+    playerX: 129,
+    playerY: 148,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 91, y: 152, kind: "enemy", routine: 2 }),
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 151, y: 128, kind: "enemy", routine: 2 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 153, y: 126, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 12, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8142);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper station keeps bailout active while sliding left from a close body cluster", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3203,
+    playerX: 131,
+    playerY: 138,
+    jumpState: 81,
+    enemies: [
+      enemy({ slot: 6, type: 0x01, hp: 1, x: 142, y: 109, kind: "enemy", routine: 2 }),
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 145, y: 128, kind: "enemy", routine: 2 }),
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 151, y: 140, kind: "enemy", routine: 2 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 143, y: 134, kind: "enemy", routine: 2 }),
+      enemy({ slot: 11, type: 0x10, hp: 15, x: 177, y: 128, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 12, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8154);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
 test("Boss wall upper swarm bails out before fixed-target station gets overrun", () => {
   const decision = decideBossWallMicroAction(snapshot({
     worldX: 3208,
@@ -1222,6 +1407,407 @@ test("Boss wall low stance bails out before fixed-target fire in the body spawn 
   assert.equal(decision?.buttons.left, true);
   assert.equal(decision?.buttons.right, false);
   assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall low stance rear body overlap jumps left before the W3208 death frame", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 196,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 9,
+        type: 0x01,
+        hp: 1,
+        x: 131,
+        y: 192,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 11,
+        type: 0x11,
+        hp: 32,
+        x: 161,
+        y: 176,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 14317);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "ground-contact-breakout");
+});
+
+test("Boss wall pre-entry suppression yields to close body contact before W3163 death", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3163,
+    playerX: 118,
+    playerY: 132,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 7,
+        type: 0x01,
+        hp: 1,
+        x: 126,
+        y: 131,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 12,
+        type: 0x10,
+        hp: 16,
+        x: 180,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 14035);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "ground-contact-breakout");
+});
+
+test("Boss wall Japan entry close soldier overrides fixed-target suppression", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 2960,
+    playerX: 128,
+    playerY: 132,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 14,
+        type: 0x01,
+        hp: 1,
+        x: 133,
+        y: 146,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 15,
+        type: 0x04,
+        hp: 8,
+        x: 160,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8
+      })
+    ]
+  }), 7880);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "ground-contact-breakout");
+});
+
+test("Boss wall Japan entry low fixed target is treated as a jump-through cue, not a stop-and-clear target", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 2960,
+    playerX: 128,
+    playerY: 132,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 15,
+        type: 0x04,
+        hp: 8,
+        x: 160,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8
+      })
+    ]
+  }), 7880);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "ground-prejump");
+});
+
+test("Boss wall Japan entry low fixed target keeps advancing after the first jump-through cue", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 2963,
+    playerX: 128,
+    playerY: 132,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 15,
+        type: 0x04,
+        hp: 8,
+        x: 157,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8
+      })
+    ]
+  }), 7883);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "ground-prejump");
+});
+
+test("Boss wall Japan entry airborne jump-through keeps carrying right instead of down-firing in place", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 2960,
+    playerX: 128,
+    playerY: 104,
+    jumpState: 17,
+    enemies: [
+      enemy({
+        slot: 15,
+        type: 0x04,
+        hp: 8,
+        x: 160,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8
+      })
+    ]
+  }), 7782);
+
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "air-carry");
+});
+
+test("Boss wall Japan entry grounded recovery keeps advancing after the low fixed target is behind", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3009,
+    playerX: 128,
+    playerY: 100,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 15,
+        type: 0x04,
+        hp: 8,
+        x: 111,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8
+      })
+    ]
+  }), 7824);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "ground-prejump");
+});
+
+test("Boss wall Japan entry low fixed target at dx52 switches to TAS-style ground right carry", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3068,
+    playerX: 128,
+    playerY: 100,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 14,
+        type: 0x04,
+        hp: 8,
+        x: 180,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8,
+        routine: 4
+      })
+    ]
+  }), 7885);
+
+  assert.equal(decision?.buttons.a, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.reason, "ground-carry");
+});
+
+test("Boss wall Japan entry low fixed target at dx52 keeps airborne right carry", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3068,
+    playerX: 128,
+    playerY: 82,
+    jumpState: 145,
+    enemies: [
+      enemy({
+        slot: 13,
+        type: 0x01,
+        hp: 1,
+        x: 134,
+        y: 114,
+        kind: "enemy",
+        fixed: false,
+        routine: 2
+      }),
+      enemy({
+        slot: 14,
+        type: 0x04,
+        hp: 8,
+        x: 180,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8,
+        routine: 4
+      })
+    ]
+  }), 7963);
+
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "air-carry");
+});
+
+test("Boss wall Japan entry W3127 left-side body pressure keeps right carry instead of down-fire", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3127,
+    playerX: 68,
+    playerY: 100,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 10,
+        type: 0x01,
+        hp: 1,
+        x: 61,
+        y: 114,
+        kind: "enemy",
+        fixed: false,
+        routine: 2
+      }),
+      enemy({
+        slot: 14,
+        type: 0x04,
+        hp: 8,
+        x: 61,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8,
+        routine: 4
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 16,
+        x: 226,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9,
+        routine: 2
+      })
+    ]
+  }), 8003);
+
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.reason, "ground-carry");
+});
+
+test("Boss wall Japan boss core high-air entry keeps right carry instead of vertical down-fire", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3183,
+    playerX: 126,
+    playerY: 82,
+    jumpState: 177,
+    enemies: [
+      enemy({
+        slot: 7,
+        type: 0x01,
+        hp: 1,
+        x: 161,
+        y: 124,
+        kind: "enemy",
+        fixed: false,
+        routine: 2
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 16,
+        x: 168,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9,
+        routine: 2
+      })
+    ]
+  }), 8000);
+
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan entry close soldier at W3068 breaks contact before default down-fire", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3068,
+    playerX: 128,
+    playerY: 100,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 13,
+        type: 0x01,
+        hp: 1,
+        x: 134,
+        y: 114,
+        kind: "enemy",
+        fixed: false,
+        routine: 2
+      }),
+      enemy({
+        slot: 14,
+        type: 0x04,
+        hp: 8,
+        x: 180,
+        y: 192,
+        kind: "durable",
+        fixed: true,
+        priority: 8,
+        routine: 4
+      })
+    ]
+  }), 7963);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.down, false);
+  assert.equal(decision?.reason, "ground-contact-breakout");
 });
 
 test("Boss wall bailout input is marked as an action-lock override", () => {
@@ -1938,4 +2524,295 @@ test("Boss wall airborne descent keeps right-up fire instead of freezing under c
   assert.equal(decision?.buttons.right, true);
   assert.equal(decision?.buttons.left, false);
   assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan upper-air close soldier bails left before W3190 body collision", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3190,
+    playerX: 118,
+    playerY: 136,
+    jumpState: 49,
+    enemies: [
+      enemy({
+        slot: 8,
+        type: 0x01,
+        hp: 1,
+        x: 120,
+        y: 133,
+        kind: "enemy",
+        routine: 2
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 14,
+        x: 153,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      }),
+      enemy({
+        slot: 13,
+        type: 0x11,
+        hp: 32,
+        x: 161,
+        y: 176,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 8127);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper re-entry close same-lane soldier blocks right carry after cluster retreat", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3186,
+    playerX: 114,
+    playerY: 128,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 5, type: 0x01, hp: 1, x: 121, y: 127, kind: "enemy", routine: 2 }),
+      enemy({ slot: 3, type: 0x01, hp: 1, x: 141, y: 126, kind: "enemy", routine: 2 }),
+      enemy({ slot: 15, type: 0x10, hp: 12, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 11, type: 0x10, hp: 15, x: 177, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8196);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan grounded upper retreat jumps right over rear close body pressure", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3183,
+    playerX: 111,
+    playerY: 164,
+    jumpState: 0,
+    enemies: [
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 101, y: 161, kind: "enemy", routine: 2 }),
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 110, y: 146, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 12, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8376);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.reason, "ground-contact-jump");
+});
+
+test("Boss wall Japan upper re-entry rear-overlap soldier keeps bailout before contact death", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3184,
+    playerX: 112,
+    playerY: 156,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 108, y: 150, kind: "enemy", routine: 2 }),
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 103, y: 159, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8378);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper re-entry starts rear-overlap bailout one frame earlier", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3183,
+    playerX: 111,
+    playerY: 160,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 9, type: 0x01, hp: 1, x: 109, y: 148, kind: "enemy", routine: 2 }),
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 102, y: 160, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8377);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan low-air landing body threat down-fires instead of left bailout", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 191,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 5, type: 0x01, hp: 1, x: 136, y: 208, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 31, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8376);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.down, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "air-contact-hold");
+});
+
+test("Boss wall Japan mid re-entry keeps left bailout before same-lane landing contact", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3196,
+    playerX: 124,
+    playerY: 158,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 120, y: 149, kind: "enemy", routine: 2 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 100, y: 161, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8391);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper re-entry scans all close bodies instead of selected front threat", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3188,
+    playerX: 116,
+    playerY: 146,
+    jumpState: 81,
+    enemies: [
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 128, y: 145, kind: "enemy", routine: 2 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 107, y: 157, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8397);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper re-entry covers low descent close body at W3194", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3194,
+    playerX: 122,
+    playerY: 172,
+    jumpState: 81,
+    enemies: [
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 123, y: 169, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 10, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8266);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan lower descent uses right-up fire before forward falling body contact", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3200,
+    playerX: 128,
+    playerY: 192,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 130, y: 154, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 10, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8260);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan lower descent moves right from rear falling body contact", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3199,
+    playerX: 127,
+    playerY: 189,
+    jumpState: 81,
+    enemies: [
+      enemy({ slot: 5, type: 0x01, hp: 1, x: 124, y: 154, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 31, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 9, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8328);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan lower descent keeps right when rear body is already overlapping", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3194,
+    playerX: 122,
+    playerY: 172,
+    jumpState: 81,
+    enemies: [
+      enemy({ slot: 5, type: 0x01, hp: 1, x: 121, y: 166, kind: "enemy", routine: 2 }),
+      enemy({ slot: 13, type: 0x11, hp: 31, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 9, x: 153, y: 128, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8333);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "boss-wall-bailout");
+});
+
+test("Boss wall Japan upper station moves right-up when rear body overlaps", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3208,
+    playerX: 136,
+    playerY: 142,
+    jumpState: 49,
+    enemies: [
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 130, y: 137, kind: "enemy", routine: 2 }),
+      enemy({ slot: 15, type: 0x10, hp: 3, x: 153, y: 128, kind: "durable", fixed: true, priority: 4 }),
+      enemy({ slot: 11, type: 0x10, hp: 14, x: 177, y: 128, kind: "durable", fixed: true, priority: 9 }),
+      enemy({ slot: 13, type: 0x11, hp: 30, x: 161, y: 176, kind: "durable", fixed: true, priority: 9 })
+    ]
+  }), 8414);
+
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.up, true);
+  assert.equal(decision?.buttons.left, false);
+  assert.equal(decision?.buttons.right, true);
+  assert.equal(decision?.reason, "boss-wall-bailout");
 });

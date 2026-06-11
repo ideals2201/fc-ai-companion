@@ -6,26 +6,46 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const docPath = path.join(repoRoot, "docs", "STRATEGY_PACK_STANDARD.md");
+const versionedDocPath = path.join(
+  repoRoot,
+  "docs",
+  "standards",
+  "v1.1.0",
+  "STRATEGY_PACK_STANDARD_V1.1.0.md"
+);
 
 test("strategy pack standard document defines distributable pack rules", () => {
   assert.equal(fs.existsSync(docPath), true, "docs/STRATEGY_PACK_STANDARD.md should exist");
+  assert.equal(
+    fs.existsSync(versionedDocPath),
+    true,
+    "versioned strategy pack standard should exist"
+  );
 
   const source = fs.readFileSync(docPath, "utf8");
+  const versionedSource = fs.readFileSync(versionedDocPath, "utf8");
 
   [
     "# FC AI Strategy Pack Standard",
     "## 1. Position",
+    "## 1.1 External Expert System Generation Contract",
     "## 2. Required Package Identity",
+    "## 2.1 Required Training And Battle Data Ledger",
+    "## 2.2 Required Strategy Description Catalog",
+    "## 2.3 Required README Usage Contract",
     "## 3. Required Directory Structure",
     "## 4. Strategy Taxonomy",
     "## 5. Side-Owned Pack Selection",
     "## 6. Coop Compatibility Contract",
-    "## 7. TAS-Derived Training Artifacts",
+    "## 7. Source And Baseline Artifacts",
     "## 8. Validation Gates",
     "## 9. Distribution Levels"
   ].forEach((heading) => assert.ok(source.includes(heading), `${heading} should be documented`));
 
+  assert.match(versionedSource, /Version: 1\.1\.0/, "versioned standard should declare version 1.1.0");
+
   assert.match(source, /manifest\.json/, "standard should define manifest as the package entry");
+  assert.match(source, /external expert system/i, "standard should support external expert generation");
   assert.match(source, /author\.displayName/, "standard should require visible author metadata");
   assert.match(source, /provenance\.creator/, "standard should require creator provenance");
   assert.match(source, /provenance\.latestModifier/, "standard should require latest modifier provenance");
@@ -41,10 +61,17 @@ test("strategy pack standard document defines distributable pack rules", () => {
   assert.match(source, /reward-like scoring/, "standard should keep validation scoring explicit");
   assert.match(source, /terminal conditions/, "standard should define terminal conditions for pack validation");
   assert.match(source, /strategyResults/, "standard should define per-strategy battle result metadata");
+  assert.match(source, /strategyDescriptions/, "standard should require per-strategy descriptions");
+  assert.match(source, /English as the internal canonical text/, "standard should keep canonical strategy text in English");
+  assert.match(source, /Localized UI text/, "standard should allow localized UI text without replacing canonical fields");
+  assert.match(source, /training-progress\.json/, "standard should require training progress ledgers");
+  assert.match(source, /stageStatus/, "standard should require explicit stage coverage state");
+  assert.match(source, /training-method prescription/, "standard should not prescribe training method");
   assert.match(source, /kills/, "standard should include kill result data");
   assert.match(source, /fixedTargetsDestroyed/, "standard should include fixed-target destruction data");
   assert.match(source, /rewardsCollected/, "standard should include reward collection data");
   assert.match(source, /clearTimeFrames/, "standard should include clear-time data");
+  assert.match(source, /trainingTimeSeconds/, "standard should include human-time training data");
   assert.match(source, /unverified/, "standard should require unverified result data to be labeled");
   assert.match(source, /side-baselines\.json/, "standard should cover TAS side baseline artifacts");
   assert.match(source, /sideScope/, "standard should require side-scope metadata for package exports");

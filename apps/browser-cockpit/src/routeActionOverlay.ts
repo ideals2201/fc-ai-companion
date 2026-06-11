@@ -1,11 +1,21 @@
 export type RouteActionOverlayAction =
   | "duck_fire"
+  | "left"
+  | "left_duck_fire"
+  | "left_fire"
+  | "left_up_fire"
   | "jump_right_fire"
   | "left_jump_fire"
   | "neutral_fire"
+  | "pulse_jump_right"
+  | "pulse_jump_right_fire"
+  | "pulse_up_jump_right"
   | "pulse_right_fire"
+  | "right"
   | "right_duck_fire"
   | "right_fire"
+  | "jump_right"
+  | "up_fire"
   | "right_up_fire";
 
 export type RouteActionOverlayRange = [number, number];
@@ -24,6 +34,7 @@ export type RouteActionOverlayEnemyGuard = {
 export type RouteActionOverlayGuard = {
   airborne?: boolean;
   enemy?: RouteActionOverlayEnemyGuard;
+  frame?: RouteActionOverlayRange;
   grounded?: boolean;
   playerX?: RouteActionOverlayRange;
   playerY?: RouteActionOverlayRange;
@@ -38,8 +49,12 @@ export type RouteActionOverlay = {
   pulse?: {
     firePeriod?: number;
     fireWidth?: number;
+    jumpPeriod?: number;
+    jumpWidth?: number;
   };
 };
+
+export type RouteActionOverlayInput = RouteActionOverlay | RouteActionOverlay[] | null;
 
 export type RouteActionOverlayEnemy = {
   fixed: boolean;
@@ -102,7 +117,8 @@ function matchesEnemyGuard(
   return inRange(dx, guard.dx) && inRange(dy, guard.dy);
 }
 
-function matchesOverlayGuard(snapshot: RouteActionOverlaySnapshot, guard: RouteActionOverlayGuard) {
+function matchesOverlayGuard(snapshot: RouteActionOverlaySnapshot, guard: RouteActionOverlayGuard, frame: number) {
+  if (!inRange(frame, guard.frame)) return false;
   if (!inRange(snapshot.worldX, guard.worldX)) return false;
   if (!inRange(snapshot.playerX, guard.playerX)) return false;
   if (!inRange(snapshot.playerY, guard.playerY)) return false;
@@ -122,21 +138,50 @@ function patchForAction(overlay: RouteActionOverlay, frame: number): RouteAction
   switch (overlay.action) {
     case "duck_fire":
       return { a: false, b: true, down: true, left: false, reason, right: false, up: false };
+    case "left":
+      return { a: false, b: false, down: false, left: true, reason, right: false, up: false };
+    case "left_duck_fire":
+      return { a: false, b: true, down: true, left: true, reason, right: false, up: false };
+    case "left_fire":
+      return { a: false, b: true, down: false, left: true, reason, right: false, up: false };
+    case "left_up_fire":
+      return { a: false, b: true, down: false, left: true, reason, right: false, up: true };
     case "jump_right_fire":
       return { a: true, b: true, down: false, left: false, reason, right: true, up: false };
     case "left_jump_fire":
       return { a: true, b: true, down: false, left: true, reason, right: false, up: false };
     case "neutral_fire":
       return { a: false, b: true, down: false, left: false, reason, right: false, up: false };
+    case "pulse_jump_right": {
+      const period = overlay.pulse?.jumpPeriod ?? 6;
+      const width = overlay.pulse?.jumpWidth ?? 2;
+      return { a: pulseWindow(frame, period, width), b: false, down: false, left: false, reason, right: true, up: false };
+    }
+    case "pulse_jump_right_fire": {
+      const period = overlay.pulse?.jumpPeriod ?? 6;
+      const width = overlay.pulse?.jumpWidth ?? 2;
+      return { a: pulseWindow(frame, period, width), b: true, down: false, left: false, reason, right: true, up: false };
+    }
+    case "pulse_up_jump_right": {
+      const period = overlay.pulse?.jumpPeriod ?? 6;
+      const width = overlay.pulse?.jumpWidth ?? 2;
+      return { a: pulseWindow(frame, period, width), b: false, down: false, left: false, reason, right: true, up: true };
+    }
     case "pulse_right_fire": {
       const period = overlay.pulse?.firePeriod ?? 6;
       const width = overlay.pulse?.fireWidth ?? 2;
       return { a: false, b: pulseWindow(frame, period, width), down: false, left: false, reason, right: true, up: false };
     }
+    case "right":
+      return { a: false, b: false, down: false, left: false, reason, right: true, up: false };
     case "right_duck_fire":
       return { a: false, b: true, down: true, left: false, reason, right: true, up: false };
     case "right_fire":
       return { a: false, b: true, down: false, left: false, reason, right: true, up: false };
+    case "jump_right":
+      return { a: true, b: false, down: false, left: false, reason, right: true, up: false };
+    case "up_fire":
+      return { a: false, b: true, down: false, left: false, reason, right: false, up: true };
     case "right_up_fire":
       return { a: false, b: true, down: false, left: false, reason, right: true, up: true };
   }
@@ -144,10 +189,11 @@ function patchForAction(overlay: RouteActionOverlay, frame: number): RouteAction
 
 export function routeActionOverlayPatch(
   snapshot: RouteActionOverlaySnapshot | null,
-  overlay: RouteActionOverlay | null,
+  overlay: RouteActionOverlayInput,
   frame: number
 ): RouteActionOverlayPatch | null {
   if (!snapshot || !overlay) return null;
-  if (!matchesOverlayGuard(snapshot, overlay.guard)) return null;
-  return patchForAction(overlay, frame);
+  const overlays = Array.isArray(overlay) ? overlay : [overlay];
+  const matchingOverlay = overlays.find((candidate) => matchesOverlayGuard(snapshot, candidate.guard, frame)) ?? null;
+  return matchingOverlay ? patchForAction(matchingOverlay, frame) : null;
 }

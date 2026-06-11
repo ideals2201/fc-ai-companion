@@ -1,0 +1,343 @@
+{
+  "schemaVersion": "1.1.0",
+  "packId": "contra-stage1-strategy-v0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-3",
+  "status": "unstarted",
+  "updatedAt": null,
+  "policy": {
+    "appendOnlyRuns": true,
+    "summaryDerivedFromRuns": true,
+    "timeUnit": "seconds",
+    "frameRate": 60,
+    "promotionRequiresValidationReplay": true,
+    "futurePackagesUseMeasuredLedgerOnly": true,
+    "exactRomValidationRequired": true,
+    "tasIsEvidenceNotController": true,
+    "failureRunsMustBeRecorded": true
+  },
+  "stageSummary": {
+    "stage-3": {
+      "status": "unstarted",
+      "dataMode": "measured-ledger-only",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "knownDeaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "unknownDeathRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "recordedRunTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "historicalEstimate": null
+    }
+  },
+  "progressByStrategy": {
+    "survival-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "stage-3 survival-v0 training has not started for contra-j-good."
+    },
+    "speedrun-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "stage-3 speedrun-v0 training has not started for contra-j-good."
+    },
+    "combat-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "stage-3 combat-v0 training has not started for contra-j-good."
+    },
+    "loot-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "stage-3 loot-v0 training has not started for contra-j-good."
+    },
+    "guard-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "stage-3 guard-v0 training has not started for contra-j-good."
+    }
+  },
+  "runs": [],
+  "strategyDescriptions": {
+    "survival-v0": {
+      "label": "Robust Survival",
+      "summary": "Prioritizes zero-death progression, safety override, fixed-threat handling, and stable clear routing.",
+      "playStyle": "Single-AI clear baseline and parent route for all other strategy types.",
+      "riskPolicy": "Safety, pits, body contact, and fixed-threat survival override speed, reward, and kill objectives.",
+      "dataSource": "stages/<stage-id>/training-progress.json + contra-j-good runtime evidence"
+    },
+    "speedrun-v0": {
+      "label": "Fast Advance",
+      "summary": "Optimizes clear time after survival windows are stable.",
+      "playStyle": "Showcase and speed route training.",
+      "riskPolicy": "May skip optional kills and rewards, but cannot violate survival gates inherited from survival-v0.",
+      "dataSource": "stages/<stage-id>/training-progress.json + TAS baseline candidates"
+    },
+    "combat-v0": {
+      "label": "Combat Clear",
+      "summary": "Prioritizes enemy, turret, and fixed-target destruction while preserving clear stability.",
+      "playStyle": "Threat-density reduction, kill-count farming, and safer human-facing companion play.",
+      "riskPolicy": "Optional kills must not create dead loops or increase death probability beyond survival guardrails.",
+      "dataSource": "stages/<stage-id>/training-progress.json + trace-evidence combat chain"
+    },
+    "loot-v0": {
+      "label": "Loot Priority",
+      "summary": "Prioritizes weapon and reward capture after survival windows are stable.",
+      "playStyle": "Weapon optimization, reward viewing, and resource-rich companion play.",
+      "riskPolicy": "Rewards are subordinate to survival and validated route continuity.",
+      "dataSource": "stages/<stage-id>/training-progress.json + TAS/human pickup windows"
+    },
+    "guard-v0": {
+      "label": "Companion Guard",
+      "summary": "Prioritizes teammate safety, screen pacing, cover fire, and anti-screen-drag behavior.",
+      "playStyle": "Human + AI and dual-AI cooperative play.",
+      "riskPolicy": "Never steal dangerous rewards or drag the screen in a way that harms the teammate.",
+      "dataSource": "stages/<stage-id>/training-progress.json + 2P/TAS cooperation evidence"
+    }
+  }
+}

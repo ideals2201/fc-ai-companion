@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import Mapper0 from "../node_modules/jsnes/src/mappers/mapper0.js";
+import Mappers from "../node_modules/jsnes/src/mappers/index.js";
 import { Controller, NES } from "../node_modules/jsnes/src/index.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,13 +20,163 @@ const buttonMap = {
   right: Controller.BUTTON_RIGHT
 };
 
+function registerHeadlessMapper23() {
+  if (Mappers[23]) return;
+
+  class Mapper23 extends Mapper0 {
+    constructor(nes) {
+      super(nes);
+      this.prg0 = 0;
+      this.prg1 = 1;
+      this.latch = 0;
+      this.chrBanks = new Array(8).fill(0);
+      this.chrLow = new Array(8).fill(0);
+      this.chrHigh = new Array(8).fill(0);
+    }
+
+    static mapperName = "Konami VRC2/VRC4";
+
+    normalizeRegister(address) {
+      const low = address & 0x000f;
+      if (low <= 0x03) return low;
+      if (low === 0x04) return 0x01;
+      if (low === 0x08) return 0x02;
+      if (low === 0x0c) return 0x03;
+      return address & 0x0003;
+    }
+
+    syncPrgBanks() {
+      const bankCount = Math.max(1, this.nes.rom.romCount * 2);
+      this.load8kRomBank(this.prg0 % bankCount, 0x8000);
+      this.load8kRomBank(this.prg1 % bankCount, 0xa000);
+      this.load8kRomBank(Math.max(0, bankCount - 2), 0xc000);
+      this.load8kRomBank(Math.max(0, bankCount - 1), 0xe000);
+    }
+
+    syncChrBank(index) {
+      const bank = this.chrBanks[index] & 0x1ff;
+      this.load1kVromBank(bank, index * 0x0400);
+    }
+
+    setChrNibble(index, high, value) {
+      if (high) this.chrHigh[index] = value & 0x0f;
+      else this.chrLow[index] = value & 0x0f;
+      this.chrBanks[index] = this.chrLow[index] | (this.chrHigh[index] << 4);
+      this.syncChrBank(index);
+    }
+
+    writeMapperRegister(address, value) {
+      const region = address & 0xf000;
+      const register = this.normalizeRegister(address);
+
+      if (region === 0x8000) {
+        this.prg0 = value & 0x1f;
+        this.syncPrgBanks();
+        return;
+      }
+
+      if (region === 0x9000) {
+        this.nes.ppu.setMirroring(
+          (value & 1) !== 0
+            ? this.nes.rom.HORIZONTAL_MIRRORING
+            : this.nes.rom.VERTICAL_MIRRORING
+        );
+        return;
+      }
+
+      if (region === 0xa000) {
+        this.prg1 = value & 0x1f;
+        this.syncPrgBanks();
+        return;
+      }
+
+      if (region >= 0xb000 && region <= 0xe000) {
+        const pairBase = ((region - 0xb000) >> 12) * 2;
+        const chrIndex = pairBase + (register >= 2 ? 1 : 0);
+        this.setChrNibble(chrIndex, (register & 1) === 1, value);
+      }
+    }
+
+    load(address) {
+      const normalized = address & 0xffff;
+      if (normalized >= 0x6000 && normalized < 0x7000) {
+        return ((normalized >> 8) & 0xfe) | this.latch;
+      }
+      if (normalized >= 0x7000 && normalized < 0x8000) {
+        return this.nes.cpu.dataBus;
+      }
+      return super.load(address);
+    }
+
+    write(address, value) {
+      const normalized = address & 0xffff;
+      const byte = value & 0xff;
+      if (normalized < 0x6000) {
+        super.write(normalized, byte);
+        return;
+      }
+      if (normalized < 0x7000) {
+        this.latch = byte & 1;
+        return;
+      }
+      if (normalized < 0x8000) return;
+      this.writeMapperRegister(normalized, byte);
+    }
+
+    writelow(address, value) {
+      this.write(address, value);
+    }
+
+    loadROM() {
+      if (!this.nes.rom.valid) {
+        throw new Error("VRC2/VRC4: Invalid ROM! Unable to load.");
+      }
+
+      this.syncPrgBanks();
+      for (let i = 0; i < this.chrBanks.length; i += 1) {
+        this.syncChrBank(i);
+      }
+      this.loadBatteryRam();
+      this.nes.cpu.requestIrq(this.nes.cpu.IRQ_RESET);
+    }
+
+    toJSON() {
+      const state = super.toJSON();
+      state.prg0 = this.prg0;
+      state.prg1 = this.prg1;
+      state.latch = this.latch;
+      state.chrBanks = this.chrBanks;
+      state.chrLow = this.chrLow;
+      state.chrHigh = this.chrHigh;
+      return state;
+    }
+
+    fromJSON(state) {
+      super.fromJSON(state);
+      this.prg0 = Number(state.prg0 ?? 0);
+      this.prg1 = Number(state.prg1 ?? 1);
+      this.latch = Number(state.latch ?? 0) & 1;
+      this.chrBanks = Array.isArray(state.chrBanks) ? state.chrBanks.map(Number) : this.chrBanks;
+      this.chrLow = Array.isArray(state.chrLow) ? state.chrLow.map(Number) : this.chrLow;
+      this.chrHigh = Array.isArray(state.chrHigh) ? state.chrHigh.map(Number) : this.chrHigh;
+    }
+  }
+
+  Mappers[23] = Mapper23;
+}
+
 function parseArgs(argv) {
   const options = {
     candidateConfigPath: "",
+    forceCandidateOverlay: false,
     candidateTrial: null,
     dryRun: false,
     frames: 1800,
     probeInput: "none",
+    saveStateAt: null,
+    saveStatePath: "",
+    startStatePath: "",
+    stopAfterSave: false,
     strategy: "speedrun-v0",
     traceEnd: null,
     traceStart: null,
@@ -43,6 +195,20 @@ function parseArgs(argv) {
       const value = arg.slice("--candidate-config=".length).trim();
       options.candidateConfigPath = value || "";
     }
+    else if (arg === "--force-candidate-overlay") options.forceCandidateOverlay = true;
+    else if (arg.startsWith("--save-state-at=")) {
+      const value = Number.parseInt(arg.slice("--save-state-at=".length), 10);
+      if (Number.isFinite(value) && value >= 0) options.saveStateAt = value;
+    }
+    else if (arg.startsWith("--save-state=")) {
+      const value = arg.slice("--save-state=".length).trim();
+      options.saveStatePath = value || "";
+    }
+    else if (arg.startsWith("--start-state=")) {
+      const value = arg.slice("--start-state=".length).trim();
+      options.startStatePath = value || "";
+    }
+    else if (arg === "--stop-after-save") options.stopAfterSave = true;
     else if (arg.startsWith("--strategy=")) options.strategy = arg.slice("--strategy=".length) || options.strategy;
     else if (arg.startsWith("--trace-start=")) {
       const value = Number.parseInt(arg.slice("--trace-start=".length), 10);
@@ -62,6 +228,10 @@ function parseArgs(argv) {
     options.traceEnd = previousStart;
   }
   return options;
+}
+
+function readJsonFile(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
 }
 
 function probeButtons(input, createHeadlessButtonState) {
@@ -116,8 +286,14 @@ function selectedRomPath(env) {
 function readCandidateConfig(configPath) {
   if (!configPath) return null;
   const absolutePath = path.resolve(repoRoot, configPath);
-  const overlay = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+  const config = JSON.parse(fs.readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, ""));
+  const overlay = Array.isArray(config.overlays) ? config.overlays : config;
+  const id = config.id
+    ?? (Array.isArray(overlay)
+      ? overlay.map((item) => item?.id).filter(Boolean).join("+")
+      : overlay?.id);
   return {
+    id,
     overlay,
     path: path.relative(repoRoot, absolutePath).replace(/\\/g, "/")
   };
@@ -156,7 +332,7 @@ function distanceToPlayer(entity, snapshot) {
 }
 
 function nearbyEnemies(snapshot) {
-  return snapshot.enemies
+  return (snapshot.enemies ?? [])
     .map((enemy) => ({
       slot: enemy.slot,
       type: enemy.type,
@@ -177,7 +353,7 @@ function nearbyEnemies(snapshot) {
 }
 
 function nearbyBullets(snapshot) {
-  return snapshot.bullets
+  return (snapshot.bullets ?? [])
     .map((bullet) => ({
       slot: bullet.slot,
       owner: bullet.owner,
@@ -193,7 +369,7 @@ function nearbyBullets(snapshot) {
 }
 
 function activePlayerBullets(snapshot, owner = 0) {
-  return snapshot.bullets
+  return (snapshot.bullets ?? [])
     .filter((bullet) => bullet.owner === owner && bullet.routine === 1 && bullet.bulletSlotCode !== 0)
     .map((bullet) => ({
       slot: bullet.slot,
@@ -223,8 +399,8 @@ function compactSnapshot(snapshot) {
     deathFlag: snapshot.deathFlag,
     weapon: snapshot.weapon,
     twoPlayerActive: snapshot.twoPlayerActive,
-    enemyCount: snapshot.enemies.length,
-    bulletCount: snapshot.bullets.length,
+    enemyCount: (snapshot.enemies ?? []).length,
+    bulletCount: (snapshot.bullets ?? []).length,
     nearbyEnemies: nearbyEnemies(snapshot),
     nearbyBullets: nearbyBullets(snapshot),
     playerBullets: activePlayerBullets(snapshot, 0)
@@ -423,7 +599,7 @@ async function main() {
   const strategyPlan = planForStrategy(options.strategy, defaultStrategyPlans);
   const candidateConfig = readCandidateConfig(options.candidateConfigPath);
   const candidateOverlay = candidateConfig?.overlay ?? null;
-  const candidateTrial = options.candidateTrial ?? candidateOverlay?.id ?? null;
+  const candidateTrial = options.candidateTrial ?? candidateConfig?.id ?? null;
 
   const baseReport = {
     schema: "fc-ai-headless-runtime-smoke-v1",
@@ -434,11 +610,12 @@ async function main() {
     maxFrames: options.frames,
     candidateConfig: candidateConfig
       ? {
-          id: candidateOverlay?.id ?? null,
+          id: candidateConfig.id ?? null,
           path: candidateConfig.path
         }
       : null,
     candidateTrial,
+    forceCandidateOverlay: options.forceCandidateOverlay,
     probeInput: options.probeInput,
     strategyKey: options.strategy,
     strategyPlan: strategyPlan ? {
@@ -480,35 +657,82 @@ async function main() {
   }
 
   const romBytes = fs.readFileSync(romPath);
+  registerHeadlessMapper23();
   const nes = new NES({
     onFrame: () => undefined,
     onAudioSample: null,
     emulateSound: false
   });
   nes.loadROM(romBytes);
+  let startFrame = 0;
+  let startStateSnapshot = null;
+  if (options.startStatePath) {
+    const statePath = path.resolve(repoRoot, options.startStatePath);
+    if (!fs.existsSync(statePath) || !fs.statSync(statePath).isFile()) {
+      console.log(JSON.stringify({
+        ...baseReport,
+        status: "error",
+        reason: "state-not-found",
+        startStatePath: options.startStatePath
+      }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+    const savedState = readJsonFile(statePath);
+    if (!savedState || savedState.schema !== "fc-ai-jsnes-headless-state-v1" || !savedState.state) {
+      console.log(JSON.stringify({
+        ...baseReport,
+        status: "error",
+        reason: "invalid-state-file",
+        startStatePath: options.startStatePath
+      }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+    startFrame = Number.isFinite(savedState.frame) ? Math.max(0, savedState.frame) : 0;
+    startStateSnapshot = savedState.snapshot ?? null;
+    nes.fromJSON(savedState.state);
+  }
 
-  let activeFrame = null;
+  let completedFrames = 0;
+  let activeFrame = startStateSnapshot ? startFrame : null;
   let lostActiveFrame = null;
-  let finalSnapshot = null;
+  let finalSnapshot = startStateSnapshot;
   let finalButtons = createHeadlessButtonState();
-  let lastActiveSnapshot = null;
+  let lastActiveSnapshot = startStateSnapshot;
   let lastActiveButtons = createHeadlessButtonState();
-  let lastActiveRouteSegment = null;
+  let lastActiveRouteSegment = startStateSnapshot
+    ? activeRouteSegmentForPlan(startStateSnapshot, strategyPlan)
+    : null;
   let lostActiveSnapshot = null;
   let lostActiveButtons = createHeadlessButtonState();
   let lostActiveRouteSegment = null;
   let preLostActiveSnapshot = null;
   let preLostActiveButtons = createHeadlessButtonState();
   let preLostActiveRouteSegment = null;
-  let maxProgressSnapshot = null;
-  let maxProgressRouteSegment = null;
+  let maxProgressSnapshot = startStateSnapshot;
+  let maxProgressRouteSegment = startStateSnapshot
+    ? activeRouteSegmentForPlan(startStateSnapshot, strategyPlan)
+    : null;
+  let maxNoDeathProgressSnapshot = startStateSnapshot;
+  let maxNoDeathProgressRouteSegment = startStateSnapshot
+    ? activeRouteSegmentForPlan(startStateSnapshot, strategyPlan)
+    : null;
   const traceFrames = [];
 
-  function shouldReplaceMaxProgress(snapshot) {
+  function shouldReplaceProgressSnapshot(snapshot, currentSnapshot) {
     if (!snapshot) return false;
-    if (!maxProgressSnapshot) return true;
-    if (snapshot.level !== maxProgressSnapshot.level) return snapshot.level > maxProgressSnapshot.level;
-    return snapshot.worldX > maxProgressSnapshot.worldX;
+    if (!currentSnapshot) return true;
+    if (snapshot.level !== currentSnapshot.level) return snapshot.level > currentSnapshot.level;
+    return snapshot.worldX > currentSnapshot.worldX;
+  }
+
+  function shouldReplaceMaxProgress(snapshot) {
+    return shouldReplaceProgressSnapshot(snapshot, maxProgressSnapshot);
+  }
+
+  function shouldReplaceMaxNoDeathProgress(snapshot) {
+    return shouldReplaceProgressSnapshot(snapshot, maxNoDeathProgressSnapshot);
   }
 
   function currentProgressStallFrames(snapshot) {
@@ -516,7 +740,9 @@ async function main() {
     return Math.max(0, snapshot.frame - maxProgressSnapshot.frame);
   }
 
-  for (let frame = 0; frame < options.frames; frame += 1) {
+  for (let step = 0; step < options.frames; step += 1) {
+    const frame = startFrame + step;
+    completedFrames += 1;
     const beforeSnapshot = readHeadlessGameRamSnapshot(nes, frame);
     const active = isHeadlessGameplayActive(beforeSnapshot, frame);
     const startupButtons = runtimeStartupButtons(
@@ -528,11 +754,12 @@ async function main() {
     const routeSegment = activeRouteSegmentForPlan(beforeSnapshot, strategyPlan);
     const progressStallFrames = currentProgressStallFrames(beforeSnapshot);
     const buttons = active && options.probeInput === "route-plan"
-      ? decideHeadlessRoutePlanProbeButtons({
-          candidateTrial,
-          candidateOverlay,
-          frame,
-          progressStallFrames,
+        ? decideHeadlessRoutePlanProbeButtons({
+            candidateTrial,
+            candidateOverlay,
+            forceCandidateOverlay: options.forceCandidateOverlay,
+            frame,
+            progressStallFrames,
           routeSegment,
           snapshot: beforeSnapshot
         })
@@ -568,6 +795,25 @@ async function main() {
         maxProgressSnapshot = finalSnapshot;
         maxProgressRouteSegment = lastActiveRouteSegment;
       }
+      if (lostActiveFrame === null && shouldReplaceMaxNoDeathProgress(finalSnapshot)) {
+        maxNoDeathProgressSnapshot = finalSnapshot;
+        maxNoDeathProgressRouteSegment = lastActiveRouteSegment;
+      }
+    }
+    if (options.saveStateAt !== null && frame + 1 === options.saveStateAt && options.saveStatePath) {
+      const savePath = path.resolve(repoRoot, options.saveStatePath);
+      fs.mkdirSync(path.dirname(savePath), { recursive: true });
+      fs.writeFileSync(savePath, `${JSON.stringify({
+        schema: "fc-ai-jsnes-headless-state-v1",
+        frame: frame + 1,
+        rom: {
+          fileName: path.basename(romPath),
+          ...hashRom(romBytes)
+        },
+        snapshot: compactSnapshot(finalSnapshot),
+        state: nes.toJSON()
+      }, null, 2)}\n`, "utf8");
+      if (options.stopAfterSave) break;
     }
     if (activeFrame !== null && lostActiveFrame === null && !afterActive) {
       lostActiveFrame = frame + 1;
@@ -580,7 +826,8 @@ async function main() {
     }
   }
 
-  const active = isHeadlessGameplayActive(finalSnapshot, options.frames);
+  const endFrame = startFrame + completedFrames;
+  const active = isHeadlessGameplayActive(finalSnapshot, endFrame);
   const stallThresholdFrames = 900;
   const maxProgressStallFrames = active && finalSnapshot && maxProgressSnapshot
     ? Math.max(0, finalSnapshot.frame - maxProgressSnapshot.frame)
@@ -602,6 +849,9 @@ async function main() {
         ? "progress-stalled"
         : status === "lost-active" ? "gameplay-lost" : "max-frames",
     frameCount: options.frames,
+    startFrame,
+    completedFrames,
+    endFrame,
     activeFrame,
     lostActiveFrame,
     progressStallFrames,
@@ -625,6 +875,21 @@ async function main() {
     preLostActiveSnapshot: compactSnapshot(preLostActiveSnapshot),
     maxProgressRouteSegment: compactRouteSegment(maxProgressRouteSegment),
     maxProgressSnapshot: compactSnapshot(maxProgressSnapshot),
+    maxNoDeathProgressRouteSegment: compactRouteSegment(maxNoDeathProgressRouteSegment),
+    maxNoDeathProgressSnapshot: compactSnapshot(maxNoDeathProgressSnapshot),
+    saveState: options.saveStatePath
+      ? {
+          frame: options.saveStateAt,
+          path: options.saveStatePath,
+          written: options.saveStateAt !== null
+        }
+      : null,
+    startState: options.startStatePath
+      ? {
+          path: options.startStatePath,
+          frame: startFrame
+        }
+      : null,
     traceWindow: options.traceStart !== null && options.traceEnd !== null
       ? {
           startFrame: options.traceStart,
@@ -652,7 +917,8 @@ main().catch((error) => {
       tasIsController: false
     },
     status: "error",
-    reason: error instanceof Error ? error.message : String(error)
+    reason: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : null
   }, null, 2));
   process.exitCode = 1;
 });

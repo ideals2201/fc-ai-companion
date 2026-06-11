@@ -108,6 +108,16 @@
     "stages": [
       "stages/stage-1/stage-plan.json"
     ],
+    "trainingProgress": [
+      "stages/stage-1/training-progress.json",
+      "stages/stage-2/training-progress.json",
+      "stages/stage-3/training-progress.json",
+      "stages/stage-4/training-progress.json",
+      "stages/stage-5/training-progress.json",
+      "stages/stage-6/training-progress.json",
+      "stages/stage-7/training-progress.json",
+      "stages/stage-8/training-progress.json"
+    ],
     "fragments": [
       "stages/stage-1/fragments.json"
     ]
@@ -120,50 +130,210 @@
       "survival-v0": {
         "status": "candidate",
         "metrics": {
-          "kills": { "value": null, "status": "unverified" },
-          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
-          "rewardsCollected": { "value": null, "status": "unverified" },
-          "clearTimeFrames": { "value": null, "status": "unverified" }
+          "kills": {
+            "value": null,
+            "status": "unverified"
+          },
+          "fixedTargetsDestroyed": {
+            "value": null,
+            "status": "unverified"
+          },
+          "rewardsCollected": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeFrames": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          },
+          "deaths": {
+            "value": null,
+            "status": "unverified"
+          },
+          "maxProgress": {
+            "value": null,
+            "status": "unverified"
+          },
+          "stageAttempts": {
+            "value": null,
+            "status": "unverified"
+          },
+          "trainingTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          }
         },
         "evidence": "需要完成第一关稳健生存真实跑局验证后写入。"
       },
       "speedrun-v0": {
         "status": "candidate",
         "metrics": {
-          "kills": { "value": null, "status": "unverified" },
-          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
-          "rewardsCollected": { "value": null, "status": "unverified" },
-          "clearTimeFrames": { "value": null, "status": "unverified" }
+          "kills": {
+            "value": null,
+            "status": "unverified"
+          },
+          "fixedTargetsDestroyed": {
+            "value": null,
+            "status": "unverified"
+          },
+          "rewardsCollected": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeFrames": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          },
+          "deaths": {
+            "value": null,
+            "status": "unverified"
+          },
+          "maxProgress": {
+            "value": null,
+            "status": "unverified"
+          },
+          "stageAttempts": {
+            "value": null,
+            "status": "unverified"
+          },
+          "trainingTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          }
         },
         "evidence": "已接入 TAS/FCEUX opening-active 侧基准和 matrix-speedrun-20260608 的 WorldX 625 死亡反例，形成可复用候选训练片段；仍需真实跑局 ValidationReport 后才能升级。"
       },
       "combat-v0": {
         "status": "candidate",
         "metrics": {
-          "kills": { "value": null, "status": "unverified" },
-          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
-          "rewardsCollected": { "value": null, "status": "unverified" },
-          "clearTimeFrames": { "value": null, "status": "unverified" }
+          "kills": {
+            "value": null,
+            "status": "unverified"
+          },
+          "fixedTargetsDestroyed": {
+            "value": null,
+            "status": "unverified"
+          },
+          "rewardsCollected": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeFrames": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          },
+          "deaths": {
+            "value": null,
+            "status": "unverified"
+          },
+          "maxProgress": {
+            "value": null,
+            "status": "unverified"
+          },
+          "stageAttempts": {
+            "value": null,
+            "status": "unverified"
+          },
+          "trainingTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          }
         },
         "evidence": "需要完成清敌优先真实跑局验证后写入。"
       },
       "loot-v0": {
         "status": "candidate",
         "metrics": {
-          "kills": { "value": null, "status": "unverified" },
-          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
-          "rewardsCollected": { "value": null, "status": "unverified" },
-          "clearTimeFrames": { "value": null, "status": "unverified" }
+          "kills": {
+            "value": null,
+            "status": "unverified"
+          },
+          "fixedTargetsDestroyed": {
+            "value": null,
+            "status": "unverified"
+          },
+          "rewardsCollected": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeFrames": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          },
+          "deaths": {
+            "value": null,
+            "status": "unverified"
+          },
+          "maxProgress": {
+            "value": null,
+            "status": "unverified"
+          },
+          "stageAttempts": {
+            "value": null,
+            "status": "unverified"
+          },
+          "trainingTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          }
         },
         "evidence": "需要完成奖励优先真实跑局验证后写入。"
       },
       "guard-v0": {
         "status": "candidate",
         "metrics": {
-          "kills": { "value": null, "status": "unverified" },
-          "fixedTargetsDestroyed": { "value": null, "status": "unverified" },
-          "rewardsCollected": { "value": null, "status": "unverified" },
-          "clearTimeFrames": { "value": null, "status": "unverified" }
+          "kills": {
+            "value": null,
+            "status": "unverified"
+          },
+          "fixedTargetsDestroyed": {
+            "value": null,
+            "status": "unverified"
+          },
+          "rewardsCollected": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeFrames": {
+            "value": null,
+            "status": "unverified"
+          },
+          "clearTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          },
+          "deaths": {
+            "value": null,
+            "status": "unverified"
+          },
+          "maxProgress": {
+            "value": null,
+            "status": "unverified"
+          },
+          "stageAttempts": {
+            "value": null,
+            "status": "unverified"
+          },
+          "trainingTimeSeconds": {
+            "value": null,
+            "status": "unverified"
+          }
         },
         "evidence": "需要完成人类+AI 或双 AI 护卫协作真实跑局验证后写入。"
       }
@@ -179,5 +349,82 @@
     "spdxLicenseId": "LicenseRef-InternalResearch",
     "romFileNotIncluded": true,
     "userMustProvideOwnRom": true
+  },
+  "strategyDescriptions": {
+    "survival-v0": {
+      "label": "Robust Survival",
+      "summary": "Prioritizes staying alive, slows progression when needed, and clears required fixed threats and blockers.",
+      "playStyle": "Suitable for single-AI clear attempts, human-AI companion play, and dual-AI stability baselines.",
+      "riskPolicy": "Safety override takes priority over speed, rewards, and kill count.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "稳健生存",
+          "summary": "优先保证不死，必要时放慢推进，先处理固定威胁和必过障碍。",
+          "playStyle": "适合单 AI 通关、人类加 AI 陪玩、双 AI 稳定基准。",
+          "riskPolicy": "安全覆盖优先于速度、奖励和杀敌数量。"
+        }
+      }
+    },
+    "speedrun-v0": {
+      "label": "Fast Advance",
+      "summary": "Prioritizes forward pace and reusable TAS/FCEUX windows while preserving safety override.",
+      "playStyle": "Suitable for showcase runs, speed training, and later clear-time optimization.",
+      "riskPolicy": "May skip nonessential kills and rewards, but must not violate required survival conditions.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "快速推进",
+          "summary": "优先推进速度，复用 TAS/FCEUX 可用窗口，但必须保留安全覆盖。",
+          "playStyle": "适合观赏、竞速训练和后续优化过关时间。",
+          "riskPolicy": "允许减少非必要清敌和奖励，但不能牺牲必需生存条件。"
+        }
+      }
+    },
+    "combat-v0": {
+      "label": "Combat Clear",
+      "summary": "Prioritizes killing enemies, turrets, and fixed targets to reduce screen threat density.",
+      "playStyle": "Suitable for cautious combat, result farming, and threat-handling research.",
+      "riskPolicy": "May slow down to clear threats, but must not enter dead loops or die for optional kills.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "清敌优先",
+          "summary": "优先消灭敌人、炮台和固定目标，降低屏幕威胁密度。",
+          "playStyle": "适合稳扎稳打、刷战果和研究威胁处理。",
+          "riskPolicy": "可以放慢推进等待清场，但不能进入死循环或为清敌主动送死。"
+        }
+      }
+    },
+    "loot-v0": {
+      "label": "Loot Priority",
+      "summary": "Prioritizes weapons, reward capsules, and key resources when safety permits route adjustment.",
+      "playStyle": "Suitable for collection routes, weapon optimization, and reward-focused viewing.",
+      "riskPolicy": "Rewards are subordinate to survival and must not break clear stability.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "奖励优先",
+          "summary": "优先获取武器、奖励胶囊和关键资源，在安全允许时调整路线。",
+          "playStyle": "适合收集路线、武器优化和玩家观赏奖励获取。",
+          "riskPolicy": "奖励必须服从生存，不能为了吃奖励破坏通关稳定性。"
+        }
+      }
+    },
+    "guard-v0": {
+      "label": "Companion Guard",
+      "summary": "Provides cover fire, anti-screen-drag behavior, and cooperative progression around the teammate.",
+      "playStyle": "Suitable for human-AI companion play and dual-AI cooperation.",
+      "riskPolicy": "Prioritizes teammate safety and screen tempo, avoiding screen drag and dangerous reward steals.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "护卫队友",
+          "summary": "围绕队友位置提供火力、防拖屏和协作推进。",
+          "playStyle": "适合人类加 AI 陪玩和双 AI 协作。",
+          "riskPolicy": "优先保护队友和屏幕节奏，不抢屏、不抢危险奖励。"
+        }
+      }
+    }
   }
 }

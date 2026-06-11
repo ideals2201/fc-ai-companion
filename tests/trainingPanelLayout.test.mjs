@@ -7,6 +7,27 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const mainSource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit", "src", "main.tsx"), "utf8");
 const cssSource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit", "src", "styles.css"), "utf8");
+const i18nSource = fs.readFileSync(path.join(repoRoot, "apps", "browser-cockpit", "src", "i18n.ts"), "utf8");
+const contraTrainingProgressPath = path.join(repoRoot, "strategy-packs", "contra", "stages", "stage-1", "training-progress.json");
+const contraTrainingProgress = JSON.parse(fs.readFileSync(contraTrainingProgressPath, "utf8"));
+const insertedCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-contra-inspired-yellow-cartridge.png");
+const emptyCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-empty-cartridge-slot.png");
+const genericCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-generic-yellow-cartridge.png");
+const battleCityCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-battle-city-yellow-cartridge.png");
+const contraForceCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-contra-force-yellow-cartridge.png");
+const doubleDragonCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-double-dragon-ii-yellow-cartridge.png");
+const jackalCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-jackal-yellow-cartridge.png");
+const superCCartridgeAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "cartridges", "fcai-super-c-yellow-cartridge.png");
+const blueWarriorAvatarAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "avatars", "fcai-blue-warrior-avatar.png");
+const redWarriorAvatarAsset = path.join(repoRoot, "apps", "browser-cockpit", "public", "assets", "avatars", "fcai-red-warrior-avatar.png");
+const romChecksumMarker = 'className="rom-checksum-strip"';
+const romGridStart = mainSource.indexOf('className="rom-meta-grid compact"');
+const romGridEnd = mainSource.indexOf(romChecksumMarker);
+const romMainFactGridSource = romGridStart >= 0 && romGridEnd > romGridStart ? mainSource.slice(romGridStart, romGridEnd) : "";
+const startupPresetSource = mainSource.slice(
+  mainSource.indexOf("const startupPresetOptions"),
+  mainSource.indexOf("const modeLastInputLabels")
+);
 
 test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /type SideTrainingState/, "training state should be explicit and per side");
@@ -17,10 +38,10 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /strategyCategoryLabel: string/, "side training state should expose the selected strategy category");
   assert.match(mainSource, /strategyKey: AiStrategyKey/, "side training state should carry the selected strategy key");
   assert.match(mainSource, /trainingToggleLabel: string/, "side training state should expose a readable start/stop label on the title");
-  assert.match(mainSource, /strategyBaselineLabel: string/, "side training state should expose the selected strategy baseline");
+  assert.match(mainSource, /strategyBaselineLabel: string/, "side training state should expose the selected strategy package baseline summary");
   assert.match(mainSource, /selectedForTraining: boolean/, "side training state should know whether it is the focused training side");
   assert.match(mainSource, /trainingStatusLabel: string/, "side training state should expose queued vs active status");
-  assert.match(mainSource, /baselineOptions: SideTrainingBaselineOption\[\]/, "side training state should expose selectable baseline options");
+  assert.match(mainSource, /baselineOptions: SideTrainingBaselineOption\[\]/, "side training state may still receive baseline assets from package creation or TAS extraction");
   assert.match(mainSource, /selectedBaselineId: string/, "side training state should carry the selected baseline id");
   assert.match(mainSource, /trainingMethodOptions: SideTrainingMethodOption\[\]/, "side training state should expose selectable training methods");
   assert.match(mainSource, /selectedTrainingMethod: SideTrainingMethod/, "side training state should carry the selected training method");
@@ -28,6 +49,9 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /trainingRunActive: boolean/, "side training state should expose whether its run is currently recording");
   assert.match(mainSource, /trainingRunStatusLabel: string/, "side training state should expose visible run status");
   assert.match(mainSource, /<SideTrainingPanel[\s\S]*training=\{pilot\.training\}/, "PilotPanel should place training inside the controller bay");
+  assert.ok(fs.existsSync(blueWarriorAvatarAsset), "1P should have a project-owned blue warrior avatar asset");
+  assert.ok(fs.existsSync(redWarriorAvatarAsset), "2P should have a project-owned red warrior avatar asset");
+  assert.match(mainSource, /src=\{side === "1P" \? "\/assets\/avatars\/fcai-blue-warrior-avatar\.png" : "\/assets\/avatars\/fcai-red-warrior-avatar\.png"\}/, "controller avatar should use generated 3D warrior assets");
   assert.match(mainSource, /className="side-training-pack-identity"/, "side training panel should prominently show strategy pack identity");
   assert.match(mainSource, /className=\{sideTrainingPanelClassName\(training\)\}/, "side training panel should distinguish queued and active training states");
   assert.match(mainSource, /className=\{sideTrainingTitleClassName\(training\)\}/, "side training title should distinguish queued and active training states");
@@ -35,26 +59,28 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.match(mainSource, /onSideTrainingToggle/, "side training title should route per-side training start and stop");
   assert.match(mainSource, /className="side-training-title-strategy"/, "side training title should show the current top-level AI strategy category");
   assert.doesNotMatch(mainSource, /strategyCategoryOptions/, "side training panel should not duplicate the top-level AI strategy selector");
-  assert.doesNotMatch(mainSource, /selectorClassName\("side-strategy-category-selector"/, "side training panel should not render its own strategy category selector");
-  assert.doesNotMatch(mainSource, /onSideTrainingStrategyChange/, "side training panel should not own strategy category changes");
   assert.match(mainSource, /<strong>\{training\.packDisplayName\}<\/strong>/, "pack identity should remain visible without duplicating the strategy selector");
-  assert.match(mainSource, /training\.strategyBaseline/, "side training panel should use Strategy Baseline instead of the old TAS-only baseline label");
+  assert.match(mainSource, /className=\{selectorClassName\("side-training-strategy-selector"/, "side training panel should own the role-specific strategy category selector");
+  assert.match(mainSource, /strategyOptionsForResourcePack\(training\.resourcePackId\)\.map/, "side training strategy selector should use the selected resource pack manifest");
+  assert.match(mainSource, /actions\.onSideTrainingStrategyChange\(training\.side, option\.key\)/, "side training strategy changes should route with side ownership");
   assert.doesNotMatch(mainSource, /t\(language, "training\.baselineStrategy"\)/, "side training panel should not render the duplicated baseline-strategy field");
-  assert.match(mainSource, /selectorClassName\("side-baseline-selector"/, "side training panel should render a real baseline selector");
-  assert.match(mainSource, /training\.baselineOptions\.map/, "side baseline selector should list available baselines");
+  assert.doesNotMatch(mainSource, /className="side-training-source-summary"/, "side training panel should not spend space on package baseline summaries");
+  assert.doesNotMatch(mainSource, /selectorClassName\("side-baseline-selector"/, "side training panel should not ask users to reselect a baseline during training");
+  assert.doesNotMatch(mainSource, /function SideTrainingPanel[\s\S]*training\.baselineOptions\.map/, "side training panel should not list package baseline choices during training");
   assert.match(mainSource, /selectorClassName\("side-training-method-selector"/, "side training panel should render training method controls");
   assert.match(mainSource, /training\.trainingMethodOptions\.map/, "side training method selector should list available methods");
-  assert.match(mainSource, /className="side-training-context-actions"/, "side training panel should expose only contextual actions");
+  assert.doesNotMatch(mainSource, /className="side-training-context-actions"/, "side training panel should not expose packaging or evidence actions");
   assert.doesNotMatch(mainSource, /className="side-training-workflow-actions"/, "side training panel should not keep the old permanent workflow row");
   assert.doesNotMatch(mainSource, /className="side-training-capture-actions"/, "side training panel should not keep the old permanent capture row");
-  assert.match(mainSource, /onSideTrainingSelectBaseline/, "baseline selection should be routed with side ownership");
-  assert.match(mainSource, /onSideTrainingBaselineChange/, "baseline choice should be routed with side ownership");
+  assert.doesNotMatch(mainSource, /onSideTrainingSelectBaseline: \(side: PlayerSide\) => void/, "side training actions should not expose baseline selection");
+  assert.doesNotMatch(mainSource, /onSideTrainingBaselineChange: \(side: PlayerSide, baselineId: string\) => void/, "side training actions should not expose baseline choice controls");
+  assert.match(mainSource, /onSideTrainingStrategyChange: \(side: PlayerSide, strategy: AiStrategyKey\) => void/, "strategy category selection should be routed with side ownership");
   assert.match(mainSource, /onSideTrainingMethodChange/, "training method selection should be routed with side ownership");
-  assert.match(mainSource, /onSideTrainingModifyStrategy/, "strategy modification should be routed with side ownership");
-  assert.match(mainSource, /onSideTrainingArchiveStrategy/, "strategy archival should be routed with side ownership");
-  assert.match(mainSource, /onSideTrainingValidateStrategy/, "validation should be routed with side ownership");
-  assert.match(mainSource, /onSideTraceStart/, "trace capture should be available from each side training panel");
-  assert.match(mainSource, /onSideTrainingRunToggle/, "auto-patch run start and stop should be routed with side ownership");
+  assert.doesNotMatch(mainSource, /onSideTrainingModifyStrategy: \(side: PlayerSide\) => void/, "strategy modification should stay in package tooling, not the side training panel");
+  assert.doesNotMatch(mainSource, /onSideTrainingArchiveStrategy: \(side: PlayerSide\) => void/, "strategy archival should stay in package tooling, not the side training panel");
+  assert.doesNotMatch(mainSource, /onSideTrainingValidateStrategy: \(side: PlayerSide\) => void/, "validation should stay in package tooling, not the side training panel");
+  assert.doesNotMatch(mainSource, /onSideTraceStart: \(side: PlayerSide\) => void/, "trace capture should be implicit in training start, not a side button");
+  assert.doesNotMatch(mainSource, /onSideTrainingRunToggle: \(side: PlayerSide\) => void/, "auto-patch run start and stop should be represented by the training title toggle");
   assert.match(cssSource, /\.side-training-panel\s*\{/, "side training panel should have stable styling");
   assert.match(cssSource, /\.side-training-panel\.queued-training-side\s*\{/, "queued training panel should have selected-but-not-active styling");
   assert.match(cssSource, /\.side-training-panel\.active-training-side\s*\{/, "active training panel should have active border styling");
@@ -62,23 +88,57 @@ test("1P and 2P controller bays include side-owned training panels", () => {
   assert.doesNotMatch(mainSource, /className="training-stat-grid"/, "side training panel should not show debug metric cards");
   assert.doesNotMatch(mainSource, /className="training-note-grid"/, "side training panel should not show debug note cards");
   assert.match(cssSource, /\.side-training-title-strategy\s*\{/, "strategy category on the title should have stable styling");
-  assert.match(cssSource, /\.side-baseline-selector\s*\{/, "side baseline selector should have stable layout");
+  assert.match(cssSource, /\.side-training-strategy-selector\s*\{/, "side strategy selector should have stable layout");
   assert.match(cssSource, /\.side-training-method-selector\s*\{/, "training method selector should have stable layout");
-  assert.match(cssSource, /\.side-training-context-actions\s*\{/, "side contextual buttons should have stable layout");
+  assert.doesNotMatch(cssSource, /\.side-training-context-actions\s*\{/, "side contextual action buttons should be removed");
+});
+
+test("console cartridge art is selected from game profile with a project-owned fallback", () => {
+  assert.ok(fs.existsSync(insertedCartridgeAsset), "Contra should keep a project-owned yellow cartridge artwork asset");
+  assert.ok(fs.existsSync(emptyCartridgeAsset), "empty host slot should keep a project-owned empty cartridge artwork asset");
+  assert.ok(fs.existsSync(genericCartridgeAsset), "unknown and not-yet-customized games should have a project-owned FCAI generic cartridge artwork");
+  assert.ok(fs.existsSync(battleCityCartridgeAsset), "Battle City should have a project-owned cartridge artwork asset");
+  assert.ok(fs.existsSync(contraForceCartridgeAsset), "Contra Force should have a project-owned cartridge artwork asset");
+  assert.ok(fs.existsSync(doubleDragonCartridgeAsset), "Double Dragon II should have a project-owned cartridge artwork asset");
+  assert.ok(fs.existsSync(jackalCartridgeAsset), "Jackal should have a project-owned cartridge artwork asset");
+  assert.ok(fs.existsSync(superCCartridgeAsset), "Super C should have a project-owned cartridge artwork asset");
+  assert.match(mainSource, /const GENERIC_CARTRIDGE_ARTWORK_SRC = "\/assets\/cartridges\/fcai-generic-yellow-cartridge\.png"/, "generic cartridge asset path should be named once");
+  assert.match(mainSource, /const EMPTY_CARTRIDGE_ARTWORK_SRC = "\/assets\/cartridges\/fcai-empty-cartridge-slot\.png"/, "empty cartridge asset path should be named once");
+  assert.match(mainSource, /const CARTRIDGE_ARTWORK_BY_GAME_PROFILE/, "cartridge artwork should be mapped by game profile rather than hardcoded in JSX");
+  assert.match(mainSource, /"battle-city": "\/assets\/cartridges\/fcai-battle-city-yellow-cartridge\.png"/, "Battle City should use its own cartridge artwork");
+  assert.match(mainSource, /"contra-force": "\/assets\/cartridges\/fcai-contra-force-yellow-cartridge\.png"/, "Contra Force should use its own cartridge artwork");
+  assert.match(mainSource, /"double-dragon-ii": "\/assets\/cartridges\/fcai-double-dragon-ii-yellow-cartridge\.png"/, "Double Dragon II should use its own cartridge artwork");
+  assert.match(mainSource, /"jackal": "\/assets\/cartridges\/fcai-jackal-yellow-cartridge\.png"/, "Jackal should use its own cartridge artwork");
+  assert.match(mainSource, /"super-c": "\/assets\/cartridges\/fcai-super-c-yellow-cartridge\.png"/, "Super C should use its own cartridge artwork");
+  assert.match(mainSource, /function cartridgeArtworkSrc\(metadata: RomMetadata \| null\)/, "console should resolve cartridge art through a helper");
+  assert.match(mainSource, /cartridgeArtworkSrc\(romMetadata\)/, "loaded cartridge image should use the resolver");
+  assert.doesNotMatch(mainSource, /src=\{romMetadata \? "\/assets\/cartridges\/fcai-contra-inspired-yellow-cartridge\.png"/, "console must not hardcode every loaded ROM to the Contra cartridge");
 });
 
 test("center column includes a global training console for shared evidence and validation", () => {
   assert.match(mainSource, /type GlobalTrainingState/, "global training state should be separate from side panels");
   assert.match(mainSource, /strategyPackLabel: string/, "global training state should carry a visible strategy-pack label");
+  assert.match(mainSource, /activeRomStrategyCompatible: boolean/, "global training state should expose whether the selected strategy packs match the inserted ROM");
+  assert.match(mainSource, /activeRomStrategyCompatibilityLabel: string/, "global training state should expose a human-readable ROM strategy compatibility label");
   assert.match(mainSource, /trainingSessionActive: boolean/, "global training state should carry whole-module training session status");
   assert.match(mainSource, /trainingSessionLabel: string/, "global training state should expose a visible training session label");
+  assert.match(mainSource, /type TrainingSpeedMode = "standard" \| "fast" \| "batch"/, "training speed should be modeled separately from gameplay speed");
+  assert.match(mainSource, /trainingSpeedMode: TrainingSpeedMode/, "global training state should expose the selected training speed");
+  assert.match(mainSource, /className="strategy-training-speed-controls"/, "operation strategy control should expose compact training speed controls");
+  assert.match(mainSource, /training\.trainingSpeed/, "training speed should be visibly labeled in the operation strategy control");
+  assert.match(mainSource, /setPendingTrainingFastRun/, "fast training should route through the existing botrun batch path instead of changing the visible game loop");
+  assert.match(mainSource, /runBotFrameBatch\(pendingTrainingFastRun\.frames, pendingTrainingFastRun\.strategy\)/, "pending fast-training runs should execute through the batch runner");
   assert.match(mainSource, /ACTIVE_STRATEGY_PACK/, "training UI should display the active strategy pack identity");
   assert.match(mainSource, /function OperationStrategyControl/, "center column should render a shared operation strategy control");
   assert.match(mainSource, /globalTraining=\{globalTraining\}/, "center column should pass global training state into the host console");
   assert.match(mainSource, /<OperationStrategyControl[\s\S]*training=\{globalTraining\}/, "host console should place operation strategy control in the center column");
   assert.match(mainSource, /<TasWindow[\s\S]*\/>\s*<OperationStrategyControl/s, "operation strategy control should sit below the TAS viewing window");
-  assert.match(mainSource, /className="training-pack-banner"/, "operation strategy control should show the strategy pack name prominently");
-  assert.match(mainSource, /className="training-session-control"/, "operation strategy control should expose shared training status");
+  assert.match(mainSource, /className="strategy-package-browser-frame"/, "operation strategy control should present packages in one framed library module");
+  assert.match(mainSource, /className="strategy-pack-status-strip"/, "operation strategy control should put ROM compatibility and system status inside the package detail module");
+  assert.match(mainSource, /className="strategy-edit-policy-note"/, "selected package detail should keep the edit policy as one compact note");
+  assert.doesNotMatch(mainSource, /className="strategy-resource-edit-policy"/, "1P and 2P resource selectors should not repeat the edit-policy badge");
+  assert.match(mainSource, /training\.activeRomStrategyCompatibilityLabel/, "operation strategy control should show the ROM strategy compatibility label");
+  assert.doesNotMatch(mainSource, /className="training-session-control"/, "operation strategy control should not duplicate the side-owned training start or stop prompt");
   assert.match(mainSource, /training\.trainingSessionActive \? "operation-strategy-control training-active" : "operation-strategy-control"/, "operation strategy control should visibly mark active training sessions");
   assert.match(mainSource, /const locked = tasLocked \|\| trainingLocked/, "mode controls should be locked by TAS or active side training");
   assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top strategy buttons should be locked by TAS or active side training");
@@ -88,14 +148,46 @@ test("center column includes a global training console for shared evidence and v
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*training\.scenarioLabel/, "operation strategy control should not show detailed training-scenario status");
   assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*training\.optimizationLevel/, "operation strategy control should not show internal optimization level status");
   assert.match(cssSource, /\.operation-strategy-control\s*\{/, "operation strategy control should have stable styling");
-  assert.match(cssSource, /\.training-pack-banner\s*\{/, "strategy-pack banner should have stable emotional-value styling");
+  assert.match(cssSource, /\.strategy-package-browser-frame\s*\{/, "strategy-package browser should have stable framed styling");
   assert.match(mainSource, /className="strategy-result-board"/, "operation strategy control should show strategy result data");
   assert.match(mainSource, /training\.strategyResults/, "operation strategy control should label strategy result data");
+  assert.match(mainSource, /type StrategyTrainingProgressRecord/, "strategy packs should carry package-level training progress records");
+  assert.match(mainSource, /contraStage1TrainingProgressArtifact/, "the active Contra strategy pack should read progress facts from the strategy pack artifact");
+  assert.match(mainSource, /trainingProgress: Partial<Record<AiStrategyKey, StrategyTrainingProgressRecord>>/, "strategy resource packs should expose progress for every strategy type");
+  assert.match(mainSource, /strategyDescriptions: Partial<Record<AiStrategyKey, StrategyDescriptionRecord>>/, "strategy resource packs should expose descriptions for every strategy type");
+  assert.match(mainSource, /CONTRA_STRATEGY_DESCRIPTIONS/, "the active Contra strategy pack should read canonical descriptions from manifest.json");
+  assert.match(mainSource, /trainingTimeSeconds/, "training progress should store human-time seconds instead of displaying frame counts as time");
+  assert.doesNotMatch(mainSource, /14000f window/, "training time should not be hardcoded as a frame-window label in UI source");
+  assert.match(mainSource, /className="strategy-training-progress-metrics"/, "strategy result cards should include compact training-progress metrics");
+  assert.match(mainSource, /className="strategy-result-description"/, "strategy result cards should include the strategy description summary");
+  assert.match(mainSource, /training\.strategyTrainingProgress/, "operation strategy control should label package-level training progress");
+  assert.match(mainSource, /trainingStageSummary: StrategyTrainingStageSummaryRecord \| null/, "strategy resource packs should carry an optional stage-level training summary");
+  assert.match(mainSource, /className="strategy-stage-summary"/, "operation strategy control should show a compact stage-level training summary");
+  assert.match(mainSource, /training\.stageRuns/, "stage summary should show stage training runs");
+  assert.match(mainSource, /training\.stageKnownDeaths/, "stage summary should show known deaths");
+  assert.match(mainSource, /training\.stageUnknownDeaths/, "stage summary should show unverified death run count");
+  assert.match(mainSource, /training\.stageRecordedTime/, "stage summary should show measured ledger runtime");
+  assert.match(mainSource, /training\.stageHistoricalEstimate/, "stage summary should show migration-only historical estimates when present");
+  assert.match(mainSource, /training\.progressRuns/, "training progress should show run count");
+  assert.match(mainSource, /training\.progressDeaths/, "training progress should show death count");
+  assert.match(mainSource, /training\.progressTime/, "training progress should show training time");
+  assert.match(mainSource, /training\.progressClearance/, "training progress should show clear progress");
   assert.match(mainSource, /training\.resultKills/, "strategy result cards should include kill data");
   assert.match(mainSource, /training\.resultFixed/, "strategy result cards should include fixed-target data");
   assert.match(mainSource, /training\.resultRewards/, "strategy result cards should include reward data");
   assert.match(mainSource, /training\.resultTime/, "strategy result cards should include clear-time data");
   assert.match(mainSource, /training\.resultUnverified/, "unverified result data should be visibly marked");
+  assert.match(mainSource, /record\.status === "candidate"\) return language === "en-US" \? "pending validation" : "待验证"/, "candidate strategy result state should read as pending validation instead of appending candidate to the strategy name");
+});
+
+test("strategy pack owns cumulative training progress facts", () => {
+  assert.equal(contraTrainingProgress.schemaVersion, "1.1.0", "training progress artifact should be versioned");
+  assert.equal(contraTrainingProgress.packId, "contra-stage1-strategy-v0", "training progress should belong to the strategy pack");
+  assert.equal(contraTrainingProgress.stageId, "stage-1", "training progress should be stage scoped");
+  assert.ok(contraTrainingProgress.progressByStrategy["survival-v0"], "survival progress should be recorded inside the strategy pack");
+  assert.ok(Array.isArray(contraTrainingProgress.runs), "training progress should keep append-only run facts");
+  assert.match(JSON.stringify(contraTrainingProgress.progressByStrategy["survival-v0"]), /trainingTimeSeconds/, "summary should use seconds for human time accounting");
+  assert.match(JSON.stringify(contraTrainingProgress.runs[0] ?? {}), /durationSeconds/, "each run fact should retain human-time duration");
 });
 
 test("side training title toggles independent sessions and only locks its own play area", () => {
@@ -140,8 +232,8 @@ test("operation strategy control keeps only shared strategy-training workflow ac
   assert.match(mainSource, /function trainingControlModeForSelection/, "training session start should derive control mode from baseline and training method");
   assert.match(mainSource, /setActiveTrainingSides/, "starting and stopping training should update side-owned training sessions");
   assert.doesNotMatch(mainSource, /canStartTrainingSession/, "global training state should not keep a start-button gate");
-  assert.match(mainSource, /training\.saveStrategy/, "training console should expose gated strategy saving");
-  assert.match(mainSource, /training\.validateStrategy/, "training console should expose validation or replay");
+  assert.match(mainSource, /training\.saveStrategy/, "operation strategy control should expose gated strategy saving");
+  assert.match(mainSource, /training\.validateStrategy/, "operation strategy control should expose validation or replay");
   assert.doesNotMatch(mainSource, /<GlobalTrainingConsole[\s\S]*onTrainingSelectBaseline=/, "global console should not receive side-owned baseline selection");
   assert.doesNotMatch(mainSource, /<GlobalTrainingConsole[\s\S]*onTrainingModifyStrategy=/, "global console should not receive side-owned strategy modification");
   assert.doesNotMatch(mainSource, /<GlobalTrainingConsole[\s\S]*onTrainingArchiveStrategy=/, "global console should not receive side-owned strategy archival");
@@ -153,6 +245,34 @@ test("operation strategy control keeps only shared strategy-training workflow ac
 
 test("operation strategy control surfaces resource routing and package side scope", () => {
   assert.match(mainSource, /type StrategyPackageSideScope/, "package side scope should be modeled explicitly");
+  assert.match(mainSource, /type StrategyPackageBaseSource/, "new strategy packages should declare their baseline source explicitly");
+  assert.match(mainSource, /strategyPackageDirectoryLabel: string/, "global strategy control should carry a mountable strategy-package directory");
+  assert.match(mainSource, /type StrategyPackageDraftInput/, "new strategy packages should use a structured draft form");
+  assert.match(mainSource, /baseSource: StrategyPackageBaseSource/, "new package draft should store whether it starts blank, copies a pack, uses TAS, human demo, or AI run");
+  assert.match(mainSource, /onStrategyPackageDirectoryFiles: \(files: FileList \| null\) => void/, "strategy package directory selection should be routed separately from save/export path selection");
+  assert.match(mainSource, /onStrategyPackageCreateNew: \(draft: StrategyPackageDraftInput\) => void/, "strategy package area should create packages from a reviewed draft form");
+  assert.match(mainSource, /className="strategy-package-directory-header"/, "operation strategy control should show a compact strategy-package directory header");
+  assert.match(mainSource, /className="strategy-package-main-grid"/, "operation strategy control should keep the package list and selected detail in one aligned row");
+  assert.match(mainSource, /newPackageDialogOpen/, "new package should open a dialog instead of immediately changing active packs");
+  assert.match(mainSource, /className="new-strategy-package-dialog"/, "new package flow should render a dedicated dialog window");
+  assert.match(mainSource, /training\.newPackageName/, "new package dialog should ask for a package name");
+  assert.match(mainSource, /training\.newPackageBaseSource/, "new package dialog should ask for the baseline source");
+  assert.match(mainSource, /NEW_STRATEGY_PACKAGE_SOURCE_OPTIONS\.map/, "new package dialog should present source choices as package-creation assets");
+  assert.match(mainSource, /className="new-package-source-selector"/, "baseline source selection should live in the new package dialog");
+  assert.match(mainSource, /training\.newPackageBaseStrategy/, "new package dialog should ask for a standard base strategy");
+  assert.match(mainSource, /training\.newPackageCustomCategory/, "new package dialog should allow a custom category label");
+  assert.match(mainSource, /standardStrategyCategoryKeys\.map/, "new package dialog should offer the standard strategy categories");
+  assert.match(mainSource, /const nextPackageName = event\.currentTarget\.value/, "new package name input should capture the DOM value before scheduling React state");
+  assert.match(mainSource, /const nextBaseSource = event\.currentTarget\.value as StrategyPackageBaseSource/, "new package source select should capture the DOM value before scheduling React state");
+  assert.match(mainSource, /const nextCustomCategory = event\.currentTarget\.value/, "new package custom category input should capture the DOM value before scheduling React state");
+  assert.match(mainSource, /const nextBaseStrategy = event\.currentTarget\.value as AiStrategyKey/, "new package strategy select should capture the DOM value before scheduling React state");
+  assert.doesNotMatch(mainSource, /setNewStrategyPackageDraft\(\(current\) => \(\{ \.\.\.current, name: event\.currentTarget\.value \}\)\)/, "new package name input must not read a released React event inside a state updater");
+  assert.match(mainSource, /setStrategyResourcePacksBySide\(\{ "1P": "personal-contra-draft", "2P": "personal-contra-draft" \}\)/, "new packages should default both 1P and 2P to the new draft pack");
+  assert.match(mainSource, /strategyPackageBaselineIdForSource\(draft\.baseSource\)/, "new package source should set the package-owned training baseline once");
+  assert.match(mainSource, /setP2StrategyResourceOverridden\(false\)/, "new package creation should make 2P follow the newly selected pack until manually changed");
+  assert.match(mainSource, /training\.choosePackageDirectory/, "operation strategy control should expose a choose strategy-package directory button");
+  assert.match(mainSource, /training\.newStrategyPackage/, "operation strategy control should expose a new strategy package button");
+  assert.match(mainSource, /strategyDirectoryInputRef\.current\?\.click\(\)/, "choose directory button should open a directory picker");
   assert.doesNotMatch(mainSource, /scenarioLabel: string/, "operation strategy control should not carry detailed scenario label");
   assert.doesNotMatch(mainSource, /scenarioStats/, "operation strategy control should not carry detailed scenario metric counts");
   assert.match(mainSource, /packageSideScope: StrategyPackageSideScope/, "global training state should carry selected package side scope");
@@ -174,7 +294,11 @@ test("operation strategy control surfaces resource routing and package side scop
   assert.match(mainSource, /className="strategy-save-name-field"/, "strategy name should be edited in a dedicated field");
   assert.match(mainSource, /className="hidden-save-directory-input"/, "save strategy should open a directory chooser");
   assert.match(mainSource, /disabled=\{!training\.validationReplayComplete \|\| traceRecording\}/, "save strategy should stay disabled until validation replay completes");
-  assert.match(mainSource, /<div className="strategy-package-save-panel"[\s\S]*<\/div>\s*<div className="strategy-result-section"/, "battle result data should sit below the save workflow");
+  assert.match(mainSource, /className="strategy-operations-results-grid"/, "package actions and strategy results should share one left-right workbench");
+  assert.match(mainSource, /className="strategy-command-column"/, "package validation and save actions should be compacted into the left command column");
+  assert.match(mainSource, /className="strategy-package-action-grid"/, "package buttons should be grouped into a compact action grid");
+  assert.match(mainSource, /className="strategy-package-save-meta"/, "package name and save status should be grouped below the compact action buttons");
+  assert.match(mainSource, /<div className="strategy-operations-results-grid"[\s\S]*<div className="strategy-command-column"[\s\S]*<div className="strategy-result-section"/, "battle result data should sit to the right of the compact command column");
   assert.match(cssSource, /\.package-scope-control\s*\{/, "package scope control should have stable layout");
 });
 
@@ -185,23 +309,55 @@ test("operation strategy control supports side-specific resource packs and basel
   assert.match(mainSource, /changeStrategyResourcePack/, "resource pack selection should be wired");
   assert.match(mainSource, /setStrategyResourcePacksBySide\(\(current\) => \(\{ \.\.\.current, "1P": packId, "2P": p2StrategyResourceOverridden \? current\["2P"\] : packId \}\)\)/, "selecting a 1P pack should default 2P to the same pack until 2P overrides");
   assert.match(mainSource, /className="strategy-resource-routing"/, "operation strategy control should show 1P and 2P resource routing");
-  assert.match(mainSource, /className="strategy-resource-info"/, "operation strategy control should show resource information");
+  assert.match(mainSource, /className="strategy-pack-status-strip"/, "operation strategy control should show resource and compatibility information in the selected package detail");
   assert.match(mainSource, /training\.resourcePack1P/, "1P resource selector should be labeled");
   assert.match(mainSource, /training\.resourcePack2P/, "2P resource selector should be labeled");
-  assert.match(mainSource, /training\.resourceCreator/, "resource info should show pack creator");
-  assert.match(mainSource, /training\.resourceLatestModifier/, "resource info should show latest modifier");
-  assert.match(mainSource, /training\.resourceRevisions/, "resource info should show revision count");
+  assert.match(mainSource, /selectedLibraryPack\.creator\.displayName/, "selected package detail should show pack creator");
+  assert.match(mainSource, /selectedLibraryPack\.latestModifier\.displayName/, "selected package detail should show latest modifier");
+  assert.match(mainSource, /selectedLibraryPack\.revisionHistory\.length/, "selected package detail should show revision count");
   assert.match(mainSource, /training\.versionHistory/, "operation strategy control should expose version history and rollback entry");
   assert.match(mainSource, /training\.rollbackUnavailable/, "rollback should be gated when no restorable snapshot exists");
   assert.match(mainSource, /training\.sync2PTo1P/, "2P should be able to resync with 1P");
-  assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*onStrategyBaselineChoiceChange/, "baseline choice controls should stay in the side training panel");
+  assert.match(i18nSource, /"training\.resourceSynced": "继承 1P 路线 \/ 待验证"/, "2P synced resource state should not imply the 1P strategy is already validated for 2P");
+  assert.match(i18nSource, /"training\.resourceSynced": "Inherits 1P route \/ unverified"/, "English 2P synced resource state should also describe it as unverified");
+  assert.match(mainSource, /function strategyResourcePackEditPolicyLabel/, "resource packs should expose whether they are editable drafts or readonly baselines");
+  assert.match(mainSource, /className="strategy-edit-policy-note"/, "selected package detail should show one shared edit policy");
+  assert.doesNotMatch(mainSource, /className="strategy-resource-edit-policy"/, "resource selectors should not repeat the edit policy");
+  assert.match(mainSource, /training\.resourceEditPolicy/, "resource edit policy should be localized");
+  assert.match(mainSource, /packId === "personal-contra-draft"/, "only the personal draft pack should be directly editable");
+  assert.doesNotMatch(mainSource, /function OperationStrategyControl[\s\S]*onStrategyBaselineChoiceChange/, "operation strategy control should not expose ad-hoc baseline choice controls");
+});
+
+test("operation strategy control browses the default strategy-pack directory like a resource library", () => {
+  assert.match(mainSource, /const DEFAULT_STRATEGY_PACKAGE_DIRECTORY_LABEL = "D:\\\\Ai-Play\\\\fc-ai-companion\\\\strategy-packs"/, "strategy package library should default to the real project strategy-packs directory");
+  assert.match(mainSource, /function canUseNativeDirectoryPicker/, "directory buttons should prefer the native folder picker when Chromium exposes it");
+  assert.match(mainSource, /async function collectFilesFromDirectoryHandle/, "native directory handles should be converted into local File objects for existing import flows");
+  assert.match(mainSource, /onStrategyPackageDirectoryPickerOpen: \(\) => void/, "strategy package directory picker should be routed separately from the upload-style fallback input");
+  assert.match(mainSource, /canUseNativeDirectoryPicker\(\) \? void onStrategyPackageDirectoryPickerOpen\(\) : strategyDirectoryInputRef\.current\?\.click\(\)/, "strategy package button should use the native picker before falling back to the browser upload input");
+  assert.match(mainSource, /canUseNativeDirectoryPicker\(\) \? void onDirectoryPickerOpen\(\) : directoryInputRef\.current\?\.click\(\)/, "ROM directory button should use the native picker before falling back to the browser upload input");
+  assert.match(mainSource, /strategyResourcePackIds: StrategyResourcePackId\[\]/, "global strategy control should carry the visible strategy package list");
+  assert.match(mainSource, /selectedStrategyResourcePackId: StrategyResourcePackId/, "global strategy control should carry the selected package for the right-side info panel");
+  assert.match(mainSource, /onStrategyPackageLibrarySelect: \(packId: StrategyResourcePackId\) => void/, "package list selection should be routed as a first-class action");
+  assert.match(mainSource, /className="strategy-package-browser-frame"/, "operation strategy control should render a framed strategy package library browser");
+  assert.match(mainSource, /className="strategy-package-main-grid"/, "operation strategy control should align the package list with its detail card");
+  assert.match(mainSource, /className="strategy-package-list"/, "strategy package library should expose a compact scrollable package list");
+  assert.match(mainSource, /className=\{packId === training\.selectedStrategyResourcePackId \? "strategy-package-list-item selected" : "strategy-package-list-item"\}/, "selected package should be highlighted in the package list");
+  assert.match(mainSource, /onClick=\{\(\) => onStrategyPackageLibrarySelect\(packId\)\}/, "clicking a package should use the library selection handler");
+  assert.match(mainSource, /className="strategy-package-detail-card"/, "right side should show the selected strategy package information");
+  assert.match(mainSource, /selectedLibraryPack\.displayName\[language\]/, "detail card should use the selected package name");
+  assert.match(mainSource, /changeStrategyResourcePack\("1P", packId\)/, "library package selection should apply through the same 1P resource-pack route");
+  assert.match(cssSource, /\.strategy-package-browser-frame\s*\{/, "strategy package library should have stable styling");
+  assert.match(cssSource, /\.strategy-package-main-grid\s*\{/, "strategy package list and detail should share a stable row");
+  assert.match(cssSource, /\.strategy-package-list\s*\{/, "strategy package list should have stable styling");
+  assert.match(cssSource, /\.strategy-package-list-item\s*\{/, "strategy package list items should have stable styling");
+  assert.match(cssSource, /\.strategy-package-detail-card\s*\{/, "selected package detail card should have stable styling");
 });
 
 test("strategy buttons are derived from the selected resource pack manifest", () => {
   assert.match(mainSource, /const currentPackStrategyKeys = \["survival-v0", "speedrun-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should expose only the two current selectable candidate strategy keys");
   assert.match(mainSource, /const standardStrategyCategoryKeys = \["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"\] as const satisfies readonly AiStrategyKey\[\]/, "official Contra pack should keep the five standard strategy category slots visible");
-  assert.match(mainSource, /\{ key: "speedrun-v0", label: "快速推进候选", description: "TAS\/FCEUX 基准待训练，未验证通关" \}/, "speedrun should be labeled as an unvalidated TAS/FCEUX-baseline candidate, not a learned FCEUX controller");
-  assert.match(mainSource, /if \(strategyKey === "speedrun-v0"\) return "快速推进候选"/, "pilot status should not imply speedrun is already validated");
+  assert.match(mainSource, /\{ key: "speedrun-v0", label: "快速推进", description: "TAS\/FCEUX 基准待训练，未验证通关" \}/, "speedrun should keep the concise visible label while the description marks it unvalidated");
+  assert.match(mainSource, /if \(strategyKey === "speedrun-v0"\) return "快速推进"/, "pilot status should use the concise speedrun label");
   assert.match(mainSource, /strategySlots:\s*standardStrategyCategoryKeys/, "official Contra pack should display all standard category slots");
   assert.match(mainSource, /strategyKeys:\s*currentPackStrategyKeys/, "official Contra pack should consume the current mainline strategy keys");
   assert.match(mainSource, /strategyKeys:\s*\["personal-v0"\]/, "personal draft pack should expose personal strategy only after it is represented as a pack key");
@@ -212,6 +368,7 @@ test("strategy buttons are derived from the selected resource pack manifest", ()
   assert.match(mainSource, /function coerceStrategyForResourcePack\(strategyKey: AiStrategyKey, resourcePackId: StrategyResourcePackId\)/, "current strategy should be coerced when switching packs");
   assert.match(mainSource, /strategyResourcePackId: StrategyResourcePackId/, "Pilot should carry the selected resource pack id for button rendering");
   assert.match(mainSource, /const strategyButtons = strategyOptionsForResourcePack\(pilot\.strategyResourcePackId\)/, "PilotPanel should render buttons for the pilot's selected resource pack");
+  assert.match(mainSource, /strategyResourcePackLabel\(pilot\.strategyResourcePackId, uiLanguage\)/, "PilotPanel strategy title should show the selected strategy package name");
   assert.match(mainSource, /strategyButtons\.map/, "PilotPanel should map dynamic strategy buttons instead of a hardcoded global list");
   assert.match(mainSource, /const strategyUnavailable = !option\.available/, "PilotPanel should virtualize strategies that are not distributed with the current package");
   assert.match(mainSource, /disabled=\{strategyControlsLocked \|\| strategyUnavailable\}/, "unavailable package strategies should be visible but disabled");
@@ -261,14 +418,15 @@ test("human demonstration is a baseline source, not a training method", () => {
 
 test("side training baseline and method controls unlock only for valid active states", () => {
   assert.match(mainSource, /function isNewRunBaseline/, "new human and new AI run baselines should have a shared direct-run predicate");
-  assert.match(mainSource, /const sideTrainingConfigurable = training\.selectedForTraining && !training\.trainingConfigLocked/, "side panel should allow configuration only before a training session starts");
+  assert.match(mainSource, /const sideTrainingConfigurable = !training\.trainingConfigLocked/, "side panel should allow strategy and method configuration until a training session starts");
   assert.match(mainSource, /const directRunBaseline = isNewRunBaseline\(training\.selectedBaselineId\)/, "side panel should detect direct human or AI run baselines");
-  assert.match(mainSource, /disabled=\{!sideTrainingConfigurable\}[\s\S]*value=\{training\.selectedBaselineId\}/, "strategy baseline selection should be configured before training starts and locked during training");
+  assert.match(mainSource, /className=\{selectorClassName\("side-training-strategy-selector", !sideTrainingConfigurable\)\}/, "strategy category should be displayed as the side-owned training choice");
+  assert.doesNotMatch(mainSource, /disabled=\{!sideTrainingConfigurable\}[\s\S]*value=\{training\.selectedBaselineId\}/, "strategy baseline should not be reselected from the training panel");
   assert.match(mainSource, /disabled=\{!sideTrainingConfigurable \|\| directRunBaseline\}/, "training method choices should be configured before training starts and locked during training");
-  assert.match(mainSource, /const showDirectRunActions = directRunBaseline/, "direct new-run baselines should expose start/archive actions without requiring a method");
+  assert.doesNotMatch(mainSource, /const showDirectRunActions = directRunBaseline/, "direct new-run baselines should not create extra side action buttons");
   assert.match(mainSource, /className=\{selectorClassName\("side-training-method-selector", !sideTrainingConfigurable \|\| directRunBaseline\)\}/, "locked method selector should have dark inactive styling");
-  assert.match(mainSource, /className=\{selectorClassName\("side-baseline-selector", !sideTrainingConfigurable\)\}/, "locked baseline selector should have dark inactive styling");
-  assert.match(mainSource, /disabled=\{!sideTrainingActive \|\| actions\.traceRecording\}/, "direct start action should be gated by side training activity");
+  assert.doesNotMatch(mainSource, /className=\{selectorClassName\("side-baseline-selector", !sideTrainingConfigurable\)\}/, "baseline selector should not be locked because it should not be present in training");
+  assert.doesNotMatch(mainSource, /disabled=\{!sideTrainingActive \|\| actions\.traceRecording\}/, "side training should not have separate direct-run action buttons");
 });
 
 test("direct training baselines synchronize side play mode while training owns input", () => {
@@ -277,6 +435,8 @@ test("direct training baselines synchronize side play mode while training owns i
   assert.match(mainSource, /if \(baselineId === "ai-run-new"\) return "ai"/, "new AI run baseline should switch the side to AI input");
   assert.match(mainSource, /if \(activeTrainingSides\[side\]\) \{[\s\S]*baseline change blocked because training is active/, "baseline changes should be blocked after training starts");
   assert.match(mainSource, /const mode = trainingControlModeForSelection\(selectedSideBaselineIds\[side\], selectedTrainingMethod\);[\s\S]*changeControlMode\(side, mode\)/, "starting training should synchronize every active side to its locked baseline mode");
+  assert.match(mainSource, /if \(!traceRecording\) startTraceRecording\(\)/, "starting training should begin trace capture without a separate side button");
+  assert.match(mainSource, /if \(!otherSideStillActive && traceRecording\) stopTraceRecording\(\)/, "stopping the last active side should stop trace capture");
 });
 
 test("dual AI training uses one shared method and locks it after start", () => {
@@ -288,14 +448,14 @@ test("dual AI training uses one shared method and locks it after start", () => {
   assert.match(mainSource, /buildSideTrainingStateV2\("2P"[\s\S]*selectedTrainingMethod/, "2P panel should receive the shared training method");
 });
 
-test("auto-patch run start synchronizes capture and exposes a stop run control", () => {
+test("training title start synchronizes capture and optional auto-patch running", () => {
   assert.match(mainSource, /trainingRunActiveSides/, "auto-patch run state should be tracked per training side");
   assert.match(mainSource, /const trainingRunActive = trainingRunActiveSides\["1P"\] \|\| trainingRunActiveSides\["2P"\]/, "global run status should summarize side run state");
-  assert.match(mainSource, /const startSideTrainingRun = useCallback\(\(side: PlayerSide\) => \{[\s\S]*startTraceRecording\(\)[\s\S]*setRunning\(true\)/, "starting an auto-patch run should begin trace capture and run the emulator together");
-  assert.match(mainSource, /const stopSideTrainingRun = useCallback\(\(side: PlayerSide\) => \{[\s\S]*stopTraceRecording\(\)[\s\S]*setRunning\(false\)/, "stopping an auto-patch run should stop capture and pause the run together");
-  assert.match(mainSource, /onSideTrainingRunToggle: \(side: PlayerSide\) => void/, "side actions should expose one auto-patch run toggle");
-  assert.match(mainSource, /training\.trainingRunActive \? "停止跑局" : "开始跑局"/, "auto-patch UI should show start or stop run from the same control");
-  assert.match(mainSource, /actions\.onSideTrainingRunToggle\(training\.side\)/, "auto-patch run button should call the run toggle");
+  assert.match(mainSource, /const startSideTraining = useCallback\(\(side: PlayerSide\) => \{[\s\S]*if \(!traceRecording\) startTraceRecording\(\)[\s\S]*setRunning\(true\)/, "starting training should begin trace capture and run the emulator together");
+  assert.match(mainSource, /const stopSideTraining = useCallback\(\(side: PlayerSide\) => \{[\s\S]*if \(!otherSideStillActive && traceRecording\) stopTraceRecording\(\)[\s\S]*if \(!otherSideStillActive\) setRunning\(false\)/, "stopping the last active side should stop capture and pause the run together");
+  assert.doesNotMatch(mainSource, /onSideTrainingRunToggle: \(side: PlayerSide\) => void/, "side actions should not expose a second run toggle");
+  assert.doesNotMatch(mainSource, /training\.trainingRunActive \? "停止跑局" : "开始跑局"/, "auto-patch UI should not duplicate the training title start-stop control");
+  assert.doesNotMatch(mainSource, /actions\.onSideTrainingRunToggle\(training\.side\)/, "auto-patch run button should not exist in the side training panel");
 });
 
 test("strategy input only writes after gameplay starts and stops on pause", () => {
@@ -310,9 +470,17 @@ test("strategy input only writes after gameplay starts and stops on pause", () =
   assert.match(mainSource, /runtimeStatus: runtimeStatus === "running" \? "running" : "paused"/, "training trace samples should not label paused frames as running");
 });
 
-test("normal cartridge launch waits unless a startup preset explicitly enables menu input", () => {
+test("normal cartridge launch defaults to single-player AI and locks preset after start", () => {
   assert.match(mainSource, /type StartupLaunchPreset = "wait" \| "auto-1p" \| "auto-2p"/, "startup preset should model wait, auto 1P, and auto 2P modes");
-  assert.match(mainSource, /const \[startupLaunchPreset, setStartupLaunchPreset\] = useState<StartupLaunchPreset>\("wait"\)/, "manual cartridge launches should default to waiting for player input");
+  assert.match(mainSource, /const startupLaunchPresetRef = useRef<StartupLaunchPreset>\("auto-1p"\)/, "startup preset should default to single-player AI automation");
+  assert.match(mainSource, /const \[startupLaunchPreset, setStartupLaunchPreset\] = useState<StartupLaunchPreset>\("auto-1p"\)/, "startup preset UI should default to single-player AI");
+  assert.match(mainSource, /const controlModesRef = useRef<Record<PlayerSide, ControlMode>>\(\{ "1P": "ai", "2P": "human" \}\)/, "single-player AI preset should initialize 1P as AI and 2P as human");
+  assert.match(mainSource, /startupPresetEditable: boolean/, "console deck should receive an explicit startup preset edit window");
+  assert.match(mainSource, /const \[startupPresetEditable, setStartupPresetEditable\] = useState\(false\)/, "startup preset should be locked until a cartridge is loaded");
+  assert.match(mainSource, /const startupPresetLocked = !startupPresetEditable/, "startup preset lock should not depend only on paused or loaded status");
+  assert.match(mainSource, /setStartupPresetEditable\(true\)[\s\S]*setStatus\("loaded"\)/, "loading a cartridge should open the pre-start preset edit window");
+  assert.match(mainSource, /setStartupPresetEditable\(false\)[\s\S]*setStatus\("running"\)/, "starting runtime should close the preset edit window");
+  assert.match(mainSource, /disabled=\{startupPresetLocked\}/, "startup preset buttons should lock after start and remain locked while paused");
   assert.match(mainSource, /startupLaunchPresetRef\.current = "auto-1p"/, "autorun URLs should opt into 1P startup automation explicitly");
   assert.match(mainSource, /const startupAutomationEnabled = startupLaunchPresetRef\.current !== "wait"/, "runtime startup inputs should be gated by the selected preset");
   assert.match(mainSource, /startupAutomationEnabled\s+\?\s+runtimeStartupButtons\(/, "system should only press Start or Select when automation is enabled");
@@ -322,12 +490,37 @@ test("console host controls expose compact launch preset controls and one-row ma
   assert.match(mainSource, /startupLaunchPreset: StartupLaunchPreset/, "console deck should receive the startup preset");
   assert.match(mainSource, /onStartupLaunchPresetChange: \(preset: StartupLaunchPreset\) => void/, "console deck should route startup preset changes");
   assert.match(mainSource, /className="console-machine-frame"/, "console host controls should be grouped inside a visible machine frame");
+  assert.doesNotMatch(mainSource, /className="console-status-strip"/, "console host should not keep a duplicate path/status strip above the title");
+  assert.match(mainSource, /className="console-host-status-chip"[\s\S]*runtimeStatusLabel\(status, uiLanguage\)/, "runtime status should live in the compact host title row");
   assert.match(mainSource, /className="cartridge-slot rom-library-frame"/, "ROM browser should have its own cartridge frame");
+  assert.doesNotMatch(mainSource, /<span>\{t\(uiLanguage, "console\.romDirectory"\)\}<\/span>/, "ROM directory header should be one compact line without a separate title row");
+  assert.match(mainSource, /<strong>\{romLibraryDirLabel\}<\/strong>[\s\S]*romLibraryHeaderStatusLabel\(romLibraryStatus, uiLanguage\)[\s\S]*chooseRomDirectory/, "ROM directory path, cartridge count, and chooser button should share the compact header");
   assert.doesNotMatch(mainSource, /<small>\{entry\.metadata\.romProfileId !== "unknown"/, "ROM list items should show one compact filename line only");
   assert.match(mainSource, /className="rom-selected-title"[\s\S]*\{t\(uiLanguage, "console\.selectedCartridge"\)\}：[\s\S]*\{romEntryTitle\(selectedRomEntry\)\}/, "selected cartridge title should render as one label-colon-value row");
   assert.doesNotMatch(mainSource, /<span>\{t\(uiLanguage, "console\.selectedCartridge"\)\}<\/span>\s*<strong>\{romEntryTitle\(selectedRomEntry\)\}<\/strong>/, "selected cartridge title should not consume two rows");
+  assert.doesNotMatch(romMainFactGridSource, /<span>PRG\/CHR<\/span>|<span>MD5<\/span>|<span>SHA1<\/span>|<span>SHA256<\/span>/, "ROM main fact grid should not be dominated by engineering checksum fields");
+  assert.doesNotMatch(romMainFactGridSource, /console\.strategy|<span>TAS<\/span>|console\.support/, "ROM main fact grid should only contain cartridge-owned facts, not FC AI system status");
+  assert.match(mainSource, /className="rom-checksum-strip"[\s\S]*<span>PRG\/CHR<\/span>[\s\S]*<span>MD5<\/span>[\s\S]*<span>SHA1<\/span>[\s\S]*<span>SHA256<\/span>/, "ROM checksums should still be visible in a compact secondary row");
+  assert.match(mainSource, /className="rom-system-status-row"[\s\S]*console\.strategy[\s\S]*<span>TAS<\/span>[\s\S]*console\.support/, "strategy, TAS, and support should move into the FC AI system status row");
   assert.match(mainSource, /className="startup-preset-row"/, "launch preset controls should have a dedicated compact row");
-  assert.match(mainSource, /startupPresetOptions\.map/, "launch preset row should render the wait, auto 1P, and auto 2P options");
+  assert.match(startupPresetSource, /key: "wait"/, "startup preset row should keep a manual player-control option");
+  assert.match(startupPresetSource, /key: "auto-1p"/, "startup preset row should keep a single-player AI option");
+  assert.doesNotMatch(startupPresetSource, /key: "auto-2p"/, "startup preset row should not expose a double-AI one-click option");
+  assert.match(mainSource, /className="console-machine-actions"[\s\S]*className="cartridge-status-frame"[\s\S]*className="startup-preset-frame"/, "bottom host row should render machine actions, cartridge status, and startup presets in order");
+  assert.match(mainSource, /className="console-machine-actions"/, "machine buttons should be grouped as one framed action area");
+  assert.match(mainSource, /className="cartridge-status-frame"/, "cartridge status should sit in the middle framed area");
+  assert.match(mainSource, /className=\{romMetadata \? "cartridge-visual inserted" : "cartridge-visual empty"\}/, "middle status should switch between empty prompt and inserted cartridge art");
+  assert.ok(fs.existsSync(insertedCartridgeAsset), "inserted cartridge art should be saved under project public assets");
+  assert.ok(fs.existsSync(emptyCartridgeAsset), "empty cartridge slot art should be saved under project public assets");
+  assert.match(mainSource, /src=\{cartridgeArtworkSrc\(romMetadata\)\}/, "cartridge visual should use the game-profile artwork resolver");
+  assert.doesNotMatch(mainSource, /className="cartridge-status-copy"/, "middle cartridge status should not repeat multi-line inserted status text");
+  assert.match(mainSource, /const cartridgeTitle = romMetadata[\s\S]*`\$\{loadedUiStatus\.chineseName\} · \$\{romMetadata\.displayTitle\}`/, "middle cartridge title should be derived from the inserted cartridge metadata");
+  assert.match(mainSource, /className="cartridge-status-detail"[\s\S]*className="cartridge-status-name"[\s\S]*title=\{cartridgeTitle\}/, "middle cartridge status should place the cartridge name in the right-side detail area");
+  assert.match(mainSource, /const cartridgeIntro = romMetadata[\s\S]*loadedUiStatus\.intro\[uiLanguage\]/, "middle cartridge intro should be derived from the game profile");
+  assert.match(mainSource, /className="cartridge-status-intro"[\s\S]*\{cartridgeIntro\}/, "middle cartridge status should show a short game introduction beside the cartridge art");
+  assert.match(mainSource, /className="console-load-cartridge-button"/, "load cartridge button should be the dominant left action");
+  assert.match(mainSource, /className="console-run-reset-stack"/, "start/pause and reset should stack tightly beside load cartridge");
+  assert.match(mainSource, /className="startup-preset-frame"/, "startup presets should have a separate framed area");
   assert.match(cssSource, /\.console-machine-frame\s*\{[\s\S]*border: 1px solid rgba\(126, 200, 255, 0\.24\)/, "console machine frame should visibly separate host controls");
   assert.match(cssSource, /\.rom-list\s*\{[\s\S]*height: 155px/, "ROM list should show about four compact cartridge names before scrolling");
   assert.match(cssSource, /\.rom-library-body\s*\{[\s\S]*align-items: start/, "ROM list and detail should align to their content height instead of stretching unevenly");
@@ -335,8 +528,24 @@ test("console host controls expose compact launch preset controls and one-row ma
   assert.match(cssSource, /\.rom-meta-grid\.compact\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/, "ROM facts should use four compact columns like the TAS detail area");
   assert.match(cssSource, /\.rom-meta-grid div\s*\{[\s\S]*grid-template-columns: auto minmax\(0, 1fr\)/, "ROM facts should render as compact label-colon-value rows");
   assert.match(cssSource, /\.rom-meta-grid span::after\s*\{[\s\S]*content: "："/, "ROM fact labels should include the visible Chinese colon separator");
-  assert.match(cssSource, /\.console-controls\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/, "machine buttons should stay in one equal-width row");
-  assert.match(cssSource, /\.console-controls button\s*\{[\s\S]*min-height: 32px/, "machine buttons should be compact instead of oversized");
+  assert.match(cssSource, /\.rom-checksum-strip\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/, "ROM checksum row should stay compact and secondary");
+  assert.match(cssSource, /\.rom-system-status-row\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/, "FC AI system status should render as three obvious status boxes");
+  assert.match(cssSource, /\.rom-system-status-row div\s*\{[\s\S]*border-color: rgba\(104, 227, 145, 0\.28\)/, "FC AI system status boxes should read as a distinct system-provided layer");
+  assert.match(cssSource, /\.console-machine-frame\s*\{[\s\S]*min-width: 0/, "console machine frame should be allowed to shrink inside the center column");
+  assert.match(cssSource, /\.console-power-panel\s*\{[\s\S]*grid-template-columns: minmax\(190px, 0\.72fr\) minmax\(360px, 1\.35fr\) minmax\(190px, 0\.75fr\)/, "bottom host controls should fit inside the center column while keeping the cartridge detail area dominant");
+  assert.match(cssSource, /\.console-power-panel\s*\{[\s\S]*height: 138px/, "bottom host controls should stay compact while fitting the cartridge art and detail");
+  assert.match(cssSource, /\.console-machine-actions\s*\{[\s\S]*grid-template-columns: minmax\(0, 0\.95fr\) minmax\(0, 0\.72fr\)/, "machine action area should shrink while keeping one load button plus one stacked button column");
+  assert.match(cssSource, /\.console-load-cartridge-button\s*\{[\s\S]*grid-row: 1 \/ span 2/, "load cartridge button should occupy both stacked rows");
+  assert.match(cssSource, /\.console-run-reset-stack\s*\{[\s\S]*grid-template-rows: repeat\(2, minmax\(0, 1fr\)\)/, "start/pause and reset should be vertically stacked");
+  assert.match(cssSource, /\.cartridge-status-frame\s*\{[\s\S]*grid-template-columns: minmax\(150px, 0\.95fr\) minmax\(160px, 1fr\)/, "middle cartridge status should split into cartridge art on the left and readable game info on the right");
+  assert.match(cssSource, /\.cartridge-visual\s*\{[\s\S]*width: 100%[\s\S]*height: 100%/, "cartridge visual should fill the left side without cropping");
+  assert.match(cssSource, /\.cartridge-visual img\s*\{[\s\S]*object-fit: contain/, "cartridge visual should show the full cartridge without cropping");
+  assert.match(cssSource, /\.cartridge-status-detail\s*\{[\s\S]*align-content: center/, "cartridge detail should vertically center the title and short intro");
+  assert.match(cssSource, /\.cartridge-status-name\s*\{[\s\S]*text-overflow: ellipsis/, "cartridge name should stay compact in the right detail area");
+  assert.match(cssSource, /\.cartridge-status-intro\s*\{[\s\S]*-webkit-line-clamp: 2/, "short game introduction should stay compact at two lines");
+  assert.match(cssSource, /\.cartridge-visual\.empty\s*\{[\s\S]*border-style: dashed/, "empty cartridge slot should visually read as a prompt instead of real cartridge");
+  assert.match(cssSource, /\.startup-preset-row\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "startup preset area should render two compact preset buttons");
+  assert.match(cssSource, /\.startup-preset-button\s*\{[\s\S]*min-height: 44px/, "startup preset buttons should stay compact");
 });
 
 test("botrun stop path clears runtime inputs before publishing the final paused report", () => {
@@ -346,10 +555,11 @@ test("botrun stop path clears runtime inputs before publishing the final paused 
   assert.match(mainSource, /terminalRuntime,/, "botrun report should export the last active runtime separately from the final paused runtime");
 });
 
-test("side training panels derive their target from the locked top AI strategy", () => {
+test("side training panels own training strategy selection and lock it after start", () => {
   assert.match(mainSource, /function trainingProfileForStrategy/, "training target should be derived from the selected strategy key");
   assert.match(mainSource, /function strategyTrainingCandidateCount/, "candidate counts should be strategy-aware");
-  assert.doesNotMatch(mainSource, /const onSideTrainingStrategyChange = useCallback/, "training panel should not have a second strategy-category change handler");
+  assert.match(mainSource, /const onSideTrainingStrategyChange = useCallback/, "training panel should own strategy-category changes for training");
+  assert.match(mainSource, /if \(activeTrainingSides\[side\]\) \{[\s\S]*strategy change blocked because training is active/, "training strategy selection should lock after start");
   assert.match(mainSource, /strategyModels\["1P"\]/, "1P training state should derive from the top 1P AI strategy selection");
   assert.match(mainSource, /strategyModels\["2P"\]/, "2P training state should derive from the top 2P AI strategy selection");
   assert.match(mainSource, /const strategyControlsLocked = tasLocked \|\| trainingLocked/, "top AI strategy controls should lock while that side is training");

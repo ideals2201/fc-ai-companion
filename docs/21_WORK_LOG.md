@@ -16,6 +16,61 @@
 
 ## 2026-06-10
 
+### 主机区 ROM 信息与策略卡展示重排
+
+触发：
+
+- 用户指出 ROM 详情区里 `策略 / TAS / 支持` 属于 FC AI 系统提供的信息，不应混在 ROM 本身信息中。
+- 用户要求主机底部三块重新调整比例：左侧主机按钮区缩小，中间信息区拆成黄色卡带图和游戏简介，右侧开局预设也缩小到合理比例。
+- 用户要求中间卡带图最大化，但卡带下面不再堆多行重复状态，只保留清晰可读的信息。
+
+修改：
+
+- ROM 本体信息区只保留卡带自身事实：中文名、版本、档案、容量、Mapper。
+- PRG/CHR、MD5、SHA1、SHA256 保留在 ROM 信息区的二级校验行。
+- `策略 / TAS / 支持` 移入独立 `.rom-system-status-row`，作为 FC AI 系统状态三框显示。
+- 主机底部 `.console-power-panel` 改为左窄、中宽、右窄：
+  - 左侧：更换卡带 + 开始/暂停 + Reset。
+  - 中间：左侧策略卡图片，右侧游戏名称和短简介。
+  - 右侧：开局预设，只保留等待玩家、自动单人两个选项。
+- `gameProfileUiStatus` 增加游戏短简介，后续不同 ROM 可显示不同策略卡说明。
+- 修正主机底部子面板被内容撑出父框的问题，三块面板现在服从固定主机区高度。
+- 修正 `.console-machine-frame` 默认 `min-width:auto` 导致中间列被撑宽的问题，主机框现在能在 880px 中间列内正常压缩。
+- 接入项目自有资产：蓝色/红色 3D 战士头像、魂斗罗风格黄色策略卡、未插入卡带提示图。
+
+浏览器验证：
+
+```text
+URL: http://127.0.0.1:5173/?autoload=1
+主机底部宽度:
+- 左侧主机按钮区: 206px
+- 中间卡带信息区: 387px
+- 右侧开局预设区: 215px
+中间卡带信息:
+- 标题: 魂斗罗 · contra_us_test
+- 简介: 横向动作射击经典。当前重点用于 TAS 基准、第一关稳健生存策略和双手柄协作训练。
+溢出检查:
+- `.console-deck` clientWidth=879 / scrollWidth=879，未横向溢出。
+- `.console-machine-frame` rectWidth=855，未再撑出中间列。
+- `策略 / TAS / 支持` 三个系统状态框均在 ROM 信息区内完整显示。
+```
+
+验证：
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+npm test
+```
+
+```text
+trainingPanelLayout: 24 pass, 0 fail
+layout + training panel tests: 29 pass, 0 fail
+npm run build: pass
+npm test: 395 pass, 0 fail
+```
+
 ### TAS 观赏 / 训练基座窗口重新设计
 
 触发：
@@ -26,10 +81,11 @@
 修改：
 
 - `TasWindow` 新增 `movieFileLabel()`，左侧 TAS 列表只渲染 `.fm2` 文件名。
-- 新增 `.tas-sidebar`，把 TAS 文件列表和观赏模式按钮放在同一侧栏。
+- 新增 `.tas-sidebar`，把 TAS 文件列表和播放控制放在左侧栏。
 - 右侧详情新增 `.tas-subtitle-row`，集中显示中文/英文标题和原始文件名。
 - TAS 列表高度从 82px 调整为 132px，减少 4 个 TAS 文件需要滚动或看不全的问题。
-- 观赏模式按钮改为两列紧凑布局，播放控制仍为独立四列按钮区。
+- 播放控制改为 `载入 / 试播 / 暂停 / 停止` 2x2 矩阵，并紧贴 TAS 文件列表下方。
+- 观赏模式按钮改为右侧详情内的窄竖列，右侧固定文字框显示当前解说内容。
 - TAS 详情里的来源、关键点、风险、训练基准、制品路径、校验、进度、阶段、当前输入统一改为 `标签：内容` 单行显示。
 - 增加集成测试，防止后续再次把中文说明塞回文件列表，或把观赏按钮放回右侧详情区。
 
@@ -42,9 +98,9 @@ npm test
 ```
 
 ```text
-tasWindowIntegration: 7 pass, 0 fail
+tasWindowIntegration: 8 pass, 0 fail
 npm run build: pass
-npm test: 394 pass, 0 fail
+npm test: 395 pass, 0 fail
 ```
 
 浏览器验证：
@@ -59,6 +115,7 @@ TAS 匹配: 4 个
 - mars608_aiqiyou-contraj-nes-2p,lowp.fm2
 DOM: hasSidebar=true, hasModesInSidebar=true, hasDetailSubtitle=true, listHeight=132
 事实项: 9 个，均为 `来源：内容` 这类单行结构
+播放控制: 距离 TAS 文件列表底部 6px，已紧贴列表窗口
 ```
 
 提交目标：
@@ -4296,6 +4353,1125 @@ W1641 pre-compression escape =
 
 Do not promote this candidate into live `survival-v0`.
 
+## 2026-06-11 - Training Progress Ledger Runtime Recording
+
+Decision:
+
+- The UI field is now `入账跑局时长`, not total project/development time.
+- It only counts run facts stored in `strategy-packs/contra/stages/stage-1/training-progress.json`.
+- Historical training and debugging before this ledger existed remain valid evidence in this work log and runtime reports, but they are not exact cumulative minutes unless they are converted into structured `runs[]` records.
+
+Implemented:
+
+- Added `scripts/strategy-training-progress.mjs`.
+- The script can wrap `scripts/headless-runtime-smoke.mjs`, parse the runtime JSON report, append a run to the strategy pack ledger, and recompute `progressByStrategy.*.summary`.
+- New run facts include `durationSeconds`, `maxWorldX`, `finalWorldX`, `activeFrame`, `lostActiveFrame`, `maxWorldFrame`, `death` inference, ROM hash, candidate config, and status reason.
+
+Current recorded ledger state:
+
+```text
+pack: contra-stage1-strategy-v0
+strategy: survival-v0
+trainingRuns: 32
+入账跑局时长: 486.66 seconds, displayed as 8分7秒
+clearProgress: W2385 / W2960
+deaths: unverified summary because imported historical run has unconsolidated deaths
+```
+
+Latest real long-window run:
+
+```powershell
+node scripts\strategy-training-progress.mjs --side=1P --strategy=survival-v0 --run-id=survival-v0-long-window-20260611-001 --notes=Long-window-current-survival-regression-run. -- --frames=14000 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status=recorded
+latest run status=candidate
+reason=gameplay-loss-recovered
+frames=14000
+durationSeconds=233.33
+maxWorldX=2385
+targetWorldX=2960
+deaths=1
+ROM=contra_us_test.nes
+```
+
+Verification:
+
+```powershell
+node --test tests\strategyTrainingProgressLedger.test.mjs tests\trainingPanelLayout.test.mjs tests\headlessRuntimeSmokeScript.test.mjs
+npm run build
+```
+
+Outcome:
+
+```text
+tests: pass
+build: pass, Vite chunk-size warning only
+```
+
+## 2026-06-11 - Strategy Pack Data Contract V1.1 And UI Description Wiring
+
+Decision:
+
+- Strategy Pack data remains English-core. UI localization can show Chinese text, but canonical package fields must be English.
+- Every strategy category in a package needs a description before users or external expert systems can understand the package consistently.
+- Strategy descriptions are not validation claims. Runtime facts still come from `quality.strategyResults` and `stages/<stage-id>/training-progress.json`.
+
+Implemented:
+
+- Added canonical `strategyDescriptions` validation to `strategy-packs/contra/schemas/manifest.schema.json`.
+- Added `strategyDescriptions` to `strategy-packs/contra/manifest.json`.
+- Ensured every `strategy-packs/contra/stages/stage-1` through `stage-8` training ledger carries all five strategy descriptions and battle metric fields.
+- Wired the browser cockpit Strategy Result cards to read descriptions from the active Strategy Pack manifest.
+- Added `docs/standards/v1.1.0/` as the current versioned standard release, with `STRATEGY_PACK_STANDARD_V1.1.0.md` as the external expert generation contract.
+- Updated `docs/standards/README.md` to make `v1.1.0` the current stable release.
+
+Current recorded training state:
+
+```text
+pack: contra-stage1-strategy-v0
+stage: stage-1
+strategy: survival-v0
+trainingRuns: 34
+trainingTimeSeconds: 1153.32
+human time: about 19m 13s
+clearProgress: W3208 / W3300
+latest candidate: w2430-chain-boss-w2960-3300-wide-pulse-jump-right-fire
+latest result: candidate-failed, gameplay-lost
+death summary: unverified, latest run recorded 1 death
+kills/fixed targets/rewards/clear time: unverified
+promotion status: not promoted as clear
+```
+
+Verification:
+
+```powershell
+node --test tests\strategyPackStandard.test.mjs tests\strategyTrainingProgressLedger.test.mjs tests\trainingPanelLayout.test.mjs
+npm run build
+node --test tests\strategyPackStandardDoc.test.mjs
+```
+
+Outcome:
+
+```text
+strategy/data/UI tests: 42 pass, 0 fail
+strategy pack standard doc test: 1 pass, 0 fail
+build: pass, Vite chunk-size warning only
+```
+
+## 2026-06-11 - Contra Fire Cadence Research
+
+Question:
+
+- Whether the AI should imitate real-machine turbo fire, and how to avoid hurting Laser weapon performance.
+
+Source findings:
+
+- StrategyWiki documents that the normal rifle fires one bullet per B press and has a four-bullet on-screen limit.
+- StrategyWiki documents that Machine Gun can fire continuously while holding B, has a six-bullet on-screen capacity, and Rapid Fire can improve its effective firing rate.
+- StrategyWiki documents that Laser is powerful but slow, and firing a new beam cancels the old beam. This means turbo is harmful for Laser.
+- StrategyWiki documents that Spread has a ten-bullet on-screen capacity and is very strong at close range because multiple bullets can hit the same target.
+- GameFAQs also describes Rapid Fire as projectile speed rather than true auto-fire, and warns that firing Spread too quickly can reduce how many bullets are available per shot while old bullets remain on screen.
+- TASVideos points to Contra technical resources and the annotated Contra (US) disassembly.
+- The annotated disassembly project confirms the exact Contra (US) ROM checksum used by our current ROM profile: `7BDAD8B4A7A56A634C9649D20BD3011B`.
+- NES controller input is frame-sampled by the console/game code, so our browser runtime should express turbo as frame cadence, not as asynchronous key spam.
+
+Engineering rule:
+
+```text
+Rifle / default weapon:
+  Use edge-triggered B pulses, because one shot is created per press.
+
+Machine Gun:
+  Hold B by default; optional pulsing is only for interaction with our own input layer, not because the weapon needs tapping.
+
+Spread:
+  Use controlled pulse fire. Do not fire every frame blindly because the on-screen bullet cap can reduce useful pellets.
+
+Fireball:
+  Use slower deliberate pulses because projectiles are slow and capped.
+
+Laser:
+  Never turbo. Hold/repress only when no active beam exists, the previous beam has hit, or the target window requires a fresh beam.
+
+Rapid Fire power-up:
+  Treat as projectile-speed / travel-time improvement, not as a separate input mode.
+```
+
+Next implementation target:
+
+```text
+Add weapon-aware fire cadence:
+- read current weapon
+- read active player bullet count/type if available
+- generate B input using weapon profile
+- preserve Boss Wall safety overrides before any firing optimization
+```
+
+## 2026-06-11 - Versioned Standards Release Directory
+
+Decision:
+
+- Stable standard documents must be published with explicit version numbers in the filename.
+- Documents belonging to the same stable standard release should live in one version directory.
+- Root-level files under `docs/` remain current working aliases because tests and older project notes still reference them.
+- Versioned release directories are snapshots. Do not silently overwrite a released version; create a new version directory when the standard changes.
+
+Implemented:
+
+- Created `docs/standards/README.md`.
+- Created `docs/standards/v1.0.0/README.md`.
+- Created `docs/standards/v1.0.0/OPERATION_STRATEGY_STANDARD_V1.0.0.md`.
+- Created `docs/standards/v1.0.0/STRATEGY_PROTOCOL_CORE_V1.0.0.md`.
+- Created `docs/standards/v1.0.0/STRATEGY_PACK_STANDARD_V1.0.0.md`.
+- Created `docs/standards/v1.0.0/STRATEGY_TRAINING_STANDARD_V1.0.0.md`.
+- Created `docs/standards/v1.0.0/STANDARDIZED_OPERATION_MANUAL_V1.0.0.md`.
+
+Clarification:
+
+- `STRATEGY_PACK_STANDARD_V1.0.0.md` is the key file for external experts who need to generate Strategy Packs compatible with this system.
+- It is a package output and data standard, not a mandatory training-method standard.
+- It now requires training/progress ledgers, battle results, validation evidence, stage coverage state, ROM compatibility data, and usage documentation.
+
+## 2026-06-11 - Current Test Package Snapshot
+
+Decision:
+
+- The current user-testable package state must be recorded as a candidate snapshot, not as a completed strategy.
+- A bad shell-quoting run was removed from the ledger because it recorded a false `W48 / 30s` result after `--notes` was split by PowerShell.
+- The package now exposes a current standalone test snapshot at `strategy-packs/contra/stages/stage-1/current-test-state.json`.
+
+Current measured package state:
+
+```text
+pack: contra-stage1-strategy-v0
+stage: stage-1
+strategy: survival-v0
+current run: survival-v0-w2320-capture-w2458-neutral-clear-20260611
+status: candidate-failed
+trainingRuns: 33
+recordedRunTimeSeconds: 819.99
+clearProgress: W2587 / W2960
+knownDeaths: 2
+latest death: W2458, frame 13397
+candidate config: data/training/contra/runtime_runs/contra-us-good/candidate-overlays/w2320-capture-w2458-neutral-clear.json
+runtime report: data/training/contra/runtime_runs/contra-us-good/segment-search-reports/current-state-w2320-capture-w2458-neutral-clear-20260611.json
+```
+
+Inference:
+
+```text
+The W2320 release-A -> W2366 jump branch fixed the earlier W2391 bridge/platform drop.
+The next blocker is the W2458 enemy/fixed-threat cluster after the route stalls around the boss-approach segment.
+Continue candidate search in W2430-W2490 with B held, no down+A, and no long neutral stall.
+```
+
+## 2026-06-11 - Survival Candidate Advanced To W3208 Barrier Node
+
+Current best measured candidate:
+
+```text
+run: survival-v0-w2430-chain-boss-w2960-3300-wide-pulse-20260611
+candidate config: data/training/contra/runtime_runs/contra-us-good/candidate-overlays/w2430-chain-boss-w2960-3300-wide-pulse-jump-right-fire.json
+status: candidate-failed
+trainingRuns: 34
+recordedRunTimeSeconds: 1153.32
+clearProgress: W3208 / W3300
+knownDeaths: 3
+latest death: W3208, frame 14113
+```
+
+Engineering findings:
+
+```text
+W2960 is only the boss-entry progress point, not a stage-clear proof.
+The current stage-1 provisional target was revised to W3300 until a real clear condition is identified.
+The old W2458 cluster is solved enough to reach the final barrier node.
+The current blocker is W3208: type16 HP16 fixed parts, type17 HP32 center, plus close type1 enemies reaching the player.
+Default down+B still leaks in when action windows expire; the next fix must be an explicit W3180-W3220 barrier-node action lock with HP monitoring.
+```
+
+## 2026-06-11 - Strategy Pack Stage 1-8 Training Ledgers
+
+Decision:
+
+- Strategy packages must preserve training data for all eight Contra stages, not only Stage 1.
+- Empty stages must remain factual: `unstarted`, `unverified`, and `runs: []`.
+- Do not fake kills, deaths, clear time, or clear progress for untrained stages.
+
+Implemented:
+
+- `strategy-packs/contra/manifest.json` now indexes `trainingProgress` for `stage-1` through `stage-8`.
+- Added empty measured-ledger artifacts:
+  - `strategy-packs/contra/stages/stage-2/training-progress.json`
+  - `strategy-packs/contra/stages/stage-3/training-progress.json`
+  - `strategy-packs/contra/stages/stage-4/training-progress.json`
+  - `strategy-packs/contra/stages/stage-5/training-progress.json`
+  - `strategy-packs/contra/stages/stage-6/training-progress.json`
+  - `strategy-packs/contra/stages/stage-7/training-progress.json`
+  - `strategy-packs/contra/stages/stage-8/training-progress.json`
+- `scripts/strategy-training-progress.mjs` now supports `--stage=stage-N`, and writes the selected stage summary instead of hard-coding `stage-1`.
+
+Training efficiency rule:
+
+- Use headless runtime for fast training runs and regression search.
+- Use the browser cockpit for human-visible validation and product acceptance, not for slow brute-force training.
+- Use FM2/TAS data as frame-indexed baseline evidence and route knowledge; do not treat TAS as the production controller.
+- Keep ROM checksum, entry point, input row index, movie framecount, runtime identity, and validation replay evidence whenever TAS-derived data is promoted into a candidate baseline.
+
+Reference checks:
+
+- FCEUX FM2 docs: FM2 contains a header plus input log; text input rows are per-frame records with controller columns.
+- BizHawk docs: TAS-oriented emulator tooling includes speed control, frame stepping, rewind, memory view/search/edit, input recording, and Lua/C# control.
+- TASVideos BizHawk FAQ: TAStudio/input-log timing can have frame-index implications; use movie/input-row anchors rather than screen-frame guesses.
+
+Verification:
+
+```powershell
+node --test tests\strategyTrainingProgressLedger.test.mjs
+node --test tests\strategyTrainingProgressLedger.test.mjs tests\strategyPackStandard.test.mjs tests\trainingPanelLayout.test.mjs
+```
+
+Outcome:
+
+```text
+training ledger tests: tests 7, pass 7, fail 0
+related pack/layout tests: tests 41, pass 41, fail 0
+```
+
+## 2026-06-11 - Stage-Level Training Summary Added
+
+User clarification:
+
+- Future strategy packs should have one cumulative training data set.
+- The current Contra pack is a migration exception because training began before the ledger existed.
+
+Data rule:
+
+- `stageSummary.summary` is the standard stage-level cumulative record.
+- `stageSummary.historicalEstimate` is optional and only used for migrated legacy packs.
+- New strategy packs should use `dataMode: measured-ledger-only`.
+- The current Contra pack uses `dataMode: migration-with-estimate`.
+
+Implemented:
+
+- Added `stageSummary.stage-1` to `strategy-packs/contra/stages/stage-1/training-progress.json`.
+- Added stage summary rendering in the operation strategy control panel.
+- Added UI labels for stage runs, known deaths, unknown death runs, recorded runtime, migration estimate, clear progress, and clear time.
+- Updated metric display so an unverified metric with a known value still shows the value; only null values show `待统计`.
+
+Current visible stage summary:
+
+```text
+第一关训练总览
+关卡训练次数: 32
+已知死亡: 1
+未核死亡记录: 30
+入账跑局时长: 8分7秒
+迁移历史估算: 约2小时25分18秒
+通关程度: W2385 / W2960
+通关时间: 待统计
+```
+
+Historical estimate method:
+
+```text
+source: docs/21_WORK_LOG.md
+method: unique headless-runtime-smoke command lines with --frames
+commandLines: 49
+estimatedFrames: 523100
+estimatedSeconds: 8718.33
+estimatedMinutes: 145.3
+```
+
+Caveat:
+
+```text
+This estimate is only for the migrated current pack. It may omit browser/manual runs and may not be exact enough for future strategy package standards.
+```
+
+Verification:
+
+```powershell
+node --test tests\strategyTrainingProgressLedger.test.mjs tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+```
+
+Browser check:
+
+```text
+第一关训练总览migration关卡训练次数32已知死亡1未核死亡记录30入账跑局时长8分7秒迁移历史估算约2小时25分18秒通关程度W2385 / W2960通关时间待统计
+```
+
+## 2026-06-11 - Strategy Pack Training Progress Becomes Pack Facts
+
+Decision:
+
+- Training progress is strategy-package data, not UI-only text.
+- The cockpit must read package facts and present them in human time.
+- Frame counts remain technical evidence, but the user-facing field is seconds/minutes.
+
+Implemented:
+
+- Added `strategy-packs/contra/stages/stage-1/training-progress.json`.
+- Added the path to `strategy-packs/contra/manifest.json` under `files.trainingProgress`.
+- Updated `apps/browser-cockpit/src/main.tsx` to import `contraStage1TrainingProgressArtifact` and derive `trainingProgress` from the strategy pack artifact.
+- Replaced UI-facing `trainingTimeFrames` with `trainingTimeSeconds`.
+- Updated Chinese label from `训练时间` to `训练用时`.
+
+Current recorded facts:
+
+```text
+pack: contra-stage1-strategy-v0
+strategy: survival-v0
+status: candidate
+training runs: 30
+deaths: unverified
+training time: 233.33 seconds, displayed as 3分53秒
+clear progress: W2366 / W2960
+source frames: 14000
+```
+
+Important caveat:
+
+- The current `233.33 seconds` is the longest observed candidate window imported from existing evidence, not a consolidated total wall-clock training time across all 30 attempts.
+- Future training should append run records to `runs[]`, then recompute `progressByStrategy.*.summary` for accumulated totals.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+node --test tests\layoutStabilityCss.test.mjs tests\humanTrainingWorkflow.test.mjs
+npm run build
+```
+
+Browser check:
+
+```text
+稳健生存待验证训练次数30死亡次数待统计训练用时3分53秒通关程度W2366 / W2960
+```
+
+## 2026-06-11 - Strategy Training Control Status Display And Speed Modes
+
+Scope:
+
+- Added package-level training progress display inside the middle `Operation Strategy Control`.
+- Added training speed modes for training only: `standard`, `fast`, and `batch`.
+- Clarified that 1P survival training progress does not automatically mean 2P is validated.
+
+Implementation:
+
+- `StrategyTrainingProgressRecord` now tracks per-strategy training state:
+  - training runs
+  - deaths
+  - training time
+  - clear progress
+- The middle strategy result cards now show both:
+  - training progress
+  - validation battle results
+- `fast` and `batch` training modes route through the existing `runBotFrameBatch(...)` path.
+- Visible game/companionship and TAS viewing remain standard-speed; acceleration is limited to training runs.
+- 2P synced strategy-pack state now displays `继承 1P 路线 / 待验证` instead of implying 2P completion.
+
+Current honest status:
+
+- 1P `稳健生存` is still a candidate, not a completed strategy.
+- Current displayed candidate progress is:
+  - runs: `30`
+  - training time: `14000f window`
+  - clear progress: `W2366 / W2960`
+  - deaths: `待统计`
+- Other strategy categories remain `待统计`.
+- 2P may inherit route knowledge from the same package, but requires separate 2P RAM and co-op validation before it can be marked complete.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs tests\humanTrainingWorkflow.test.mjs
+npm run build
+```
+
+Result:
+
+```text
+tests 33, pass 33, fail 0
+npm run build: pass
+```
+
+Browser check:
+
+- Training speed buttons are visible and switchable.
+- Default was restored to `标准`.
+- Training progress card text is visible.
+- 2P resource state shows `继承 1P 路线 / 待验证`.
+
+Additional runtime smoke:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=1200 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status=active
+reason=gameplay-detected
+frameCount=1200
+worldX=430
+deathFlag=0
+```
+
+Interpretation:
+
+- The fast/headless training path is usable for short-window runs.
+- This does not validate Stage 1 completion.
+
+## 2026-06-11 - Full Flow UI Regression: Companion / TAS Viewing / Training
+
+Objective:
+
+- Run the whole browser-cockpit feature surface by user-facing mode instead of isolated widgets.
+- Keep the three responsibility boundaries intact:
+  - Companion/play mode: controller bays, ROM host, TV runtime, start/pause/reset.
+  - TAS viewing mode: TAS list, load, trial replay, stop, side-owned baseline availability.
+  - Training mode: side-owned strategy/method start-stop plus center package management, validation, save, and results.
+
+Automated verification:
+
+```powershell
+npm test
+npm run build
+```
+
+Result:
+
+```text
+npm test: 420 tests, 420 pass, 0 fail
+npm run build: pass
+```
+
+Repairs made during this pass:
+
+- Updated stale tests that still expected the old side-panel capture/edit/export buttons. The new invariant is that side panels own only strategy kind, training method, and title start/stop; shared package actions stay in `OperationStrategyControl`.
+- Scoped the TAS baseline test to `TasWindow` so it does not falsely treat normal controller-bay strategy switching as TAS baseline control.
+- Changed strategy-result status display from `候选` to `待验证`, so result cards read like `快速推进待验证` instead of looking like the strategy name is `快速推进候选`.
+
+Browser-flow evidence:
+
+- Companion/play:
+  - Current host state can pause and continue.
+  - `Reset` returns runtime to early frames and restarts the loaded cartridge.
+  - Startup preset buttons remain locked after launch, as designed.
+- TAS viewing:
+  - Contra US shows `已匹配 0 个 TAS`, right detail stays `未载入`, and baseline buttons are disabled.
+  - Contra Japan loads as `contra-j-good`, shows 4 matched TAS files, and keeps TAS details hidden until `载入`.
+  - After TAS load, detail shows title, source, risk, training base, artifact path, checksum, progress, phase, and current input.
+  - Trial replay locks both controller bays in TAS mode; stop unlocks them.
+- Training:
+  - 1P training start locks only the 1P play controls and 1P training controls.
+  - 2P remains independently selectable while 1P training is active.
+  - Stopping 1P returns it to queued `待训练`.
+  - Center operation strategy control remains the owner of package browser, 1P/2P resource routing, validation gate, save, version history, and strategy results.
+
+Human-layout check:
+
+- No real horizontal overflow was found: browser viewport width and document scroll width matched.
+- The screenshot looked duplicated because of the browser capture/display state after scrolling, not because the app created horizontal overflow.
+- Main visible concern that remains for future polish: the controller cabins and center column are tall by design; if the user wants less vertical travel later, reduce density only after preserving all current information and controls.
+
+## 2026-06-11 - Strategy Training UI Responsibility Split
+
+Decision:
+
+- Middle `Operation Strategy Control` owns strategy package assets only:
+  - strategy package directory
+  - strategy package list and selected package information
+  - 1P / 2P package mounting
+  - validation replay
+  - package save / version history
+  - strategy result display
+- 1P / 2P controller bay training panels own per-role training only:
+  - strategy category
+  - training method
+  - title button start / stop
+- TAS window owns TAS viewing and base generation only:
+  - load / preview / pause / stop
+  - generate 1P baseline
+  - generate 2P baseline
+
+Implementation:
+
+- Removed side-panel contextual action buttons for trace, archive, validate, modify, and run toggle.
+- Added side-owned strategy category selection inside each controller training panel.
+- Training start now locks that side, starts trace capture, synchronizes side control mode, and starts the emulator for auto-patch / direct AI-run cases.
+- Training stop unlocks that side; when no other side is still active, it stops trace capture and pauses runtime.
+- New strategy package dialog now asks for baseline source at package creation time:
+  - copy current pack
+  - blank draft
+  - TAS baseline
+  - human demo
+  - AI run
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+```
+
+Result:
+
+```text
+training/layout tests: tests 31, pass 31, fail 0
+npm run build: pass
+```
+
+Browser verification:
+
+- Reloaded `http://127.0.0.1:5173/?autoload=1`.
+- Confirmed side training panels show strategy category + training method + title start/stop only.
+- Confirmed side training panels no longer render contextual trace/archive/validate/modify buttons.
+- Confirmed middle operation strategy control still shows package directory, package list, 1P/2P routing, validation, save, rollback, and strategy result areas.
+- Confirmed TAS window still exposes baseline generation controls.
+- Click-tested 1P Training:
+  - start locks 1P top strategy buttons and training selections
+  - stop unlocks them again
+- Opened New Strategy Package dialog and confirmed baseline source options are shown at creation time.
+
+## 2026-06-11 - Operation Strategy Packaging Layout Compression
+
+Context:
+
+- User reviewed the operation strategy control panel and found two issues:
+  - the `编辑策略：只读基准，修改会复制为草稿` notice was useful but visually too repetitive under both 1P and 2P resource selectors;
+  - the packaging action area was too loose, and the strategy battle-result board was being pushed below the visible fixed panel.
+
+Decision:
+
+- Keep the edit policy because it protects official/downloaded packages from accidental mutation.
+- Do not repeat the edit policy in each side selector.
+- Move the policy into the selected package detail status strip as one compact system rule.
+- Keep the packaging workflow as a clear fixed module:
+  - left: 1P/2P package scope;
+  - top right: validation replay, save strategy, version history;
+  - bottom right: strategy name and save/rollback status.
+- Increase the operation strategy control row from 520px to 620px instead of hiding content or turning it into a scroll area.
+
+Changed files:
+
+```text
+apps/browser-cockpit/src/main.tsx
+apps/browser-cockpit/src/styles.css
+tests/trainingPanelLayout.test.mjs
+tests/layoutStabilityCss.test.mjs
+```
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs tests\i18n.test.mjs tests\tasWindowIntegration.test.mjs
+npm run build
+```
+
+Result:
+
+```text
+tests: 42 pass, 0 fail
+build: pass
+vite: large chunk warning only
+```
+
+Browser layout evidence:
+
+```text
+operation-strategy-control: width 855, height 620, overflowX false, overflowY false
+strategy-package-browser-frame: width 833, height 219, overflowX false, overflowY false
+strategy-resource-routing: width 833, height 94, overflowX false, overflowY false
+strategy-training-workflow-grid: width 833, height 118, overflowX false, overflowY false
+strategy-result-section: width 833, height 117, overflowX false, overflowY false
+strategy-result-board: width 833, height 95, overflowX false, overflowY false
+resultInsideControl: true
+```
+
+Next:
+
+- Continue strategy-control behavior work only after UI structure is stable.
+- Later package saving should use the same compact workflow: verify first, then save, then allow rollback/history review.
+
+## 2026-06-11 - Native Folder Picker Preference For Local Libraries
+
+Context:
+
+- The ROM library and strategy package library both need to behave like local resource libraries, not like uploads.
+- The user-facing intent is "open/select a local folder"; no data should leave the machine.
+
+Implementation:
+
+- Added a native folder-picker preference in `apps/browser-cockpit/src/main.tsx`.
+- Both `选择其他 ROM 目录` and `选择其他策略包目录` now call `window.showDirectoryPicker()` first when the browser exposes it.
+- The existing hidden `webkitdirectory` file input remains only as a fallback for browsers that do not support the native folder picker.
+- Added recursive directory-handle collection so native folder handles reuse the existing ROM and strategy-package import flows.
+
+Observed browser limitation:
+
+- The current Codex in-app browser reports `typeof window.showDirectoryPicker === "undefined"`.
+- Because of that browser limitation, the in-app browser still falls back to the upload-style directory input dialog.
+- The UI tooltip is `本地读取，不上传`; this fallback still reads local files only and does not upload them.
+- In a Chromium/Edge environment that exposes the File System Access API, the same buttons will use the native open-folder dialog.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+node --test tests\trainingPanelLayout.test.mjs tests\i18n.test.mjs tests\tasWindowIntegration.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+```
+
+Result:
+
+```text
+trainingPanelLayout: tests 26, pass 26, fail 0
+combined UI tests: tests 42, pass 42, fail 0
+npm run build: pass
+```
+
+Browser check:
+
+```text
+选择其他 ROM 目录: title=本地读取，不上传
+选择其他策略包目录: title=本地读取，不上传
+current in-app browser native picker support: false
+```
+
+## 2026-06-11 - Operation Strategy Control Library Layout
+
+Context:
+
+- The operation strategy control panel had the correct core functions, but the information hierarchy was too fragmented.
+- The old layout repeated package identity, compatibility, resource info, and archive path in separate bands.
+- The target interaction model is now aligned with the Host and TAS modules: directory header, compact list, right-side detail, then action workflow.
+
+Implementation:
+
+- Reworked `OperationStrategyControl` in `apps/browser-cockpit/src/main.tsx`.
+- Added a single framed strategy package browser:
+  - `strategy-package-browser-frame`
+  - `strategy-package-directory-header`
+  - `strategy-package-main-grid`
+  - `strategy-package-list`
+  - `strategy-package-detail-card`
+  - `strategy-pack-status-strip`
+- Moved ROM compatibility, protocol, creator, and revision count into the selected package detail.
+- Removed the separate duplicated resource-info and archive bands from the visible JSX.
+- Kept 1P and 2P resource-pack routing independent, with 2P following 1P until overridden.
+- Grouped validation gates and save/version controls into `strategy-training-workflow-grid`.
+- Compressed the save workflow into stable areas:
+  - package scope
+  - validation replay
+  - version history / rollback
+  - strategy name
+  - save strategy
+  - save path / status
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs
+node --test tests\trainingPanelLayout.test.mjs tests\i18n.test.mjs tests\tasWindowIntegration.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+```
+
+Result:
+
+```text
+strategy/layout tests: tests 31, pass 31, fail 0
+combined UI tests: tests 42, pass 42, fail 0
+npm run build: pass
+```
+
+Browser layout audit:
+
+```text
+strategy-package-browser-frame: no X/Y overflow
+strategy-package-main-grid: no X/Y overflow
+strategy-package-list: no X/Y overflow
+strategy-package-detail-card: no X/Y overflow
+strategy-resource-routing: no X/Y overflow
+strategy-training-workflow-grid: no X/Y overflow
+strategy-package-save-panel: no X/Y overflow
+strategy-result-board: no X/Y overflow
+```
+
+Next:
+
+- Use this reorganized panel as the stable control surface for strategy-package training.
+- Continue with the survival strategy package quality loop; do not treat UI completion as strategy completion.
+
+## 2026-06-11 - Contra US survival-v0 default route promotion to W2006
+
+Goal:
+
+```text
+Continue hardening the default `survival-v0` route with no dead-loop behavior.
+Use real headless runtime evidence first, then promote only narrow tested fragments into the default route.
+```
+
+Promoted default route fixes:
+
+- W1440/W1454 descent lower-body right carry: keep right + down fire instead of retreating during the mid-route lower soldier/fixed-target contact.
+- W1456 air-route hold-right: preserve right-side route formation after the fixed-target window.
+- W1751/W1755/W1765/W1769 reentry handling: keep right-fire through the upper/lower transition instead of falling back into generic left retreat.
+- W1686-W1820 lower-lane right clear: dynamic aim, down-fire for same/low lane and up-fire for falling upper bodies.
+- W1787 spawn preclear: treat the HP=0 type5 object cue as an upcoming body lane and pre-aim right-up.
+- W1812-W1924 upper-air fixed carry: keep right-up fire while airborne near fixed targets so the route does not stall in midair.
+- W1986-W2010 pit-air carry: force right + A + B during the pit fall window to preserve horizontal carry.
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+Result:
+
+```text
+tests 70
+pass 70
+fail 0
+```
+
+Runtime evidence:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=20000 --strategy=survival-v0 --probe=route-plan
+```
+
+Latest result:
+
+```text
+status=lost-active
+reason=gameplay-lost
+lostActiveFrame=13110
+lostWorldX=2006
+preLostWorldX=2005
+preLostButtons={"up":false,"down":false,"left":false,"right":true,"a":true,"b":true}
+maxWorldX=2046
+maxSegment=danger-survive
+```
+
+Important comparison:
+
+```text
+Before this pass, the default route died or recovered around W1765-W1943.
+After this pass, it reaches W2046 but still dies at W2006.
+This is progress, not completion.
+```
+
+Current inference:
+
+```text
+The W2006 blocker is not solved by local right carry alone.
+The AI enters the W1986-W2010 pit window with an insufficient jump trajectory; right+A+B preserves input intent but does not clear the fall.
+Next work should search earlier jump timing / route-class entry for the W1960-W2010 pit rather than stacking more last-frame W2006 patches.
+```
+
+## 2026-06-11 - Contra US survival-v0 pit-entry and weapon-gate route locks
+
+Goal:
+
+```text
+Continue the default survival-v0 route toward a no-death Stage 1 clear by fixing the W2006/W2010/W2158 class of loop/fall failures without promoting unverified candidate branches.
+```
+
+Promoted default route fixes:
+
+```text
+1. W1920-W1985 airborne pit-entry right carry: keeps right+B through the bridge/pit descent and ignores rear fixed-body overlap.
+2. W1940-W1958 early-ground carry: suppresses the too-early jump that was causing a bad arc.
+3. W1959-W1972 delayed jump: commits the actual pit-entry jump after the player reaches the correct platform edge.
+4. W2018-W2040 pit-exit platform logic: carries right after landing, then jumps at the exit edge.
+5. W2148-W2172 weapon-gate air carry: prevents the weapon-gate object/fixed overlap from pulling the route left.
+```
+
+Rejected attempts:
+
+```text
+1. W2337-W2342 last-frame left dodge: rejected because it moved the death earlier from W2341 to W2336/W2339.
+2. W2280-W2328 fire cooldown before the close low object: rejected because it did not prevent W2341 and reduced route quality.
+```
+
+Verification:
+
+```powershell
+node --test tests\headlessRoutePlanProbe.test.mjs
+```
+
+Result:
+
+```text
+tests 80
+pass 80
+fail 0
+```
+
+Latest real runtime:
+
+```powershell
+node scripts\headless-runtime-smoke.mjs --frames=20000 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status: recovered-after-loss
+lostActiveFrame: 13152
+preLostWorldX: 2340
+lostWorldX: 2341
+maxWorldX: 2417
+maxSegment: boss-approach-survive
+```
+
+Current inference:
+
+```text
+W2006/W2010/W2158 are resolved as default-route blockers. The current hard blocker is W2341: a close low enemy/object intersects the airborne route around frame 13152. Last-frame aim, short left dodge, and pre-contact fire cooldown are not enough. The next fix should alter route timing/position before W2337 instead of stacking more contact-frame reactions.
+```
+
+## 2026-06-11 - Cartridge Artwork Resolver And FCAI Fallback
+
+Changed:
+
+- Added a game-profile based cartridge artwork resolver in the browser cockpit.
+- Empty host slot uses `fcai-empty-cartridge-slot.png`.
+- Unknown or not-yet-customized games use the new project-owned `fcai-generic-yellow-cartridge.png`.
+- Dedicated cartridge artwork is now mapped for:
+  - Contra
+  - Super C
+  - Contra Force
+  - Jackal
+  - Battle City
+  - Double Dragon II
+- Ninja Gaiden and Mega Man 2 currently use the generic FCAI cartridge until dedicated art is approved.
+
+Reason:
+
+- Loaded ROMs must not all display the Contra cartridge. That misleads the user and breaks the FC platform direction.
+- The UI now has a stable extension point: add or replace a cartridge PNG, then update one map instead of editing the host layout.
+
+Generated project asset:
+
+```text
+apps/browser-cockpit/public/assets/cartridges/fcai-generic-yellow-cartridge.png
+```
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+```
+
+```text
+tests 25
+pass 25
+fail 0
+```
+
+## 2026-06-11 - Strategy Package ROM Compatibility Warning
+
+Browser human-flow check:
+
+- Loaded `battle-city/Battle City (J).nes` through the host cartridge controls.
+- Confirmed the host cartridge art changed from Contra art to `fcai-battle-city-yellow-cartridge.png`.
+- Found a product issue: the Operation Strategy Control still showed the Contra strategy package while the inserted ROM was Battle City.
+
+Changed:
+
+- Added ROM/strategy-pack compatibility state to `GlobalTrainingState`.
+- Operation Strategy Control now shows a compact compatibility strip:
+  - compatible: strategy pack matches the inserted ROM profile
+  - warning: current game has no dedicated strategy pack, and the area is only for package management/reference
+
+Reason:
+
+- The FC platform must not imply that a Contra strategy package is valid for a different game.
+- Resource-package management may still remain available, but runtime strategy validity must be visible.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+```
+
+```text
+tests 25
+pass 25
+fail 0
+```
+
+## 2026-06-11 - Strategy Resource Edit Policy Indicator
+
+Scope:
+
+- Operation strategy control resource selectors.
+- 1P/2P strategy package edit semantics.
+
+Decision:
+
+- Strategy packages are split into two edit modes:
+  - `personal-contra-draft`: editable draft package.
+  - all official/downloaded packs: readonly baseline assets; modification first copies/switches to the draft package.
+- The edit rule is now shown directly under each 1P/2P resource selector, because 1P and 2P may use different packages.
+
+Implementation:
+
+- Added `strategyResourcePackEditPolicyLabel(...)`.
+- Added a per-side `strategy-resource-edit-policy` pill below each resource package selector.
+- Added localized label `training.resourceEditPolicy`.
+- Kept original package mutation blocked by the existing draft-copy flow.
+
+Browser validation:
+
+- Reloaded `http://127.0.0.1:5173/?autoload=1`.
+- Official pack state showed:
+
+```text
+编辑策略：只读基准，修改会复制为草稿
+```
+
+- Changed 1P resource package to `personal-contra-draft`.
+- Because 2P was following 1P, both sides switched to the draft and showed:
+
+```text
+编辑策略：草稿可直接修改
+```
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+npm run build
+npm test
+```
+
+Result:
+
+```text
+trainingPanelLayout: tests 24, pass 24, fail 0
+npm run build: pass
+npm test: tests 395, pass 395, fail 0
+```
+
+## 2026-06-10 - Strategy Package Creation And Draft Protection
+
+Scope:
+
+- Browser cockpit operation strategy control.
+- 1P/2P strategy package routing.
+- Side controller AI strategy header.
+
+Design decisions:
+
+- Creating a strategy package now opens a reviewed draft dialog instead of immediately changing active packs.
+- New strategy package fields: package name, standard strategy category, optional custom category.
+- After creation, the new personal draft package is selected for both 1P and 2P by default.
+- 1P and 2P can both be changed independently afterward.
+- Original/official/downloaded packages remain immutable baseline assets.
+- Editing a non-draft package first switches/copies the side into the personal draft package; only drafts are edited directly.
+- Creator can be recorded at draft creation time. Latest modifier/contributor should be written only after validation replay and quality gates produce real evidence.
+- Pilot AI strategy headers now show the selected strategy package name so the player can see both the strategy category and package source.
+
+Browser validation:
+
+- Opened the in-app browser at `http://127.0.0.1:5173/?autoload=1`.
+- Clicked `新建策略包`.
+- Verified the dialog showed package name, standard category, custom category, and the draft protection rule.
+- Filled package name `个人魂斗罗训练草稿 · UI验证` and custom category `桥段练习`.
+- Clicked `创建策略包`.
+- Verified the dialog closed and both 1P/2P resource package selectors changed to `personal-contra-draft`.
+- Verified 2P could be changed back independently to `contra-stage1-strategy-v0` while 1P stayed on the personal draft.
+- Verified controller AI strategy headers include the selected package name.
+
+Bug fixed during browser validation:
+
+- Root cause: new-package input handlers read `event.currentTarget.value` inside React state updater callbacks. The event target was null by the time React executed the updater, which crashed `OperationStrategyControl`.
+- Fix: capture `event.currentTarget.value` into local constants before scheduling state updates.
+- Regression test added in `tests/trainingPanelLayout.test.mjs`.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs
+npm run build
+npm test
+```
+
+Result:
+
+```text
+trainingPanelLayout: tests 24, pass 24, fail 0
+npm run build: pass
+npm test: tests 395, pass 395, fail 0
+```
+
+## 2026-06-10 - Browser Cockpit Console Compaction And FC AI Assets
+
+Goal:
+
+- Make the host console area tighter and more human-readable.
+- Keep engineering checksum data visible, but stop letting it dominate the main ROM card.
+- Replace temporary CSS placeholder art with project-owned cartridge and controller avatar assets.
+
+UI decisions:
+
+- Removed the duplicated top host path/status strip from the console module.
+- Moved runtime host status into the host title row as a compact status chip.
+- Kept the ROM directory header as one line: path + cartridge count + choose-directory button.
+- Main ROM facts now show eight player-readable fields: Chinese name, strategy, TAS, version, profile, support, size, mapper.
+- PRG/CHR, MD5, SHA1, and SHA256 remain visible in a compact secondary checksum row.
+- Bottom host controls are a compact three-frame row:
+  - machine actions,
+  - inserted cartridge state,
+  - startup preset.
+- Startup preset remains two choices only: wait for player, or single-player AI. Double-AI one-click startup stays removed.
+
+Asset decisions:
+
+- Inserted cartridge art:
+  - `apps/browser-cockpit/public/assets/cartridges/fcai-contra-inspired-yellow-cartridge.png`
+- Empty cartridge slot art:
+  - `apps/browser-cockpit/public/assets/cartridges/fcai-empty-cartridge-slot.png`
+- 1P avatar:
+  - `apps/browser-cockpit/public/assets/avatars/fcai-blue-warrior-avatar.png`
+- 2P avatar:
+  - `apps/browser-cockpit/public/assets/avatars/fcai-red-warrior-avatar.png`
+
+Copyright boundary:
+
+- These are project-owned generated assets.
+- They are Contra-inspired only at the genre/mood level.
+- Do not use Konami, Nintendo, exact Contra logos, exact original label art, or copied original cartridge labels.
+- Keep the unified `FC AI` identity and original Chinese labels instead of presenting the art as an official cartridge.
+
+Verification:
+
+```powershell
+node --test tests\trainingPanelLayout.test.mjs tests\layoutStabilityCss.test.mjs
+npm run build
+npm test
+```
+
+Result:
+
+```text
+focused layout tests: 29 pass, 0 fail
+npm run build: pass
+npm test: 395 pass, 0 fail
+browser check: cartridge image, 1P/2P avatar images, checksum row, and compact host status all loaded
+```
+
 ## 2026-06-10 - TAS/host console cockpit compaction
 
 Scope:
@@ -5038,3 +6214,62 @@ Return to the W1765 reentry branch and search for a lower-cost rear-contact hand
 ```
 
 Do not promote this candidate into live `survival-v0`.
+
+## 2026-06-11 - Training Progress Ledger Runtime Recording
+
+Decision:
+
+- The UI field is now `入账跑局时长`, not total project/development time.
+- It only counts run facts stored in `strategy-packs/contra/stages/stage-1/training-progress.json`.
+- Historical training and debugging before this ledger existed remain valid evidence in this work log and runtime reports, but they are not exact cumulative minutes unless they are converted into structured `runs[]` records.
+
+Implemented:
+
+- Added `scripts/strategy-training-progress.mjs`.
+- The script can wrap `scripts/headless-runtime-smoke.mjs`, parse the runtime JSON report, append a run to the strategy pack ledger, and recompute `progressByStrategy.*.summary`.
+- New run facts include `durationSeconds`, `maxWorldX`, `finalWorldX`, `activeFrame`, `lostActiveFrame`, `maxWorldFrame`, death inference, ROM hash, candidate config, and status reason.
+
+Current recorded ledger state:
+
+```text
+pack: contra-stage1-strategy-v0
+strategy: survival-v0
+trainingRuns: 32
+入账跑局时长: 486.66 seconds, displayed as 8分7秒
+clearProgress: W2385 / W2960
+deaths: unverified summary because imported historical run has unconsolidated deaths
+```
+
+Latest real long-window run:
+
+```powershell
+node scripts\strategy-training-progress.mjs --side=1P --strategy=survival-v0 --run-id=survival-v0-long-window-20260611-001 --notes=Long-window-current-survival-regression-run. -- --frames=14000 --strategy=survival-v0 --probe=route-plan
+```
+
+Result:
+
+```text
+status=recorded
+latest run status=candidate
+reason=gameplay-loss-recovered
+frames=14000
+durationSeconds=233.33
+maxWorldX=2385
+targetWorldX=2960
+deaths=1
+ROM=contra_us_test.nes
+```
+
+Verification:
+
+```powershell
+node --test tests\strategyTrainingProgressLedger.test.mjs tests\trainingPanelLayout.test.mjs tests\headlessRuntimeSmokeScript.test.mjs
+npm run build
+```
+
+Outcome:
+
+```text
+tests: pass
+build: pass, Vite chunk-size warning only
+```

@@ -126,6 +126,8 @@ import {
   type TraceCaptureConfig
 } from "./traceCaptureControl";
 import contraJSideBaselinesArtifact from "../../../data/training/contra/tas_bases/contra-j-good/side-baselines.json";
+import contraStrategyPackManifest from "../../../strategy-packs/contra/manifest.json";
+import contraStage1TrainingProgressArtifact from "../../../strategy-packs/contra/stages/stage-1/training-progress.json";
 import "./styles.css";
 
 type PlayerSide = "1P" | "2P";
@@ -163,8 +165,37 @@ type RuntimeStatus = "no-rom" | "loading" | "loaded" | "running" | "paused" | "e
 type AudioStatus = "off" | "starting" | "on" | "blocked" | "unsupported" | "error";
 type ControlMode = "human" | "ai" | "hybrid";
 type StartupLaunchPreset = "wait" | "auto-1p" | "auto-2p";
+type TrainingSpeedMode = "standard" | "fast" | "batch";
 type StrategyPackageSideScope = "none" | "1p-only" | "2p-only" | "1p-2p";
+type StrategyPackageBaseSource = "blank" | "copy-current" | "tas-baseline" | "human-demo" | "ai-run";
 type StrategyResourcePackId = "contra-stage1-strategy-v0" | "personal-contra-draft";
+type StrategyPackageDraftInput = {
+  name: string;
+  baseSource: StrategyPackageBaseSource;
+  baseStrategyKey: AiStrategyKey;
+  customCategoryLabel: string;
+};
+
+type NativeDirectoryPickerFileHandle = {
+  kind: "file";
+  name: string;
+  getFile: () => Promise<File>;
+};
+
+type NativeDirectoryPickerDirectoryHandle = {
+  kind: "directory";
+  name: string;
+  entries?: () => AsyncIterableIterator<[string, NativeDirectoryPickerHandle]>;
+  values?: () => AsyncIterableIterator<NativeDirectoryPickerHandle>;
+};
+
+type NativeDirectoryPickerHandle = NativeDirectoryPickerFileHandle | NativeDirectoryPickerDirectoryHandle;
+
+declare global {
+  interface Window {
+    showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<NativeDirectoryPickerDirectoryHandle>;
+  }
+}
 
 type RomLibrarySource = "server" | "browser";
 
@@ -470,6 +501,7 @@ type BotRunReport = {
 type SideTrainingState = {
   side: PlayerSide;
   ownerLabel: string;
+  resourcePackId: StrategyResourcePackId;
   packDisplayName: string;
   strategyKey: AiStrategyKey;
   strategyCategoryLabel: string;
@@ -500,22 +532,79 @@ type SideTrainingActions = {
   traceRecording: boolean;
   traceSampleCount: number;
   onSideTrainingToggle: (side: PlayerSide) => void;
-  onSideTrainingSelectBaseline: (side: PlayerSide) => void;
-  onSideTrainingBaselineChange: (side: PlayerSide, baselineId: string) => void;
+  onSideTrainingStrategyChange: (side: PlayerSide, strategy: AiStrategyKey) => void;
   onSideTrainingMethodChange: (side: PlayerSide, method: SideTrainingMethod) => void;
-  onSideTrainingModifyStrategy: (side: PlayerSide) => void;
-  onSideTrainingArchiveStrategy: (side: PlayerSide) => void;
-  onSideTrainingValidateStrategy: (side: PlayerSide) => void;
-  onSideTrainingRunToggle: (side: PlayerSide) => void;
-  onSideTraceStart: (side: PlayerSide) => void;
-  onSideTraceStop: (side: PlayerSide) => void;
-  onSideTraceExport: (side: PlayerSide) => void;
-  onSideTraceClear: (side: PlayerSide) => void;
 };
 
 type StrategyResultMetric = {
   value: number | null;
   status: "unverified" | "measured" | "validated";
+};
+
+type StrategyDescriptionText = {
+  label: string;
+  summary: string;
+  playStyle: string;
+  riskPolicy: string;
+};
+
+type StrategyDescriptionRecord = StrategyDescriptionText & {
+  dataSource?: string;
+  localization?: Partial<Record<UiLanguage, Partial<StrategyDescriptionText>>>;
+};
+
+type StrategyTrainingProgressMetric = {
+  value: number | string | null;
+  status: "unverified" | "candidate" | "measured" | "validated";
+};
+
+type StrategyTrainingProgressRecord = {
+  status: "unstarted" | "candidate" | "training" | "validated";
+  metrics: {
+    trainingRuns: StrategyTrainingProgressMetric;
+    deaths: StrategyTrainingProgressMetric;
+    trainingTimeSeconds: StrategyTrainingProgressMetric;
+    clearProgress: StrategyTrainingProgressMetric;
+  };
+  evidence?: string;
+};
+
+type StrategyTrainingProgressArtifactRecord = {
+  status?: StrategyTrainingProgressRecord["status"];
+  summary?: {
+    trainingRuns?: StrategyTrainingProgressMetric;
+    deaths?: StrategyTrainingProgressMetric;
+    trainingTimeSeconds?: StrategyTrainingProgressMetric;
+    clearProgress?: StrategyTrainingProgressMetric;
+  };
+  evidence?: string;
+};
+
+type StrategyTrainingStageSummaryRecord = {
+  status?: string;
+  dataMode?: "measured-ledger-only" | "migration-with-estimate" | string;
+  summary?: {
+    trainingRuns?: StrategyTrainingProgressMetric;
+    knownDeaths?: StrategyTrainingProgressMetric;
+    unknownDeathRuns?: StrategyTrainingProgressMetric;
+    recordedRunTimeSeconds?: StrategyTrainingProgressMetric;
+    clearProgress?: StrategyTrainingProgressMetric;
+    clearTimeSeconds?: StrategyTrainingProgressMetric;
+    clearTimeFrames?: StrategyTrainingProgressMetric;
+  };
+  historicalEstimate?: null | {
+    status?: string;
+    appliesOnlyToThisMigratedPack?: boolean;
+    estimatedSeconds?: number;
+    estimatedMinutes?: number;
+    source?: string;
+    caveat?: string;
+  };
+};
+
+type StrategyTrainingProgressArtifact = {
+  progressByStrategy?: Partial<Record<AiStrategyKey, StrategyTrainingProgressArtifactRecord>>;
+  stageSummary?: Record<string, StrategyTrainingStageSummaryRecord>;
 };
 
 type StrategyResultRecord = {
@@ -544,16 +633,32 @@ type StrategyPackRevision = {
 
 type GlobalTrainingState = {
   strategyPackLabel: string;
+  activeRomStrategyCompatible: boolean;
+  activeRomStrategyCompatibilityLabel: string;
   trainingSessionActive: boolean;
   trainingRunActive: boolean;
   trainingSessionLabel: string;
+  trainingSpeedMode: TrainingSpeedMode;
+  trainingSpeedLabel: string;
+  trainingSpeedDescription: string;
   packageSideScope: StrategyPackageSideScope;
   strategyExportName: string;
   validationReplayComplete: boolean;
+  strategyPackageDirectoryLabel: string;
   savePathLabel: string;
   versionStatusLabel: string;
+  strategyResourcePackIds: StrategyResourcePackId[];
+  selectedStrategyResourcePackId: StrategyResourcePackId;
   resourcePacksBySide: Record<PlayerSide, StrategyResourcePackId>;
   p2ResourceSynced: boolean;
+};
+
+type PendingTrainingFastRun = {
+  requestId: number;
+  side: PlayerSide;
+  frames: number;
+  strategy: BotRunStrategyKey;
+  speedMode: TrainingSpeedMode;
 };
 
 type RomLibraryStatusState = {
@@ -826,11 +931,6 @@ const startupPresetOptions: Array<{
     key: "auto-1p",
     label: { "zh-CN": "自动单人", "en-US": "Auto 1P" },
     detail: { "zh-CN": "标题菜单自动 Start", "en-US": "Auto Start at title" }
-  },
-  {
-    key: "auto-2p",
-    label: { "zh-CN": "自动双人", "en-US": "Auto 2P" },
-    detail: { "zh-CN": "自动 Select 后 Start", "en-US": "Auto Select then Start" }
   }
 ];
 
@@ -845,7 +945,7 @@ const aiStrategyOptions: Array<{ key: AiStrategyKey; label: string; description:
   { key: "placeholder", label: "安全占位 Bot", description: "空输入 / 待机" },
   { key: "rules-v0", label: "规则基线 V0", description: "等待 RAM/FSM" },
   { key: "survival-v0", label: "稳健生存", description: "优先避险和低风险推进" },
-  { key: "speedrun-v0", label: "快速推进候选", description: "TAS/FCEUX 基准待训练，未验证通关" },
+  { key: "speedrun-v0", label: "快速推进", description: "TAS/FCEUX 基准待训练，未验证通关" },
   { key: "combat-v0", label: "清敌优先", description: "优先射击屏幕威胁" },
   { key: "loot-v0", label: "奖励优先", description: "优先武器箱和飞行胶囊" },
   { key: "guard-v0", label: "护卫队友", description: "保护 1P 周围威胁" },
@@ -908,6 +1008,38 @@ const SIDE_TRAINING_METHOD_OPTIONS = [
   }
 ] as const satisfies readonly SideTrainingMethodOption[];
 
+const NEW_STRATEGY_PACKAGE_SOURCE_OPTIONS = [
+  {
+    key: "copy-current",
+    label: { "zh-CN": "复制当前包", "en-US": "Copy Current Pack" },
+    detail: { "zh-CN": "推荐。以当前选中策略包为基准，生成可修改草稿。", "en-US": "Recommended. Start from the selected pack and create an editable draft." }
+  },
+  {
+    key: "blank",
+    label: { "zh-CN": "空白草稿", "en-US": "Blank Draft" },
+    detail: { "zh-CN": "只建立包结构和策略分类，适合从零设计。", "en-US": "Create only the package structure and strategy category." }
+  },
+  {
+    key: "tas-baseline",
+    label: { "zh-CN": "TAS 基准", "en-US": "TAS Baseline" },
+    detail: { "zh-CN": "使用 TAS 窗口已抽取并归档的基准片段。", "en-US": "Use a baseline fragment extracted and archived from the TAS window." }
+  },
+  {
+    key: "human-demo",
+    label: { "zh-CN": "人类演示", "en-US": "Human Demo" },
+    detail: { "zh-CN": "进入人类采集流程，先录一段可学习操作。", "en-US": "Enter human capture flow and record a learnable run." }
+  },
+  {
+    key: "ai-run",
+    label: { "zh-CN": "AI 跑局", "en-US": "AI Run" },
+    detail: { "zh-CN": "用当前基础 AI 自动跑局，生成候选基准。", "en-US": "Run the current base AI to create a candidate baseline." }
+  }
+] as const satisfies ReadonlyArray<{
+  key: StrategyPackageBaseSource;
+  label: Record<UiLanguage, string>;
+  detail: Record<UiLanguage, string>;
+}>;
+
 const keyboardHints: Record<PlayerSide, string> = {
   "1P": "方向键 / Z=B / X=A / Enter=开始 / Shift=选择",
   "2P": "WASD / J=B / K=A / I=开始 / U=选择"
@@ -933,8 +1065,39 @@ const CONTRA_US_COMPATIBILITY_GROUP = "contra-us";
 const PERSONAL_STRATEGY_STORAGE_KEY = "fc-ai.personal.stage1.strategy.v1";
 const CONTRA_TAS_SIDE_BASELINE_PATH = "data/training/contra/tas_bases/contra-j-good/side-baselines.json";
 const FC_HARDWARE_SPEC = "FC/NES · Ricoh 2A03 1.79 MHz · PPU 256x240 · RAM 2 KB · Controllers x2";
+const DEFAULT_STRATEGY_PACKAGE_DIRECTORY_LABEL = "D:\\Ai-Play\\fc-ai-companion\\strategy-packs";
+
+const TRAINING_SPEED_OPTIONS: ReadonlyArray<{
+  key: TrainingSpeedMode;
+  label: Record<UiLanguage, string>;
+  description: Record<UiLanguage, string>;
+  frames: number;
+}> = [
+  {
+    key: "standard",
+    label: { "zh-CN": "标准", "en-US": "Standard" },
+    description: { "zh-CN": "实时画面采集", "en-US": "Realtime capture" },
+    frames: 0
+  },
+  {
+    key: "fast",
+    label: { "zh-CN": "快速", "en-US": "Fast" },
+    description: { "zh-CN": "短窗快速跑局", "en-US": "Fast window run" },
+    frames: 3600
+  },
+  {
+    key: "batch",
+    label: { "zh-CN": "批量", "en-US": "Batch" },
+    description: { "zh-CN": "长窗批量搜索", "en-US": "Long batch search" },
+    frames: 12000
+  }
+];
 
 const strategyResultKeys = ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"] as const satisfies readonly AiStrategyKey[];
+
+const CONTRA_STRATEGY_DESCRIPTIONS = (
+  contraStrategyPackManifest as { strategyDescriptions: Partial<Record<AiStrategyKey, StrategyDescriptionRecord>> }
+).strategyDescriptions;
 
 function unverifiedStrategyResult(evidence: string): StrategyResultRecord {
   return {
@@ -949,6 +1112,49 @@ function unverifiedStrategyResult(evidence: string): StrategyResultRecord {
   };
 }
 
+function trainingSpeedOptionByMode(mode: TrainingSpeedMode) {
+  return TRAINING_SPEED_OPTIONS.find((option) => option.key === mode) ?? TRAINING_SPEED_OPTIONS[0];
+}
+
+function botRunStrategyFromAiStrategy(strategy: AiStrategyKey): BotRunStrategyKey {
+  return strategyResultKeys.includes(strategy as (typeof strategyResultKeys)[number])
+    ? strategy as BotRunStrategyKey
+    : "survival-v0";
+}
+
+function unverifiedStrategyTrainingProgress(evidence: string): StrategyTrainingProgressRecord {
+  return {
+    status: "unstarted",
+    metrics: {
+      trainingRuns: { value: null, status: "unverified" },
+      deaths: { value: null, status: "unverified" },
+      trainingTimeSeconds: { value: null, status: "unverified" },
+      clearProgress: { value: null, status: "unverified" }
+    },
+    evidence
+  };
+}
+
+function strategyTrainingProgressFromArtifact(artifact: StrategyTrainingProgressArtifact) {
+  return Object.fromEntries(strategyResultKeys.map((strategyKey) => {
+    const record = artifact.progressByStrategy?.[strategyKey];
+    return [strategyKey, {
+      status: record?.status ?? "unstarted",
+      metrics: {
+        trainingRuns: record?.summary?.trainingRuns ?? { value: null, status: "unverified" },
+        deaths: record?.summary?.deaths ?? { value: null, status: "unverified" },
+        trainingTimeSeconds: record?.summary?.trainingTimeSeconds ?? { value: null, status: "unverified" },
+        clearProgress: record?.summary?.clearProgress ?? { value: null, status: "unverified" }
+      },
+      evidence: record?.evidence
+    } satisfies StrategyTrainingProgressRecord];
+  })) as Record<(typeof strategyResultKeys)[number], StrategyTrainingProgressRecord>;
+}
+
+function strategyStageSummaryFromArtifact(artifact: StrategyTrainingProgressArtifact, stageId = "stage-1"): StrategyTrainingStageSummaryRecord | null {
+  return artifact.stageSummary?.[stageId] ?? null;
+}
+
 const CONTRA_STAGE1_STRATEGY_RESULTS: Record<(typeof strategyResultKeys)[number], StrategyResultRecord> = {
   "survival-v0": unverifiedStrategyResult("Awaiting Stage 1 robust survival runtime validation."),
   "speedrun-v0": unverifiedStrategyResult("Reusable TAS/FCEUX speedrun candidate is indexed; awaiting Stage 1 runtime validation."),
@@ -956,6 +1162,10 @@ const CONTRA_STAGE1_STRATEGY_RESULTS: Record<(typeof strategyResultKeys)[number]
   "loot-v0": unverifiedStrategyResult("Awaiting Stage 1 reward-route runtime validation."),
   "guard-v0": unverifiedStrategyResult("Awaiting human-AI or dual-AI guard validation.")
 };
+
+const CONTRA_STAGE1_TRAINING_PROGRESS = strategyTrainingProgressFromArtifact(
+  contraStage1TrainingProgressArtifact as StrategyTrainingProgressArtifact
+);
 
 const ACTIVE_STRATEGY_PACK = {
   packId: "contra-stage1-strategy-v0",
@@ -990,6 +1200,11 @@ const ACTIVE_STRATEGY_PACK = {
     "zh-CN": "魂斗罗第一关策略包 V0",
     "en-US": "Contra Stage 1 Strategy Pack V0"
   },
+  trainingProgress: CONTRA_STAGE1_TRAINING_PROGRESS,
+  trainingStageSummary: strategyStageSummaryFromArtifact(
+    contraStage1TrainingProgressArtifact as StrategyTrainingProgressArtifact
+  ),
+  strategyDescriptions: CONTRA_STRATEGY_DESCRIPTIONS,
   strategyResults: CONTRA_STAGE1_STRATEGY_RESULTS
 } as const;
 
@@ -1021,6 +1236,27 @@ const STRATEGY_RESOURCE_PACKS = [
       "zh-CN": "个人魂斗罗训练草稿",
       "en-US": "Personal Contra Training Draft"
     },
+    trainingProgress: CONTRA_STAGE1_TRAINING_PROGRESS,
+    trainingStageSummary: strategyStageSummaryFromArtifact(
+      contraStage1TrainingProgressArtifact as StrategyTrainingProgressArtifact
+    ),
+    strategyDescriptions: {
+      "personal-v0": {
+        label: "Personal Draft",
+        summary: "Local editable strategy draft for player-owned experimentation.",
+        playStyle: "Suitable for copied baselines, human demonstrations, and local tuning before validation.",
+        riskPolicy: "No validation claims until the draft passes replay and runtime checks.",
+        dataSource: "local draft manifest + stage training ledger",
+        localization: {
+          "zh-CN": {
+            label: "个人草稿",
+            summary: "用于玩家自建和本地调试的可编辑策略草稿。",
+            playStyle: "适合复制基准、人类演示和本地调参，验证前不作为正式策略。",
+            riskPolicy: "通过回放和实机校验前，不写入已验证结论。"
+          }
+        }
+      }
+    },
     strategyResults: CONTRA_STAGE1_STRATEGY_RESULTS
   }
 ] as const satisfies ReadonlyArray<{
@@ -1038,6 +1274,9 @@ const STRATEGY_RESOURCE_PACKS = [
   strategySlots: readonly AiStrategyKey[];
   strategyKeys: readonly AiStrategyKey[];
   displayName: Record<UiLanguage, string>;
+  trainingProgress: Partial<Record<AiStrategyKey, StrategyTrainingProgressRecord>>;
+  trainingStageSummary: StrategyTrainingStageSummaryRecord | null;
+  strategyDescriptions: Partial<Record<AiStrategyKey, StrategyDescriptionRecord>>;
   strategyResults: Partial<Record<AiStrategyKey, StrategyResultRecord>>;
 }>;
 
@@ -1056,42 +1295,131 @@ function nextPackageSideScope(scope: StrategyPackageSideScope, side: PlayerSide)
   return "none";
 }
 
+function canUseNativeDirectoryPicker() {
+  return typeof window !== "undefined" && typeof window.showDirectoryPicker === "function";
+}
+
+function fileWithRelativePath(file: File, relativePath: string) {
+  try {
+    Object.defineProperty(file, "webkitRelativePath", {
+      configurable: true,
+      value: relativePath
+    });
+  } catch {
+    // Some browser File objects expose a readonly path; the importer can still use file.name.
+  }
+  return file as File & { webkitRelativePath?: string };
+}
+
+async function collectFilesFromDirectoryHandle(
+  directoryHandle: NativeDirectoryPickerDirectoryHandle,
+  basePath = directoryHandle.name
+): Promise<File[]> {
+  const files: File[] = [];
+  const iterator = directoryHandle.entries
+    ? directoryHandle.entries()
+    : directoryHandle.values
+      ? (async function* () {
+          for await (const handle of directoryHandle.values?.() ?? []) {
+            yield [handle.name, handle] as [string, NativeDirectoryPickerHandle];
+          }
+        })()
+      : null;
+
+  if (!iterator) return files;
+
+  for await (const [name, handle] of iterator) {
+    const relativePath = `${basePath}/${name}`;
+    if (handle.kind === "file") {
+      files.push(fileWithRelativePath(await handle.getFile(), relativePath));
+    } else {
+      files.push(...await collectFilesFromDirectoryHandle(handle, relativePath));
+    }
+  }
+  return files;
+}
+
 const gameProfileUiStatus = {
   "contra": {
     chineseName: "魂斗罗",
-    strategyStatus: "第一关策略 V0 / 调试中"
+    strategyStatus: "第一关策略 V0 / 调试中",
+    intro: {
+      "zh-CN": "横向动作射击经典。当前重点用于 TAS 基准、第一关稳健生存策略和双手柄协作训练。",
+      "en-US": "Classic side-scrolling action. Currently used for TAS baselines, stage 1 survival strategy, and two-pad co-op training."
+    }
   },
   "super-c": {
     chineseName: "超级魂斗罗",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "魂斗罗续作候选。后续用于验证横向射击策略包能否跨关卡、跨版本复用。",
+      "en-US": "Contra sequel candidate for testing whether side-scrolling shooter strategy packs transfer across stages and versions."
+    }
   },
   "contra-force": {
     chineseName: "魂斗罗外传",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "魂斗罗系列外传候选。用于后续验证角色差异、武器差异和策略包兼容边界。",
+      "en-US": "Contra-series spin-off candidate for later role, weapon, and compatibility-boundary validation."
+    }
   },
   "jackal": {
     chineseName: "赤色要塞",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "俯视载具动作游戏。适合验证路径、救援目标和不同视角下的陪玩策略。",
+      "en-US": "Top-down vehicle action game for route, rescue-objective, and alternate-camera companion strategy validation."
+    }
   },
   "battle-city": {
     chineseName: "坦克大战",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "固定屏幕坦克防守游戏。适合验证守点、基地保护和局部战术策略。",
+      "en-US": "Fixed-screen tank defense game for hold-point, base-protection, and local tactical strategy validation."
+    }
   },
   "double-dragon-ii": {
     chineseName: "双截龙 II",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "清版格斗候选。用于后续验证近身战、站位和双人配合策略。",
+      "en-US": "Beat-em-up candidate for later melee, spacing, and two-player cooperation strategy validation."
+    }
   },
   "ninja-gaiden": {
     chineseName: "忍者龙剑传",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "高难度平台动作候选。适合验证跳跃窗口、墙面动作和精密路线片段。",
+      "en-US": "Difficult platform-action candidate for jump windows, wall movement, and precise route fragments."
+    }
   },
   "mega-man-2": {
     chineseName: "洛克人 2",
-    strategyStatus: "计划中"
+    strategyStatus: "计划中",
+    intro: {
+      "zh-CN": "关卡选择和武器克制明显。适合验证武器规划、Boss 弱点和多路线策略库。",
+      "en-US": "Stage-choice and weapon-matchup game for weapon planning, boss weaknesses, and multi-route strategy libraries."
+    }
   }
 } as const;
 
 type GameProfileKey = keyof typeof gameProfileUiStatus;
+
+const EMPTY_CARTRIDGE_ARTWORK_SRC = "/assets/cartridges/fcai-empty-cartridge-slot.png";
+const GENERIC_CARTRIDGE_ARTWORK_SRC = "/assets/cartridges/fcai-generic-yellow-cartridge.png";
+const CARTRIDGE_ARTWORK_BY_GAME_PROFILE: Record<GameProfileKey, string> = {
+  "contra": "/assets/cartridges/fcai-contra-inspired-yellow-cartridge.png",
+  "super-c": "/assets/cartridges/fcai-super-c-yellow-cartridge.png",
+  "contra-force": "/assets/cartridges/fcai-contra-force-yellow-cartridge.png",
+  "jackal": "/assets/cartridges/fcai-jackal-yellow-cartridge.png",
+  "battle-city": "/assets/cartridges/fcai-battle-city-yellow-cartridge.png",
+  "double-dragon-ii": "/assets/cartridges/fcai-double-dragon-ii-yellow-cartridge.png",
+  "ninja-gaiden": GENERIC_CARTRIDGE_ARTWORK_SRC,
+  "mega-man-2": GENERIC_CARTRIDGE_ARTWORK_SRC
+};
 
 function bytesToHex(bytes: Uint8Array) {
   return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -1128,10 +1456,21 @@ function cartridgeUiStatus(metadata: RomMetadata | null) {
   if (gameKey === "unknown") {
     return {
       chineseName: "未识别游戏",
-      strategyStatus: "无策略"
+      strategyStatus: "无策略",
+      intro: {
+        "zh-CN": "当前卡带尚未匹配游戏档案。可先运行测试，再补充 ROM 档案、策略包和 TAS 对应表。",
+        "en-US": "This cartridge is not matched to a game profile yet. Run it first, then add the ROM profile, strategy pack, and TAS mapping."
+      }
     };
   }
   return gameProfileUiStatus[gameKey];
+}
+
+function cartridgeArtworkSrc(metadata: RomMetadata | null) {
+  if (!metadata) return EMPTY_CARTRIDGE_ARTWORK_SRC;
+  const gameKey = inferGameProfileKey(metadata);
+  if (gameKey === "unknown") return GENERIC_CARTRIDGE_ARTWORK_SRC;
+  return CARTRIDGE_ARTWORK_BY_GAME_PROFILE[gameKey] ?? GENERIC_CARTRIDGE_ARTWORK_SRC;
 }
 
 function localizedStrategyStatusLabel(status: string, language: UiLanguage) {
@@ -1161,6 +1500,15 @@ function activeStrategyPackLabel(language: UiLanguage) {
   return `${ACTIVE_STRATEGY_PACK.displayName[language]} · ${ACTIVE_STRATEGY_PACK.version} · ${ACTIVE_STRATEGY_PACK.status}`;
 }
 
+function strategyResourcePackBannerLabel(packIds: readonly StrategyResourcePackId[], language: UiLanguage) {
+  return packIds
+    .map((packId) => {
+      const pack = strategyResourcePackById(packId);
+      return `${pack.displayName[language]} · ${pack.version} · ${pack.status}`;
+    })
+    .join(" / ");
+}
+
 function strategyResourcePackById(packId: StrategyResourcePackId) {
   return STRATEGY_RESOURCE_PACKS.find((pack) => pack.packId === packId) ?? ACTIVE_STRATEGY_PACK;
 }
@@ -1168,6 +1516,13 @@ function strategyResourcePackById(packId: StrategyResourcePackId) {
 function strategyResourcePackLabel(packId: StrategyResourcePackId, language: UiLanguage) {
   const pack = strategyResourcePackById(packId);
   return `${pack.displayName[language]} · ${pack.version}`;
+}
+
+function strategyResourcePackEditPolicyLabel(packId: StrategyResourcePackId, language: UiLanguage) {
+  if (packId === "personal-contra-draft") {
+    return language === "en-US" ? "Editable draft package" : "草稿可直接修改";
+  }
+  return language === "en-US" ? "Readonly baseline, edits copy to draft" : "只读基准，修改会复制为草稿";
 }
 
 function strategyOptionsForResourcePack(resourcePackId: StrategyResourcePackId): ResourcePackStrategyOption[] {
@@ -1334,6 +1689,20 @@ function isNewRunBaseline(baselineId: string) {
   return baselineId === "human-demo-new" || baselineId === "ai-run-new";
 }
 
+function strategyPackageBaselineIdForSource(source: StrategyPackageBaseSource) {
+  if (source === "human-demo") return "human-demo-new";
+  if (source === "ai-run") return "ai-run-new";
+  return DEFAULT_SIDE_BASELINE_ID;
+}
+
+function strategyPackageBaseSourceOption(source: StrategyPackageBaseSource) {
+  return NEW_STRATEGY_PACKAGE_SOURCE_OPTIONS.find((option) => option.key === source) ?? NEW_STRATEGY_PACKAGE_SOURCE_OPTIONS[0];
+}
+
+function strategyPackageBaseSourceLabel(source: StrategyPackageBaseSource, language: UiLanguage) {
+  return strategyPackageBaseSourceOption(source).label[language];
+}
+
 function trainingControlModeForSelection(baselineId: string, method: SideTrainingMethod): ControlMode {
   if (baselineId === "human-demo-new") return "human";
   if (baselineId === "ai-run-new") return "ai";
@@ -1359,8 +1728,29 @@ function strategyResultMetricLabel(metric: StrategyResultMetric, language: UiLan
   return String(metric.value);
 }
 
+function formatTrainingDurationSeconds(seconds: number, language: UiLanguage) {
+  const totalSeconds = Math.max(0, Math.round(seconds));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+  if (language === "en-US") {
+    if (hours > 0) return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+    return `${remainingSeconds}s`;
+  }
+  if (hours > 0) return `${hours}小时${minutes}分${remainingSeconds}秒`;
+  if (minutes > 0) return `${minutes}分${remainingSeconds}秒`;
+  return `${remainingSeconds}秒`;
+}
+
+function strategyTrainingProgressMetricLabel(metric: StrategyTrainingProgressMetric, language: UiLanguage, unit: "plain" | "seconds" = "plain") {
+  if (metric.value === null) return t(language, "training.progressUnverified");
+  if (unit === "seconds" && typeof metric.value === "number") return formatTrainingDurationSeconds(metric.value, language);
+  return String(metric.value);
+}
+
 function strategyResultStatusLabel(record: StrategyResultRecord, language: UiLanguage) {
-  if (record.status === "candidate") return language === "en-US" ? "candidate" : "候选";
+  if (record.status === "candidate") return language === "en-US" ? "pending validation" : "待验证";
   if (record.status === "validated") return language === "en-US" ? "validated" : "已验证";
   return record.status;
 }
@@ -1868,6 +2258,14 @@ function tasPhaseLabel(phase: TasPlaybackUiState["phase"]) {
   if (phase === "desynced") return "Desync";
   return "Init Phase";
 }
+
+const TAS_COMMENTARY_MODE_OPTIONS: TasCommentaryMode[] = [
+  "expert-viewing",
+  "teaching",
+  "companion-emotional",
+  "strategy-analysis",
+  "casual-entertainment"
+];
 
 function matchedTasCountLabel(count: number, language: UiLanguage) {
   if (language === "en-US") return count === 1 ? "1 matched TAS" : `${count} matched TAS files`;
@@ -2707,6 +3105,35 @@ function localizedAiStrategyLabel(strategy: AiStrategyKey, language: UiLanguage)
   return translated === `strategy.${strategy}` ? getAiStrategyLabel(strategy) : translated;
 }
 
+function localizedStrategyDescription(
+  record: StrategyDescriptionRecord | undefined,
+  strategy: AiStrategyKey,
+  language: UiLanguage
+): StrategyDescriptionText {
+  const fallback: StrategyDescriptionText = {
+    label: localizedAiStrategyLabel(strategy, language),
+    summary: language === "en-US" ? "No strategy description in this package." : "此策略包未提供说明。",
+    playStyle: "",
+    riskPolicy: ""
+  };
+  if (!record) return fallback;
+  if (language === "en-US") {
+    return {
+      label: record.label,
+      summary: record.summary,
+      playStyle: record.playStyle,
+      riskPolicy: record.riskPolicy
+    };
+  }
+  const localized = record.localization?.[language];
+  return {
+    label: localized?.label ?? record.label,
+    summary: localized?.summary ?? record.summary,
+    playStyle: localized?.playStyle ?? record.playStyle,
+    riskPolicy: localized?.riskPolicy ?? record.riskPolicy
+  };
+}
+
 function localizedTasStatusLabel(entry: TasRegistryEntry | null, language: UiLanguage) {
   if (language === "en-US") return entry ? "Matched TAS" : "No matched TAS";
   return tasStatusLabel(entry);
@@ -2798,6 +3225,21 @@ function romLibraryStatusLabel(status: RomLibraryStatusState, language: UiLangua
   if (status.code === "browser-empty") return "所选目录未发现 .nes 卡带";
   if (status.code === "browser-count") return `玩家目录：${count} 个卡带`;
   return `玩家目录读取失败：${detail}`;
+}
+
+function romLibraryHeaderStatusLabel(status: RomLibraryStatusState, language: UiLanguage) {
+  const count = status.count ?? 0;
+  const detail = status.detail ?? "";
+  if (language === "en-US") {
+    if (status.code === "default-count" || status.code === "browser-count") return `${count} cartridges`;
+    if (status.code === "scanning-default") return "scanning";
+    if (status.code === "default-empty" || status.code === "browser-empty") return "0 cartridges";
+    return detail ? `error: ${detail}` : "read failed";
+  }
+  if (status.code === "default-count" || status.code === "browser-count") return `${count} 个卡带`;
+  if (status.code === "scanning-default") return "扫描中";
+  if (status.code === "default-empty" || status.code === "browser-empty") return "0 个卡带";
+  return detail ? `错误：${detail}` : "读取失败";
 }
 
 function audioLabel(status: AudioStatus) {
@@ -3547,7 +3989,7 @@ function getPilotTemperament(side: PlayerSide, mode: ControlMode, strategyKey: A
   if (strategyKey === "off") return "AI 未启用";
   if (strategyKey === "placeholder") return "AI 安全占位";
   if (strategyKey === "survival-v0") return "稳健生存";
-  if (strategyKey === "speedrun-v0") return "快速推进候选";
+  if (strategyKey === "speedrun-v0") return "快速推进";
   if (strategyKey === "combat-v0") return "清敌优先";
   if (strategyKey === "loot-v0") return "奖励优先";
   if (strategyKey === "guard-v0") return "护卫队友";
@@ -6058,7 +6500,7 @@ function buildDialogue(mode: ControlMode, strategyKey: AiStrategyKey, language: 
     return ["稳健生存：优先避开近身危险。", "威胁过密时放慢推进，先跳开、点射，再继续前进。"];
   }
   if (strategyKey === "speedrun-v0") {
-    return ["快速推进候选：复用 TAS/FCEUX 基准窗口。", "当前仍有 WorldX 625 死亡反例，必须真实跑局验证后才能升级。"];
+    return ["快速推进：复用 TAS/FCEUX 基准窗口。", "当前仍有 WorldX 625 死亡反例，必须真实跑局验证后才能升级。"];
   }
   if (strategyKey === "combat-v0") {
     return ["清敌优先：先处理屏幕威胁。", "敌人靠近时会停推进、持续射击并尝试跳开。"];
@@ -6355,6 +6797,7 @@ function buildSideTrainingStateV2(
   return {
     side,
     ownerLabel: `${side} Training`,
+    resourcePackId,
     packDisplayName,
     strategyKey,
     strategyCategoryLabel: strategyLabel,
@@ -6410,14 +6853,36 @@ function buildGlobalTrainingState(
   packageSideScope: StrategyPackageSideScope,
   strategyExportName: string,
   validationReplayComplete: boolean,
+  strategyPackageDirectoryLabel: string,
   savePathLabel: string,
   versionStatusLabel: string,
   resourcePacksBySide: Record<PlayerSide, StrategyResourcePackId>,
   p2ResourceSynced: boolean,
+  trainingSpeedMode: TrainingSpeedMode,
+  activeRomMetadata: RomMetadata | null,
   language: UiLanguage
 ): GlobalTrainingState {
+  const selectedPackIds = Array.from(new Set(Object.values(resourcePacksBySide)));
+  const activeRomStrategyCompatible = Boolean(
+    activeRomMetadata
+    && activeRomMetadata.romProfileId !== "unknown"
+    && selectedPackIds.every((packId) => (strategyResourcePackById(packId).romProfileIds as readonly string[]).includes(activeRomMetadata.romProfileId))
+  );
+  const activeRomStatus = activeRomMetadata ? cartridgeUiStatus(activeRomMetadata) : null;
+  const activeRomStrategyCompatibilityLabel = !activeRomMetadata
+    ? language === "en-US" ? "Insert a cartridge before strategy validation" : "请先插入卡带后再验证策略"
+    : activeRomStrategyCompatible
+      ? language === "en-US"
+        ? `Strategy pack matches ${activeRomStatus?.chineseName ?? activeRomMetadata.displayTitle}`
+        : `策略包匹配当前游戏：${activeRomStatus?.chineseName ?? activeRomMetadata.displayTitle}`
+      : language === "en-US"
+        ? `No dedicated strategy pack for ${activeRomStatus?.chineseName ?? activeRomMetadata.displayTitle}; package tools remain available`
+        : `当前游戏暂无专用策略包：${activeRomStatus?.chineseName ?? activeRomMetadata.displayTitle}，此区仅作资源包管理/参考`;
+
   return {
-    strategyPackLabel: activeStrategyPackLabel(language),
+    strategyPackLabel: strategyResourcePackBannerLabel(selectedPackIds, language),
+    activeRomStrategyCompatible,
+    activeRomStrategyCompatibilityLabel,
     trainingSessionActive,
     trainingRunActive,
     trainingSessionLabel: trainingRunActive
@@ -6425,11 +6890,17 @@ function buildGlobalTrainingState(
       : trainingSessionActive
       ? language === "en-US" ? "Training active" : "训练中"
       : language === "en-US" ? "Training idle" : "待训练",
+    trainingSpeedMode,
+    trainingSpeedLabel: trainingSpeedOptionByMode(trainingSpeedMode).label[language],
+    trainingSpeedDescription: trainingSpeedOptionByMode(trainingSpeedMode).description[language],
     packageSideScope,
     strategyExportName,
     validationReplayComplete,
+    strategyPackageDirectoryLabel,
     savePathLabel,
     versionStatusLabel,
+    strategyResourcePackIds: STRATEGY_RESOURCE_PACKS.map((pack) => pack.packId),
+    selectedStrategyResourcePackId: resourcePacksBySide["1P"],
     resourcePacksBySide,
     p2ResourceSynced
   };
@@ -6528,11 +6999,10 @@ function ControllerView({
 function WarriorAvatar({ side }: { side: PlayerSide }) {
   return (
     <div className={`warrior-avatar ${side === "1P" ? "blue-warrior" : "red-warrior"}`} aria-hidden="true">
-      <div className="warrior-helmet">
-        <span />
-      </div>
-      <div className="warrior-face" />
-      <div className="warrior-body" />
+      <img
+        alt=""
+        src={side === "1P" ? "/assets/avatars/fcai-blue-warrior-avatar.png" : "/assets/avatars/fcai-red-warrior-avatar.png"}
+      />
     </div>
   );
 }
@@ -6594,19 +7064,8 @@ function SideTrainingPanel({
   training: SideTrainingState;
   actions: SideTrainingActions;
 }) {
-  const captureStartLabel = training.selectedBaselineId === "human-demo-new"
-    ? t(language, "training.startCapture")
-    : training.selectedTrainingMethod === "human-assist"
-      ? "开始混合采集"
-      : t(language, "training.startCapture");
-  const autoPatchRunLabel = training.trainingRunActive ? "停止跑局" : "开始跑局";
-  const archiveLabel = training.selectedBaselineId === "human-demo-new" ? "归档演示" : t(language, "training.archiveStrategy");
-  const sideTrainingActive = training.trainingSessionActive;
-  const sideTrainingConfigurable = training.selectedForTraining && !training.trainingConfigLocked;
+  const sideTrainingConfigurable = !training.trainingConfigLocked;
   const directRunBaseline = isNewRunBaseline(training.selectedBaselineId);
-  const showDirectRunActions = directRunBaseline;
-  const showCaptureActions = showDirectRunActions || training.selectedTrainingMethod === "human-assist";
-  const autoPatchArchiveLabel = training.selectedBaselineId === "ai-run-new" ? "归档AI跑局" : "生成补丁";
 
   return (
     <div className={sideTrainingPanelClassName(training)} aria-label={`${training.side} 训练区`}>
@@ -6625,19 +7084,28 @@ function SideTrainingPanel({
       <div className="side-training-pack-identity">
         <strong>{training.packDisplayName}</strong>
       </div>
-      <label className={selectorClassName("side-baseline-selector", !sideTrainingConfigurable)}>
-        <span>{t(language, "training.strategyBaseline")}</span>
-        <select
-          disabled={!sideTrainingConfigurable}
-          onChange={(event) => actions.onSideTrainingBaselineChange(training.side, event.currentTarget.value)}
-          value={training.selectedBaselineId}
-        >
-          {training.baselineOptions.map((option) => (
-            <option key={option.id} value={option.id}>{option.label}</option>
-          ))}
-        </select>
-        <small>{training.sourceLabel} / {training.strategyBaselineLabel}</small>
-      </label>
+      <div className={selectorClassName("side-training-strategy-selector", !sideTrainingConfigurable)} aria-label="训练策略种类">
+        <span>策略种类</span>
+        <div>
+          {strategyOptionsForResourcePack(training.resourcePackId).map((option) => {
+            const selected = training.strategyKey === option.key;
+            const strategyUnavailable = !option.available;
+            return (
+              <button
+                aria-pressed={selected}
+                className={selected ? "active" : strategyUnavailable ? "unavailable" : ""}
+                disabled={!sideTrainingConfigurable || strategyUnavailable}
+                key={option.key}
+                onClick={() => actions.onSideTrainingStrategyChange(training.side, option.key)}
+                type="button"
+              >
+                {localizedAiStrategyLabel(option.key, language)}
+              </button>
+            );
+          })}
+        </div>
+        <small>{training.packDisplayName}</small>
+      </div>
       <div className={selectorClassName("side-training-method-selector", !sideTrainingConfigurable || directRunBaseline)} aria-label="训练方法">
         <span>训练方法</span>
         <div>
@@ -6658,36 +7126,6 @@ function SideTrainingPanel({
       </div>
       <div className="side-training-run-status">
         <small>{training.trainingRunStatusLabel}</small>
-      </div>
-      <div className="side-training-context-actions">
-        {showDirectRunActions ? (
-          <>
-            <button disabled={!sideTrainingActive || actions.traceRecording} onClick={() => actions.onSideTraceStart(training.side)} type="button">{captureStartLabel}</button>
-            <button disabled={!sideTrainingActive || !actions.traceRecording} onClick={() => actions.onSideTraceStop(training.side)} type="button">{t(language, "training.stop")}</button>
-            <button disabled={!sideTrainingActive || actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{archiveLabel}</button>
-          </>
-        ) : showCaptureActions ? (
-          <>
-            <button disabled={!sideTrainingActive || actions.traceRecording} onClick={() => actions.onSideTraceStart(training.side)} type="button">{captureStartLabel}</button>
-            <button disabled={!sideTrainingActive || !actions.traceRecording} onClick={() => actions.onSideTraceStop(training.side)} type="button">{t(language, "training.stop")}</button>
-            <button disabled={!sideTrainingActive || actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{archiveLabel}</button>
-          </>
-        ) : training.selectedTrainingMethod === "manual-edit" ? (
-          <>
-            <button disabled={!sideTrainingActive} onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">{t(language, "training.modifyStrategy")}</button>
-            <button disabled={!sideTrainingActive || actions.traceRecording} onClick={() => actions.onSideTrainingValidateStrategy(training.side)} type="button">{t(language, "training.validateStrategy")}</button>
-          </>
-        ) : training.selectedTrainingMethod === "model-analysis" ? (
-          <>
-            <button disabled={!sideTrainingActive || actions.traceSampleCount === 0 || actions.traceRecording} onClick={() => actions.onSideTraceExport(training.side)} type="button">打包数据</button>
-            <button disabled={!sideTrainingActive} onClick={() => actions.onSideTrainingModifyStrategy(training.side)} type="button">导入建议</button>
-          </>
-        ) : (
-          <>
-            <button disabled={!sideTrainingActive || (actions.traceRecording && !training.trainingRunActive)} onClick={() => actions.onSideTrainingRunToggle(training.side)} type="button">{autoPatchRunLabel}</button>
-            <button disabled={!sideTrainingActive || actions.traceSampleCount === 0 || actions.traceRecording || training.trainingRunActive} onClick={() => actions.onSideTrainingArchiveStrategy(training.side)} type="button">{autoPatchArchiveLabel}</button>
-          </>
-        )}
       </div>
     </div>
   );
@@ -6725,6 +7163,7 @@ function PilotPanel({
   const inputLocked = tasLocked || trainingLocked;
   const strategyControlsLocked = tasLocked || trainingLocked;
   const strategyButtons = strategyOptionsForResourcePack(pilot.strategyResourcePackId);
+  const strategyPackTitle = strategyResourcePackLabel(pilot.strategyResourcePackId, uiLanguage);
   return (
     <section className={`pilot-panel controller-bay ${pilot.accent} ${pilot.side === "1P" ? "side-left" : "side-right"} ${tasLocked ? "tas-locked" : ""} ${trainingLocked ? "training-locked" : ""}`}>
       <div className="controller-head">
@@ -6759,7 +7198,10 @@ function PilotPanel({
         </div>
       )}
       <div className={aiActive ? "strategy-button-section" : "strategy-button-section inactive"} aria-label={`${pilot.side} ${t(uiLanguage, "pilot.aiStrategy")}`}>
-        <div className="strategy-button-title">{aiActive ? t(uiLanguage, "pilot.aiStrategy") : t(uiLanguage, "pilot.aiStrategyDisabled")}</div>
+        <div className="strategy-button-title">
+          <span>{aiActive ? t(uiLanguage, "pilot.aiStrategy") : t(uiLanguage, "pilot.aiStrategyDisabled")}</span>
+          <strong>{strategyPackTitle}</strong>
+        </div>
         <div className="strategy-button-grid">
           {strategyButtons.map((option) => {
             const selected = aiActive && pilot.strategyKey === option.key;
@@ -7005,9 +7447,14 @@ function OperationStrategyControl({
   onTrainingSavePathSelected,
   onTrainingValidateStrategy,
   onTrainingVersionHistory,
+  onStrategyPackageDirectoryFiles,
+  onStrategyPackageDirectoryPickerOpen,
+  onStrategyPackageCreateNew,
+  onStrategyPackageLibrarySelect,
   onPackageSideScopeToggle,
   onStrategyResourcePackChange,
   onStrategyExportNameChange,
+  onTrainingSpeedModeChange,
   onSync2PResourceTo1P
 }: {
   training: GlobalTrainingState;
@@ -7018,32 +7465,44 @@ function OperationStrategyControl({
   onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
   onTrainingVersionHistory: () => void;
+  onStrategyPackageDirectoryFiles: (files: FileList | null) => void;
+  onStrategyPackageDirectoryPickerOpen: () => void;
+  onStrategyPackageCreateNew: (draft: StrategyPackageDraftInput) => void;
+  onStrategyPackageLibrarySelect: (packId: StrategyResourcePackId) => void;
   onPackageSideScopeToggle: (side: PlayerSide) => void;
   onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
   onStrategyExportNameChange: (name: string) => void;
+  onTrainingSpeedModeChange: (mode: TrainingSpeedMode) => void;
   onSync2PResourceTo1P: () => void;
 }) {
+  const strategyDirectoryInputRef = useRef<HTMLInputElement | null>(null);
   const saveDirectoryInputRef = useRef<HTMLInputElement | null>(null);
-  const saveDirectoryInputProps = { webkitdirectory: "", directory: "" } as Record<string, string>;
-  const selectedPackIds = Array.from(new Set(Object.values(training.resourcePacksBySide)));
-  const resourceSummary = selectedPackIds
-    .map((packId) => {
-      const pack = strategyResourcePackById(packId);
-      return `${pack.displayName[language]} · ${pack.status}`;
-    })
-    .join(" / ");
-  const authorSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).author))).join(" / ");
-  const creatorSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).creator.displayName))).join(" / ");
-  const latestModifierSummary = Array.from(new Set(selectedPackIds.map((packId) => strategyResourcePackById(packId).latestModifier.displayName))).join(" / ");
-  const revisionSummary = selectedPackIds
-    .map((packId) => `${strategyResourcePackById(packId).revisionHistory.length}`)
-    .join(" / ");
-  const archiveSummary = selectedPackIds.map((packId) => strategyResourcePackById(packId).archivePath).join(" / ");
+  const [newPackageDialogOpen, setNewPackageDialogOpen] = useState(false);
+  const [newStrategyPackageDraft, setNewStrategyPackageDraft] = useState<StrategyPackageDraftInput>({
+    name: training.strategyExportName || "个人魂斗罗训练草稿",
+    baseSource: "copy-current",
+    baseStrategyKey: "survival-v0",
+    customCategoryLabel: ""
+  });
+  const directoryInputProps = { webkitdirectory: "", directory: "" } as Record<string, string>;
+  const selectedLibraryPack = strategyResourcePackById(training.selectedStrategyResourcePackId);
   const resultPack = strategyResourcePackById(training.resourcePacksBySide["1P"]);
+  const selectedNewPackageSource = strategyPackageBaseSourceOption(newStrategyPackageDraft.baseSource);
   const qualityGates = validationReport?.qualityGates ?? [];
   const handleSaveStrategy = () => {
     onTrainingSaveStrategy();
     if (training.packageSideScope !== "none") saveDirectoryInputRef.current?.click();
+  };
+  const openNewStrategyPackageDialog = () => {
+    setNewStrategyPackageDraft((current) => ({
+      ...current,
+      name: training.strategyExportName || current.name || "个人魂斗罗训练草稿"
+    }));
+    setNewPackageDialogOpen(true);
+  };
+  const submitNewStrategyPackage = () => {
+    onStrategyPackageCreateNew(newStrategyPackageDraft);
+    setNewPackageDialogOpen(false);
   };
 
   return (
@@ -7052,14 +7511,189 @@ function OperationStrategyControl({
         <Database size={15} />
         <span>{t(language, "training.globalTitle")}</span>
       </div>
-      <div className="training-pack-banner">
-        <strong>{training.strategyPackLabel}</strong>
-        <span>{ACTIVE_STRATEGY_PACK.packId}</span>
+      <div className="strategy-training-speed-controls" aria-label={t(language, "training.trainingSpeed")}>
+        <span>{t(language, "training.trainingSpeed")}</span>
+        <div>
+          {TRAINING_SPEED_OPTIONS.map((option) => (
+            <button
+              aria-pressed={training.trainingSpeedMode === option.key}
+              className={training.trainingSpeedMode === option.key ? "active" : ""}
+              disabled={training.trainingSessionActive}
+              key={option.key}
+              onClick={() => onTrainingSpeedModeChange(option.key)}
+              type="button"
+            >
+              <strong>{option.label[language]}</strong>
+              <small>{option.description[language]}</small>
+            </button>
+          ))}
+        </div>
+        <strong>{training.trainingSpeedLabel}</strong>
+        <small>{training.trainingSpeedDescription}</small>
       </div>
-      <div className="training-session-control" aria-label="训练会话">
-        <strong>{training.trainingSessionLabel}</strong>
-        <span>{language === "en-US" ? "Start or stop from each controller Training title" : "在手柄训练标题处启动或停止"}</span>
+      <div className="strategy-package-browser-frame" aria-label={language === "en-US" ? "Strategy package browser" : "策略包库"}>
+        <div className="strategy-package-directory-header" aria-label={t(language, "training.packageDirectory")}>
+          <div>
+            <span>{t(language, "training.packageDirectory")}</span>
+            <strong>{training.strategyPackageDirectoryLabel}</strong>
+          </div>
+          <button
+            onClick={() => canUseNativeDirectoryPicker() ? void onStrategyPackageDirectoryPickerOpen() : strategyDirectoryInputRef.current?.click()}
+            title={t(language, "training.localReadOnlyHint")}
+            type="button"
+          >
+            <FolderOpen size={14} /> {t(language, "training.choosePackageDirectory")}
+          </button>
+          <button onClick={openNewStrategyPackageDialog} type="button">
+            <Plus size={14} /> {t(language, "training.newStrategyPackage")}
+          </button>
+          <input
+            {...directoryInputProps}
+            className="hidden-save-directory-input"
+            onChange={(event) => {
+              onStrategyPackageDirectoryFiles(event.currentTarget.files);
+              event.currentTarget.value = "";
+            }}
+            ref={strategyDirectoryInputRef}
+            type="file"
+          />
+        </div>
+        <div className="strategy-package-main-grid">
+          <div className="strategy-package-list-panel">
+            <div className="strategy-package-list" role="listbox" aria-label={language === "en-US" ? "Strategy packages" : "策略包"}>
+              {training.strategyResourcePackIds.map((packId) => {
+                const pack = strategyResourcePackById(packId);
+                return (
+                  <button
+                    aria-selected={packId === training.selectedStrategyResourcePackId}
+                    className={packId === training.selectedStrategyResourcePackId ? "strategy-package-list-item selected" : "strategy-package-list-item"}
+                    key={pack.packId}
+                    onClick={() => onStrategyPackageLibrarySelect(packId)}
+                    role="option"
+                    type="button"
+                  >
+                    <strong>{pack.displayName[language]}</strong>
+                    <span>{pack.version} · {pack.status}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="strategy-package-detail-card">
+            <div className="strategy-package-detail-head">
+              <span>{language === "en-US" ? "Selected package" : "选中策略包"}</span>
+              <strong>{selectedLibraryPack.displayName[language]}</strong>
+              <em>{selectedLibraryPack.packId}</em>
+            </div>
+            <div className="strategy-package-detail-grid">
+              <div>
+                <span>{language === "en-US" ? "Version" : "版本"}</span>
+                <strong>{selectedLibraryPack.version}</strong>
+              </div>
+              <div>
+                <span>{language === "en-US" ? "Author" : "作者"}</span>
+                <strong>{selectedLibraryPack.author}</strong>
+              </div>
+              <div>
+                <span>{language === "en-US" ? "Latest" : "最近修改"}</span>
+                <strong>{selectedLibraryPack.latestModifier.displayName}</strong>
+              </div>
+              <div>
+                <span>{t(language, "training.resourceCreator")}</span>
+                <strong>{selectedLibraryPack.creator.displayName}</strong>
+              </div>
+            </div>
+            <div className="strategy-pack-status-strip">
+              <div className={training.activeRomStrategyCompatible ? "compatible" : "warning"}>
+                <span>{language === "en-US" ? "ROM Strategy" : "ROM 策略"}</span>
+                <strong>{training.activeRomStrategyCompatibilityLabel}</strong>
+              </div>
+              <div>
+                <span>{t(language, "training.resourceStandard")}</span>
+                <strong>Protocol {selectedLibraryPack.protocolVersion}</strong>
+              </div>
+              <div>
+                <span>{t(language, "training.resourceRevisions")}</span>
+                <strong>{selectedLibraryPack.revisionHistory.length}</strong>
+              </div>
+              <div className="strategy-edit-policy-note">
+                <span>{t(language, "training.resourceEditPolicy")}</span>
+                <strong>{strategyResourcePackEditPolicyLabel(selectedLibraryPack.packId, language)}</strong>
+              </div>
+            </div>
+            <p>{language === "en-US"
+              ? "Selecting a package applies it to 1P. 2P follows 1P until it has its own selected package."
+              : "点击策略包会应用到 1P；2P 未单独选择时自动跟随 1P，已单独选择时保持独立。"}</p>
+          </div>
+        </div>
       </div>
+      {newPackageDialogOpen ? (
+        <div className="new-strategy-package-backdrop">
+          <div className="new-strategy-package-dialog" role="dialog" aria-modal="true" aria-label={t(language, "training.newPackageTitle")}>
+            <div className="new-strategy-package-head">
+              <strong>{t(language, "training.newPackageTitle")}</strong>
+              <span>{t(language, "training.newPackageReviewHint")}</span>
+            </div>
+            <label>
+              <span>{t(language, "training.newPackageName")}</span>
+              <input
+                onChange={(event) => {
+                  const nextPackageName = event.currentTarget.value;
+                  setNewStrategyPackageDraft((current) => ({ ...current, name: nextPackageName }));
+                }}
+                type="text"
+                value={newStrategyPackageDraft.name}
+              />
+            </label>
+            <label className="new-package-source-selector">
+              <span>{t(language, "training.newPackageBaseSource")}</span>
+              <select
+                onChange={(event) => {
+                  const nextBaseSource = event.currentTarget.value as StrategyPackageBaseSource;
+                  setNewStrategyPackageDraft((current) => ({ ...current, baseSource: nextBaseSource }));
+                }}
+                value={newStrategyPackageDraft.baseSource}
+              >
+                {NEW_STRATEGY_PACKAGE_SOURCE_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>{option.label[language]}</option>
+                ))}
+              </select>
+              <small>{selectedNewPackageSource.detail[language]}</small>
+            </label>
+            <label>
+              <span>{t(language, "training.newPackageBaseStrategy")}</span>
+              <select
+                onChange={(event) => {
+                  const nextBaseStrategy = event.currentTarget.value as AiStrategyKey;
+                  setNewStrategyPackageDraft((current) => ({ ...current, baseStrategyKey: nextBaseStrategy }));
+                }}
+                value={newStrategyPackageDraft.baseStrategyKey}
+              >
+                {standardStrategyCategoryKeys.map((strategyKey) => (
+                  <option key={strategyKey} value={strategyKey}>{localizedAiStrategyLabel(strategyKey, language)}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>{t(language, "training.newPackageCustomCategory")}</span>
+              <input
+                onChange={(event) => {
+                  const nextCustomCategory = event.currentTarget.value;
+                  setNewStrategyPackageDraft((current) => ({ ...current, customCategoryLabel: nextCustomCategory }));
+                }}
+                placeholder={t(language, "training.newPackageCustomHint")}
+                type="text"
+                value={newStrategyPackageDraft.customCategoryLabel}
+              />
+            </label>
+            <p>{t(language, "training.newPackageDraftRule")}</p>
+            <div className="new-strategy-package-actions">
+              <button onClick={() => setNewPackageDialogOpen(false)} type="button">{t(language, "training.cancel")}</button>
+              <button onClick={submitNewStrategyPackage} type="button">{t(language, "training.createPackage")}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="strategy-resource-routing">
         {(["1P", "2P"] as PlayerSide[]).map((side) => {
           const packId = training.resourcePacksBySide[side];
@@ -7078,42 +7712,16 @@ function OperationStrategyControl({
                   <option key={pack.packId} value={pack.packId}>{strategyResourcePackLabel(pack.packId, language)}</option>
                 ))}
               </select>
-              <small>{strategyResourcePackById(packId).archivePath}</small>
+              <div className="strategy-resource-slot-foot">
+                <small>{strategyResourcePackById(packId).archivePath}</small>
+              </div>
             </div>
           );
         })}
         <button className="strategy-resource-sync" onClick={onSync2PResourceTo1P} type="button">{t(language, "training.sync2PTo1P")}</button>
       </div>
-      <div className="strategy-resource-info" aria-label={t(language, "training.resourceInfo")}>
-        <div>
-          <span>{t(language, "training.resourceInfo")}</span>
-          <strong>{resourceSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.resourceAuthor")}</span>
-          <strong>{authorSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.resourceCreator")}</span>
-          <strong>{creatorSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.resourceLatestModifier")}</span>
-          <strong>{latestModifierSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.resourceRevisions")}</span>
-          <strong>{revisionSummary}</strong>
-        </div>
-        <div>
-          <span>{t(language, "training.resourceStandard")}</span>
-          <strong>Protocol {ACTIVE_STRATEGY_PACK.protocolVersion}</strong>
-        </div>
-      </div>
-      <div className="strategy-resource-archive">
-        <span>{t(language, "training.archive")}</span>
-        <strong>{archiveSummary}</strong>
-      </div>
+      <div className="strategy-operations-results-grid">
+        <div className="strategy-command-column">
       <div className="strategy-validation-gates" data-testid="strategy-validation-gates" aria-label={t(language, "training.qualityGates")}>
         <div className="strategy-validation-gates-heading">
           <span>{t(language, "training.qualityGates")}</span>
@@ -7152,23 +7760,31 @@ function OperationStrategyControl({
           </div>
           <small>{strategyPackageSideScopeLabel(training.packageSideScope, language)}</small>
         </div>
-        <button className="validation-replay-button" disabled={traceRecording} onClick={onTrainingValidateStrategy} type="button">{t(language, "training.validateStrategy")}</button>
-        <label className="strategy-save-name-field">
-          <span>{t(language, "training.packageName")}</span>
-          <input
-            onChange={(event) => onStrategyExportNameChange(event.currentTarget.value)}
-            type="text"
-            value={training.strategyExportName}
-          />
-        </label>
-        <button className="save-strategy-button" disabled={!training.validationReplayComplete || traceRecording} onClick={handleSaveStrategy} type="button">
-          {t(language, "training.saveStrategy")}
-        </button>
-        <button className="version-history-button" onClick={onTrainingVersionHistory} type="button">
-          {t(language, "training.versionHistory")}
-        </button>
+        <div className="strategy-package-action-grid">
+          <button className="validation-replay-button" disabled={traceRecording} onClick={onTrainingValidateStrategy} type="button">{t(language, "training.validateStrategy")}</button>
+          <button className="save-strategy-button" disabled={!training.validationReplayComplete || traceRecording} onClick={handleSaveStrategy} type="button">
+            {t(language, "training.saveStrategy")}
+          </button>
+          <button className="version-history-button" onClick={onTrainingVersionHistory} type="button">
+            {t(language, "training.versionHistory")}
+          </button>
+        </div>
+        <div className="strategy-package-save-meta">
+          <label className="strategy-save-name-field">
+            <span>{t(language, "training.packageName")}</span>
+            <input
+              onChange={(event) => onStrategyExportNameChange(event.currentTarget.value)}
+              type="text"
+              value={training.strategyExportName}
+            />
+          </label>
+          <div className="strategy-save-status-stack">
+            <small className="strategy-save-path">{training.savePathLabel || t(language, "training.savePathWaiting")}</small>
+            <small className="strategy-version-status">{training.versionStatusLabel || t(language, "training.rollbackUnavailable")}</small>
+          </div>
+        </div>
         <input
-          {...saveDirectoryInputProps}
+          {...directoryInputProps}
           className="hidden-save-directory-input"
           onChange={(event) => {
             const firstFile = event.currentTarget.files?.[0] as (File & { webkitRelativePath?: string }) | undefined;
@@ -7179,22 +7795,61 @@ function OperationStrategyControl({
           ref={saveDirectoryInputRef}
           type="file"
         />
-        <small className="strategy-save-path">{training.savePathLabel || t(language, "training.savePathWaiting")}</small>
-        <small className="strategy-version-status">{training.versionStatusLabel || t(language, "training.rollbackUnavailable")}</small>
+      </div>
       </div>
       <div className="strategy-result-section" aria-label={t(language, "training.strategyResults")}>
         <div className="strategy-result-heading">
-          <span>{t(language, "training.strategyResults")}</span>
+          <span>{t(language, "training.strategyTrainingProgress")} / {t(language, "training.strategyResults")}</span>
           <strong>{resultPack.displayName[language]}</strong>
         </div>
+        {resultPack.trainingStageSummary ? (
+          <div className="strategy-stage-summary" aria-label={t(language, "training.stageTrainingSummary")}>
+            <div className="strategy-stage-summary-title">
+              <strong>{t(language, "training.stageTrainingSummary")}</strong>
+              <span>{resultPack.trainingStageSummary.dataMode === "migration-with-estimate" ? "migration" : "measured"}</span>
+            </div>
+            <div className="strategy-stage-summary-grid">
+              <span>{t(language, "training.stageRuns")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.trainingRuns ?? { value: null, status: "unverified" }, language)}</b>
+              <span>{t(language, "training.stageKnownDeaths")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.knownDeaths ?? { value: null, status: "unverified" }, language)}</b>
+              <span>{t(language, "training.stageUnknownDeaths")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.unknownDeathRuns ?? { value: null, status: "unverified" }, language)}</b>
+              <span>{t(language, "training.stageRecordedTime")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.recordedRunTimeSeconds ?? { value: null, status: "unverified" }, language, "seconds")}</b>
+              <span>{t(language, "training.stageHistoricalEstimate")}</span>
+              <b>{Number.isFinite(resultPack.trainingStageSummary.historicalEstimate?.estimatedSeconds)
+                ? `${language === "en-US" ? "about " : "约"}${formatTrainingDurationSeconds(resultPack.trainingStageSummary.historicalEstimate?.estimatedSeconds ?? 0, language)}`
+                : t(language, "training.progressUnverified")}</b>
+              <span>{t(language, "training.stageClearProgress")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.clearProgress ?? { value: null, status: "unverified" }, language)}</b>
+              <span>{t(language, "training.stageClearTime")}</span>
+              <b>{strategyTrainingProgressMetricLabel(resultPack.trainingStageSummary.summary?.clearTimeSeconds ?? { value: null, status: "unverified" }, language, "seconds")}</b>
+            </div>
+          </div>
+        ) : null}
         <div className="strategy-result-board">
           {strategyResultKeys.map((strategyKey) => {
             const record = resultPack.strategyResults[strategyKey] ?? unverifiedStrategyResult("Missing result record.");
+            const progressRecord = resultPack.trainingProgress[strategyKey] ?? unverifiedStrategyTrainingProgress("Missing training progress record.");
+            const strategyDescriptions = resultPack.strategyDescriptions as Partial<Record<AiStrategyKey, StrategyDescriptionRecord>>;
+            const strategyDescription = localizedStrategyDescription(strategyDescriptions[strategyKey], strategyKey, language);
             return (
               <div className="strategy-result-card" key={strategyKey}>
                 <div className="strategy-result-card-head">
-                  <strong>{localizedAiStrategyLabel(strategyKey, language)}</strong>
+                  <strong>{strategyDescription.label}</strong>
                   <span>{strategyResultStatusLabel(record, language)}</span>
+                </div>
+                <p className="strategy-result-description">{strategyDescription.summary}</p>
+                <div className="strategy-training-progress-metrics">
+                  <span>{t(language, "training.progressRuns")}</span>
+                  <b>{strategyTrainingProgressMetricLabel(progressRecord.metrics.trainingRuns, language)}</b>
+                  <span>{t(language, "training.progressDeaths")}</span>
+                  <b>{strategyTrainingProgressMetricLabel(progressRecord.metrics.deaths, language)}</b>
+                  <span>{t(language, "training.progressTime")}</span>
+                  <b>{strategyTrainingProgressMetricLabel(progressRecord.metrics.trainingTimeSeconds, language, "seconds")}</b>
+                  <span>{t(language, "training.progressClearance")}</span>
+                  <b>{strategyTrainingProgressMetricLabel(progressRecord.metrics.clearProgress, language)}</b>
                 </div>
                 <div className="strategy-result-metrics">
                   <span>{t(language, "training.resultKills")}</span>
@@ -7212,12 +7867,14 @@ function OperationStrategyControl({
         </div>
       </div>
     </div>
+    </div>
   );
 }
 
 function TasWindow({
   tasEntry,
   selectedMovieId,
+  loadedMovieId,
   language,
   commentaryMode,
   playback,
@@ -7231,6 +7888,7 @@ function TasWindow({
 }: {
   tasEntry: TasRegistryEntry | null;
   selectedMovieId: string;
+  loadedMovieId: string;
   language: UiLanguage;
   commentaryMode: TasCommentaryMode;
   playback: TasPlaybackUiState;
@@ -7243,14 +7901,19 @@ function TasWindow({
   onGenerateBaseline: (movieId: string, side: PlayerSide) => void;
 }) {
   const movies = tasMoviesForEntry(tasEntry);
-  const selectedMovie = movies.find((movie) => movie.id === selectedMovieId) ?? selectDefaultTasMovie(tasEntry);
-  const modes = selectedMovie?.commentaryModes ?? [];
+  const defaultMovie = selectDefaultTasMovie(tasEntry);
+  const pendingMovie = selectedMovieId ? movies.find((movie) => movie.id === selectedMovieId) ?? null : null;
+  const selectedMovie = loadedMovieId ? movies.find((movie) => movie.id === loadedMovieId) ?? null : null;
+  const unloadedLabel = t(language, "tas.notLoaded");
+  const modes = selectedMovie?.commentaryModes ?? TAS_COMMENTARY_MODE_OPTIONS;
   const progress = playback.totalFrames > 0
     ? `${playback.frameIndex}/${playback.totalFrames}`
-    : t(language, "tas.notLoaded");
+    : unloadedLabel;
   const commentary = selectedMovie
     ? buildTasCommentary(selectedMovie, commentaryMode)
-    : t(language, "tas.noMatch");
+    : unloadedLabel;
+  const loadPrompt = tasEntry ? t(language, "tas.loadPromptDetail") : t(language, "tas.noMatchDetail");
+  const canLoadMovie = Boolean(tasEntry && (pendingMovie || defaultMovie));
   const canUseMovie = Boolean(tasEntry && selectedMovie);
   const movieTitle = (movie: NonNullable<typeof selectedMovie>) => (
     language === "en-US" ? movie.title.en : movie.title.zh
@@ -7297,7 +7960,7 @@ function TasWindow({
             )}
           </div>
           <div className="tas-control-row">
-            <button disabled={!canUseMovie || playback.status === "loading"} onClick={onLoad} type="button">
+            <button disabled={!canLoadMovie || playback.status === "loading"} onClick={onLoad} type="button">
               <Database size={14} /> {t(language, "tas.load")}
             </button>
             <button disabled={!canUseMovie || playback.status === "loading" || playback.status === "playing"} onClick={onPlay} type="button">
@@ -7310,59 +7973,75 @@ function TasWindow({
               <Square size={14} /> {t(language, "tas.stop")}
             </button>
           </div>
+          <div className="tas-baseline-actions" aria-label={t(language, "tas.generateBaseline")}>
+            <button
+              disabled={!canUseMovie || hasGeneratedBaseline("1P")}
+              onClick={() => { if (selectedMovie) onGenerateBaseline(selectedMovie.id, "1P"); }}
+              type="button"
+            >
+              {generateBaselineLabel("1P")}
+            </button>
+            <button
+              disabled={!canUseMovie || hasGeneratedBaseline("2P")}
+              onClick={() => { if (selectedMovie) onGenerateBaseline(selectedMovie.id, "2P"); }}
+              type="button"
+            >
+              {generateBaselineLabel("2P")}
+            </button>
+          </div>
         </div>
         <div className="tas-detail">
-          {selectedMovie ? (
-            <>
-              <div className="tas-title-row">
-                <strong>{movieTitle(selectedMovie)}</strong>
-                <span>{selectedMovie.players} / {selectedMovie.category}</span>
-              </div>
-              <div className="tas-subtitle-row">
-                <span>{movieSubtitle(selectedMovie)}</span>
-                <b>{selectedMovie.fileName}</b>
-              </div>
-              <p>{selectedMovie.summaryZh}</p>
-              <div className="tas-info-grid">
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.source")}：</span>
-                  <b className="tas-fact-value">{selectedMovie.sourceNote}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.keyMoments")}：</span>
-                  <b className="tas-fact-value">{selectedMovie.keyMoments.slice(0, 2).join(" / ")}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.risk")}：</span>
-                  <b className="tas-fact-value">{selectedMovie.riskNotes[0]}</b>
-                </div>
-              </div>
-              <div className="tas-meta-grid">
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.trainingBase")}：</span>
-                  <b className="tas-fact-value">{recommendationLabel(selectedMovie)}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.artifact")}：</span>
-                  <b className="tas-fact-value">{tasEntry?.trainingBasePath ?? "-"}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.checksum")}：</span>
-                  <b className="tas-fact-value">{playback.checksumStatus}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.progress")}：</span>
-                  <b className="tas-fact-value">{progress}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.phase")}：</span>
-                  <b className="tas-fact-value">{tasPhaseLabel(playback.phase)}</b>
-                </div>
-                <div className="tas-fact-row">
-                  <span className="tas-fact-label">{t(language, "tas.currentInput")}：</span>
-                  <b className="tas-fact-value">{playback.currentInput}</b>
-                </div>
-              </div>
+          <div className="tas-title-row">
+            <strong>{selectedMovie ? movieTitle(selectedMovie) : unloadedLabel}</strong>
+            <span>{selectedMovie ? `${selectedMovie.players} / ${selectedMovie.category}` : unloadedLabel}</span>
+          </div>
+          <div className="tas-subtitle-row">
+            <span>{selectedMovie ? movieSubtitle(selectedMovie) : unloadedLabel}</span>
+            <b>{selectedMovie ? selectedMovie.fileName : unloadedLabel}</b>
+          </div>
+          <p>{selectedMovie ? selectedMovie.summaryZh : loadPrompt}</p>
+          <div className="tas-info-grid">
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.source")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? selectedMovie.sourceNote : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.keyMoments")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? selectedMovie.keyMoments.slice(0, 2).join(" / ") : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.risk")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? selectedMovie.riskNotes[0] : unloadedLabel}</b>
+            </div>
+          </div>
+          <div className="tas-meta-grid">
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.trainingBase")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? recommendationLabel(selectedMovie) : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.artifact")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? tasEntry?.trainingBasePath ?? "-" : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.checksum")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? playback.checksumStatus : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.progress")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? progress : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.phase")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? tasPhaseLabel(playback.phase) : unloadedLabel}</b>
+            </div>
+            <div className="tas-fact-row">
+              <span className="tas-fact-label">{t(language, "tas.currentInput")}：</span>
+              <b className="tas-fact-value">{selectedMovie ? playback.currentInput : unloadedLabel}</b>
+            </div>
+          </div>
+          <div className="tas-commentary-layout">
+            <div className="tas-commentary-rail">
               <div className="tas-mode-strip" aria-label={t(language, "tas.commentaryMode")}>
                 {modes.map((mode) => (
                   <button
@@ -7375,27 +8054,9 @@ function TasWindow({
                   </button>
                 ))}
               </div>
-              <div className="tas-commentary">{commentary}</div>
-              <div className="tas-baseline-actions" aria-label={t(language, "tas.generateBaseline")}>
-                <button
-                  disabled={hasGeneratedBaseline("1P")}
-                  onClick={() => onGenerateBaseline(selectedMovie.id, "1P")}
-                  type="button"
-                >
-                  {generateBaselineLabel("1P")}
-                </button>
-                <button
-                  disabled={hasGeneratedBaseline("2P")}
-                  onClick={() => onGenerateBaseline(selectedMovie.id, "2P")}
-                  type="button"
-                >
-                  {generateBaselineLabel("2P")}
-                </button>
-              </div>
-            </>
-          ) : (
-            <p>{t(language, "tas.noMatchDetail")}</p>
-          )}
+            </div>
+            <div className="tas-commentary">{commentary}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -7448,7 +8109,9 @@ function ConsoleDeck({
   romLibraryStatus,
   selectedRomEntry,
   selectedTasMovieId,
+  loadedTasMovieId,
   startupLaunchPreset,
+  startupPresetEditable,
   tasCommentaryMode,
   tasPlaybackState,
   uiLanguage,
@@ -7456,6 +8119,7 @@ function ConsoleDeck({
   validationReport,
   traceRecording,
   onDirectoryFiles,
+  onDirectoryPickerOpen,
   onLoadLocalRom,
   onSelectRom,
   onTasCommentaryModeChange,
@@ -7474,9 +8138,14 @@ function ConsoleDeck({
   onTrainingSavePathSelected,
   onTrainingValidateStrategy,
   onTrainingVersionHistory,
+  onStrategyPackageDirectoryFiles,
+  onStrategyPackageDirectoryPickerOpen,
+  onStrategyPackageCreateNew,
+  onStrategyPackageLibrarySelect,
   onPackageSideScopeToggle,
   onStrategyResourcePackChange,
   onStrategyExportNameChange,
+  onTrainingSpeedModeChange,
   onSync2PResourceTo1P
 }: {
   status: RuntimeStatus;
@@ -7486,7 +8155,9 @@ function ConsoleDeck({
   romLibraryStatus: RomLibraryStatusState;
   selectedRomEntry: RomLibraryEntry | null;
   selectedTasMovieId: string;
+  loadedTasMovieId: string;
   startupLaunchPreset: StartupLaunchPreset;
+  startupPresetEditable: boolean;
   tasCommentaryMode: TasCommentaryMode;
   tasPlaybackState: TasPlaybackUiState;
   uiLanguage: UiLanguage;
@@ -7494,6 +8165,7 @@ function ConsoleDeck({
   validationReport: StrategyPackageValidationReport | null;
   traceRecording: boolean;
   onDirectoryFiles: (files: FileList | null) => void;
+  onDirectoryPickerOpen: () => void;
   onLoadLocalRom: () => void;
   onSelectRom: (id: string) => void;
   onTasCommentaryModeChange: (mode: TasCommentaryMode) => void;
@@ -7512,9 +8184,14 @@ function ConsoleDeck({
   onTrainingSavePathSelected: (pathLabel: string) => void;
   onTrainingValidateStrategy: () => void;
   onTrainingVersionHistory: () => void;
+  onStrategyPackageDirectoryFiles: (files: FileList | null) => void;
+  onStrategyPackageDirectoryPickerOpen: () => void;
+  onStrategyPackageCreateNew: (draft: StrategyPackageDraftInput) => void;
+  onStrategyPackageLibrarySelect: (packId: StrategyResourcePackId) => void;
   onPackageSideScopeToggle: (side: PlayerSide) => void;
   onStrategyResourcePackChange: (side: PlayerSide, packId: StrategyResourcePackId) => void;
   onStrategyExportNameChange: (name: string) => void;
+  onTrainingSpeedModeChange: (mode: TrainingSpeedMode) => void;
   onSync2PResourceTo1P: () => void;
 }) {
   const directoryInputRef = useRef<HTMLInputElement | null>(null);
@@ -7526,18 +8203,31 @@ function ConsoleDeck({
   const selectedTas = identifyTasForRom(selectedMetadata);
   const loadedTas = identifyTasForRom(romMetadata);
   const directoryInputProps = { webkitdirectory: "", directory: "" } as Record<string, string>;
+  const startupPresetLocked = !startupPresetEditable;
+  const runButtonLabel = isRunning
+    ? t(uiLanguage, "console.pause")
+    : status === "loaded"
+      ? t(uiLanguage, "console.start")
+      : t(uiLanguage, "console.continue");
+  const cartridgeTitle = romMetadata
+    ? `${loadedUiStatus.chineseName} · ${romMetadata.displayTitle}`
+    : hasRom
+      ? t(uiLanguage, "console.localRomInserted")
+      : t(uiLanguage, "console.waitingCartridge");
+  const cartridgeIntro = romMetadata
+    ? loadedUiStatus.intro[uiLanguage]
+    : hasRom
+      ? t(uiLanguage, "console.cartridgeUnknownIntro")
+      : t(uiLanguage, "console.cartridgeEmptyIntro");
 
   return (
     <section className="console-deck" aria-label="主机">
       <div className="console-machine-frame">
-      <div className="console-status-strip">
-        <span>{t(uiLanguage, "console.path")}：{romMetadata?.filePath || t(uiLanguage, "console.noLocalPath")}</span>
-        <strong>{t(uiLanguage, "console.hostStatus")}：{runtimeStatusLabel(status, uiLanguage)}</strong>
-      </div>
       <div className="console-left">
         <div className="panel-title">
           <Cpu size={18} />
           <span>{t(uiLanguage, "console.host")}</span>
+          <small className="console-host-status-chip">{t(uiLanguage, "console.hostStatus")}：{runtimeStatusLabel(status, uiLanguage)}</small>
           <small className="hardware-spec">{FC_HARDWARE_SPEC}</small>
           <LanguageSwitch language={uiLanguage} onLanguageChange={onLanguageChange} />
         </div>
@@ -7557,11 +8247,14 @@ function ConsoleDeck({
           <div className="rom-library-browser">
             <div className="rom-library-header">
               <div>
-                <span>{t(uiLanguage, "console.romDirectory")}</span>
                 <strong>{romLibraryDirLabel}</strong>
-                <small>{romLibraryStatusLabel(romLibraryStatus, uiLanguage)}</small>
+                <small>（{romLibraryHeaderStatusLabel(romLibraryStatus, uiLanguage)}）</small>
               </div>
-              <button onClick={() => directoryInputRef.current?.click()} type="button">
+              <button
+                onClick={() => canUseNativeDirectoryPicker() ? void onDirectoryPickerOpen() : directoryInputRef.current?.click()}
+                title={t(uiLanguage, "console.localReadOnlyHint")}
+                type="button"
+              >
                 <FolderOpen size={15} />
                 {t(uiLanguage, "console.chooseRomDirectory")}
               </button>
@@ -7587,18 +8280,11 @@ function ConsoleDeck({
                   <strong>{romEntryTitle(selectedRomEntry)}</strong>
                 </div>
                 {selectedMetadata ? (
+                  <>
                   <div className="rom-meta-grid compact" aria-label="选中 ROM 详情">
                     <div>
                       <span>{t(uiLanguage, "console.chineseTitle")}</span>
                       <b>{selectedUiStatus.chineseName}</b>
-                    </div>
-                    <div>
-                      <span>{t(uiLanguage, "console.strategy")}</span>
-                      <b>{localizedStrategyStatusLabel(selectedUiStatus.strategyStatus, uiLanguage)}</b>
-                    </div>
-                    <div>
-                      <span>TAS</span>
-                      <b>{localizedTasStatusLabel(selectedTas, uiLanguage)}</b>
                     </div>
                     <div>
                       <span>{t(uiLanguage, "console.version")}</span>
@@ -7609,10 +8295,6 @@ function ConsoleDeck({
                       <b>{selectedMetadata.romProfileId}</b>
                     </div>
                     <div>
-                      <span>{t(uiLanguage, "console.support")}</span>
-                      <b>{localizedRomSupportLabel(selectedMetadata.romSupportLabel, uiLanguage)}</b>
-                    </div>
-                    <div>
                       <span>{t(uiLanguage, "console.size")}</span>
                       <b>{selectedMetadata.sizeLabel}</b>
                     </div>
@@ -7620,6 +8302,8 @@ function ConsoleDeck({
                       <span>Mapper</span>
                       <b>{selectedMetadata.mapperLabel}</b>
                     </div>
+                  </div>
+                  <div className="rom-checksum-strip" aria-label="ROM 校验值">
                     <div>
                       <span>PRG/CHR</span>
                       <b>{selectedMetadata.prgRomKb} KB / {selectedMetadata.chrRomKb} KB</b>
@@ -7637,6 +8321,21 @@ function ConsoleDeck({
                       <b>{selectedMetadata.sha256Short || pendingHashLabel(uiLanguage)}</b>
                     </div>
                   </div>
+                  <div className="rom-system-status-row" aria-label="FC AI 状态">
+                    <div>
+                      <span>{t(uiLanguage, "console.strategy")}</span>
+                      <b>{localizedStrategyStatusLabel(selectedUiStatus.strategyStatus, uiLanguage)}</b>
+                    </div>
+                    <div>
+                      <span>TAS</span>
+                      <b>{localizedTasStatusLabel(selectedTas, uiLanguage)}</b>
+                    </div>
+                    <div>
+                      <span>{t(uiLanguage, "console.support")}</span>
+                      <b>{localizedRomSupportLabel(selectedMetadata.romSupportLabel, uiLanguage)}</b>
+                    </div>
+                  </div>
+                  </>
                 ) : (
                   <small>{t(uiLanguage, "console.selectRomHint")}</small>
                 )}
@@ -7660,27 +8359,49 @@ function ConsoleDeck({
         </div>
       </div>
       <div className="console-power-panel">
-        <div className="startup-preset-row" aria-label={uiLanguage === "en-US" ? "Startup preset" : "开局预设"}>
-          <span>{uiLanguage === "en-US" ? "Startup" : "开局预设"}</span>
-          {startupPresetOptions.map((option) => (
-            <button
-              className={option.key === startupLaunchPreset ? "startup-preset-button active" : "startup-preset-button"}
-              key={option.key}
-              onClick={() => onStartupLaunchPresetChange(option.key)}
-              type="button"
-            >
-              <strong>{option.label[uiLanguage]}</strong>
-              <small>{option.detail[uiLanguage]}</small>
-            </button>
-          ))}
-        </div>
-        <div className="console-controls">
-          <button disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button"><Upload size={15} /> {t(uiLanguage, "console.loadCartridge")}</button>
-          <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
-            <Power size={15} />
-            {isRunning ? t(uiLanguage, "console.pause") : t(uiLanguage, "console.continue")}
+        <div className="console-machine-actions" aria-label={uiLanguage === "en-US" ? "Machine actions" : "主机操作"}>
+          <button className="console-load-cartridge-button" disabled={!selectedRomEntry} onClick={onLoadLocalRom} type="button">
+            <Upload size={16} />
+            {t(uiLanguage, "console.loadCartridge")}
           </button>
-          <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
+          <div className="console-run-reset-stack">
+            <button disabled={!hasRom} onClick={isRunning ? onPause : onRun} type="button">
+              <Power size={15} />
+              {runButtonLabel}
+            </button>
+            <button disabled={!hasRom} onClick={onReset} type="button"><RotateCcw size={15} /> Reset</button>
+          </div>
+        </div>
+        <div className="cartridge-status-frame" aria-label="当前已插入卡带">
+          <div className={romMetadata ? "cartridge-visual inserted" : "cartridge-visual empty"}>
+            <img
+              alt={romMetadata ? `${loadedUiStatus.chineseName} ${romMetadata.displayTitle}` : (uiLanguage === "en-US" ? "Insert cartridge" : "请插入卡带")}
+              src={cartridgeArtworkSrc(romMetadata)}
+            />
+          </div>
+          <div className="cartridge-status-detail">
+            <strong className="cartridge-status-name" title={cartridgeTitle}>
+              {cartridgeTitle}
+            </strong>
+            <p className="cartridge-status-intro">{cartridgeIntro}</p>
+          </div>
+        </div>
+        <div className="startup-preset-frame" aria-label={uiLanguage === "en-US" ? "Startup preset" : "开局预设"}>
+          <span className="startup-preset-title">{uiLanguage === "en-US" ? "Startup" : "开局预设"}</span>
+          <div className="startup-preset-row">
+            {startupPresetOptions.map((option) => (
+              <button
+                className={option.key === startupLaunchPreset ? "startup-preset-button active" : "startup-preset-button"}
+                disabled={startupPresetLocked}
+                key={option.key}
+                onClick={() => onStartupLaunchPresetChange(option.key)}
+                type="button"
+              >
+                <strong>{option.label[uiLanguage]}</strong>
+                <small>{option.detail[uiLanguage]}</small>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       </div>
@@ -7694,6 +8415,7 @@ function ConsoleDeck({
         onStop={onTasStop}
         onGenerateBaseline={onTasGenerateBaseline}
         language={uiLanguage}
+        loadedMovieId={loadedTasMovieId}
         playback={tasPlaybackState}
         selectedMovieId={selectedTasMovieId}
         tasEntry={loadedTas}
@@ -7706,9 +8428,14 @@ function ConsoleDeck({
         onTrainingSavePathSelected={onTrainingSavePathSelected}
         onTrainingValidateStrategy={onTrainingValidateStrategy}
         onTrainingVersionHistory={onTrainingVersionHistory}
+        onStrategyPackageDirectoryFiles={onStrategyPackageDirectoryFiles}
+        onStrategyPackageDirectoryPickerOpen={onStrategyPackageDirectoryPickerOpen}
+        onStrategyPackageCreateNew={onStrategyPackageCreateNew}
+        onStrategyPackageLibrarySelect={onStrategyPackageLibrarySelect}
         onPackageSideScopeToggle={onPackageSideScopeToggle}
         onStrategyResourcePackChange={onStrategyResourcePackChange}
         onStrategyExportNameChange={onStrategyExportNameChange}
+        onTrainingSpeedModeChange={onTrainingSpeedModeChange}
         onSync2PResourceTo1P={onSync2PResourceTo1P}
         traceRecording={traceRecording}
       />
@@ -8120,7 +8847,7 @@ function App() {
   const autoSmokeStartedRef = useRef(false);
   const autoRecordStartedRef = useRef(false);
   const botRunStartedRef = useRef(false);
-  const startupLaunchPresetRef = useRef<StartupLaunchPreset>("wait");
+  const startupLaunchPresetRef = useRef<StartupLaunchPreset>("auto-1p");
   const romSelectionTouchedRef = useRef(false);
   const audioBlockedLoggedRef = useRef(false);
   const audioOnLoggedRef = useRef(false);
@@ -8151,7 +8878,7 @@ function App() {
   const bossWallPhaseStatesRef = useRef<Record<PlayerSide, BossWallPhaseState>>(createBossWallPhaseStates());
   const lastRawAiButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
   const lastLockedAiButtonsRef = useRef<PlayerButtonStates>(createPlayerButtonStates());
-  const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const controlModesRef = useRef<Record<PlayerSide, ControlMode>>({ "1P": "ai", "2P": "human" });
   const strategyModelsRef = useRef<Record<PlayerSide, AiStrategyKey>>({
     "1P": defaultAiStrategyForSide("1P"),
     "2P": defaultAiStrategyForSide("2P")
@@ -8161,7 +8888,8 @@ function App() {
     "2P": gamepadLabel(null, 1)
   });
   const [status, setStatus] = useState<RuntimeStatus>("no-rom");
-  const [startupLaunchPreset, setStartupLaunchPreset] = useState<StartupLaunchPreset>("wait");
+  const [startupLaunchPreset, setStartupLaunchPreset] = useState<StartupLaunchPreset>("auto-1p");
+  const [startupPresetEditable, setStartupPresetEditable] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioStatus>("off");
   const [message, setMessage] = useState("加载本地用户自有 ROM 后开始真实模拟器测试。");
   const [romMetadata, setRomMetadata] = useState<RomMetadata | null>(null);
@@ -8195,6 +8923,7 @@ function App() {
   const [packageSideScope, setPackageSideScope] = useState<StrategyPackageSideScope>("1p-only");
   const [strategyExportName, setStrategyExportName] = useState<string>(ACTIVE_STRATEGY_PACK.displayName["zh-CN"]);
   const [validationReplayComplete, setValidationReplayComplete] = useState(false);
+  const [strategyPackageDirectoryLabel, setStrategyPackageDirectoryLabel] = useState(DEFAULT_STRATEGY_PACKAGE_DIRECTORY_LABEL);
   const [strategySavePathLabel, setStrategySavePathLabel] = useState("");
   const [strategyVersionStatusLabel, setStrategyVersionStatusLabel] = useState("");
   const [strategyResourcePacksBySide, setStrategyResourcePacksBySide] = useState<Record<PlayerSide, StrategyResourcePackId>>({
@@ -8206,6 +8935,8 @@ function App() {
     "2P": DEFAULT_SIDE_BASELINE_ID
   });
   const [selectedTrainingMethod, setSelectedTrainingMethod] = useState<SideTrainingMethod>(DEFAULT_SIDE_TRAINING_METHOD);
+  const [selectedTrainingSpeedMode, setSelectedTrainingSpeedMode] = useState<TrainingSpeedMode>("standard");
+  const [pendingTrainingFastRun, setPendingTrainingFastRun] = useState<PendingTrainingFastRun | null>(null);
   const [selectedTrainingSides, setSelectedTrainingSides] = useState<Record<PlayerSide, boolean>>({
     "1P": true,
     "2P": false
@@ -8222,9 +8953,10 @@ function App() {
   const trainingRunActive = trainingRunActiveSides["1P"] || trainingRunActiveSides["2P"];
   const [p2StrategyResourceOverridden, setP2StrategyResourceOverridden] = useState(false);
   const [selectedTasMovieId, setSelectedTasMovieId] = useState("");
+  const [loadedTasMovieId, setLoadedTasMovieId] = useState("");
   const [tasCommentaryMode, setTasCommentaryMode] = useState<TasCommentaryMode>("strategy-analysis");
   const [tasPlaybackState, setTasPlaybackState] = useState<TasPlaybackUiState>(createIdleTasPlaybackState);
-  const [controlModes, setControlModes] = useState<Record<PlayerSide, ControlMode>>({ "1P": "human", "2P": "human" });
+  const [controlModes, setControlModes] = useState<Record<PlayerSide, ControlMode>>({ "1P": "ai", "2P": "human" });
   const [strategyModels, setStrategyModels] = useState<Record<PlayerSide, AiStrategyKey>>({
     "1P": defaultAiStrategyForSide("1P"),
     "2P": defaultAiStrategyForSide("2P")
@@ -8326,8 +9058,8 @@ function App() {
     }
   }, [appendLog, hydrateBrowserRomEntry, romLibraryEntries]);
 
-  const handleRomDirectoryFiles = useCallback((files: FileList | null) => {
-    const nesFiles = Array.from(files ?? []).filter((file) => file.name.toLowerCase().endsWith(".nes"));
+  const importBrowserRomFiles = useCallback((files: readonly File[]) => {
+    const nesFiles = files.filter((file) => file.name.toLowerCase().endsWith(".nes"));
     if (nesFiles.length === 0) {
       setRomLibraryStatus({ code: "browser-empty" });
       appendLog("ROM库：所选目录未发现 .nes 卡带");
@@ -8348,6 +9080,26 @@ function App() {
       appendLog(`ROM库：玩家目录读取失败（${detail}）`);
     });
   }, [appendLog]);
+
+  const handleRomDirectoryFiles = useCallback((files: FileList | null) => {
+    importBrowserRomFiles(Array.from(files ?? []));
+  }, [importBrowserRomFiles]);
+
+  const openRomDirectoryPicker = useCallback(async () => {
+    if (!canUseNativeDirectoryPicker() || !window.showDirectoryPicker) {
+      return;
+    }
+    try {
+      const directoryHandle = await window.showDirectoryPicker({ mode: "read" });
+      const files = await collectFilesFromDirectoryHandle(directoryHandle);
+      importBrowserRomFiles(files);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      const detail = error instanceof Error ? error.message : String(error);
+      setRomLibraryStatus({ code: "browser-error", detail });
+      appendLog(`ROM库：系统目录选择失败（${detail}）`);
+    }
+  }, [appendLog, importBrowserRomFiles]);
 
   useEffect(() => {
     void refreshDefaultRomLibrary();
@@ -9270,6 +10022,7 @@ function App() {
     runningRef.current = running;
     if (running) {
       void enableAudio();
+      setStartupPresetEditable(false);
       setStatus("running");
       if (forceRestart && timerRef.current !== null) {
         window.clearInterval(timerRef.current);
@@ -9333,6 +10086,7 @@ function App() {
       };
       tasPlaybackGuardRef.current = createTasPlaybackGuardState(playbackStartFrame);
       setSelectedTasMovieId(movie.id);
+      setLoadedTasMovieId(movie.id);
       setTasPlaybackState({
         status: "ready",
         movieId: movie.id,
@@ -9357,6 +10111,7 @@ function App() {
         frameIndex: 0
       };
       tasPlaybackGuardRef.current = createTasPlaybackGuardState();
+      setLoadedTasMovieId("");
       setTasPlaybackState({
         status: "error",
         movieId: movie.id,
@@ -9385,6 +10140,7 @@ function App() {
     };
     tasPlaybackGuardRef.current = createTasPlaybackGuardState();
     setSelectedTasMovieId(movieId);
+    setLoadedTasMovieId("");
     setSourceButtons("1P", "tas", createButtonState());
     setSourceButtons("2P", "tas", createButtonState());
     setTasPlaybackState({
@@ -9449,10 +10205,19 @@ function App() {
     }
 
     setRunning(false);
-    const preloadedMovieId = tasPlaybackRef.current.movieId || selectedTasMovieId;
-    let movieEntry = tasMoviesForEntry(identifyTasForRom(romMetadata)).find((item) => item.id === preloadedMovieId)
-      ?? selectDefaultTasMovie(identifyTasForRom(romMetadata));
-    let parsed = tasMovieRef.current && tasPlaybackRef.current.movieId === selectedTasMovieId
+    const entry = identifyTasForRom(romMetadata);
+    const preloadedMovieId = tasPlaybackRef.current.movieId || loadedTasMovieId;
+    let movieEntry = tasMoviesForEntry(entry).find((item) => item.id === preloadedMovieId) ?? null;
+    if (!movieEntry) {
+      setTasPlaybackState((current) => ({
+        ...current,
+        status: "error",
+        messageKey: "load-rom-first",
+        message: "Load a TAS movie before replay"
+      }));
+      return;
+    }
+    let parsed = tasMovieRef.current && tasPlaybackRef.current.movieId === loadedTasMovieId
       ? tasMovieRef.current
       : null;
     let movieId = preloadedMovieId;
@@ -9507,6 +10272,7 @@ function App() {
     resetPlayerMetrics,
     resetRamTracking,
     romMetadata,
+    loadedTasMovieId,
     selectedTasMovieId,
     setRunning
   ]);
@@ -9538,6 +10304,25 @@ function App() {
     appendLog(`Training ${side}: method ${option.label}`);
   }, [appendLog, trainingSessionActive]);
 
+  const onTrainingSpeedModeChange = useCallback((mode: TrainingSpeedMode) => {
+    if (trainingSessionActive) {
+      appendLog("Training speed change blocked because training is active");
+      return;
+    }
+    const option = trainingSpeedOptionByMode(mode);
+    setSelectedTrainingSpeedMode(option.key);
+    appendLog(`Training speed: ${option.label[uiLanguage]} / ${option.description[uiLanguage]}`);
+  }, [appendLog, trainingSessionActive, uiLanguage]);
+
+  const onSideTrainingStrategyChange = useCallback((side: PlayerSide, strategy: AiStrategyKey) => {
+    if (activeTrainingSides[side]) {
+      appendLog(`Training ${side}: strategy change blocked because training is active`);
+      return;
+    }
+    changeStrategyModel(side, strategy);
+    appendLog(`Training ${side}: strategy ${localizedAiStrategyLabel(strategy, uiLanguage)}`);
+  }, [activeTrainingSides, appendLog, changeStrategyModel, uiLanguage]);
+
   const startSideTraining = useCallback((side: PlayerSide) => {
     if (activeTrainingSides[side]) {
       appendLog(`Training ${side}: already active`);
@@ -9548,18 +10333,40 @@ function App() {
     setPackageSideScope((current) => packageScopeHasSide(current, side) ? current : side === "1P" ? "1p-only" : "2p-only");
     const mode = trainingControlModeForSelection(selectedSideBaselineIds[side], selectedTrainingMethod);
     changeControlMode(side, mode);
+    if (!traceRecording) startTraceRecording();
+    const startsAutoRun = selectedSideBaselineIds[side] === "ai-run-new" || selectedTrainingMethod === "auto-patch";
+    setTrainingRunActiveSides((current) => ({ ...current, [side]: startsAutoRun }));
+    const speedOption = trainingSpeedOptionByMode(selectedTrainingSpeedMode);
+    if (startsAutoRun && side === "1P" && speedOption.key !== "standard") {
+      setPendingTrainingFastRun({
+        requestId: Date.now(),
+        side,
+        frames: speedOption.frames,
+        strategy: botRunStrategyFromAiStrategy(strategyModelsRef.current[side]),
+        speedMode: speedOption.key
+      });
+      appendLog(`Training: queued ${side} ${speedOption.label[uiLanguage]} batch / ${speedOption.frames} frames`);
+    } else {
+      if (startsAutoRun && side === "2P" && speedOption.key !== "standard") {
+        appendLog("Training 2P: fast mode waits for verified 2P RAM; using standard visible run");
+      }
+      setRunning(true);
+    }
     appendLog(`Training: started ${side} / ${controlModeLabels[mode]}`);
-  }, [activeTrainingSides, appendLog, changeControlMode, selectedSideBaselineIds, selectedTrainingMethod]);
+  }, [activeTrainingSides, appendLog, changeControlMode, selectedSideBaselineIds, selectedTrainingMethod, selectedTrainingSpeedMode, setRunning, startTraceRecording, traceRecording, uiLanguage]);
 
   const stopSideTraining = useCallback((side: PlayerSide) => {
     if (!activeTrainingSides[side]) {
       appendLog(`Training ${side}: already stopped`);
       return;
     }
+    const otherSideStillActive = side === "1P" ? activeTrainingSides["2P"] : activeTrainingSides["1P"];
     setActiveTrainingSides((current) => ({ ...current, [side]: false }));
     setTrainingRunActiveSides((current) => ({ ...current, [side]: false }));
+    if (!otherSideStillActive && traceRecording) stopTraceRecording();
+    if (!otherSideStillActive) setRunning(false);
     appendLog(`Training: stopped ${side}; ${side} game controls unlocked`);
-  }, [activeTrainingSides, appendLog]);
+  }, [activeTrainingSides, appendLog, setRunning, stopTraceRecording, traceRecording]);
 
   const toggleSideTraining = useCallback((side: PlayerSide) => {
     if (activeTrainingSides[side]) {
@@ -9570,10 +10377,40 @@ function App() {
   }, [activeTrainingSides, startSideTraining, stopSideTraining]);
 
   const onSideTrainingModifyStrategy = useCallback((side: PlayerSide) => {
+    const currentPackId = strategyResourcePacksBySide[side];
+    if (currentPackId !== "personal-contra-draft") {
+      if (side === "1P") {
+        setStrategyResourcePacksBySide((current) => ({ ...current, "1P": "personal-contra-draft", "2P": p2StrategyResourceOverridden ? current["2P"] : "personal-contra-draft" }));
+        setStrategyModels((current) => {
+          const next = {
+            ...current,
+            "1P": coerceStrategyForResourcePack(current["1P"], "personal-contra-draft"),
+            "2P": p2StrategyResourceOverridden ? current["2P"] : coerceStrategyForResourcePack(current["2P"], "personal-contra-draft")
+          };
+          strategyModelsRef.current = next;
+          return next;
+        });
+      } else {
+        setP2StrategyResourceOverridden(true);
+        setStrategyResourcePacksBySide((current) => ({ ...current, "2P": "personal-contra-draft" }));
+        setStrategyModels((current) => {
+          const next = {
+            ...current,
+            "2P": coerceStrategyForResourcePack(current["2P"], "personal-contra-draft")
+          };
+          strategyModelsRef.current = next;
+          return next;
+        });
+      }
+      setStrategyVersionStatusLabel(`${side} 已复制到个人草稿，原装包保持不变`);
+      appendLog(`Training ${side}: copied selected package to personal draft before editing`);
+    }
+    setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
     appendLog(`Training ${side}: opening strategy designer`);
-    appendLog("训练：打开策略设计器，准备修改个人策略");
+    appendLog("训练：打开策略设计器，准备修改个人草稿");
     openStrategyDesigner();
-  }, [appendLog, openStrategyDesigner]);
+  }, [appendLog, openStrategyDesigner, p2StrategyResourceOverridden, strategyResourcePacksBySide]);
 
   const onSideTrainingArchiveStrategy = useCallback((side: PlayerSide) => {
     const samples = traceSamplesRef.current.length > 0 ? traceSamplesRef.current : traceSampleSnapshot;
@@ -9671,6 +10508,59 @@ function App() {
     appendLog(`Training package save path selected: ${pathLabel}`);
   }, [appendLog]);
 
+  const mountStrategyPackageDirectoryFiles = useCallback((files: readonly File[], fallbackName = "strategy-packs") => {
+    const firstFile = files[0] as (File & { webkitRelativePath?: string }) | undefined;
+    const rootName = firstFile?.webkitRelativePath?.split("/")[0] || fallbackName;
+    setStrategyPackageDirectoryLabel(rootName);
+    setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
+    appendLog(`Strategy package directory mounted: ${rootName}`);
+  }, [appendLog]);
+
+  const onStrategyPackageDirectoryFiles = useCallback((files: FileList | null) => {
+    mountStrategyPackageDirectoryFiles(Array.from(files ?? []));
+  }, [mountStrategyPackageDirectoryFiles]);
+
+  const openStrategyPackageDirectoryPicker = useCallback(async () => {
+    if (!canUseNativeDirectoryPicker() || !window.showDirectoryPicker) {
+      return;
+    }
+    try {
+      const directoryHandle = await window.showDirectoryPicker({ mode: "read" });
+      const files = await collectFilesFromDirectoryHandle(directoryHandle);
+      mountStrategyPackageDirectoryFiles(files, directoryHandle.name || "strategy-packs");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      appendLog(`Strategy package directory picker failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }, [appendLog, mountStrategyPackageDirectoryFiles]);
+
+  const createNewStrategyPackage = useCallback((draft: StrategyPackageDraftInput) => {
+    const packageName = draft.name.trim() || "个人魂斗罗训练草稿";
+    const customCategory = draft.customCategoryLabel.trim();
+    const strategyLabel = localizedAiStrategyLabel(draft.baseStrategyKey, uiLanguage);
+    const sourceLabel = strategyPackageBaseSourceLabel(draft.baseSource, uiLanguage);
+    const selectedBaselineId = strategyPackageBaselineIdForSource(draft.baseSource);
+    setStrategyResourcePacksBySide({ "1P": "personal-contra-draft", "2P": "personal-contra-draft" });
+    setP2StrategyResourceOverridden(false);
+    setSelectedSideBaselineIds({ "1P": selectedBaselineId, "2P": selectedBaselineId });
+    setStrategyModels((current) => {
+      const next = {
+        ...current,
+        "1P": coerceStrategyForResourcePack(current["1P"], "personal-contra-draft"),
+        "2P": coerceStrategyForResourcePack(current["2P"], "personal-contra-draft")
+      };
+      strategyModelsRef.current = next;
+      return next;
+    });
+    setStrategyExportName(packageName);
+    setPackageSideScope("1p-only");
+    setValidationReplayComplete(false);
+    setStrategyPackageValidationReport(null);
+    setStrategyVersionStatusLabel(`新建草稿：${packageName} / ${sourceLabel} / ${strategyLabel}${customCategory ? ` / ${customCategory}` : ""}，等待验证后保存`);
+    appendLog(`Strategy package: new personal draft prepared / ${packageName} / ${sourceLabel} / ${strategyLabel}${customCategory ? ` / ${customCategory}` : ""}`);
+  }, [appendLog, uiLanguage]);
+
   const onTrainingVersionHistory = useCallback(() => {
     const selectedPackIds = Array.from(new Set(Object.values(strategyResourcePacksBySide)));
     const revisionCount = selectedPackIds.reduce((total, packId) => total + strategyResourcePackById(packId).revisionHistory.length, 0);
@@ -9720,6 +10610,11 @@ function App() {
     appendLog(`Training ${side}: resource pack ${strategyResourcePackLabel(packId, uiLanguage)}`);
   }, [appendLog, p2StrategyResourceOverridden, strategyResourcePacksBySide, uiLanguage]);
 
+  const selectStrategyPackageFromLibrary = useCallback((packId: StrategyResourcePackId) => {
+    changeStrategyResourcePack("1P", packId);
+    appendLog(`Strategy package library: selected ${strategyResourcePackLabel(packId, uiLanguage)}`);
+  }, [appendLog, changeStrategyResourcePack, uiLanguage]);
+
   const sync2PResourceTo1P = useCallback(() => {
     setStrategyResourcePacksBySide((current) => ({ ...current, "2P": current["1P"] }));
     setStrategyModels((current) => {
@@ -9767,9 +10662,24 @@ function App() {
     };
     setTrainingRunActiveSides(nextRunSides);
     if (!traceRecording) startTraceRecording();
-    setRunning(true);
+    const speedOption = trainingSpeedOptionByMode(selectedTrainingSpeedMode);
+    if (side === "1P" && speedOption.key !== "standard") {
+      setPendingTrainingFastRun({
+        requestId: Date.now(),
+        side,
+        frames: speedOption.frames,
+        strategy: botRunStrategyFromAiStrategy(strategyModelsRef.current[side]),
+        speedMode: speedOption.key
+      });
+      appendLog(`Training ${side}: queued ${speedOption.label[uiLanguage]} batch / ${speedOption.frames} frames`);
+    } else {
+      if (side === "2P" && speedOption.key !== "standard") {
+        appendLog("Training 2P: fast mode waits for verified 2P RAM; using standard visible run");
+      }
+      setRunning(true);
+    }
     appendLog(`Training ${side}: auto-patch run started; TraceEvidence capture synchronized`);
-  }, [activeTrainingSides, appendLog, setRunning, startTraceRecording, traceRecording]);
+  }, [activeTrainingSides, appendLog, selectedTrainingSpeedMode, setRunning, startTraceRecording, traceRecording, uiLanguage]);
 
   const stopSideTrainingRun = useCallback((side: PlayerSide) => {
     if (!trainingRunActiveSides[side]) {
@@ -9975,6 +10885,16 @@ function App() {
     });
   }, [clearAllInputs, clearRuntimeOwnedInputs, tickFrame]);
 
+  useEffect(() => {
+    if (!pendingTrainingFastRun) return;
+    setPendingTrainingFastRun(null);
+    appendLog(`Training ${pendingTrainingFastRun.side}: running ${pendingTrainingFastRun.speedMode} batch through botrun / ${pendingTrainingFastRun.frames} frames`);
+    void runBotFrameBatch(pendingTrainingFastRun.frames, pendingTrainingFastRun.strategy).finally(() => {
+      setTrainingRunActiveSides((current) => ({ ...current, [pendingTrainingFastRun.side]: false }));
+      appendLog(`Training ${pendingTrainingFastRun.side}: ${pendingTrainingFastRun.speedMode} batch finished`);
+    });
+  }, [appendLog, pendingTrainingFastRun, runBotFrameBatch]);
+
   const installRom = useCallback((data: Uint8Array, metadata: RomMetadata) => {
     const nes = nesRef.current || createNes();
     nes.loadROM(data);
@@ -9985,6 +10905,7 @@ function App() {
     resetPlayerMetrics();
     resetRamTracking();
     setRomMetadata(metadata);
+    setStartupPresetEditable(true);
     setStatus("loaded");
     romSelectionTouchedRef.current = false;
     setMessage(`本地 ROM 已加载：${metadata.displayTitle} / ${metadata.versionLabel} / ${metadata.romSupportLabel}。`);
@@ -10160,6 +11081,7 @@ function App() {
       frameIndex: 0
     };
     setSelectedTasMovieId("");
+    setLoadedTasMovieId("");
     setTasPlaybackState({
       ...createIdleTasPlaybackState(),
       movieId: "",
@@ -10229,17 +11151,8 @@ function App() {
     traceRecording,
     traceSampleCount,
     onSideTrainingToggle: toggleSideTraining,
-    onSideTrainingSelectBaseline,
-    onSideTrainingBaselineChange,
-    onSideTrainingMethodChange,
-    onSideTrainingModifyStrategy,
-    onSideTrainingArchiveStrategy,
-    onSideTrainingValidateStrategy,
-    onSideTrainingRunToggle: toggleSideTrainingRun,
-    onSideTraceStart,
-    onSideTraceStop,
-    onSideTraceExport,
-    onSideTraceClear
+    onSideTrainingStrategyChange,
+    onSideTrainingMethodChange
   };
   const globalTraining = buildGlobalTrainingState(
     trainingSessionActive,
@@ -10247,10 +11160,13 @@ function App() {
     packageSideScope,
     strategyExportName,
     validationReplayComplete,
+    strategyPackageDirectoryLabel,
     strategySavePathLabel,
     strategyVersionStatusLabel,
     strategyResourcePacksBySide,
     !p2StrategyResourceOverridden,
+    selectedTrainingSpeedMode,
+    romMetadata,
     uiLanguage
   );
   const tasPlaybackLocked = tasPlaybackState.status === "playing";
@@ -10383,7 +11299,9 @@ function App() {
           <ConsoleDeck
             globalTraining={globalTraining}
             validationReport={strategyPackageValidationReport}
+            loadedTasMovieId={loadedTasMovieId}
             onDirectoryFiles={handleRomDirectoryFiles}
+            onDirectoryPickerOpen={openRomDirectoryPicker}
             onLoadLocalRom={loadLocalRom}
             onLanguageChange={setUiLanguage}
             onPause={() => setRunning(false)}
@@ -10398,13 +11316,18 @@ function App() {
             onTasPlay={() => { void startTasReplay(); }}
             onTasStop={stopTasReplay}
             onTasGenerateBaseline={generateTasBaselineForSide}
-            onTrainingSaveStrategy={onTrainingSaveStrategy}
+          onTrainingSaveStrategy={onTrainingSaveStrategy}
           onTrainingSavePathSelected={onTrainingSavePathSelected}
           onTrainingValidateStrategy={onTrainingValidateStrategy}
           onTrainingVersionHistory={onTrainingVersionHistory}
+          onStrategyPackageDirectoryFiles={onStrategyPackageDirectoryFiles}
+          onStrategyPackageDirectoryPickerOpen={openStrategyPackageDirectoryPicker}
+          onStrategyPackageCreateNew={createNewStrategyPackage}
+          onStrategyPackageLibrarySelect={selectStrategyPackageFromLibrary}
           onPackageSideScopeToggle={togglePackageSideScope}
             onStrategyResourcePackChange={changeStrategyResourcePack}
             onStrategyExportNameChange={changeStrategyExportName}
+            onTrainingSpeedModeChange={onTrainingSpeedModeChange}
             onSync2PResourceTo1P={sync2PResourceTo1P}
             romLibraryDirLabel={romLibraryDirLabel}
             romLibraryEntries={romLibraryEntries}
@@ -10413,6 +11336,7 @@ function App() {
             selectedTasMovieId={selectedTasMovieId}
             selectedRomEntry={selectedRomEntry}
             startupLaunchPreset={startupLaunchPreset}
+            startupPresetEditable={startupPresetEditable}
             status={status}
             tasCommentaryMode={tasCommentaryMode}
             tasPlaybackState={tasPlaybackState}

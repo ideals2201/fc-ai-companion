@@ -114,6 +114,27 @@ test("contra manifest exposes per-strategy battle result placeholders without pr
   }
 });
 
+test("contra manifest exposes canonical English descriptions for every strategy slot", () => {
+  const manifest = readJson("strategy-packs/contra/manifest.json");
+
+  assert.ok(manifest.strategyDescriptions, "manifest should expose a strategy description catalog");
+
+  for (const strategyKey of manifest.strategySlots) {
+    const description = manifest.strategyDescriptions[strategyKey];
+    assert.ok(description, `${strategyKey} should have a strategy description`);
+    assert.equal(typeof description.label, "string", `${strategyKey} should have an English label`);
+    assert.equal(typeof description.summary, "string", `${strategyKey} should have an English summary`);
+    assert.equal(typeof description.playStyle, "string", `${strategyKey} should explain expected play style`);
+    assert.equal(typeof description.riskPolicy, "string", `${strategyKey} should explain its safety policy`);
+    assert.ok(description.label.length > 0);
+    assert.ok(description.summary.length > 0);
+    assert.ok(description.playStyle.length > 0);
+    assert.ok(description.riskPolicy.length > 0);
+    assert.ok(!("zh" in description), `${strategyKey} should not use localized fields as canonical data`);
+    assert.ok(!("localizedText" in description), `${strategyKey} should keep localization under localization`);
+  }
+});
+
 test("contra training scenarios declare game-specific variables and terminal conditions", () => {
   const scenariosFile = readJson("strategy-packs/contra/research/training-scenarios.json");
   const conditionRegistry = readJson("strategy-packs/contra/research/condition-registry.json");

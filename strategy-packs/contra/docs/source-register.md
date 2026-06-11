@@ -20,6 +20,14 @@ Registered local research assets:
 - Extracted knowledge: Japanese Contra TAS route knowledge and optional training baseline candidates.
 - Boundary: TAS is not used as the live controller; it must be converted into strategy fragments and validated by real runtime traces.
 
+Registered training-experience notes:
+
+- `docs/contra1-training-experience.md`: durable Contra Japan training lessons for this strategy pack.
+- Comparison source: `D:/2026TEST/contra-ai/strategy-packs/contra/docs/contra1-training-experience.md`.
+- External method references: TASVideos TAS workflow/resources, NESdev controller timing, FCEUX Lua scripting, OpenAI Gym Retro/Stable-Retro, behavior cloning/imitation learning, Contra-specific RL/Gym examples, StrategyWiki Stage 1, Contra Wiki Stage 1, GameFAQs Stage 1 walkthrough, and NESMaps Stage 1 map.
+- Extracted knowledge: exact-ROM validation, survival-first branching, bounded validation windows, weapon-and-bullet-slot-aware fire control, TAS-style branch search, demonstration fragment mining, curriculum windows, prioritized failure replay, failed-run ledger updates, bridge jump windows, Spread/Rapid weapon priority, and boss-gate safe-station priority.
+- Boundary: FCEUX, TAS, public walkthrough, and US-ROM findings are hypotheses only until replayed against `contra-j-good` in the browser/jsnes runtime.
+
 Any future external source must be registered with:
 
 - title

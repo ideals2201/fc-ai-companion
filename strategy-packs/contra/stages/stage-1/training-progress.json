@@ -1,0 +1,1626 @@
+{
+  "schemaVersion": "1.1.0",
+  "packId": "contra-stage1-strategy-v0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-j-good",
+  "stageId": "stage-1",
+  "status": "candidate",
+  "updatedAt": "2026-06-11T19:33:13.611Z",
+  "policy": {
+    "appendOnlyRuns": true,
+    "summaryDerivedFromRuns": true,
+    "timeUnit": "seconds",
+    "frameRate": 60,
+    "promotionRequiresValidationReplay": true,
+    "futurePackagesUseMeasuredLedgerOnly": true,
+    "exactRomValidationRequired": true,
+    "tasIsEvidenceNotController": true,
+    "failureRunsMustBeRecorded": true
+  },
+  "stageSummary": {
+    "stage-1": {
+      "status": "candidate",
+      "dataMode": "measured-ledger-only",
+      "summary": {
+        "trainingRuns": {
+          "value": 37,
+          "status": "candidate"
+        },
+        "knownDeaths": {
+          "value": 34,
+          "status": "candidate"
+        },
+        "unknownDeathRuns": {
+          "value": 0,
+          "status": "candidate"
+        },
+        "recordedRunTimeSeconds": {
+          "value": 3126.7,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W3208 / W3300",
+          "status": "candidate",
+          "maxWorldX": 3208,
+          "targetWorldX": 3300
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 3208,
+          "status": "candidate"
+        }
+      },
+      "historicalEstimate": null
+    }
+  },
+  "progressByStrategy": {
+    "survival-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 24,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": 22,
+          "status": "candidate"
+        },
+        "trainingTimeSeconds": {
+          "value": 1969.36,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W3208 / W3300",
+          "status": "candidate",
+          "maxWorldX": 3208,
+          "targetWorldX": 3300
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 3208,
+          "status": "candidate"
+        }
+      },
+      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-boss-wall-late-jump_right_fire-from-w2160-20260612; latest status candidate-failed."
+    },
+    "speedrun-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "trainingTimeSeconds": {
+          "value": 36.9,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W625 / W3300",
+          "status": "candidate",
+          "maxWorldX": 625,
+          "targetWorldX": 3300
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 625,
+          "status": "candidate"
+        }
+      },
+      "evidence": "Imported from contra-j-good trace evidence; best run matrix-speedrun-20260608 reached W625 with status candidate-failed."
+    },
+    "combat-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 10,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": 9,
+          "status": "candidate"
+        },
+        "trainingTimeSeconds": {
+          "value": 898.18,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W2174 / W3300",
+          "status": "candidate",
+          "maxWorldX": 2174,
+          "targetWorldX": 3300
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 2174,
+          "status": "candidate"
+        }
+      },
+      "evidence": "Imported from contra-j-good trace evidence; best run combat-boss-approach-early-pit-jump-check-20260608c reached W2174 with status candidate-failed."
+    },
+    "loot-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "trainingTimeSeconds": {
+          "value": 97.63,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W1943 / W3300",
+          "status": "candidate",
+          "maxWorldX": 1943,
+          "targetWorldX": 3300
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 1943,
+          "status": "candidate"
+        }
+      },
+      "evidence": "Imported from contra-j-good trace evidence; best run matrix-loot-20260608 reached W1943 with status candidate-failed."
+    },
+    "guard-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": 1,
+          "status": "candidate"
+        },
+        "trainingTimeSeconds": {
+          "value": 124.63,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W2038 / W3300",
+          "status": "candidate",
+          "maxWorldX": 2038,
+          "targetWorldX": 3300
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": 2038,
+          "status": "candidate"
+        }
+      },
+      "evidence": "Imported from contra-j-good trace evidence; best run matrix-guard-20260608 reached W2038 with status candidate-failed."
+    }
+  },
+  "runs": [
+    {
+      "runId": "combat-boss-approach-early-pit-jump-check-20260608c",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-boss-approach-early-pit-jump-check-20260608c",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174.json",
+      "startedAt": "2026-06-08T19:12:00.000+08:00",
+      "runCount": 1,
+      "frames": 5585,
+      "durationSeconds": 93.08,
+      "activeFrame": null,
+      "lostActiveFrame": 5585,
+      "maxWorldX": 2174,
+      "maxWorldFrame": 5585,
+      "finalWorldX": 2174,
+      "finalFrame": 5585,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-boss-approach-early-pit-jump-death-worldx2174",
+      "candidateConfig": null,
+      "score": 4900,
+      "weapon": 16,
+      "lastInput": "down+right+B",
+      "routeSegment": "boss-approach-clear",
+      "notes": "The early boss-approach pit-jump start is progress evidence, not validated clearance: combat-v0 moved from the WorldX 2112 low right-jump fall death to a later WorldX 2174 airborne sniper/contact death, with score 4900 and weapon 16, but the run still ended with deaths=1 and bossDefeated=0. The next hypothesis must target the WorldX 2173-2174 high-air contact/sniper transition, not the old W2112 late-pit start."
+    },
+    {
+      "runId": "combat-boss-approach-high-air-contact-check-20260608e-1780919698927",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-boss-approach-high-air-contact-check-20260608e-1780919698927",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160.json",
+      "startedAt": "2026-06-08T19:56:00.000+08:00",
+      "runCount": 1,
+      "frames": 5589,
+      "durationSeconds": 93.15,
+      "activeFrame": null,
+      "lostActiveFrame": 5589,
+      "maxWorldX": 2160,
+      "maxWorldFrame": 5589,
+      "finalWorldX": 2160,
+      "finalFrame": 5589,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-boss-approach-high-air-contact-death-worldx2160",
+      "candidateConfig": null,
+      "score": 4900,
+      "weapon": 16,
+      "lastInput": "up+right+A+B",
+      "routeSegment": "boss-approach-clear",
+      "notes": "The W2157 high-air contact patch is rejected as a runtime strategy: it regressed combat-v0 from the prior WorldX 2174 boss-approach death to WorldX 2160 while still ending with deaths=1 and bossDefeated=0. Stop patching this route class by local coordinates; the next attempt needs a new TAS/human state-action fragment or a route-class redesign for the boss-approach high-air enemy cluster."
+    },
+    {
+      "runId": "combat-bridge-low-fixed-crowd-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-bridge-low-fixed-crowd-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943.json",
+      "startedAt": "2026-06-08T15:18:00.000+08:00",
+      "runCount": 1,
+      "frames": 5276,
+      "durationSeconds": 87.93,
+      "activeFrame": null,
+      "lostActiveFrame": 5276,
+      "maxWorldX": 1943,
+      "maxWorldFrame": 5276,
+      "finalWorldX": 1943,
+      "finalFrame": 5276,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-bridge-low-fixed-crowd-death-worldx1943",
+      "candidateConfig": null,
+      "score": 4500,
+      "weapon": 16,
+      "lastInput": "right+A+B",
+      "routeSegment": "danger-clear",
+      "notes": "The bridge low fixed crowd patch is progress evidence, not validated clearance: combat-v0 moved from the WorldX 626 bridge blocker to a later danger-clear death at WorldX 1943 with score 4500 and weapon 16, but the run still ended with deaths=1 and bossDefeated=0. The next hypothesis must target the WorldX 1914-1943 danger-clear falling and low-lane state, not retune the earlier bridge crowd window."
+    },
+    {
+      "runId": "combat-danger-low-lane-fall-check-20260608c",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-danger-low-lane-fall-check-20260608c",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038.json",
+      "startedAt": "2026-06-08T17:39:00.000+08:00",
+      "runCount": 1,
+      "frames": 5430,
+      "durationSeconds": 90.5,
+      "activeFrame": null,
+      "lostActiveFrame": 5430,
+      "maxWorldX": 2038,
+      "maxWorldFrame": 5430,
+      "finalWorldX": 2038,
+      "finalFrame": 5430,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-danger-low-lane-fall-death-worldx2038",
+      "candidateConfig": null,
+      "score": 4700,
+      "weapon": 16,
+      "lastInput": "B",
+      "routeSegment": "danger-clear",
+      "notes": "The danger low-lane fall patch is progress evidence, not validated clearance: combat-v0 moved from the WorldX 1943 right+A+B fall death to a later WorldX 2038 danger-clear fixed-threat death with score 4700 and weapon 16, but the run still ended with deaths=1 and bossDefeated=0. The next hypothesis must target the WorldX 2038 fixed-threat cluster and stationary B-only death, not retune the WorldX 1914-1943 low-lane fall window."
+    },
+    {
+      "runId": "combat-opening-descent-carry-y-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-opening-descent-carry-y-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-descent-carry-death-worldx626.json",
+      "startedAt": "2026-06-08T14:29:00.000+08:00",
+      "runCount": 1,
+      "frames": 1929,
+      "durationSeconds": 32.15,
+      "activeFrame": null,
+      "lostActiveFrame": 1929,
+      "maxWorldX": 626,
+      "maxWorldFrame": 1929,
+      "finalWorldX": 626,
+      "finalFrame": 1929,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-opening-descent-carry-death-worldx626",
+      "candidateConfig": null,
+      "score": 1700,
+      "weapon": 16,
+      "lastInput": "down+right+A+B",
+      "routeSegment": "bridge-clear",
+      "notes": "The descent-carry patch is progress evidence, not validated clearance: combat-v0 moved from the opening WorldX 286-290 death class to a later bridge-clear death at WorldX 626 with score 1700 and weapon 16, but the run still ended with deaths=1 and no bossDefeated signal. The next hypothesis must target the WorldX 614-626 bridge low fixed-threat crowd window, not retune the earlier WorldX 286 contact frame."
+    },
+    {
+      "runId": "combat-opening-low-fixed-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-opening-low-fixed-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-low-fixed-stall-worldx286.json",
+      "startedAt": "2026-06-08T10:44:24.161+08:00",
+      "runCount": 1,
+      "frames": 20000,
+      "durationSeconds": 333.33,
+      "activeFrame": null,
+      "lostActiveFrame": null,
+      "maxWorldX": 286,
+      "maxWorldFrame": 20000,
+      "finalWorldX": 286,
+      "finalFrame": 20000,
+      "targetWorldX": 3300,
+      "deaths": 0,
+      "status": "candidate-stalled",
+      "reason": "max-frames",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-opening-low-fixed-stall-worldx286",
+      "candidateConfig": null,
+      "score": 100,
+      "weapon": 0,
+      "lastInput": "down+B",
+      "routeSegment": "start-clear",
+      "notes": "The opening low fixed-threat patch changed the Contra Japan combat matrix blocker from death at WorldX 286 with A+B into a no-death max-frame stall at the same WorldX with down+B. This proves the jump death was suppressed, but the fixed low threat is not cleared and the route is still not validated."
+    },
+    {
+      "runId": "combat-opening-right-down-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-opening-right-down-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-down-death-worldx290.json",
+      "startedAt": "2026-06-08T14:01:51.334+08:00",
+      "runCount": 1,
+      "frames": 1486,
+      "durationSeconds": 24.77,
+      "activeFrame": null,
+      "lostActiveFrame": 1486,
+      "maxWorldX": 290,
+      "maxWorldFrame": 1486,
+      "finalWorldX": 290,
+      "finalFrame": 1486,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-opening-right-down-death-worldx290",
+      "candidateConfig": null,
+      "score": 100,
+      "weapon": 0,
+      "lastInput": "down+right+B",
+      "routeSegment": "start-clear",
+      "notes": "The TAS-style right-down-fire variant avoided the previous max-frame stall but died at WorldX 290 with the same low fixed threat still alive. This rejects direct promotion of right-down-fire for the current single-AI combat route."
+    },
+    {
+      "runId": "combat-opening-right-only-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-opening-right-only-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-opening-right-only-death-worldx290.json",
+      "startedAt": "2026-06-08T14:02:00.000+08:00",
+      "runCount": 1,
+      "frames": 1486,
+      "durationSeconds": 24.77,
+      "activeFrame": null,
+      "lostActiveFrame": 1486,
+      "maxWorldX": 290,
+      "maxWorldFrame": 1486,
+      "finalWorldX": 290,
+      "finalFrame": 1486,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-opening-right-only-death-worldx290",
+      "candidateConfig": null,
+      "score": 100,
+      "weapon": 0,
+      "lastInput": "right",
+      "routeSegment": "start-clear",
+      "notes": "The right-only variant still died at WorldX 290. The compact trace shows the route lost horizontal ownership during the preceding descent at WorldX 286, so the next hypothesis must handle the earlier opening descent carry instead of adding another contact-frame low-fixed-threat patch."
+    },
+    {
+      "runId": "combat-spread-turret-suppression-check-20260608b",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "combat-spread-turret-suppression-check-20260608b",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112.json",
+      "startedAt": "2026-06-08T18:15:00.000+08:00",
+      "runCount": 1,
+      "frames": 5601,
+      "durationSeconds": 93.35,
+      "activeFrame": null,
+      "lostActiveFrame": 5601,
+      "maxWorldX": 2112,
+      "maxWorldFrame": 5601,
+      "finalWorldX": 2112,
+      "finalFrame": 5601,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-combat-v0-spread-turret-suppression-death-worldx2112",
+      "candidateConfig": null,
+      "score": 4800,
+      "weapon": 16,
+      "lastInput": "right+A+B",
+      "routeSegment": "boss-approach-clear",
+      "notes": "The spread turret suppression runtime wiring is progress evidence, not validated clearance: combat-v0 moved from the WorldX 2038 stationary B-only fixed-threat death to a later WorldX 2112 boss-approach-clear death with score 4800 and weapon 16, but the run still ended with deaths=1 and bossDefeated=0. The next hypothesis must target the boss-approach sniper/fall transition around WorldX 2111-2112, not retune the W2038 fixed-threat suppression window."
+    },
+    {
+      "runId": "post-fragment-j-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "post-fragment-j-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068.json",
+      "startedAt": "2026-06-07T22:01:13.863Z",
+      "runCount": 1,
+      "frames": 3986,
+      "durationSeconds": 66.43,
+      "activeFrame": null,
+      "lostActiveFrame": 3986,
+      "maxWorldX": 2068,
+      "maxWorldFrame": 3986,
+      "finalWorldX": 2068,
+      "finalFrame": 3986,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-survival-v0-ai-run-mid-fixed-threat-death-worldx2068",
+      "candidateConfig": null,
+      "score": 2200,
+      "weapon": 0,
+      "lastInput": "down+B",
+      "routeSegment": "weapon-gate-survive",
+      "notes": "Contra Japan browser AI botrun did not pass Stage 1. The current survival route dies at WorldX 2068 while holding down-fire against a mid fixed threat, before the boss-approach platform-capture candidate can be reached. Archive this as a failure counterexample and train fixed-threat-route/fixed-threat-hp-lock before revalidating boss approach."
+    },
+    {
+      "runId": "mid-fixed-high-station-check-20260608b",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "mid-fixed-high-station-check-20260608b",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087.json",
+      "startedAt": "2026-06-07T22:52:50.729Z",
+      "runCount": 1,
+      "frames": 3991,
+      "durationSeconds": 66.52,
+      "activeFrame": null,
+      "lostActiveFrame": 3991,
+      "maxWorldX": 2087,
+      "maxWorldFrame": 3991,
+      "finalWorldX": 2087,
+      "finalFrame": 3991,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-survival-v0-mid-fixed-high-station-death-worldx2087",
+      "candidateConfig": null,
+      "score": 2400,
+      "weapon": 0,
+      "lastInput": "up+B",
+      "routeSegment": "weapon-gate-survive",
+      "notes": "The high fixed-threat station patch changed the J-version run's final input from right+A+B to up+B and raised the score from 2300 to 2400, but the AI still dies at WorldX 2087 with the high forward fixed threat alive. This is progress evidence, not Stage 1 clearance."
+    },
+    {
+      "runId": "mid-fixed-recovery-check-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "mid-fixed-recovery-check-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087.json",
+      "startedAt": "2026-06-07T22:13:00.000Z",
+      "runCount": 1,
+      "frames": 3991,
+      "durationSeconds": 66.52,
+      "activeFrame": null,
+      "lostActiveFrame": 3991,
+      "maxWorldX": 2087,
+      "maxWorldFrame": 3991,
+      "finalWorldX": 2087,
+      "finalFrame": 3991,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "candidate-1p-survival-v0-mid-fixed-recovery-death-worldx2087",
+      "candidateConfig": null,
+      "score": 2300,
+      "weapon": 0,
+      "lastInput": "right+A+B",
+      "routeSegment": "weapon-gate-survive",
+      "notes": "The mid fixed-threat recovery patch improved the J-version run from WorldX 2068 to WorldX 2087, but it still dies before Stage 1 clearance. The next counterexample is a high/forward fixed threat while the AI holds right+A+B; this is progress evidence, not a pass."
+    },
+    {
+      "runId": "matrix-combat-detail-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "combat-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "matrix-combat-detail-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-combat-v0-death-worldx286.json",
+      "startedAt": "2026-06-08T07:06:00.000+08:00",
+      "runCount": 1,
+      "frames": 1509,
+      "durationSeconds": 25.15,
+      "activeFrame": null,
+      "lostActiveFrame": 1509,
+      "maxWorldX": 286,
+      "maxWorldFrame": 1509,
+      "finalWorldX": 286,
+      "finalFrame": 1509,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "matrix-1p-combat-v0-death-worldx286",
+      "candidateConfig": null,
+      "score": 100,
+      "weapon": 0,
+      "lastInput": "A+B",
+      "routeSegment": "start-clear",
+      "notes": "The combat matrix botrun dies very early at WorldX 286 while attempting A+B under an immediate fixed threat. This is not Stage 1 clearance."
+    },
+    {
+      "runId": "matrix-guard-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "guard-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "matrix-guard-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-guard-v0-death-worldx2038.json",
+      "startedAt": "2026-06-08T07:06:00.000+08:00",
+      "runCount": 1,
+      "frames": 7478,
+      "durationSeconds": 124.63,
+      "activeFrame": null,
+      "lostActiveFrame": 7478,
+      "maxWorldX": 2038,
+      "maxWorldFrame": 7478,
+      "finalWorldX": 2038,
+      "finalFrame": 7478,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "matrix-1p-guard-v0-death-worldx2038",
+      "candidateConfig": null,
+      "score": 4700,
+      "weapon": 0,
+      "lastInput": "B",
+      "routeSegment": "danger-guard",
+      "notes": "The guard matrix botrun reaches WorldX 2038 but dies under fixed-threat pressure while holding B. This is not Stage 1 clearance."
+    },
+    {
+      "runId": "matrix-loot-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "loot-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "matrix-loot-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-loot-v0-death-worldx1943.json",
+      "startedAt": "2026-06-08T07:06:00.000+08:00",
+      "runCount": 1,
+      "frames": 5858,
+      "durationSeconds": 97.63,
+      "activeFrame": null,
+      "lostActiveFrame": 5858,
+      "maxWorldX": 1943,
+      "maxWorldFrame": 5858,
+      "finalWorldX": 1943,
+      "finalFrame": 5858,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "matrix-1p-loot-v0-death-worldx1943",
+      "candidateConfig": null,
+      "score": 4300,
+      "weapon": 16,
+      "lastInput": "right+A+B",
+      "routeSegment": "danger-loot",
+      "notes": "The loot matrix botrun reaches WorldX 1943 with weapon 16 but dies while preserving a loot/cautious route under fixed-threat pressure. This is not Stage 1 clearance."
+    },
+    {
+      "runId": "matrix-speedrun-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "speedrun-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "matrix-speedrun-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-speedrun-v0-death-worldx625.json",
+      "startedAt": "2026-06-08T07:06:00.000+08:00",
+      "runCount": 1,
+      "frames": 2214,
+      "durationSeconds": 36.9,
+      "activeFrame": null,
+      "lostActiveFrame": 2214,
+      "maxWorldX": 625,
+      "maxWorldFrame": 2214,
+      "finalWorldX": 625,
+      "finalFrame": 2214,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "matrix-1p-speedrun-v0-death-worldx625",
+      "candidateConfig": null,
+      "score": 1800,
+      "weapon": 16,
+      "lastInput": "down+right+A+B",
+      "routeSegment": "first-bridge",
+      "notes": "The speedrun matrix botrun dies on the first bridge with the route still advancing under immediate threat. This is not Stage 1 clearance."
+    },
+    {
+      "runId": "matrix-survival-20260608",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "browser-ai-botrun",
+      "sourceRunId": "matrix-survival-20260608",
+      "evidencePath": "data/training/contra/runtime_runs/contra-j-good/trace-evidence/matrix-1p-survival-v0-death-worldx2087.json",
+      "startedAt": "2026-06-08T07:06:00.000+08:00",
+      "runCount": 1,
+      "frames": 3991,
+      "durationSeconds": 66.52,
+      "activeFrame": null,
+      "lostActiveFrame": 3991,
+      "maxWorldX": 2087,
+      "maxWorldFrame": 3991,
+      "finalWorldX": 2087,
+      "finalFrame": 3991,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "death-count",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha1": "376836361f404c815d404e1d5903d5d11f4eff0e",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "matrix-1p-survival-v0-death-worldx2087",
+      "candidateConfig": null,
+      "score": 2400,
+      "weapon": 0,
+      "lastInput": "up+B",
+      "routeSegment": "weapon-gate-survive",
+      "notes": "The survival matrix botrun still dies at WorldX 2087 with default weapon and the high fixed threat alive. This is not Stage 1 clearance."
+    },
+    {
+      "runId": "survival-v0-jp-current-route-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T13:09:17.957Z",
+      "runCount": 1,
+      "frames": 7000,
+      "durationSeconds": 116.67,
+      "activeFrame": 1174,
+      "lostActiveFrame": 1708,
+      "maxWorldX": 1722,
+      "maxWorldFrame": 6255,
+      "finalWorldX": 82,
+      "finalFrame": 7000,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "Current contra-j-good survival-v0 route regression check after switching .env to Japanese ROM. Failed before previous W2087 evidence, max W1722; not promoted."
+    },
+    {
+      "runId": "survival-v0-jp-w241-neutral-fire-validation-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T13:21:17.180Z",
+      "runCount": 1,
+      "frames": 2500,
+      "durationSeconds": 41.67,
+      "activeFrame": 1200,
+      "lostActiveFrame": null,
+      "maxWorldX": 1189,
+      "maxWorldFrame": 3625,
+      "finalWorldX": 1139,
+      "finalFrame": 3700,
+      "targetWorldX": 3300,
+      "deaths": 0,
+      "status": "candidate",
+      "reason": "gameplay-detected",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "Validated Contra Japan W241 neutral-fire close-body safety patch from saved state frame 1200; active for 2500 resumed frames, no first-death regression; not a clear."
+    },
+    {
+      "runId": "survival-v0-jp-post-w241-route-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T13:22:31.484Z",
+      "runCount": 1,
+      "frames": 7000,
+      "durationSeconds": 116.67,
+      "activeFrame": 1174,
+      "lostActiveFrame": null,
+      "maxWorldX": 1465,
+      "maxWorldFrame": 6488,
+      "finalWorldX": 1465,
+      "finalFrame": 7000,
+      "targetWorldX": 3300,
+      "deaths": 0,
+      "status": "candidate",
+      "reason": "gameplay-detected",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "Contra Japan full-route validation after W241 neutral-fire patch; no death in 7000 frames, max W1465, still not clear and needs efficiency/progression fix."
+    },
+    {
+      "runId": "contra-j-stage1-boss-wall-directional-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T17:21:57.870Z",
+      "runCount": 1,
+      "frames": 500,
+      "durationSeconds": 8.33,
+      "activeFrame": 8130,
+      "lostActiveFrame": 8415,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8224,
+      "finalWorldX": 3147,
+      "finalFrame": 8630,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate",
+      "reason": "gameplay-loss-recovered",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-w1465-chain-w2939-early-entry-jump_right_fire-2896",
+      "candidateConfig": {
+        "id": "jp-w1465-chain-w2939-early-entry-jump_right_fire-2896",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-w1465-chain-w2939-early-entry-jump_right_fire-2896.json"
+      },
+      "notes": "Contra Japan headless boss-wall regression: directional falling-body split passed unit tests and moved stable failure to W3208/8415; full-clip retreat and W3182 extension were rejected after regressions."
+    },
+    {
+      "runId": "contra-j-stage1-boss-wall-default-weapon-deadend-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T17:58:31.620Z",
+      "runCount": 1,
+      "frames": 1800,
+      "durationSeconds": 30,
+      "activeFrame": 8130,
+      "lostActiveFrame": 8706,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8224,
+      "finalWorldX": 82,
+      "finalFrame": 9930,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "debug-boss-wall-lower-contact-duck-then-right-up-with-base",
+      "candidateConfig": {
+        "id": "debug-boss-wall-lower-contact-duck-then-right-up-with-base",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/debug-boss-wall-lower-contact-duck-then-right-up-with-base.json"
+      },
+      "notes": "Contra Japan headless boss-wall route-level check: lower contact-duck/right-up station extended survival from 8415 to 8706 but did not damage fixed targets or clear W3208. Treat default-weapon boss-wall threshold work as rejected; next route work must prioritize weapon acquisition before boss wall."
+    },
+    {
+      "runId": "contra-j-stage1-weapon-gate-late-window-rejected-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T18:16:22.599Z",
+      "runCount": 1,
+      "frames": 2600,
+      "durationSeconds": 43.33,
+      "activeFrame": 7000,
+      "lostActiveFrame": 7145,
+      "maxWorldX": 2390,
+      "maxWorldFrame": 7144,
+      "finalWorldX": 82,
+      "finalFrame": 9600,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-weapon-gate-2260-2368-right-duck-fire",
+      "candidateConfig": {
+        "id": "jp-weapon-gate-2260-2368-right-duck-fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-weapon-gate-2260-2368-right-duck-fire.json"
+      },
+      "notes": "Contra Japan headless weapon-route check: W2260-W2368 late weapon-gate action candidates did not change weapon RAM from 0 and often lost active near W2390. Late rescue is rejected; TAS replay evidence shows valid weapon changes happen earlier at W344 and W1591 in the synchronized 2P TAS environment."
+    },
+    {
+      "runId": "survival-v0-w1471-grounded-stall-patch-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.170Z",
+      "runCount": 1,
+      "frames": 14000,
+      "durationSeconds": 233.33,
+      "activeFrame": 1174,
+      "lostActiveFrame": 6309,
+      "maxWorldX": 1769,
+      "maxWorldFrame": 6302,
+      "finalWorldX": 82,
+      "finalFrame": 14000,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "accepted W1471 stall fix; progressed beyond grounded loop."
+    },
+    {
+      "runId": "survival-v0-w2160-high-air-carry-patch-segment-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.244Z",
+      "runCount": 1,
+      "frames": 1600,
+      "durationSeconds": 26.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 7678,
+      "maxWorldX": 2494,
+      "maxWorldFrame": 7677,
+      "finalWorldX": 82,
+      "finalFrame": 8880,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "accepted W2160 high-air carry fix; progressed toward boss approach."
+    },
+    {
+      "runId": "survival-v0-w2438-2700-pulse-chain-patch-segment-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.347Z",
+      "runCount": 1,
+      "frames": 3600,
+      "durationSeconds": 60,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8141,
+      "maxWorldX": 2838,
+      "maxWorldFrame": 8140,
+      "finalWorldX": 82,
+      "finalFrame": 10880,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "accepted W2438-W2700 14x1 pulse platform chain evidence; progressed to W2838."
+    },
+    {
+      "runId": "survival-v0-w2812-late-edge-jump-patch-segment-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.437Z",
+      "runCount": 1,
+      "frames": 4200,
+      "durationSeconds": 70,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8246,
+      "maxWorldX": 2939,
+      "maxWorldFrame": 8242,
+      "finalWorldX": 82,
+      "finalFrame": 11480,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "accepted W2812 late-edge jump evidence; progressed to W2939."
+    },
+    {
+      "runId": "survival-v0-w2896-entry-jump-patch-segment-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.561Z",
+      "runCount": 1,
+      "frames": 5200,
+      "durationSeconds": 86.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8600,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 82,
+      "finalFrame": 12480,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "accepted W2896 boss-entry jump evidence; reached W3208 boss wall with default rifle."
+    },
+    {
+      "runId": "jp-boss-wall-late-up_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.729Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8779,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-up_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-up_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-up_fire.json"
+      },
+      "notes": "rejected boss late up_fire candidate; delayed death but did not reduce core HP."
+    },
+    {
+      "runId": "jp-boss-wall-late-neutral_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.823Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8779,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-neutral_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-neutral_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-neutral_fire.json"
+      },
+      "notes": "rejected boss late neutral_fire candidate; delayed death but did not reduce core HP."
+    },
+    {
+      "runId": "jp-boss-wall-late-right_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:12.937Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8678,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-right_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-right_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-right_fire.json"
+      },
+      "notes": "rejected boss late right_fire candidate; did not reduce core HP."
+    },
+    {
+      "runId": "jp-boss-wall-late-right_up_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.032Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8630,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 2775,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate",
+      "reason": "gameplay-loss-recovered",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-right_up_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-right_up_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-right_up_fire.json"
+      },
+      "notes": "rejected boss late right_up_fire candidate; recovered after loss but no core HP progress."
+    },
+    {
+      "runId": "jp-boss-wall-late-duck_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.139Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8638,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 2787,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate",
+      "reason": "gameplay-loss-recovered",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-duck_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-duck_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-duck_fire.json"
+      },
+      "notes": "rejected boss late duck_fire candidate; no core HP progress."
+    },
+    {
+      "runId": "jp-boss-wall-late-right_duck_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.244Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8630,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 2798,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate",
+      "reason": "gameplay-loss-recovered",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-right_duck_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-right_duck_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-right_duck_fire.json"
+      },
+      "notes": "rejected boss late right_duck_fire candidate; no core HP progress."
+    },
+    {
+      "runId": "jp-boss-wall-late-left_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.359Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8672,
+      "maxWorldX": 3200,
+      "maxWorldFrame": 8524,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-left_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-left_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-left_fire.json"
+      },
+      "notes": "rejected boss late left_fire candidate; retreated below W3208."
+    },
+    {
+      "runId": "jp-boss-wall-late-left_jump_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.474Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8672,
+      "maxWorldX": 3200,
+      "maxWorldFrame": 8524,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-left_jump_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-left_jump_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-left_jump_fire.json"
+      },
+      "notes": "rejected boss late left_jump_fire candidate; retreated below W3208."
+    },
+    {
+      "runId": "jp-boss-wall-late-jump_right_fire-from-w2160-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T19:33:13.609Z",
+      "runCount": 1,
+      "frames": 5800,
+      "durationSeconds": 96.67,
+      "activeFrame": 7280,
+      "lostActiveFrame": 8678,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 8532,
+      "finalWorldX": 82,
+      "finalFrame": 13080,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-boss-wall-late-jump_right_fire",
+      "candidateConfig": {
+        "id": "jp-boss-wall-late-jump_right_fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-boss-wall-late-jump_right_fire.json"
+      },
+      "notes": "rejected boss late jump_right_fire candidate; no core HP progress."
+    }
+  ],
+  "strategyDescriptions": {
+    "survival-v0": {
+      "label": "Robust Survival",
+      "summary": "Prioritizes zero-death progression, safety override, fixed-threat handling, and stable clear routing.",
+      "playStyle": "Single-AI clear baseline and parent route for all other strategy types.",
+      "riskPolicy": "Safety, pits, body contact, and fixed-threat survival override speed, reward, and kill objectives.",
+      "dataSource": "stages/stage-1/training-progress.json + data/training/contra/runtime_runs/contra-j-good/"
+    },
+    "speedrun-v0": {
+      "label": "Fast Advance",
+      "summary": "Optimizes clear time after survival windows are stable.",
+      "playStyle": "Showcase and speed route training.",
+      "riskPolicy": "May skip optional kills and rewards, but cannot violate survival gates inherited from survival-v0.",
+      "dataSource": "stages/stage-1/training-progress.json + TAS baseline candidates"
+    },
+    "combat-v0": {
+      "label": "Combat Clear",
+      "summary": "Prioritizes enemy, turret, and fixed-target destruction while preserving clear stability.",
+      "playStyle": "Threat-density reduction, kill-count farming, and safer human-facing companion play.",
+      "riskPolicy": "Optional kills must not create dead loops or increase death probability beyond survival guardrails.",
+      "dataSource": "stages/stage-1/training-progress.json + trace-evidence combat chain"
+    },
+    "loot-v0": {
+      "label": "Loot Priority",
+      "summary": "Prioritizes weapon and reward capture after survival windows are stable.",
+      "playStyle": "Weapon optimization, reward viewing, and resource-rich companion play.",
+      "riskPolicy": "Rewards are subordinate to survival and validated route continuity.",
+      "dataSource": "stages/stage-1/training-progress.json + TAS/human pickup windows"
+    },
+    "guard-v0": {
+      "label": "Companion Guard",
+      "summary": "Prioritizes teammate safety, screen pacing, cover fire, and anti-screen-drag behavior.",
+      "playStyle": "Human + AI and dual-AI cooperative play.",
+      "riskPolicy": "Never steal dangerous rewards or drag the screen in a way that harms the teammate.",
+      "dataSource": "stages/stage-1/training-progress.json + 2P/TAS cooperation evidence"
+    }
+  },
+  "legacyNotes": [
+    "Current training target is Contra Japan / contra-j-good.",
+    "Previous contra-us-good progress data was copied to training-progress.contra-us-good.legacy-broken-20260611.json because it was not valid JSON and must not be mixed with Japanese training.",
+    "All future accepted runs must use the Contra (J).nes hash in this ledger."
+  ]
+}

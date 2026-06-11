@@ -1,0 +1,516 @@
+{
+  "schemaVersion": "1.0.0",
+  "packId": "contra-stage1-strategy-v0",
+  "gameProfileId": "contra",
+  "romProfileId": "contra-us-good",
+  "stageId": "stage-1",
+  "updatedAt": "2026-06-11T12:40:44.431Z",
+  "policy": {
+    "appendOnlyRuns": true,
+    "summaryDerivedFromRuns": true,
+    "timeUnit": "seconds",
+    "frameRate": 60,
+    "promotionRequiresValidationReplay": true,
+    "futurePackagesUseMeasuredLedgerOnly": true
+  },
+  "stageSummary": {
+    "stage-1": {
+      "status": "candidate",
+      "dataMode": "migration-with-estimate",
+      "summary": {
+        "trainingRuns": {
+          "value": 35,
+          "status": "candidate"
+        },
+        "knownDeaths": {
+          "value": 4,
+          "status": "candidate"
+        },
+        "unknownDeathRuns": {
+          "value": 30,
+          "status": "unverified"
+        },
+        "recordedRunTimeSeconds": {
+          "value": 1486.65,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W3208 / W3300",
+          "status": "candidate",
+          "maxWorldX": 3208,
+          "targetWorldX": 3300
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "historicalEstimate": {
+        "status": "estimated",
+        "appliesOnlyToThisMigratedPack": true,
+        "source": "docs/21_WORK_LOG.md unique headless-runtime-smoke command lines with --frames",
+        "commandLines": 49,
+        "frameEvents": 49,
+        "estimatedFrames": 523100,
+        "estimatedSeconds": 8718.33,
+        "estimatedMinutes": 145.3,
+        "caveat": "This is an approximate migration estimate. It may omit browser/manual runs and should not be treated as the standard strategy-package metric."
+      }
+    }
+  },
+  "progressByStrategy": {
+    "survival-v0": {
+      "status": "candidate",
+      "summary": {
+        "trainingRuns": {
+          "value": 35,
+          "status": "candidate"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": 1486.65,
+          "status": "candidate"
+        },
+        "clearProgress": {
+          "value": "W3208 / W3300",
+          "status": "candidate",
+          "maxWorldX": 3208,
+          "targetWorldX": 3300
+        }
+      },
+      "evidence": "Updated from headless-jsnes-runtime-smoke run survival-v0-w3163-boss-safe-station-regression-20260611; latest status candidate-failed."
+    },
+    "speedrun-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "Speedrun training has not started from a validated baseline."
+    },
+    "combat-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "Combat-clear training has not started from a validated baseline."
+    },
+    "loot-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "Reward-route training has not started from a validated baseline."
+    },
+    "guard-v0": {
+      "status": "unstarted",
+      "summary": {
+        "trainingRuns": {
+          "value": null,
+          "status": "unverified"
+        },
+        "deaths": {
+          "value": null,
+          "status": "unverified"
+        },
+        "trainingTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearProgress": {
+          "value": null,
+          "status": "unverified"
+        },
+        "kills": {
+          "value": null,
+          "status": "unverified"
+        },
+        "fixedTargetsDestroyed": {
+          "value": null,
+          "status": "unverified"
+        },
+        "rewardsCollected": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeFrames": {
+          "value": null,
+          "status": "unverified"
+        },
+        "clearTimeSeconds": {
+          "value": null,
+          "status": "unverified"
+        },
+        "maxProgress": {
+          "value": null,
+          "status": "unverified"
+        }
+      },
+      "evidence": "Guard/co-op training has not started from a validated baseline."
+    }
+  },
+  "runs": [
+    {
+      "runId": "survival-v0-candidate-window-20260611",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-runtime-smoke",
+      "startedAt": "2026-06-11",
+      "runCount": 30,
+      "frames": 14000,
+      "durationSeconds": 233.33,
+      "maxWorldX": 2366,
+      "targetWorldX": 3300,
+      "deaths": null,
+      "status": "candidate",
+      "notes": "Imported from current candidate progress display; death count remains unconsolidated."
+    },
+    {
+      "runId": "survival-v0-short-window-20260611-001",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T08:49:39.316Z",
+      "runCount": 1,
+      "frames": 1200,
+      "durationSeconds": 20,
+      "maxWorldX": 430,
+      "targetWorldX": 3300,
+      "deaths": 0,
+      "status": "candidate",
+      "reason": "gameplay-detected",
+      "rom": {
+        "fileName": "contra_us_test.nes",
+        "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+        "headerlessMd5": "5a5c2f4f1cafb1f55a8dc0d5ad4550e5",
+        "sha256": "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "Short-window"
+    },
+    {
+      "runId": "survival-v0-long-window-20260611-001",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T08:50:43.454Z",
+      "runCount": 1,
+      "frames": 14000,
+      "durationSeconds": 233.33,
+      "maxWorldX": 2385,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate",
+      "reason": "gameplay-loss-recovered",
+      "rom": {
+        "fileName": "contra_us_test.nes",
+        "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+        "headerlessMd5": "5a5c2f4f1cafb1f55a8dc0d5ad4550e5",
+        "sha256": "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519"
+      },
+      "candidateTrial": null,
+      "candidateConfig": null,
+      "notes": "Long-window-current-survival-regression-run."
+    },
+    {
+      "runId": "survival-v0-w2320-capture-w2458-neutral-clear-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T10:25:29.561Z",
+      "runCount": 1,
+      "frames": 20000,
+      "durationSeconds": 333.33,
+      "activeFrame": 612,
+      "lostActiveFrame": 13397,
+      "maxWorldX": 2587,
+      "maxWorldFrame": 13900,
+      "finalWorldX": 82,
+      "finalFrame": 20000,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "contra_us_test.nes",
+        "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+        "headerlessMd5": "5a5c2f4f1cafb1f55a8dc0d5ad4550e5",
+        "sha256": "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519"
+      },
+      "candidateTrial": "w2320-capture-w2458-neutral-clear",
+      "candidateConfig": {
+        "id": "w2320-capture-w2458-neutral-clear",
+        "path": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/w2320-capture-w2458-neutral-clear.json"
+      },
+      "notes": "Current test package state: candidate overlay reached W2587 but failed near W2458; available for user standalone test, not promoted as clear."
+    },
+    {
+      "runId": "survival-v0-w2430-chain-boss-w2960-3300-wide-pulse-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T11:06:35.348Z",
+      "runCount": 1,
+      "frames": 20000,
+      "durationSeconds": 333.33,
+      "activeFrame": 612,
+      "lostActiveFrame": 14113,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 14071,
+      "finalWorldX": 82,
+      "finalFrame": 20000,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "contra_us_test.nes",
+        "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+        "headerlessMd5": "5a5c2f4f1cafb1f55a8dc0d5ad4550e5",
+        "sha256": "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519"
+      },
+      "candidateTrial": "w2430-chain-boss-w2960-3300-wide-pulse-jump-right-fire",
+      "candidateConfig": {
+        "id": "w2430-chain-boss-w2960-3300-wide-pulse-jump-right-fire",
+        "path": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/w2430-chain-boss-w2960-3300-wide-pulse-jump-right-fire.json"
+      },
+      "notes": "Current best training state: reached W3208 barrier node, then failed on close enemy plus fixed core HP16/32 cluster; not promoted as clear."
+    },
+    {
+      "runId": "survival-v0-w3163-boss-safe-station-regression-20260611",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-11T12:40:44.429Z",
+      "runCount": 1,
+      "frames": 20000,
+      "durationSeconds": 333.33,
+      "activeFrame": 612,
+      "lostActiveFrame": 14036,
+      "maxWorldX": 3166,
+      "maxWorldFrame": 14028,
+      "finalWorldX": 82,
+      "finalFrame": 20000,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "contra_us_test.nes",
+        "md5": "7bdad8b4a7a56a634c9649d20bd3011b",
+        "headerlessMd5": "5a5c2f4f1cafb1f55a8dc0d5ad4550e5",
+        "sha256": "26541a5550ee22deeb3d5484e4a96130219b58cff74d068fb1eb6567fa5e5519"
+      },
+      "candidateTrial": "w2430-chain-core-w3180-3230-right-fire-station",
+      "candidateConfig": {
+        "id": "w2430-chain-core-w3180-3230-right-fire-station",
+        "path": "data/training/contra/runtime_runs/contra-us-good/candidate-overlays/w2430-chain-core-w3180-3230-right-fire-station.json"
+      },
+      "notes": "Intentional run after applying boss-wall safety override to headless route-plan; W3208 failure moved earlier to W3163 body contact near boss-gate safe-station problem. Not promoted."
+    }
+  ],
+  "strategyDescriptions": {
+    "survival-v0": {
+      "label": "Robust Survival",
+      "summary": "Prioritizes staying alive, slows progression when needed, and clears required fixed threats and blockers.",
+      "playStyle": "Suitable for single-AI clear attempts, human-AI companion play, and dual-AI stability baselines.",
+      "riskPolicy": "Safety override takes priority over speed, rewards, and kill count.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "稳健生存",
+          "summary": "优先保证不死，必要时放慢推进，先处理固定威胁和必过障碍。",
+          "playStyle": "适合单 AI 通关、人类加 AI 陪玩、双 AI 稳定基准。",
+          "riskPolicy": "安全覆盖优先于速度、奖励和杀敌数量。"
+        }
+      }
+    },
+    "speedrun-v0": {
+      "label": "Fast Advance",
+      "summary": "Prioritizes forward pace and reusable TAS/FCEUX windows while preserving safety override.",
+      "playStyle": "Suitable for showcase runs, speed training, and later clear-time optimization.",
+      "riskPolicy": "May skip nonessential kills and rewards, but must not violate required survival conditions.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "快速推进",
+          "summary": "优先推进速度，复用 TAS/FCEUX 可用窗口，但必须保留安全覆盖。",
+          "playStyle": "适合观赏、竞速训练和后续优化过关时间。",
+          "riskPolicy": "允许减少非必要清敌和奖励，但不能牺牲必需生存条件。"
+        }
+      }
+    },
+    "combat-v0": {
+      "label": "Combat Clear",
+      "summary": "Prioritizes killing enemies, turrets, and fixed targets to reduce screen threat density.",
+      "playStyle": "Suitable for cautious combat, result farming, and threat-handling research.",
+      "riskPolicy": "May slow down to clear threats, but must not enter dead loops or die for optional kills.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "清敌优先",
+          "summary": "优先消灭敌人、炮台和固定目标，降低屏幕威胁密度。",
+          "playStyle": "适合稳扎稳打、刷战果和研究威胁处理。",
+          "riskPolicy": "可以放慢推进等待清场，但不能进入死循环或为清敌主动送死。"
+        }
+      }
+    },
+    "loot-v0": {
+      "label": "Loot Priority",
+      "summary": "Prioritizes weapons, reward capsules, and key resources when safety permits route adjustment.",
+      "playStyle": "Suitable for collection routes, weapon optimization, and reward-focused viewing.",
+      "riskPolicy": "Rewards are subordinate to survival and must not break clear stability.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "奖励优先",
+          "summary": "优先获取武器、奖励胶囊和关键资源，在安全允许时调整路线。",
+          "playStyle": "适合收集路线、武器优化和玩家观赏奖励获取。",
+          "riskPolicy": "奖励必须服从生存，不能为了吃奖励破坏通关稳定性。"
+        }
+      }
+    },
+    "guard-v0": {
+      "label": "Companion Guard",
+      "summary": "Provides cover fire, anti-screen-drag behavior, and cooperative progression around the teammate.",
+      "playStyle": "Suitable for human-AI companion play and dual-AI cooperation.",
+      "riskPolicy": "Prioritizes teammate safety and screen tempo, avoiding screen drag and dangerous reward steals.",
+      "dataSource": "quality.strategyResults + stages/<stage-id>/training-progress.json",
+      "localization": {
+        "zh-CN": {
+          "label": "护卫队友",
+          "summary": "围绕队友位置提供火力、防拖屏和协作推进。",
+          "playStyle": "适合人类加 AI 陪玩和双 AI 协作。",
+          "riskPolicy": "优先保护队友和屏幕节奏，不抢屏、不抢危险奖励。"
+        }
+      }
+    }
+  }
+}

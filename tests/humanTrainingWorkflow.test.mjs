@@ -201,16 +201,21 @@ test("human training workflow connects TAS extraction, training evidence, candid
   assert.ok(exportPayload.packageFiles.some((file) => file.path.includes("/candidate-fragments/candidate-fragment-1p-survival-v0-tas-contra-j-good-contra-j-2p-any-percent-boss-approach-platform-capture-1p.json")));
 });
 
-test("side training panel gives each training method a distinct human workflow", () => {
+test("side training methods route through side start and shared package workflow", () => {
   const panelMatch = mainSource.match(/function SideTrainingPanel[\s\S]*?function PilotPanel/);
   assert.ok(panelMatch, "SideTrainingPanel should exist");
   const panelSource = panelMatch[0];
 
-  assert.match(panelSource, /training\.selectedTrainingMethod === "human-assist"[\s\S]*开始混合采集/, "human assist should expose capture controls for human intervention traces");
-  assert.match(panelSource, /training\.selectedTrainingMethod === "manual-edit"[\s\S]*onSideTrainingModifyStrategy/, "manual edit should open the strategy designer instead of starting a bot run");
-  assert.match(panelSource, /training\.selectedTrainingMethod === "model-analysis"[\s\S]*onSideTraceExport[\s\S]*打包数据/, "model analysis should package captured data for analysis");
-  assert.match(panelSource, /actions\.onSideTrainingRunToggle\(training\.side\)/, "auto patch should be the branch that starts or stops synchronized run capture");
+  assert.match(panelSource, /selectorClassName\("side-training-method-selector"/, "side panel should own the role-specific training-method selector");
+  assert.match(panelSource, /training\.trainingMethodOptions\.map/, "side panel should list all available training methods");
+  assert.match(panelSource, /actions\.onSideTrainingMethodChange\(training\.side, option\.key\)/, "method changes should be routed with side ownership");
+  assert.match(panelSource, /onClick=\{\(\) => actions\.onSideTrainingToggle\(training\.side\)\}/, "the training title should be the per-side start and stop command");
+  assert.doesNotMatch(panelSource, /开始混合采集|打包数据|onSideTrainingModifyStrategy|onSideTraceExport|onSideTrainingRunToggle/, "side panel should not duplicate capture, packaging, edit, or run buttons");
+  assert.match(mainSource, /selectedTrainingMethod/, "runtime should keep one selected training method for side-owned starts");
+  assert.match(mainSource, /const startsAutoRun = selectedSideBaselineIds\[side\] === "ai-run-new" \|\| selectedTrainingMethod === "auto-patch"/, "auto patch and new AI-run baselines should start synchronized run capture from the title");
+  assert.match(mainSource, /setSelectedTrainingMethod\(option\.key\)/, "method selector should update the normalized training method used at start");
   assert.match(mainSource, /if \(method === "human-assist"\) return "hybrid"/, "human assist should switch runtime input ownership to hybrid");
   assert.match(mainSource, /if \(baselineId === "human-demo-new"\) return "human"/, "human demonstration baseline should switch runtime input ownership to human");
   assert.match(mainSource, /if \(baselineId === "ai-run-new"\) return "ai"/, "AI run baseline should switch runtime input ownership to AI");
+  assert.match(mainSource, /function OperationStrategyControl[\s\S]*training\.validateStrategy[\s\S]*training\.saveStrategy/, "shared strategy control should own validation and packaging actions");
 });
