@@ -592,3 +592,32 @@ Next weapon16 work:
 - No single-player RAM trace in this batch confirmed a Spread upgrade; `weapon` stayed `16` through the best no-death state.
 - Accept a candidate only if RAM confirms `weapon` improves or remains useful and the segment stays zero-death.
 - Do not promote any weapon16 or Spread route to the strategy pack unless it reconnects to the boss approach without deaths.
+
+## 2026-06-12 Contra Japan W2838-W2939 Weapon16 Pulse Repress
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-weapon16-w2939-pulse-rejected-20260612`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-weapon16-w2838-release-repress-batch-20260612.summary.json`.
+- Best representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-w2939-pulse-predeath-trace-20260612.json`.
+- Saved continuation state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2939-weapon16-20260612.json`.
+
+Accepted facts:
+
+- The W2735-W2790 `right_fire` landing fix alone reaches W2838 but holds A across the later landing window; W2805-W2838 shows `jumpState = 0` with A pressed and no accepted jump.
+- Delaying the second jump by simply extending `right_fire` through W2798, W2804, W2808, W2812, W2816, or W2820 did not improve over W2838.
+- Adding W2790-W2804 `right_fire` release followed by W2804-W2884 `pulse_jump_right_fire` produced a reproducible no-death W2939 state with `weapon = 16`.
+- The best candidate remains below the all-route Stage 1 best W3208 and is not a boss-wall clear or Stage 1 clear.
+
+Rejected facts:
+
+- W2790-W2804 and W2790-W2812 neutral release variants still died at W2838; W2790-W2820 neutral stalled at W2814.
+- W2790-W2804 and W2790-W2812 left-fire brake variants stalled around W2800 and are not useful for zero-death progress.
+- The W2939 trace dies at W2940/Y236 from a low-fall window before the boss wall; nearby enemies are above or distant enough that this is not direct body-contact evidence.
+
+Next weapon16 work:
+
+- Continue from the saved W2939 state only for inspection; do not treat it as a local rescue point unless the first action can happen before W2940.
+- Rebuild the W2884-W2940 descent with a shorter or later pulse window, or add a pre-W2920 release/repress pattern that lands before Y230.
+- If a candidate reaches W2960+ no-death, re-enable boss-wall-specific validation and compare against the existing W3208 all-route branch.
