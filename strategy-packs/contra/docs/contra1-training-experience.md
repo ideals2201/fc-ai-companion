@@ -538,9 +538,34 @@ Rejected facts:
 - W1715 danger-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1715-weapon16-danger-window-batch-20260612.json`.
 - W1715 variants `right_fire`, `right_up_fire`, `right_duck_fire`, `duck_fire`, `up_fire`, `neutral_fire`, `jump_right_fire`, `pulse_jump_right_fire`, `left_fire`, `left_jump_fire`, and `left` did not clear the danger window. The baseline route reached no-death W1753 with `weapon = 16`, then died at frame 5604, so it is recorded as rejected ledger run `jp-s1-w1715-weapon16-danger-window-rejected-20260612`.
 
+## 2026-06-12 Contra Japan W1753-W2390 Weapon16 Continuation
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Starting state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Formal ledger run: `jp-s1-w1753-weapon16-w2390-window-rejected-20260612`.
+- Best representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-weapon16-w2309-jump-2248-2368-20260612.json`.
+- Saved continuation state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2390-weapon16-20260612.json`.
+
+Accepted facts:
+
+- The W1753 baseline route still dies at W1753/W1760 because it backs left into a same-lane body window.
+- A no-left W1753 batch carried `weapon = 16` to no-death W2178, then died at a low-lane pit/body window.
+- Adding a W2132-W2188 `jump_right_fire` pit jump carried `weapon = 16` to no-death W2309, then died at W2310.
+- Extending the W2250-W2368 window with `jump_right_fire` carried `weapon = 16` to no-death W2390 before a low pit/edge death at frame 6260.
+- The new best weapon16 analysis state is W2390, but it is not a clear fragment and does not improve the all-route Stage 1 best of W3208.
+
+Rejected facts:
+
+- W2250-W2368 `right_fire`, `right_up_fire`, neutral/left brake variants, and late W2368-W2440 pulse or release-then-jump variants did not beat W2390 as no-death progress.
+- Pulse-jump variants can report post-death progress as high as W2726 after recovery, but this is rejected for zero-death training and must not be promoted.
+- W2390 trace shows the second failure is a low pit/edge window after entering `boss-approach-survive`, not a boss-wall clear attempt.
+- Holding A continuously through W2248-W2368 does not produce a reliable second jump after W2368; future candidates need a route-level terrain/window fix rather than another stance-only overlay.
+
 Next weapon16 work:
 
-- Resume from `jp-stage1-w1753-weapon16-20260612.json` or an earlier W1715 trace point and train the W1715-W1760 same-lane body blocker before returning to boss-wall work.
+- Resume from `jp-stage1-w2390-weapon16-20260612.json` for blocker diagnosis, but prefer rebuilding the W2368-W2395 terrain transition from an earlier W2248/W2309 trace so the next branch remains zero-death.
 - No single-player RAM trace in this batch confirmed a Spread upgrade; `weapon` stayed `16` through the best no-death state.
 - Accept a candidate only if RAM confirms `weapon` improves or remains useful and the segment stays zero-death.
 - Do not promote any weapon16 or Spread route to the strategy pack unless it reconnects to the boss approach without deaths.
