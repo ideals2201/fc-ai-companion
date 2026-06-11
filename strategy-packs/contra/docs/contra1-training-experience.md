@@ -563,9 +563,32 @@ Rejected facts:
 - W2390 trace shows the second failure is a low pit/edge window after entering `boss-approach-survive`, not a boss-wall clear attempt.
 - Holding A continuously through W2248-W2368 does not produce a reliable second jump after W2368; future candidates need a route-level terrain/window fix rather than another stance-only overlay.
 
+## 2026-06-12 Contra Japan W2390-W2838 Weapon16 Boss-Approach Chain
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-weapon16-w2838-landfix-rejected-20260612`.
+- Best representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-weapon16-w2824-landfix-rightfire-2735-2790-20260612.json`.
+- Saved continuation states: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2726-weapon16-20260612.json`, `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2824-weapon16-20260612.json`, and `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2838-weapon16-20260612.json`.
+
+Accepted facts:
+
+- Splitting the W2248-W2440 movement into W2248-W2334 `jump_right_fire`, W2334-W2352 `right_fire` release, and W2352-W2440 `jump_right_fire` fixed the W2390 low-fall blocker.
+- Adding W2688-W2735 `jump_right_fire` avoided the W2726 close-body contact and pushed the no-death weapon16 branch to W2824.
+- Adding a W2735-W2790 `right_fire` landing fix pushed the no-death weapon16 branch to W2838.
+- The best current weapon16 branch still preserves `weapon = 16`, but it remains below the all-route Stage 1 best W3208 and is not a clear fragment.
+
+Rejected facts:
+
+- W2726 local rescue from `jp-stage1-w2726-weapon16-20260612.json` is too late; all tested local actions died immediately at W2727.
+- W2780-W2860 extended jump, pulse jump, right-up fire, and W2808-W2835 late brake candidates did not beat W2824.
+- W2735-W2790 neutral, left-fire, and left-jump landing fixes regressed or died earlier; only right-carry variants reached W2838.
+- W2838 trace shows the route is already in an unrecoverable low fall at Y231 with no nearby contact threat; pressing A at that point does not start a jump.
+
 Next weapon16 work:
 
-- Resume from `jp-stage1-w2390-weapon16-20260612.json` for blocker diagnosis, but prefer rebuilding the W2368-W2395 terrain transition from an earlier W2248/W2309 trace so the next branch remains zero-death.
+- Rebuild the W2735-W2838 platform-chain trajectory from an earlier W2688/W2726 trace; W2838 itself is too late to rescue.
 - No single-player RAM trace in this batch confirmed a Spread upgrade; `weapon` stayed `16` through the best no-death state.
 - Accept a candidate only if RAM confirms `weapon` improves or remains useful and the segment stays zero-death.
 - Do not promote any weapon16 or Spread route to the strategy pack unless it reconnects to the boss approach without deaths.
