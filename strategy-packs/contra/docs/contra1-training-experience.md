@@ -1471,3 +1471,31 @@ Next weapon16 work:
 - Do not repeat W1750-W1815 transplant sweeps from the current W1210 branch.
 - If rebuilding before W2100, use a new saved-state phase model instead of direct fragment copying.
 - The next bounded phase should either rebuild before W2688 from a trace-proven state difference, or return to the older W1753-derived saved states and test whether they can be made reproducible without mixing them into the W1210 branch.
+
+## 2026-06-12 Contra Japan W2939 Boss-Entry Rescue Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2939-boss-entry-rescue-rejected-20260612`.
+- Start states checked: `jp-stage1-w2939-weapon16-20260612.json`, `jp-stage1-w2941-weapon16-20260612.json`, `jp-stage1-w2945-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2939-boss-entry-rescue-batch-20260612.summary.json`.
+
+Accepted facts:
+
+- The W2939, W2941, and W2945 weapon16 saved states all lose active on the next resumed frame under the normal route-plan probe.
+- Twelve W2939 rescue candidates tested immediate left-jump, left-fire, up-fire, right-up, jump-right, pulse-jump, right-duck, duck, neutral, right-fire, pulse-right, and pulse-up-jump entry actions.
+- No candidate exceeded W2939, reached W2960 boss-wall entry, approached W3208, or produced a usable zero-death segment.
+- This proves the W2939-W2945 saved states are pre-loss evidence rather than practical rescue anchors.
+
+Rejected facts:
+
+- Do not treat W2939, W2941, or W2945 as reusable boss-entry start states for future candidate batches.
+- The older W1753-derived branch cannot be advanced by starting directly from these terminal saved states.
+- The W3208 global best remains separate boss-wall evidence from a different state and is not reproduced by the W2939 rescue class.
+
+Next weapon16 work:
+
+- Start any older-branch boss-entry reconstruction earlier than W2939.
+- Prefer a trace-proven state before the low-lane fall/contact collapse instead of one-frame pre-loss snapshots.
+- If the next phase uses W2945-class evidence, first prove the chosen saved state survives at least several frames without a candidate overlay, then test boss-wall actions.
