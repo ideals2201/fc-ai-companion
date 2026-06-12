@@ -290,6 +290,90 @@ test("ledger appends runtime reports to the selected stage instead of hard-codin
   assert.equal(updated.stageSummary["stage-1"], undefined);
 });
 
+test("ledger appends candidate-search summaries as aggregate batch runs", () => {
+  const progress = {
+    schemaVersion: "1.1.0",
+    packId: "test-pack",
+    gameProfileId: "contra",
+    romProfileId: "contra-j-good",
+    stageId: "stage-1",
+    policy: {},
+    stageSummary: {},
+    progressByStrategy: {
+      "survival-v0": {
+        status: "candidate",
+        summary: {
+          clearProgress: { targetWorldX: 3300 }
+        }
+      }
+    },
+    runs: []
+  };
+  const report = {
+    schema: "fc-ai-contra-segment-candidate-search-run-v1",
+    source: { kind: "contra-segment-candidate-search", tasIsController: false },
+    frameCount: 2600,
+    strategyKey: "survival-v0",
+    candidates: [
+      {
+        candidateTrial: "right-up-window",
+        status: "lost-active",
+        lostActiveFrame: 6252,
+        maxWorldX: 1981,
+        maxNoDeathWorldX: 1689,
+        finalWorldX: 82,
+        reportPath: "runtime/right-up.json",
+        configPath: "runtime/right-up-overlay.json"
+      },
+      {
+        candidateTrial: "right-duck-window",
+        status: "stalled-active",
+        lostActiveFrame: null,
+        maxWorldX: 1579,
+        maxNoDeathWorldX: 1579,
+        finalWorldX: 1579,
+        reportPath: "runtime/right-duck.json",
+        configPath: "runtime/right-duck-overlay.json"
+      },
+      {
+        candidateTrial: "pulse-window",
+        status: "lost-active",
+        lostActiveFrame: 6781,
+        maxWorldX: 2726,
+        maxNoDeathWorldX: 2178,
+        finalWorldX: 82,
+        reportPath: "runtime/pulse.json",
+        configPath: "runtime/pulse-overlay.json"
+      }
+    ]
+  };
+
+  const updated = appendRuntimeTrainingReport(progress, report, {
+    now: "2026-06-12T04:00:00.000Z",
+    runId: "w1534-spread-window-batch",
+    side: "1P",
+    targetWorldX: 3300
+  });
+
+  assert.equal(updated.runs.length, 1);
+  assert.equal(updated.runs[0].runCount, 3);
+  assert.equal(updated.runs[0].frames, 7800);
+  assert.equal(updated.runs[0].durationSeconds, 130);
+  assert.equal(updated.runs[0].deaths, 2);
+  assert.equal(updated.runs[0].maxWorldX, 2178);
+  assert.equal(updated.runs[0].finalWorldX, 1579);
+  assert.equal(updated.runs[0].status, "candidate-failed");
+  assert.equal(updated.runs[0].source, "contra-segment-candidate-search");
+  assert.equal(updated.runs[0].candidateTrial, "pulse-window");
+  assert.deepEqual(updated.runs[0].candidateConfig, {
+    id: "pulse-window",
+    path: "runtime/pulse-overlay.json"
+  });
+  assert.equal(updated.stageSummary["stage-1"].summary.trainingRuns.value, 3);
+  assert.equal(updated.stageSummary["stage-1"].summary.knownDeaths.value, 2);
+  assert.equal(updated.progressByStrategy["survival-v0"].summary.clearProgress.value, "W2178 / W3300");
+});
+
 test("ledger prefers no-death progress over post-death max progress", () => {
   const progress = {
     schemaVersion: "1.1.0",

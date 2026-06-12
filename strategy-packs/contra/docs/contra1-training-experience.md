@@ -1242,3 +1242,33 @@ Next boss-wall work:
 - Do not spend the next phase on more direct translations of this external boss window.
 - Rebuild boss entry station before W3208 or change the route state by improving weapon acquisition before the boss.
 - If using the external package again, mine earlier route-state or weapon-route ideas instead of copying the final boss action string.
+
+## 2026-06-12 Contra Japan W1534 Spread Window Live Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1534-spread-window-live-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/debug-w1590-before-spread-window.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1534-spread-window-live-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1534-spread-window-pulseright1500-1688-p8w4-20260612.json`.
+
+Accepted facts:
+
+- The W1534 saved state is a real single-player `contra-j-good` state near the TAS W1591 weapon-change clue, but it starts with `weapon = 0`, not the TAS `weapon = 1` precondition.
+- Twelve live overlays tested W1500-W1688 up-fire, right-up fire, right fire, crouch fire, pulse-right fire, jump-right fire, and split jump/right-up variants.
+- No candidate produced any RAM-confirmed weapon transition; `maxObservedWeapon` stayed `0` for the whole batch.
+- Best zero-death local progress was W2178 from `pulse_right_fire` p8/w4, still below the existing weapon16 W2945 branch and below the all-route W3208 ceiling.
+
+Rejected facts:
+
+- Treat this specific W1534 single-player saved state as rejected for direct Spread conversion.
+- The TAS W1591 clue does not transfer without first recreating its earlier weapon/camera/enemy-cycle preconditions.
+- Static up/neutral/duck variants either stalled around W1500-W1579 or lost active before reconnecting.
+- Right/right-up/jump variants advanced locally but died around W1690-W2179 and never improved route state.
+
+Training rule:
+
+- Do not spend another phase on W1500-W1688 direct fire-angle overlays from `debug-w1590-before-spread-window.json`.
+- If revisiting the W1591 TAS idea, first rebuild the earlier W300-W390 pickup route so RAM enters this window with the correct nonzero weapon state.
+- Candidate-search summaries must enter the ledger through `scripts/strategy-training-progress.mjs`; batch runs must preserve candidate count, death count, and best no-death progress instead of being collapsed to a single run.

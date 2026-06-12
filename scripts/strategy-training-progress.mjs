@@ -54,6 +54,125 @@ function maxWorldXFromReport(report) {
   return candidates.length > 0 ? Math.max(...candidates) : null;
 }
 
+function isCandidateSearchSummary(report) {
+  return report?.schema === "fc-ai-contra-segment-candidate-search-run-v1"
+    && Array.isArray(report.candidates);
+}
+
+function candidateNumber(candidate, keys) {
+  for (const key of keys) {
+    const value = key.split(".").reduce((current, segment) => current?.[segment], candidate);
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+function candidateNoDeathWorldX(candidate) {
+  return candidateNumber(candidate, [
+    "maxNoDeathWorldX",
+    "maxNoDeathProgression",
+    "maxNoDeathProgressSnapshot.worldX",
+    "report.maxNoDeathProgressSnapshot.worldX",
+    "maxProgression",
+    "maxWorldX",
+    "report.maxProgressSnapshot.worldX",
+    "finalProgression",
+    "finalWorldX",
+    "report.finalSnapshot.worldX"
+  ]);
+}
+
+function candidateFinalWorldX(candidate) {
+  return candidateNumber(candidate, [
+    "finalWorldX",
+    "finalProgression",
+    "report.finalSnapshot.worldX"
+  ]);
+}
+
+function candidateHasDeath(candidate) {
+  if (Number.isFinite(candidate?.deathCount)) return candidate.deathCount > 0;
+  if (Number.isFinite(candidate?.report?.deathCount)) return candidate.report.deathCount > 0;
+  if (Number.isFinite(candidate?.lostActiveFrame)) return true;
+  if (Number.isFinite(candidate?.report?.lostActiveFrame)) return true;
+  const status = candidate?.status ?? candidate?.report?.status;
+  return status === "lost-active" || status === "recovered-after-loss";
+}
+
+function candidateFrameTotal(report, candidateCount) {
+  const framesPerCandidate = Number.isFinite(report?.frameCount)
+    ? report.frameCount
+    : Number.isFinite(report?.frames) ? report.frames : null;
+  if (framesPerCandidate !== null) return framesPerCandidate * candidateCount;
+
+  const candidateFrames = report.candidates
+    .map((candidate) => candidateNumber(candidate, ["frameCount", "frames", "report.frameCount", "report.maxFrames"]))
+    .filter((value) => Number.isFinite(value));
+  return candidateFrames.length === candidateCount
+    ? candidateFrames.reduce((total, value) => total + value, 0)
+    : 0;
+}
+
+function bestCandidateFromSearchSummary(report) {
+  return [...report.candidates].sort((left, right) => (
+    (candidateNoDeathWorldX(right) ?? -1) - (candidateNoDeathWorldX(left) ?? -1)
+  ))[0] ?? null;
+}
+
+function createRunFromCandidateSearchSummary(report, options = {}) {
+  const strategyKey = options.strategyKey ?? report?.strategyKey ?? report?.strategy ?? "survival-v0";
+  const stageId = options.stageId ?? report?.stageId ?? "stage-1";
+  const frameRate = options.frameRate ?? defaultFrameRate;
+  const candidates = report.candidates;
+  const runCount = candidates.length;
+  const frames = candidateFrameTotal(report, runCount);
+  const bestCandidate = bestCandidateFromSearchSummary(report);
+  const maxWorldX = candidateNoDeathWorldX(bestCandidate) ?? 0;
+  const finalWorldXValues = candidates
+    .map(candidateFinalWorldX)
+    .filter((value) => Number.isFinite(value));
+  const deaths = candidates.filter(candidateHasDeath).length;
+  const acceptedCount = Array.isArray(report.acceptedCandidates)
+    ? report.acceptedCandidates.length
+    : candidates.filter((candidate) => candidate.gateStatus === "candidate").length;
+  const runId = options.runId
+    ?? `${strategyKey}-batch-${new Date(options.now ?? Date.now()).toISOString().replace(/[:.]/g, "-")}`;
+  return {
+    runId,
+    stageId,
+    strategyKey,
+    side: options.side ?? report?.side ?? "1P",
+    source: report?.source?.kind ?? "contra-segment-candidate-search",
+    startedAt: options.now ?? report?.createdAt ?? new Date().toISOString(),
+    runCount,
+    frames,
+    durationSeconds: formatSecondsForProgress(frames / frameRate),
+    activeFrame: null,
+    lostActiveFrame: Number.isFinite(bestCandidate?.lostActiveFrame)
+      ? bestCandidate.lostActiveFrame
+      : Number.isFinite(bestCandidate?.report?.lostActiveFrame) ? bestCandidate.report.lostActiveFrame : null,
+    maxWorldX,
+    maxWorldFrame: candidateNumber(bestCandidate, [
+      "maxNoDeathFrame",
+      "maxNoDeathProgressSnapshot.frame",
+      "report.maxNoDeathProgressSnapshot.frame",
+      "report.maxProgressSnapshot.frame"
+    ]),
+    finalWorldX: finalWorldXValues.length > 0 ? Math.max(...finalWorldXValues) : null,
+    finalFrame: null,
+    targetWorldX: options.targetWorldX ?? 2960,
+    deaths,
+    status: acceptedCount > 0 ? "candidate" : "candidate-failed",
+    reason: report?.phase ?? report?.reason ?? "candidate-search-summary",
+    rom: report?.rom ?? null,
+    candidateTrial: bestCandidate?.candidateTrial ?? bestCandidate?.id ?? null,
+    candidateConfig: bestCandidate?.configPath
+      ? { id: bestCandidate?.candidateTrial ?? bestCandidate?.id ?? null, path: bestCandidate.configPath }
+      : bestCandidate?.candidateConfig ?? null,
+    notes: options.notes ?? "Recorded from candidate search summary."
+  };
+}
+
 export function inferRuntimeReportDeaths(report) {
   const deathFlags = [
     report?.lostActiveSnapshot?.deathFlag,
@@ -80,6 +199,8 @@ function defaultTargetWorldX(progress, strategyKey, fallbackTarget) {
 }
 
 function createRunFromRuntimeReport(report, options = {}) {
+  if (isCandidateSearchSummary(report)) return createRunFromCandidateSearchSummary(report, options);
+
   const strategyKey = options.strategyKey ?? report?.strategyKey ?? "survival-v0";
   const stageId = options.stageId ?? "stage-1";
   const frameRate = options.frameRate ?? defaultFrameRate;

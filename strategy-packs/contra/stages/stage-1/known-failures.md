@@ -9,6 +9,7 @@ Pack: `contra-stage1-strategy-v0`
 - `stage1-w2836-mid-platform-capture-failure`: Boss-approach mid-platform left correction changes the death point to `WorldX 2836/y236` but still misses safe capture. Do not keep tuning left/right correction in this same falling window. Evidence: `trace-evidence/2026-06-07-mid-platform-capture-failure.json`.
 - `stage1-w2839-lower-platform-edge-trigger-failure`: Boss-approach lower-platform edge trigger releases A before landing and re-triggers at `WorldX 2814-2828`, but still dies at `WorldX 2839/y234`. Do not keep tuning the same lower-platform A-edge window. Evidence: `trace-evidence/2026-06-07-lower-platform-edge-trigger-failure.json`.
 - `stage1-w3208-barrier-node-station-failure`: barrier station and aim can fail if the AI does not hold the correct firing angle.
+- `stage1-w1534-spread-window-live-state-rejected`: the single-player `debug-w1590-before-spread-window.json` state starts with `weapon = 0`; twelve W1500-W1688 direct fire-angle/jump overlays produced no RAM weapon transition and best no-death only W2178. Do not rescan this window unless an earlier W300-W390 route rebuild enters it with the correct nonzero weapon state. Evidence: `jp-s1-w1534-spread-window-live-rejected-20260612`.
 - `stage1-bridge-reward-missed`: reward or weapon targets before the bridge can be skipped when route pressure is too high.
 - `stage1-fixed-threat-no-fire`: fixed threats can be visible but not attacked if classification or aim mapping fails.
 
