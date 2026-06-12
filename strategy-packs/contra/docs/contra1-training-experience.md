@@ -1040,3 +1040,34 @@ Next weapon16 work:
 - Treat W1461 as a diagnostic pre-death state, not a continuation start.
 - Rebuild the route before W1461, especially the W1210-W1450 weapon16 approach and enemy-cycle control.
 - Keep external Contra Japan package claims as proposal sources only until reproduced through live `contra-j-good` headless/FCEUX evidence.
+
+## 2026-06-12 Contra Japan W1450 Pulse5x2 W1722 Escape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1450-pulse5x2-w1722-escape-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1450-weapon16-20260612.json`.
+- Base overlay: W1450-W1510 `pulse_right_fire` with `firePeriod = 5`, `fireWidth = 2`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w1722-escape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w1722-jump1718-1748-20260612.json`.
+
+Accepted facts:
+
+- The W1450-W1510 p5/w2 right-fire pulse remains the best known W1450 local variant: it preserves `weapon = 16` and reaches the W1722 contact blocker before death.
+- Twelve second-stage overlays tested W1718-W1748 jump-right, jump-only, right-duck, duck, right-fire, right-up, up-fire, left-fire, left-jump, p6/w2 pulse-jump, p10/w2 pulse-jump, and left-duck actions.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+- The best second-stage result reached W1733/Y196 with `weapon = 16`, then lost active at W1734. This is a small local improvement over W1722, but not a viable continuation.
+
+Rejected facts:
+
+- Jump, jump-only, right-fire, right-up, and pulse-jump variants all tied W1733 no-death, then died at W1734/Y196 or W1734/Y188.
+- Duck, right-duck, and left-duck avoided immediate death but stalled at W1718 and did not cross the blocker.
+- Up-fire, left-fire, and left-jump died or recovered after loss at W1718, so post-loss progress is rejected.
+- Local W1722 rescue is too late for this route class; the enemy-cycle formation must be changed before W1718 or the route must be rebuilt before W1450.
+
+Next weapon16 work:
+
+- Move the next search to W1510-W1718 formation shaping, not W1722 last-moment rescue.
+- Test whether earlier fire cadence or short right/left spacing changes can prevent slot6 from arriving at same-lane contact around W1734.
+- Keep the W1450 p5/w2 pulse as a useful proposal source only until a follow-up branch exceeds W1753 no-death without stalling.
