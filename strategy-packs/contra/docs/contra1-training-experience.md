@@ -1136,3 +1136,36 @@ Next weapon16 work:
 - Move the next search to W2309-W2328 landing and fixed-target timing only if using the W2112-W2188 pulse-up-jump route.
 - Otherwise rebuild the route before W1450 or use an external Japan package proposal to seed a different live `contra-j-good` W1450 approach.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W1450 Pulse5x2 W2328 Landing Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1450-pulse5x2-w2328-landing-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1450-weapon16-20260612.json`.
+- Base overlays: W1450-W1510 `pulse_right_fire` p5/w2, W1648-W1718 `jump_right_fire`, and W2112-W2188 `pulse_up_jump_right` p12/w3.
+- Trace report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2328-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2328-landing-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2328-landing-jump2288-2348-20260612.json`.
+
+Accepted facts:
+
+- The trace shows the best W2327 route descending from Y139 to Y225, then dying at W2328/Y232; this is still before boss-wall logic.
+- Twelve candidates tested W2288-W2360 jump-right, jump-only, pulse-jump, pulse-up-jump, right-up, right-fire, right-duck, duck-fire, and left-duck landing/fixed-target actions.
+- No candidate exceeded the W2327 no-death ceiling or reached W2960 for boss-wall validation.
+- The current W2328 blocker cannot be solved by simply overwriting local W2288-W2348 inputs after the W2112-W2188 pulse-up-jump branch.
+
+Rejected facts:
+
+- Jump-right, jump-only, pulse-jump, pulse-up-jump, right-up, right-fire, right-duck, and duck-fire variants all repeated the W2328/Y232 death.
+- Left-duck changed vertical position but regressed: no-death remained capped at W2327/Y61 and then lost at W2322/Y74.
+- Post-loss recovery remains rejected and must not be counted as route progress.
+- This local rescue window is exhausted for the current branch.
+
+Next weapon16 work:
+
+- Do not spend more attempts only changing W2288-W2348 actions on this branch.
+- Move the next search earlier into the W2112-W2188 arc shape, especially pulse phase and jump-release cadence that determines descent into W2327.
+- If W2112-W2188 arc search cannot exceed W2327, rebuild before W1450 using a different live `contra-j-good` approach.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
