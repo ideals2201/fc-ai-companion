@@ -707,3 +707,30 @@ Next weapon16 work:
 - Continue around the W2735-W2784 release and W2784-W2884 p12 pulse family, varying pulse width and exit timing before testing W2884+ controls again.
 - Accept only zero-death candidates that exceed W2945 or reach W2960+ for boss-wall validation.
 - Keep W2945 saved state as inspection evidence, not as a local rescue point, because the next loss happens at W2946/Y236.
+
+## 2026-06-12 Contra Japan W2945 P12 Neighbor And Post-Control Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-p12-neighbor-post-sweep-rejected-20260612`.
+- P12-neighbor batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-p12-neighbor-batch-20260612.summary.json`.
+- Post-control batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-post-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-post-rightfire2910-2964-20260612.json`.
+
+Accepted facts:
+
+- The W2945 p12/w1 pre-arc candidate remains reproducible, but none of the neighbor or post-control variants improved it.
+- The representative W2910-W2964 `right_fire` post-control overlay still lost at W2946/Y236 with `weapon = 16`.
+
+Rejected facts:
+
+- W2784-W2884 p12/w2, p12/w3, p15/w1, W2780 start, W2788 start, early W2876 exit, and W2896/W2910 extensions all tied W2945 but did not improve it.
+- W2784-W2884 p11, p13, p14, and p16 variants regressed to W2938-W2941 or lower.
+- W2910-W2964 `right_fire`, `jump_right_fire`, p12/p8 pulse, split right-then-jump, W2925 low stance, and W2935 left-jump escape variants all failed to exceed W2945.
+
+Next weapon16 work:
+
+- Stop treating W2910+ as a local rescue window for this route class; the W2946/Y236 loss persists after direct post-control overrides.
+- Move the next search earlier, especially W2688-W2735 jump shape and W2735-W2784 platform release, to enter the p12 pulse with more vertical margin.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
