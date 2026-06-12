@@ -976,3 +976,35 @@ Next weapon16 work:
 - Treat W2000-W2132 local entry-shape tuning as exhausted for the current route class.
 - Move the next search before W2000, likely W1753-W2000 route-state shaping or a different pre-W1753 weapon route state.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W1753-W2000 Route-State Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-2000-routestate-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Baseline trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-2000-baseline-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-2000-routestate-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-2000-routestate-rightfire1980-2006-20260612.json`.
+
+Accepted facts:
+
+- The baseline trace confirms that the current weapon16 p12 route reaches W2945 no-death, then loses at W2946/Y236.
+- Twelve candidates modified only the pre-W2000 route state before returning to the same W2132/W2248/W2352 and W2688/W2735/W2784 p12 chain.
+- No candidate exceeded W2945 or reached W2960 for boss-wall validation.
+- W1980-W2006 right-fire, right-up, p12/w2 pulse, and right-duck variants only reproduced W2945 before losing at W2946/Y236.
+
+Rejected facts:
+
+- W1887-W1911 right-fire and right-duck replacements regressed the route to W2838/W2839 losses.
+- W1887 neutral fire, W1887 early jump, delayed W1911 jump, and W1904 prejump variants died before W2005.
+- Suppressing the W1960 second jump reached only W2014; delaying that jump to W1968 reached only W2178.
+- W1753-W2000 local route-state tuning does not change the later W2945 death into a W2960+ boss-wall candidate.
+
+Next weapon16 work:
+
+- Treat local W1753-W2000 route-state shaping as exhausted for the current weapon16 p12 route class.
+- Rebuild before the W1753 saved state, or use the external Contra Japan package only as a proposal source for new live `contra-j-good` replay candidates.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.

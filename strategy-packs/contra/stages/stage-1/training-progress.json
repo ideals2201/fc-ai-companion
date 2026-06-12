@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T01:34:32.529Z",
+  "updatedAt": "2026-06-12T01:55:24.511Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 57,
+          "value": 58,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 53,
+          "value": 54,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 4633.39,
+          "value": 4720.06,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 44,
+          "value": 45,
           "status": "candidate"
         },
         "deaths": {
-          "value": 41,
+          "value": 42,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 3476.05,
+          "value": 3562.72,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w2068-entryshape-sweep-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w1753-2000-routestate-sweep-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -2233,6 +2233,39 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2068-entryshape-pulse2068-2132-p10w2-20260612.json"
       },
       "notes": "Rejected W2000-W2132 entry-shape sweep from the W1753 weapon16 continuation: 12 candidates changed the W2000-W2048 pit descent, W2026 recoil/jump zone, W2048-W2098 fixed-threat aim, W2060-W2112 platform-jump hold, W2068-W2132 pulse platform jump, and W2096-W2132 descent aim before returning to the existing W2132/W2248/W2352 and W2688/W2735/W2784 chain. No candidate exceeded W2945 or reached W2960. Only the W2068-W2132 p10/w2 pulse and W2096-W2132 right-up variants reproduced W2945 before losing at W2946/Y236; W2000/W2026 suppressions died around W2030, W2048-W2112 variants died around W2110, and W2020-W2068 right-jump died around W2178. Treat W2000-W2132 local entry-shape tuning as exhausted for this route class; next search should move before W2000 or rebuild the pre-W1753 weapon route state."
+    },
+    {
+      "runId": "jp-s1-w1753-2000-routestate-sweep-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-12T01:55:24.509Z",
+      "runCount": 1,
+      "frames": 5200,
+      "durationSeconds": 86.67,
+      "activeFrame": 5544,
+      "lostActiveFrame": 6854,
+      "maxWorldX": 2945,
+      "maxWorldFrame": 6853,
+      "finalWorldX": 82,
+      "finalFrame": 10744,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-s1-w1753-2000-routestate-rightfire1980-2006-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-w1753-2000-routestate-rightfire1980-2006-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1753-2000-routestate-rightfire1980-2006-20260612.json"
+      },
+      "notes": "Rejected W1753-W2000 route-state shaping sweep from the W1753 weapon16 continuation: 12 candidates changed the W1887-W1911 low stall, W1911 jump timing, W1960 second-jump timing, and W1980-W2006 high pit-entry posture before returning to the existing W2132/W2248/W2352 and W2688/W2735/W2784 p12 chain. No candidate exceeded W2945 or reached W2960. W1980-W2006 right-fire, right-up, p12/w2 pulse, and right-duck variants only reproduced W2945 before losing at W2946/Y236; W1887 right-fire/right-duck regressed to W2838, W1968 delayed jump reached only W2178, W1960 jump suppression reached W2014, W1904 prejump reached W2004, and neutral/early-jump/delayed W1911 variants died before W1960. Treat local W1753-W2000 route-state shaping as exhausted for the current weapon16 p12 route class; next search should rebuild the pre-W1753 weapon route state or import external package ideas only as proposals for live contra-j-good replay."
     }
   ],
   "strategyDescriptions": {
