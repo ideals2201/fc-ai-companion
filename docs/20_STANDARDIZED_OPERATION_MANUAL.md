@@ -79,6 +79,17 @@ Strategy packages start after the browser cockpit has entered an operable game s
 
 Menu flow belongs to the cockpit runtime, not the strategy pack. START, SELECT, one-player/two-player entry, pause, continue, and stop-run controls may be driven by the browser UI through a system input source, but those controls must not be stored as strategy-pack controller actions.
 
+### Phase Summary Cadence
+
+Every strategy training run uses a fixed phase-summary cadence:
+
+- Stop after roughly 20 minutes or 12 candidates, whichever comes first.
+- Save a factual phase summary before starting the next candidate batch.
+- Apply this cadence to every stage and every strategy category: `survival-v0`, `speedrun-v0`, `combat-v0`, `loot-v0`, and `guard-v0`.
+- The phase summary must record best no-death `worldX`, death point, accepted candidates, rejected candidates, rejection reasons, changed route-state facts, and the next search boundary.
+- Failed candidates are evidence, not noise. They must remain `candidate-failed` or comparison evidence unless a real runtime replay proves promotion.
+- If two adjacent phase summaries show no improvement in no-death progress, boss/fixed-target HP, route state, weapon state, or reproducibility, move the next search boundary instead of repeating the same local window.
+
 ## 5. TraceEvidence
 
 TraceEvidence is the standard archive for real runtime proof.

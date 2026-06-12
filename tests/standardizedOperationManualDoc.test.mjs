@@ -40,3 +40,17 @@ test("standardized operation manual includes candidate fragment package evidence
   assert.match(source, /candidate StrategyFragment proposal/i, "manual should include candidate fragment proposals in package evidence");
   assert.match(source, /tasIsController/i, "manual should keep TAS explicitly marked as non-controller evidence");
 });
+
+test("standardized operation manual saves phase summaries for every training category", () => {
+  assert.match(source, /20 minutes/i, "manual should require a time-bounded phase summary cadence");
+  assert.match(source, /12 candidates/i, "manual should require a candidate-count phase summary cadence");
+  assert.match(source, /every stage and every strategy category/i, "manual should apply cadence across all training");
+  for (const strategyKey of ["survival-v0", "speedrun-v0", "combat-v0", "loot-v0", "guard-v0"]) {
+    assert.match(source, new RegExp(strategyKey), `manual should apply cadence to ${strategyKey}`);
+  }
+  assert.match(source, /best no-death `worldX`/i, "manual should require best no-death progress");
+  assert.match(source, /death point/i, "manual should require death point evidence");
+  assert.match(source, /accepted candidates/i, "manual should require accepted candidate evidence");
+  assert.match(source, /rejected candidates/i, "manual should require rejected candidate evidence");
+  assert.match(source, /next search boundary/i, "manual should require next-boundary guidance");
+});

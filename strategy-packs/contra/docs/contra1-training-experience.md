@@ -1202,3 +1202,43 @@ Next weapon16 work:
 - Rebuild before W1450, especially the W1210-W1450 weapon16 approach and enemy-cycle state.
 - Use the external Contra Japan package only as a proposal source for a different live `contra-j-good` W1450 approach, then revalidate through headless runtime.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan External Boss Window Conversion Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-extboss-source-bosswall-sweep-rejected-20260612`.
+- Proposal source: external package `contra-jp-operation-strategy-pack-v0-0.1.0-20260612-090640`, Stage 1 boss fragments.
+- Source idea translated: FCEUX proposal windows around `D+B`, `R+D`, and `R+U+B` for rotating-gun/plated-door pressure.
+- Start states: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w3120-boss-entry-20260612.json` and `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w3208-boss-core-contact-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-extboss-source-bosswall-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-extboss-w3208-rduck60-rup120-20260612.json`.
+
+Accepted facts:
+
+- Twelve candidate overlays were tested: six from W3120 boss entry and six from W3208 core-contact state.
+- No candidate exceeded the existing W3208 no-death ceiling or reached W3300.
+- No candidate reduced boss fixed-target HP before death; the representative W3208 run still shows core HP 31.
+- The best W3208 candidate survived until lostActiveFrame 8158, then lost at W3201/Y196.
+- The best W3120 candidate reached only W3171 before loss.
+
+Rejected facts:
+
+- The external package's FCEUX `D+B -> R+D -> R+U+B` boss action window does not directly transfer to the current jsnes `contra-j-good` W3120/W3208 states.
+- Simple crouch/fire and right-up boss-wall overlays remain insufficient with default rifle and current enemy-cycle state.
+- Phase-on plus the same translated overlay did not improve over phase-off results.
+- The external package remains proposal material only; it is not validated live-controller evidence for this pack.
+
+Training cadence rule:
+
+- Stop after roughly 20 minutes or 12 candidates, whichever comes first, and write a factual phase summary.
+- Every phase summary must list accepted facts, rejected facts, best no-death `worldX`, death point, and the next search boundary.
+- Do not continue sweeping a local window after two adjacent phase summaries show no progress in `maxNoDeathWorldX`, boss HP, or route state.
+- Runtime artifacts stay local unless promoted through ledger/docs/tests; failed candidates are still useful only as rejection evidence.
+
+Next boss-wall work:
+
+- Do not spend the next phase on more direct translations of this external boss window.
+- Rebuild boss entry station before W3208 or change the route state by improving weapon acquisition before the boss.
+- If using the external package again, mine earlier route-state or weapon-route ideas instead of copying the final boss action string.

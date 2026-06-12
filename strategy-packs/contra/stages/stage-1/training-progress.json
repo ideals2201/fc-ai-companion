@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T03:03:39.005Z",
+  "updatedAt": "2026-06-12T03:20:36.891Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 64,
+          "value": 65,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 59,
+          "value": 60,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 5223.38,
+          "value": 5250.05,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 51,
+          "value": 52,
           "status": "candidate"
         },
         "deaths": {
-          "value": 47,
+          "value": 48,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 4066.04,
+          "value": 4092.71,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w1450-pulse5x2-w2112-arc-sweep-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-extboss-source-bosswall-sweep-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -2464,6 +2464,39 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1450-pulse5x2-w2112-arc-pulseup2088-2168-p12w3-20260612.json"
       },
       "notes": "Rejected W1450 pulse5x2 W2112-W2240 arc-shape sweep: 12 candidate overlays kept W1450-W1510 p5/w2 pulse_right_fire and W1648-W1718 jump_right_fire formation, then varied W2088-W2240 pulse_up_jump_right start/end windows and p10/p12/p14/p16 cadence, plus W2112-W2240 pulse_jump_right_fire and W2096-W2188 hold jump. No candidate exceeded the W2327 no-death ceiling or reached W2960 boss-wall validation. Ten pulse_up variants repeated W2328/Y232, pulse_jump_right_fire regressed to W2226/Y77, and holdjump regressed to W2178/Y230. Treat W2112-W2240 local arc shaping as exhausted for the current W1450 branch; next search should rebuild before W1450 or seed a different live contra-j-good branch from external Japan proposals."
+    },
+    {
+      "runId": "jp-s1-extboss-source-bosswall-sweep-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-12T03:20:36.889Z",
+      "runCount": 1,
+      "frames": 1600,
+      "durationSeconds": 26.67,
+      "activeFrame": 7940,
+      "lostActiveFrame": 8158,
+      "maxWorldX": 3208,
+      "maxWorldFrame": 7940,
+      "finalWorldX": 82,
+      "finalFrame": 9540,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-s1-extboss-w3208-rduck60-rup120-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-extboss-w3208-rduck60-rup120-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-extboss-w3208-rduck60-rup120-20260612.json"
+      },
+      "notes": "Rejected external-package boss-window conversion sweep: 12 candidate overlays translated FCEUX proposal actions around D+B, R+D, and R+U+B into jsnes route overlays from W3120 and W3208. No candidate exceeded the existing W3208 no-death ceiling, reached W3300, or reduced boss fixed-target HP before death. Best W3208 candidate survived until lostActiveFrame 8158 but still lost at W3201/Y196 with core HP 31; best W3120 candidate reached only W3171. Treat the external package boss action window as proposal-only for contra-j-good jsnes until a different station entry or weapon route changes the state."
     }
   ],
   "strategyDescriptions": {
