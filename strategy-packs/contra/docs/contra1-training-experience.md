@@ -540,6 +540,9 @@ Accepted facts:
 Rejected facts:
 
 - W674 variants `neutral_fire`, `left_fire`, `left_up_fire`, `right_fire`, `right_up_fire`, `jump_right_fire`, `pulse_jump_right_fire`, and `right_duck_fire` all died or lost active after the saved W674 state.
+- W300 pickup reconnect batch `jp-s1-w300-pickup-reconnect-rejected-20260612` tested 12 candidates from `stage1-start-1200.json`, combining W300-W390 pickup overlays with the accepted W674 `left_jump_fire` escape plus old W760/W1160/W1440/W1830 weapon16 connectors.
+- Best no-death result in that batch was `rightup-300-390` to W1504 with `weapon = 16`; it then lost active at frame 9771 and only reached W1631 after recovery with `weapon = 0`, so it is rejected for zero-death promotion.
+- The W300-W390 pickup is real RAM evidence, but stance-only reconnect from W300 to the current W674/W1500 route is exhausted for now. Future pickup work must alter the W1500-W1830 phase or create a new saved-state branch before repeating W300 opening variants.
 - The W1210 `jump_right_fire` connector is not accepted as a clear fragment because it later lost active at frame 4931, even though it produced the current best saved weapon16 continuation state.
 - Recovered-after-loss progress after a weapon-route death must not be counted as zero-death route progress; the useful value is the saved no-death W1461 state.
 - W1450 immediate Spread-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-weapon16-spread-window-batch-20260612.json`.

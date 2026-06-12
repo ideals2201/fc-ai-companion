@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T08:08:49.912Z",
+  "updatedAt": "2026-06-12T08:25:36.533Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 295,
+          "value": 307,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 280,
+          "value": 291,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 20103.38,
+          "value": 21903.38,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 282,
+          "value": 294,
           "status": "candidate"
         },
         "deaths": {
-          "value": 268,
+          "value": 279,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 18946.04,
+          "value": 20746.04,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w674-entryphase-rebuild-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w300-pickup-reconnect-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -3120,6 +3120,34 @@
       "candidateTrial": "jp-s1-w674-entryphase-rebuild-20260612-rightfire-760-930",
       "candidateConfig": null,
       "notes": "Rejected W674 entry-phase rebuild sweep: 12 candidates preserved the accepted W674 left_jump_fire weapon16 escape, then varied W760-W1160 bridge/entry phase before the known W1210/W1830 weapon16 connectors. No candidate cleared, reached boss-wall validation, exceeded official W3208, or even exceeded the W2178 local branch baseline. Best no-death progress was W2026 with weapon16 before loss around W2023/Y156; active/stalled variants ended below W1500. Treat W760-W1160 entry-phase overlays from the W674 predeath state as rejected unless a new earlier pickup route changes the W674 state itself."
+    },
+    {
+      "runId": "jp-s1-w300-pickup-reconnect-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "contra-segment-candidate-search",
+      "startedAt": "2026-06-12T08:25:23.554Z",
+      "runCount": 12,
+      "frames": 108000,
+      "durationSeconds": 1800,
+      "activeFrame": null,
+      "lostActiveFrame": 9771,
+      "maxWorldX": 1504,
+      "maxWorldFrame": 9762,
+      "finalWorldX": 1631,
+      "finalFrame": null,
+      "targetWorldX": 3300,
+      "deaths": 11,
+      "status": "candidate-failed",
+      "reason": "w300-pickup-reconnect-rejected",
+      "rom": null,
+      "candidateTrial": "jp-s1-w300-pickup-reconnect-20260612-rightup-300-390",
+      "candidateConfig": {
+        "id": "jp-s1-w300-pickup-reconnect-20260612-rightup-300-390",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w300-pickup-reconnect-20260612-rightup-300-390.json"
+      },
+      "notes": "12-candidate W300-W390 weapon pickup reconnect batch rejected: best no-death W1504 weapon16, no boss-wall clear, no improvement over W3208 baseline."
     }
   ],
   "strategyDescriptions": {
