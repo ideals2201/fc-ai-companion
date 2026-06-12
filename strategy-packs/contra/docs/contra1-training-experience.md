@@ -1071,3 +1071,36 @@ Next weapon16 work:
 - Move the next search to W1510-W1718 formation shaping, not W1722 last-moment rescue.
 - Test whether earlier fire cadence or short right/left spacing changes can prevent slot6 from arriving at same-lane contact around W1734.
 - Keep the W1450 p5/w2 pulse as a useful proposal source only until a follow-up branch exceeds W1753 no-death without stalling.
+
+## 2026-06-12 Contra Japan W1450 Pulse5x2 W1510-W1718 Formation Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1450-pulse5x2-formation-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1450-weapon16-20260612.json`.
+- Base overlay: W1450-W1510 `pulse_right_fire` with `firePeriod = 5`, `fireWidth = 2`.
+- Formation trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-formation-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-formation-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-formation-jump1648-1718-20260612.json`.
+
+Accepted facts:
+
+- The trace confirms that W1722 last-frame rescue is too late for this route class; formation has to change before W1718.
+- Twelve candidates tested W1600-W1718 right-fire, right-up, right-duck, p4/w2 and p8/w4 pulse-right, W1648-W1718 jump-right and p8/w2 pulse-jump, W1668-W1738 p10/w2 pulse-jump, W1600-W1668 up-fire, W1648-W1688 left-up, and W1668-W1718 left/right actions.
+- The best local formation result was W1648-W1718 `jump_right_fire` or p8/w2 `pulse_jump_right_fire`: no-death `weapon = 16` progress advanced from W1733 to W2178.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+
+Rejected facts:
+
+- The two best W1648-W1718 jump variants both lost active at W2179/Y235, so they are not accepted as Stage 1 clear evidence.
+- Right-fire, right-up, and pulse-right variants reached W1758 no-death but lost around W1728; post-loss W2390/W2758 progress is rejected.
+- Right-duck and left-up variants stalled before reconnecting.
+- Up-fire, left-fire, p10/w2 pulse-jump, and right-only variants regressed to W1600-W1679 no-death or died after loss recovery.
+
+Next weapon16 work:
+
+- Treat W1510-W1718 formation shaping as locally useful but not sufficient for the current route class.
+- Move the next search to the new W2178 low/fall blocker, especially W2132-W2180 landing shape from the W1648 jump route.
+- Alternatively rebuild before W1450 if the W2178 low/fall death proves tied to the p5/w2 branch geometry.
+- Do not count post-loss W2390/W2758 recovery as progress.
