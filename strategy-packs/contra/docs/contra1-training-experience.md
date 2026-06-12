@@ -548,7 +548,9 @@ Rejected facts:
 - Do not use `jp-stage1-w1504-weapon16-from-w300-20260612.json` as a future reconnect anchor. Move the branch point before W1496 or change the earlier enemy/object phase before trying W1500-W1830 again.
 - W1499 precontact batch `jp-s1-w1499-precontact-phase-shaping-rejected-20260612` confirms that the W300 branch can escape the long W1499 crouch/stall. Right/right-fire/jump-right style breakout variants move no-death weapon16 progress to W1785.
 - This is local branch progress only: all tested variants then die around W1786 to a same-lane type1 contact or recover after loss with `weapon = 0`. The saved continuation state is `jp-stage1-w1785-weapon16-from-w1499-20260612.json`.
-- Do not repeat W1499 breakout-only variants; the next useful segment is W1785/W1786 contact separation while preserving `weapon = 16`.
+- W1785 contact separation batch `jp-s1-w1785-contact-separation-rejected-20260612` tested 12 forced direction/fire overlays from `jp-stage1-w1785-weapon16-from-w1499-20260612.json`.
+- The W1785 state is already too late: every contact-frame override lost active at frame 9317, with no zero-death progress beyond W1785. Later W1914/W1928/W2178 progress happened after death and weapon reset, so it is rejected for all strategy categories.
+- Do not repeat W1499 breakout-only variants or W1785 contact-frame swaps; the next useful segment is W1750-W1780 preclear/phase shaping while preserving `weapon = 16`.
 - The W1210 `jump_right_fire` connector is not accepted as a clear fragment because it later lost active at frame 4931, even though it produced the current best saved weapon16 continuation state.
 - Recovered-after-loss progress after a weapon-route death must not be counted as zero-death route progress; the useful value is the saved no-death W1461 state.
 - W1450 immediate Spread-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-weapon16-spread-window-batch-20260612.json`.
