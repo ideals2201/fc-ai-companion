@@ -944,3 +944,35 @@ Next weapon16 work:
 - Move the next search before W2132, especially W2068-W2112 fixed-threat/descent shaping.
 - Consider rebuilding the pre-W1753 weapon route state rather than adding more local rescue overlays after W2132.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2068 Entry-Shape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2068-entryshape-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Baseline trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2068-2112-baseline-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2068-entryshape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2068-entryshape-pulse2068-2132-p10w2-20260612.json`.
+
+Accepted facts:
+
+- The baseline trace shows the W2026 pit-exit jump/recoil area, the W2068 high fixed-target platform jump, and W2112-W2132 descent into the already rejected W2132 pit-approach window.
+- Twelve candidates modified only W2000-W2132 while returning to the same W2132/W2248/W2352 and W2688/W2735/W2784 chain.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960.
+- The W2068-W2132 p10/w2 pulse and W2096-W2132 right-up variants only reproduced W2945 before losing at W2946/Y236.
+
+Rejected facts:
+
+- W2000-W2048 and W2026-W2068 right-fire or pulse suppressions died around W2030.
+- W2048-W2112 fixed-threat aim and extended-jump variants died around W2110.
+- W2020-W2068 forced right-jump died around W2178.
+- No local W2000-W2132 entry-shape variant changed the later W2945 death into a W2960+ boss-wall candidate.
+
+Next weapon16 work:
+
+- Treat W2000-W2132 local entry-shape tuning as exhausted for the current route class.
+- Move the next search before W2000, likely W1753-W2000 route-state shaping or a different pre-W1753 weapon route state.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
