@@ -1717,3 +1717,32 @@ Next weapon16 work:
 - Rebuild before W2148 so the object phase at W2178 changes before the player reaches Y229/Y234.
 - Prefer earlier object-clear or spacing candidates over another local jump action at the death frame.
 - If earlier rebuild cannot alter the object phase, return to a different weapon16 saved-state branch rather than continuing late W2178 geometry.
+
+## 2026-06-12 Contra Japan W2960 Entry-Shape Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2764-w2960-entryshape-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w2960-entryshape-20260612.summary.json`.
+- Diagnostic mode: forced W2960-W3100 entry-shaping before the boss-wall station.
+
+Accepted facts:
+
+- Twelve candidates tested right-up, up, neutral, right, duck, right-duck, jump-right-fire, p8/w2 and p12/w3 pulse jump, p5/w2 pulse right fire, and two left pre-retreat plus right-up re-entry variants.
+- No candidate cleared, stayed deathless beyond W3208, or improved the official Stage 1 ceiling.
+- The best local result was W2960-W3100 `pulse_jump_right_fire` p12/w3: it reached W3206 before losing active at W3207/Y119.
+- Earlier right/right-up/right-duck entry variants died around W3069/W3070, while up/neutral/duck and left pre-retreat variants regressed to W2960.
+
+Rejected facts:
+
+- W2960-W3100 default-weapon forced entry shaping is rejected as a standalone boss-wall repair from the W2764 anchor.
+- Do not repeat W2960-W3100 single-action right/up/duck/fire sweeps unless the route before W2764 changes first.
+- The near-tie W3206 p12/w3 result is still rejected because it carries death evidence and does not exceed the official W3208 no-death ledger ceiling.
+
+Next boss-wall work:
+
+- Change the route before W2764 or preserve weapon16 into boss-wall instead of spending another batch on default-weapon entry actions.
+- If an earlier branch reaches W2960+ with weapon16 or better fixed-target HP state, validate it through the boss-wall phase instead of comparing only forced overlays.
+- Keep W2764 as a useful reconstruction anchor for regression checks, not as the only source for future clear attempts.
