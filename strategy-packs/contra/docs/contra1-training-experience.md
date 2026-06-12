@@ -14,6 +14,15 @@ This document is the durable training-experience ledger for the current Contra s
 - TAS, walkthroughs, maps, and external notes are planning input. They are not live controller logic until converted into fragments and validated locally.
 - Survival is the mother route. Speed, combat, loot, and guard branches should inherit from a zero-death survival route, then alter only the branch-specific objective.
 
+## Training Cadence
+
+- Run training in bounded phases: stop after roughly 20 minutes or 12 candidates, whichever comes first.
+- Every phase must leave a durable summary before the next search begins: accepted facts, rejected facts, best no-death `worldX`, death point, route/weapon state, and the next search boundary.
+- Apply each phase summary to all strategy categories. Survival facts define the base route; combat, loot, guard, and speed tactics may reuse only facts that are compatible with their objective and exact ROM state.
+- Failed candidates are still training data, but only as rejection evidence. Do not promote them to validated fragments or clear claims.
+- Formal training-progress updates must go through `scripts/strategy-training-progress.mjs`; runtime reports remain local unless promoted into ledger, docs, schemas, or tests.
+- Stop repeating a local search window after two adjacent phase summaries show no progress in `maxNoDeathWorldX`, boss HP, route state, weapon state, or reproducibility.
+
 ## Source Anchors
 
 - NES controller input model: https://www.nesdev.org/wiki/Controller_reading
@@ -1272,3 +1281,33 @@ Training rule:
 - Do not spend another phase on W1500-W1688 direct fire-angle overlays from `debug-w1590-before-spread-window.json`.
 - If revisiting the W1591 TAS idea, first rebuild the earlier W300-W390 pickup route so RAM enters this window with the correct nonzero weapon state.
 - Candidate-search summaries must enter the ledger through `scripts/strategy-training-progress.mjs`; batch runs must preserve candidate count, death count, and best no-death progress instead of being collapsed to a single run.
+
+## 2026-06-12 Contra Japan W1210-W1460 Weapon16 Prestate Rebuild Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1210-prew1450-rebuild-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1210-prew1450-rebuild-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1210-prew1450-jump1440-1495-20260612.json`.
+
+Accepted facts:
+
+- Twelve candidates changed the W1160-W1235 and W1420-W1495 weapon16 setup before the previous W1450/W1461 blocker.
+- The old W1210 connector only reached no-death W1461. This batch proved the prestate is locally movable: several candidates exceeded W1461 with `weapon = 16`.
+- Best local candidate was W1440-W1495 `jump_right_fire`, reaching no-death W1833 with `weapon = 16` before losing active at W1834/Y192.
+- Other locally useful variants reached W1816, W1757, W1682, W1554, W1533, W1472, or W1463 before loss.
+
+Rejected facts:
+
+- No candidate survived the 5000-frame probe.
+- No candidate reached W2390, W2945, W2960, or the W3208 all-route ceiling.
+- W1440 stance-only variants mostly shifted the same failure forward without producing a reconnectable route state.
+- Post-loss W2004-W2726 progress is rejected because the weapon is lost after death.
+
+Next weapon16 work:
+
+- Do not repeat W1440-W1495 stance-only sweeps from the W1210 state.
+- Inspect the W1757-W1834 loss geometry from the best candidates, especially the W1440 jump branch and W1420 right-up branch.
+- If the W1834 loss is already unrecoverable locally, move the search earlier than W1420 or rebuild the W1210 entry state from W674 with different enemy-cycle timing.
