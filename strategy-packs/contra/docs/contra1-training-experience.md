@@ -849,3 +849,33 @@ Next weapon16 work:
 - Do not spend more candidates on direct W2945 last-frame rescue.
 - Future candidates must change the route before W2945, preferably before the W2784-W2884 p12 arc or by finding a different pre-W2644 platform-capture entry.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2945 Pre-W2644 Shape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-prew2644-shape-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-prew2644-shape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-prew2644-pulse2440-2644-p18w1-20260612.json`.
+
+Accepted facts:
+
+- Twelve candidates modified only W2440-W2644 before returning to the same W2688 platform capture and W2784-W2884 p12 baseline.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960.
+- The best no-death result in this batch was W2594 from the W2440-W2644 p18/w1 pulse candidate, still far below the current W2945 route.
+
+Rejected facts:
+
+- Forced jumps after the W2440 landing, including W2440, W2480, W2520, W2560, and W2600 starts, mostly died around W2496/Y236.
+- W2440-W2644 p18/p20 pulse shaping improved over immediate W2496 deaths but still failed at W2594/W2550 no-death.
+- Right-duck, right-up, neutral, and left-brake shaping after W2440 regressed to W2495 or as low as W2441 no-death.
+- W2390 and W2726 saved states were confirmed as pre-death inspection states, not useful search starts.
+
+Next weapon16 work:
+
+- Do not spend more candidates on W2440-W2644 forced shape changes for the current p12 route class.
+- Move the next search before the W2352-W2440 second jump, or rebuild the pre-W1753 route so the W2440 landing state is different.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
