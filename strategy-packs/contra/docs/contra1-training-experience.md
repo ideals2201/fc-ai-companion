@@ -1782,3 +1782,40 @@ Next boss-wall work:
 - Change the route before W2764 or preserve weapon16 into boss-wall instead of spending another batch on default-weapon entry actions.
 - If an earlier branch reaches W2960+ with weapon16 or better fixed-target HP state, validate it through the boss-wall phase instead of comparing only forced overlays.
 - Keep W2764 as a useful reconstruction anchor for regression checks, not as the only source for future clear attempts.
+
+## 2026-06-12 Contra Japan External Fixed-Target Sequence Transfer
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2764-external-fixed-target-sequence-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-external-fixed-target-sequence-20260612.summary.json`.
+- Source evidence: external FCEUX fragments `stage1_rotating_gun_x390_y24_fixed_target_destroyed`, `stage1_plated_door_x404_y22_fixed_target_destroyed`, and speed `stage1-speed-boss-bodyline-x128-reset-projectile-7000-20260611`.
+
+Accepted facts:
+
+- The external FCEUX package is useful as proposal evidence, but its fixed-target action windows do not directly transfer to the browser/jsnes W2764 anchor.
+- Twelve forced jsnes overlays translated the external rotating-gun/plated-door sequence into W2880-W3072 duck-fire, right-duck-fire, right-up-fire, bodyline x128 clamp, late left-dodge, and precontact pulse-jump variants.
+- No candidate cleared Stage 1, exceeded W3208 with zero deaths, or produced a promotable fixed/core HP state.
+- The best candidate was the late-shift duck/right-duck/right-up sequence. It reproduced W3208 only with death, losing near W3195/Y151 while fixed durable HP remained.
+- `leftdodge-then-rup` stayed alive but stalled at W3009, so it is rejection evidence rather than local progress.
+
+Rejected facts:
+
+- Do not directly copy the external FCEUX preferred action windows into jsnes as fixed WorldX overlays from W2764.
+- Do not promote bodyline x128 clamp experiments from this batch; the best clamp died before W3208 and later recovered only after loss.
+- Do not spend another batch on W2880-W3072 duck/right-duck/right-up sequence shifts unless the entry state, weapon state, or boss-wall phase ownership changes first.
+
+Cross-strategy application:
+
+- `survival-v0`: official best remains W3208; external boss fixed-target fragments remain proposal evidence only.
+- `combat-v0`: fixed-target destruction order is still strategically useful, but this exact W2764 transfer is not safe enough to inherit.
+- `speedrun-v0`: external speed bodyline x128 is not accepted for browser/jsnes until a zero-death exact-ROM replay reproduces it.
+- `loot-v0` and `guard-v0`: do not inherit the clamp or left-dodge actions because they either die, stall, or depend on a different runtime phase.
+
+Next boss-wall work:
+
+- Stop translating external FCEUX boss windows as raw WorldX action overlays from W2764.
+- Prefer extracting earlier state differences from the external successful route: weapon, player Y, player X, target HP, and projectile/body phase before W2764.
+- A future transfer attempt should first prove that jsnes can enter W2880+ with a comparable state; only then retest fixed-target order.
