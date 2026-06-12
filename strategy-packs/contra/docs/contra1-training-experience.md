@@ -1008,3 +1008,35 @@ Next weapon16 work:
 - Treat local W1753-W2000 route-state shaping as exhausted for the current weapon16 p12 route class.
 - Rebuild before the W1753 saved state, or use the external Contra Japan package only as a proposal source for new live `contra-j-good` replay candidates.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W1461 Immediate Escape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1461-immediate-escape-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1461-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Baseline trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1461-1630-baseline-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1461-immediate-escape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1461-immediate-escape-left-up-fire-20260612.json`.
+
+Accepted facts:
+
+- The W1461 baseline trace confirms this saved state is a pre-death inspection point: the default continuation loses active on the next frame around W1462/Y163, then can recover only after weapon loss.
+- Twelve immediate-escape candidates tested left, left-fire, left-up-fire, left-jump-fire, neutral/up/duck fire, right variants, jump-right, and p6/w2 pulse before returning to the W1753/W2132/W2688/W2784 p12 chain.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+- The best no-death distance was `left_up_fire` at W1914/Y196 with `weapon = 16`, but it stalled active for 2965 frames and never reconnected to the accepted W2945 p12 route.
+
+Rejected facts:
+
+- The `left` candidate reached W1802 no-death, then lost active at W1803/Y196.
+- `left_fire` and `left_jump_fire` reached only W1726 no-death, then lost active at W1727/Y212.
+- Neutral, up, duck, right, jump-right, and p6/w2 pulse variants either lost active immediately around W1462/Y163 or recovered only after the loss state, so they are invalid as zero-death continuations.
+- W1461 immediate escape does not provide a viable branch for the current zero-death Stage 1 route.
+
+Next weapon16 work:
+
+- Treat W1461 as a diagnostic pre-death state, not a continuation start.
+- Rebuild the route before W1461, especially the W1210-W1450 weapon16 approach and enemy-cycle control.
+- Keep external Contra Japan package claims as proposal sources only until reproduced through live `contra-j-good` headless/FCEUX evidence.
