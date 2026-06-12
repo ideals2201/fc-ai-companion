@@ -911,3 +911,36 @@ Next weapon16 work:
 - Treat immediate W2248-W2440 jump-boundary tuning as exhausted for the current route class.
 - Move the next search earlier than W2248, especially the W2132-W2188 pit approach and the pre-W1753 weapon route state.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2132 Pit-Approach Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2132-pitapproach-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Baseline trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2132-2248-baseline-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2132-pitapproach-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2132-pitapproach-pulse2132-2248-p10w2-20260612.json`.
+
+Accepted facts:
+
+- The baseline trace shows the W2132 takeoff from W2132/Y148 with `weapon = 16`, close fixed and soldier pressure around W2167-W2188, and a W2248 landing before the already rejected W2248-W2440 boundary chain.
+- Twelve candidates modified only the W2132-W2248 approach while returning to the same W2248/W2334/W2352 and W2688/W2735/W2784 route chain.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960.
+- The best no-death result in this batch was W2494/Y227 from the W2132-W2248 p10/w2 pulse-jump candidate.
+
+Rejected facts:
+
+- Early W2124 takeoff and no-jump right/right-up carry died near W2178/Y229-Y234.
+- Fixed release variants around W2170-W2188 mostly regressed to W2404 no-death.
+- Sparse p14/w1 pulse reached only W2330 no-death; W2170-W2188 double-jump reached only W2309.
+- Forcing right-fire after W2188 still regressed to W2404 and did not preserve the W2945 route.
+
+Next weapon16 work:
+
+- Treat W2132-W2248 local pit-approach tuning as exhausted for the current route class.
+- Move the next search before W2132, especially W2068-W2112 fixed-threat/descent shaping.
+- Consider rebuilding the pre-W1753 weapon route state rather than adding more local rescue overlays after W2132.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
