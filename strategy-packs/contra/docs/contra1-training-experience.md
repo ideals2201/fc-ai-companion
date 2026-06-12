@@ -1374,3 +1374,38 @@ Next weapon16 work:
 - Do not repeat W2132-W2188 rescue variants for this branch.
 - Inspect the W2698-W2727 contact geometry from the W2100-W2175 p12/w3 branch.
 - Accept the next branch only if it stays zero-death beyond W2726 and starts reconnecting toward W2945/W2960; otherwise rebuild before W2100.
+
+## 2026-06-12 Contra Japan W2726 Contact Rescue Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2726-contact-rescue-rejected-20260612`.
+- Base candidate: `jp-s1-w2178-lowfall-pulseup2100-2175-p12w3-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Diagnostic trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2726-contact-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2726-contact-rescue-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2726-contact-pulsejumpfire2688-2735-p12w3-20260612.json`.
+- Follow-up trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2831-landing-trace-20260612.json`.
+
+Accepted facts:
+
+- The W2726 trace proves the immediate loss source: the W2178 lowfall branch reaches W2726/Y91 with `weapon = 16`, then loses at W2727/Y93 to a near front body/object.
+- Twelve candidates preserved the W1210/W1830/W2178 route and varied only W2672-W2748 contact handling: jump-right, pulse-jump, right-fire, right-up, right-duck, neutral-fire, and left-up variants.
+- No candidate stayed alive for the full 5000-frame probe, reached W2945/W2960, or exceeded the all-route W3208 ceiling.
+- The best local candidate was W2688-W2735 `pulse_jump_right_fire` p12/w3, which advanced no-death `weapon = 16` progress from W2726 to W2831.
+- The follow-up W2831 trace shows the new loss as a low landing/platform failure at W2832/Y236, not a boss-wall or clear state.
+
+Rejected facts:
+
+- There were zero accepted clear or reconnect candidates. All 12 candidates are rejected as Stage 1 clear evidence because they ended in death.
+- W2688-W2735 static right-fire, right-up, and right-duck variants regressed to W2707.
+- Starting jump-fire too early at W2672 regressed to W2724; starting at W2700 repeated the old W2726/W2727 loss.
+- Neutral-fire and left-up variants held position or backed up around W2688 and did not create a viable platform entry.
+- The W2688-W2735 p12/w3 pulse-jump is local connector evidence only; it must not be reused by combat, loot, guard, or speed branches unless a later phase proves a zero-death reconnect.
+
+Next weapon16 work:
+
+- Do not repeat W2688-W2735 contact-only stance variants for this branch.
+- Test W2735-W2884 platform-capture/reconnect shaping from the W2831 connector, especially right-fire release followed by a pulse-jump arc, because earlier validated notes show this window can matter for W2945-class routes.
+- If W2735-W2884 shaping cannot produce zero-death progress beyond W2831, rebuild before W2688 instead of extending the same late landing patch.
