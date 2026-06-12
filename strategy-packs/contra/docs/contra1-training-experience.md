@@ -761,3 +761,33 @@ Next weapon16 work:
 - Do not use W2735-W2784 second-jump or early-pulse variants for this route class.
 - The remaining useful space is likely W2804-W2884 height shaping after the W2784 release, or a different earlier platform-capture route before W2688.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2945 Grounded Late-Jump Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-grounded-latejump-sweep-rejected-20260612`.
+- Valid batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-grounded-latejump-fromw1753-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-grounded-latejump-p12to2872-jump2872-2896-20260612-fromw1753.json`.
+- Invalid comparison batch: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-grounded-latejump-batch-20260612.summary.json`.
+
+Accepted facts:
+
+- The valid batch must start from `jp-stage1-w1753-weapon16-20260612.json`; power-on runs with the same 5200-frame budget only reached W1409 and are not comparable W2945 evidence.
+- Twelve W2860-W2905 variants around the late grounded frame were tested from the W1753 weapon16 continuation.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+- W2872/W2876 forced late-jump variants and W2868 late p6/p10 pulse variants only tied W2945.
+
+Rejected facts:
+
+- Forcing jump too early at W2864 or W2868 regressed to W2937-W2941.
+- Releasing A through W2880 before forcing jump produced a lower visual Y at W2941 but still died at W2940/Y236, so that shape is not progress.
+- Skipping the W2861 pulse and restarting at W2869 regressed to W2942 or tied W2945 only when p12 was preserved.
+- W2860-W2905 late grounded jump is exhausted for this route class unless an earlier platform-capture route changes the entry state.
+
+Next weapon16 work:
+
+- Move earlier than W2784, especially the W2688-W2735 platform capture and the W2735-W2784 release.
+- Do not spend more candidates on W2860-W2905 late forced jumps for the current p12 arc.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
