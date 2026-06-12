@@ -1718,6 +1718,42 @@ Next weapon16 work:
 - Prefer earlier object-clear or spacing candidates over another local jump action at the death frame.
 - If earlier rebuild cannot alter the object phase, return to a different weapon16 saved-state branch rather than continuing late W2178 geometry.
 
+## 2026-06-12 Contra Japan W1948 Phase-Shaping Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-w1948-phase-shaping-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Inherited connector: W1880-W1948 `pulse_jump_right_fire` p8/w2 from `jp-s1-w1753-w1914-weapon16-reconnect-rejected-20260612`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-w1948-phase-shaping-20260612.summary.json`.
+
+Accepted facts:
+
+- Twelve candidates tested W1948-W2160 neutral fire, right fire, right-up fire, duck fire, right-duck fire, p3/w1 and p5/w2 pulse right fire, p10/w2 pulse jump-right-fire, p10/w3 pulse up-jump-right, and staged left/neutral/right fire into jump-right-fire.
+- No candidate cleared, stayed deathless beyond W2178, produced a local connector, or exceeded the official W3208 no-death ceiling.
+- The best local result was W1948-W2148 `pulse_jump_right_fire` p10/w2, which reached only W2024 before death at W2025/Y236 with weapon16 still present.
+- Neutral/duck phase-shift variants died immediately around W1948/Y164, while forward fire variants consistently died around W2016/Y236 or W2025/Y236.
+
+Rejected facts:
+
+- W1948-W2160 direct phase shaping is rejected as a standalone repair for the W1753-derived weapon16 branch.
+- This batch regresses before the previously observed W2178 connector, so it is not useful even as local connector evidence.
+- Do not spend another batch on W1948+ neutral/right/up/duck/pulse overlays unless the W1880 entry state changes first.
+
+Cross-strategy application:
+
+- `survival-v0`: keep official best at W3208; do not promote any W1948 phase-shaping fragment.
+- `combat-v0` and `loot-v0`: do not inherit these W1948 actions, because they reduce survival progress before creating any weapon or fixed-target advantage.
+- `guard-v0`: treat W1948+ direct action overrides as unsafe guard behavior for this branch.
+- `speedrun-v0`: ignore this branch until the survival route can clear, because it loses time and dies before the boss-wall route.
+
+Next weapon16 work:
+
+- If continuing the W1753-derived weapon16 branch, move the search before W1880 so the connector enters W1948 with different object/enemy phase.
+- Otherwise, prioritize the later W2764/W3208 boss-wall route and seek a way to enter it with better weapon or fixed-target HP state.
+- Keep W1948 phase-shaping as rejected evidence only; it is not a candidate fragment.
+
 ## 2026-06-12 Contra Japan W2960 Entry-Shape Diagnostic
 
 Runtime scope:
