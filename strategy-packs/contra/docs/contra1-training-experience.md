@@ -543,6 +543,9 @@ Rejected facts:
 - W300 pickup reconnect batch `jp-s1-w300-pickup-reconnect-rejected-20260612` tested 12 candidates from `stage1-start-1200.json`, combining W300-W390 pickup overlays with the accepted W674 `left_jump_fire` escape plus old W760/W1160/W1440/W1830 weapon16 connectors.
 - Best no-death result in that batch was `rightup-300-390` to W1504 with `weapon = 16`; it then lost active at frame 9771 and only reached W1631 after recovery with `weapon = 0`, so it is rejected for zero-death promotion.
 - The W300-W390 pickup is real RAM evidence, but stance-only reconnect from W300 to the current W674/W1500 route is exhausted for now. Future pickup work must alter the W1500-W1830 phase or create a new saved-state branch before repeating W300 opening variants.
+- W1504 contact-phase batch `jp-s1-w1504-contact-phase-reconnect-rejected-20260612` saved the W300 branch at W1504/weapon16 and tested immediate jump, duck, left, right, neutral, up-fire, and staged duck/jump variants.
+- The W1504 state is too late: the player is already grounded near a same-lane type5 contact. Best zero-death progress was only W1505 with `weapon = 16`; any later W1914-W2035 progress happened after loss and weapon reset.
+- Do not use `jp-stage1-w1504-weapon16-from-w300-20260612.json` as a future reconnect anchor. Move the branch point before W1496 or change the earlier enemy/object phase before trying W1500-W1830 again.
 - The W1210 `jump_right_fire` connector is not accepted as a clear fragment because it later lost active at frame 4931, even though it produced the current best saved weapon16 continuation state.
 - Recovered-after-loss progress after a weapon-route death must not be counted as zero-death route progress; the useful value is the saved no-death W1461 state.
 - W1450 immediate Spread-window batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-weapon16-spread-window-batch-20260612.json`.
