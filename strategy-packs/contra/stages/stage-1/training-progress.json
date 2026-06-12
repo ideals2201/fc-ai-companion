@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T03:51:10.295Z",
+  "updatedAt": "2026-06-12T04:07:03.563Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 89,
+          "value": 101,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 81,
+          "value": 93,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 6770.05,
+          "value": 7770.05,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 76,
+          "value": 88,
           "status": "candidate"
         },
         "deaths": {
-          "value": 69,
+          "value": 81,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 5612.71,
+          "value": 6612.71,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w1210-prew1450-rebuild-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w1830-close-body-micro-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -2553,6 +2553,34 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1210-prew1450-jump1440-1495-20260612.json"
       },
       "notes": "Rejected W1210-W1460 weapon16 prestate rebuild sweep with local progress: 12 candidates changed the W1160-W1235 and W1420-W1495 setup before the prior W1450 blocker. No candidate survived the 5000-frame probe, reached W2390/W2945, or exceeded all-route W3208. Best local result was jump_right_fire W1440-W1495, which advanced no-death weapon16 progress to W1833 before losing active at W1834/Y192. Treat W1210-W1460 as locally improvable but not yet reconnectable; next phase should inspect W1757-W1834 loss geometry from the best candidates instead of repeating W1440 stance-only variants."
+    },
+    {
+      "runId": "jp-s1-w1830-close-body-micro-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "contra-segment-candidate-search",
+      "startedAt": "2026-06-12T04:06:27.730Z",
+      "runCount": 12,
+      "frames": 60000,
+      "durationSeconds": 1000,
+      "activeFrame": null,
+      "lostActiveFrame": 6215,
+      "maxWorldX": 2178,
+      "maxWorldFrame": 6214,
+      "finalWorldX": 1089,
+      "finalFrame": null,
+      "targetWorldX": 3300,
+      "deaths": 12,
+      "status": "candidate-failed",
+      "reason": "jp-s1-w1830-close-body-micro",
+      "rom": null,
+      "candidateTrial": "jp-s1-w1830-closebody-pulseright1818p4w2-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-w1830-closebody-pulseright1818p4w2-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1830-closebody-pulseright1818p4w2-20260612.json"
+      },
+      "notes": "Rejected W1818-W1850 close-body micro sweep from the W1210 weapon16 route: 12 candidates preserved the prior W1160/W1440 setup and varied horizontal, crouch, jump, and pulse fire at the W1830 close-body blocker. No candidate stayed alive or reconnected to W2390/W2945/W3208. Best local result was pulse_right_fire W1818-W1845 p4/w2, which advanced no-death weapon16 progress to W2178 before losing active at W2179. Treat W1830 horizontal pulse fire as locally useful evidence only; next phase should inspect the W2178 death geometry rather than repeating W1830 close-body stance variants."
     }
   ],
   "strategyDescriptions": {

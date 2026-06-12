@@ -1311,3 +1311,34 @@ Next weapon16 work:
 - Do not repeat W1440-W1495 stance-only sweeps from the W1210 state.
 - Inspect the W1757-W1834 loss geometry from the best candidates, especially the W1440 jump branch and W1420 right-up branch.
 - If the W1834 loss is already unrecoverable locally, move the search earlier than W1420 or rebuild the W1210 entry state from W674 with different enemy-cycle timing.
+
+## 2026-06-12 Contra Japan W1830 Close-Body Micro Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1830-close-body-micro-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Diagnostic trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1833-precontact-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1830-close-body-micro-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1830-closebody-pulseright1818p4w2-20260612.json`.
+
+Accepted facts:
+
+- The W1833 trace proves the immediate loss source: from F5632 onward a same-lane soldier approaches while the route keeps `uprightb` fixed-target fire; the evasive `upleftab` response starts only at F5640 and is too late.
+- Twelve candidates preserved the W1210/W1440 weapon16 setup and changed only the W1808-W1850 close-body response.
+- No candidate survived the 5000-frame probe, reached W2390, or reconnected to the previous W2945/W3208 branches.
+- The best local candidate was W1818-W1845 `pulse_right_fire` p4/w2, which advanced no-death weapon16 progress to W2178 before losing active at W2179/Y235.
+- Five additional variants made only minimal local progress to W1834/W1835; neutral, duck-only, left-fire, left-jump, and pulse-jump variants did not exceed the prior W1833 ceiling.
+
+Rejected facts:
+
+- W1830 stance-only corrections are not enough to create a validated route; all 12 candidates are rejected as clear candidates.
+- The W1830 close-body blocker is locally suppressible with horizontal pulse fire, but the resulting route state still dies before the weapon-gate reconnect.
+- Post-loss progress remains rejected even when the runtime later reports larger `maxWorldX`.
+
+Next weapon16 work:
+
+- Do not repeat W1818-W1850 horizontal/duck/jump stance variants from the current W1210/W1440 setup.
+- Inspect the W2178/W2179 death geometry from `jp-s1-w1830-closebody-pulseright1818p4w2-20260612`.
+- If W2179 is another close-body timing problem, test a new 20-minute/12-candidate phase around W2130-W2185; if it is a route-state dead end, rebuild before W1808 instead of extending the same micro patch.
