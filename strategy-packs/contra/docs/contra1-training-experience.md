@@ -879,3 +879,35 @@ Next weapon16 work:
 - Do not spend more candidates on W2440-W2644 forced shape changes for the current p12 route class.
 - Move the next search before the W2352-W2440 second jump, or rebuild the pre-W1753 route so the W2440 landing state is different.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2352 Prejump Boundary Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2352-prejump-boundary-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Base overlay: `data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2941-prearc-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Baseline trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2352-2440-baseline-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2352-prejump-boundary-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2352-prejump-jump1-short2328-20260612.json`.
+
+Accepted facts:
+
+- The W2248-W2440 trace confirms the current route lands at W2402/Y164, then re-enters a default jump around W2444 before the later boss-approach fall.
+- Twelve candidates shifted the first jump end, W2330-W2358 A-release window, second-jump start/end, neutral/left release, and second-jump pulse timing.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+- The best candidate only reproduced W2945 with `weapon = 16`, then lost active at W2946/Y236.
+
+Rejected facts:
+
+- Earlier second-jump starts at W2346, W2348, and W2350 died around W2371-W2375 before reconnecting to the platform chain.
+- Later second-jump starts and longer first-jump variants reached only W2593 no-death, below the already rejected W2945 route.
+- Second-jump pulse variants reached only W2482 no-death.
+- Neutral and left release variants regressed to W2341/W2335 no-death and are not useful for zero-death routing.
+
+Next weapon16 work:
+
+- Treat immediate W2248-W2440 jump-boundary tuning as exhausted for the current route class.
+- Move the next search earlier than W2248, especially the W2132-W2188 pit approach and the pre-W1753 weapon route state.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
