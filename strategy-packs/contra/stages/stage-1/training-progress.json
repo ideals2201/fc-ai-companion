@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T00:06:49.862Z",
+  "updatedAt": "2026-06-12T00:12:23.640Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 49,
+          "value": 50,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 45,
+          "value": 46,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 4061.71,
+          "value": 4148.38,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 36,
+          "value": 37,
           "status": "candidate"
         },
         "deaths": {
-          "value": 33,
+          "value": 34,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 2904.37,
+          "value": 2991.04,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w2945-p12-neighbor-post-sweep-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from headless-jsnes-runtime-smoke run jp-s1-w2945-entryshape-sweep-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -1969,6 +1969,39 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2945-post-rightfire2910-2964-20260612.json"
       },
       "notes": "Rejected W2945 p12 neighbor and post-control sweep: 12 pulse-neighbor variants around W2784-W2884 and 12 W2910-W2964 post-control variants failed to exceed no-death W2945. Representative post-control right_fire still lost at W2946/Y236 with weapon=16. Treat W2945 as an earlier trajectory problem, not a W2910+ local rescue point."
+    },
+    {
+      "runId": "jp-s1-w2945-entryshape-sweep-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "headless-jsnes-runtime-smoke",
+      "startedAt": "2026-06-12T00:12:23.639Z",
+      "runCount": 1,
+      "frames": 5200,
+      "durationSeconds": 86.67,
+      "activeFrame": 5544,
+      "lostActiveFrame": 6854,
+      "maxWorldX": 2945,
+      "maxWorldFrame": 6853,
+      "finalWorldX": 82,
+      "finalFrame": 10744,
+      "targetWorldX": 3300,
+      "deaths": 1,
+      "status": "candidate-failed",
+      "reason": "gameplay-lost",
+      "rom": {
+        "fileName": "Contra (J).nes",
+        "md5": "0e40bc1b049c16c5d7246cc28399cb5d",
+        "headerlessMd5": "d306c54ccfdf5cb4f8ec588f19b3e33d",
+        "sha256": "6ba53139fa88b8de1ae527c438bda6f1541d1ee7df26d63dec5164a32d166bfe"
+      },
+      "candidateTrial": "jp-s1-w2945-entryshape-jump2688-2730-right2730-2784-p12-20260612",
+      "candidateConfig": {
+        "id": "jp-s1-w2945-entryshape-jump2688-2730-right2730-2784-p12-20260612",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2945-entryshape-jump2688-2730-right2730-2784-p12-20260612.json"
+      },
+      "notes": "Rejected W2688-W2784 entry-shape sweep: W2688 jump-end variations tied W2945, while W2735-W2784 second-jump or early-pulse variants regressed to W2828-W2857 low-fall deaths. Representative W2688-W2730 jump then right_fire to W2784 still lost at W2946/Y236 with weapon=16. Treat the p12 route as sensitive to premature second-jump release; next search should alter the W2804-W2884 height curve or earlier platform capture without W2735-W2784 second jumps."
     }
   ],
   "strategyDescriptions": {

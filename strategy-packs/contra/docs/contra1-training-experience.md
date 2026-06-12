@@ -734,3 +734,30 @@ Next weapon16 work:
 - Stop treating W2910+ as a local rescue window for this route class; the W2946/Y236 loss persists after direct post-control overrides.
 - Move the next search earlier, especially W2688-W2735 jump shape and W2735-W2784 platform release, to enter the p12 pulse with more vertical margin.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2945 Entry-Shape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-entryshape-sweep-rejected-20260612`.
+- Entry-shape batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-entryshape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-entryshape-jump2688-2730-right2730-2784-p12-20260612.json`.
+
+Accepted facts:
+
+- W2688 jump-end variants at W2730, W2738, W2748, and W2756 did not improve the p12 route, but they did preserve the current W2945 ceiling.
+- The best p12 route remains W2735-W2784 `right_fire` followed by W2784-W2884 p12/w1 `pulse_jump_right_fire`.
+
+Rejected facts:
+
+- Adding a W2735-W2784 second jump at W2750, W2760, or W2770 regressed to W2828-W2848 low-fall deaths.
+- Short pre-p12 pulses from W2760-W2784 also regressed to W2838-W2844.
+- Starting the main p12 pulse at W2776 produced recovered-after-loss evidence only and is rejected for zero-death training.
+- Starting the p12 pulse at W2792 tied W2945 but did not improve it.
+
+Next weapon16 work:
+
+- Do not use W2735-W2784 second-jump or early-pulse variants for this route class.
+- The remaining useful space is likely W2804-W2884 height shaping after the W2784 release, or a different earlier platform-capture route before W2688.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
