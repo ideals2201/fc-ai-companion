@@ -1442,3 +1442,32 @@ Next weapon16 work:
 - Do not repeat W2735-W2884 release/pulse variants from the current W1210/W1830/W2178/W2726 branch.
 - Rebuild before W2688 or before W2100 to change the platform entry state rather than extending the late landing patch.
 - If mining old W2945 evidence, treat it as route-state evidence from the W1753 branch only; it is not validated for the W1210 branch until a live replay reaches W2945 again.
+
+## 2026-06-12 Contra Japan W1753 Route-State Transplant Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-routestate-transplant-rejected-20260612`.
+- Base candidate: `jp-s1-w2831-platform-right2735-2784-pulse2784-2884-p12w1-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-route-state-transplant-batch-20260612.summary.json`.
+
+Accepted facts:
+
+- The old W2945 route used W1750-W1768 `right_duck_fire` followed by W1764-W1815 `right_fire`, then a different W2132-W2440 jump chain before the late W2735-W2884 release/pulse shape.
+- Twelve candidates preserved the current W1210 weapon16 setup and tested direct W1750-W1815 transplant variants: old right-duck/right-fire, extended right-fire, pulse-right, right-up, jump, pulse-jump, neutral-fire, and a full old W1750-W2884 route transplant.
+- No candidate exceeded W2838 with zero deaths, reconnected to W2945, reached W2960 boss-wall validation, or improved the all-route W3208 ceiling.
+- The best candidate reached only W2309 and still died; several direct transplant variants tied at W2309, while pure right-fire regressed to W2128, jump/pulse-jump regressed to W1777, neutral-fire regressed to W1769, and full old-route transplant reached W2235.
+
+Rejected facts:
+
+- Directly transplanting the old W1750-W1815 route-state window into the current W1210 branch is rejected.
+- The W1210-derived route cannot be fixed by copying the old W1753 route fragment alone; it changes the W2100/W2688 connector phase and fails earlier than the current W2838 branch.
+- The older W2945 route remains useful as comparison evidence only until a live contra-j-good replay re-creates that state from the current branch.
+
+Next weapon16 work:
+
+- Do not repeat W1750-W1815 transplant sweeps from the current W1210 branch.
+- If rebuilding before W2100, use a new saved-state phase model instead of direct fragment copying.
+- The next bounded phase should either rebuild before W2688 from a trace-proven state difference, or return to the older W1753-derived saved states and test whether they can be made reproducible without mixing them into the W1210 branch.
