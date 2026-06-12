@@ -1409,3 +1409,36 @@ Next weapon16 work:
 - Do not repeat W2688-W2735 contact-only stance variants for this branch.
 - Test W2735-W2884 platform-capture/reconnect shaping from the W2831 connector, especially right-fire release followed by a pulse-jump arc, because earlier validated notes show this window can matter for W2945-class routes.
 - If W2735-W2884 shaping cannot produce zero-death progress beyond W2831, rebuild before W2688 instead of extending the same late landing patch.
+
+## 2026-06-12 Contra Japan W2831 Platform Reconnect Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2831-platform-reconnect-rejected-20260612`.
+- Base candidate: `jp-s1-w2726-contact-pulsejumpfire2688-2735-p12w3-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2831-platform-reconnect-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2831-platform-right2735-2784-pulse2784-2884-p12w1-20260612.json`.
+- Diagnostic trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2838-platform-trace-from-w1210-20260612.json`.
+
+Accepted facts:
+
+- Twelve candidates preserved the W1210/W1830/W2178/W2726 connector and varied only W2735-W2884 platform-capture/reconnect shaping.
+- The batch retested the previously useful W2735-W2784 `right_fire` release followed by W2784-W2884 `pulse_jump_right_fire` p12/w1, plus p6/p8/p12 neighbors, delayed starts, neutral release, full right-fire, and full jump-fire.
+- No candidate stayed alive for the full 5000-frame probe, reached W2945/W2960, or exceeded the all-route W3208 ceiling.
+- The best local candidate was W2735-W2784 `right_fire` followed by W2784-W2884 `pulse_jump_right_fire` p12/w1, which advanced no-death `weapon = 16` progress from W2831 to W2838.
+- The W2838 trace shows the loss at W2839/Y234 while grounded, with a nearby moving object at dx -56/dy -1. This is a low platform/landing death, not boss-wall validation.
+
+Rejected facts:
+
+- There were zero accepted clear or reconnect candidates. All 12 candidates are rejected as Stage 1 clear evidence because they ended in death.
+- The W1210-derived branch does not inherit the earlier W1753-derived W2945 route state even when replaying the known W2735-W2784 plus W2784-W2884 p12/w1 shape.
+- Neutral release regressed to W2754, and a full W2735-W2884 p12/w1 pulse repeated the W2831/W2832 death.
+- All right-release plus pulse variants tied at W2838/W2839 and did not approach W2945.
+
+Next weapon16 work:
+
+- Do not repeat W2735-W2884 release/pulse variants from the current W1210/W1830/W2178/W2726 branch.
+- Rebuild before W2688 or before W2100 to change the platform entry state rather than extending the late landing patch.
+- If mining old W2945 evidence, treat it as route-state evidence from the W1753 branch only; it is not validated for the W1210 branch until a live replay reaches W2945 again.
