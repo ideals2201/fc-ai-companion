@@ -1104,3 +1104,35 @@ Next weapon16 work:
 - Move the next search to the new W2178 low/fall blocker, especially W2132-W2180 landing shape from the W1648 jump route.
 - Alternatively rebuild before W1450 if the W2178 low/fall death proves tied to the p5/w2 branch geometry.
 - Do not count post-loss W2390/W2758 recovery as progress.
+
+## 2026-06-12 Contra Japan W1450 Pulse5x2 W2178 Lowfall Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1450-pulse5x2-w2178-lowfall-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1450-weapon16-20260612.json`.
+- Base overlays: W1450-W1510 `pulse_right_fire` p5/w2 plus W1648-W1718 `jump_right_fire`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2178-lowfall-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2178-lowfall-pulseupjump2112-2188-p12w3-20260612.json`.
+
+Accepted facts:
+
+- Twelve lowfall candidates tested W2112-W2200 jump-right, W2096-W2188 pulse-jump cadence, W2112-W2188 pulse-up-jump, right/right-up/right-duck, left-fire, and jump-only variants.
+- The best local result was W2112-W2188 `pulse_up_jump_right` p12/w3: no-death `weapon = 16` progress advanced from W2178 to W2327.
+- W2132-W2188 `jump_right_fire` and `jump_right` reached W2309, while pulse-jump fire variants reached W2226.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+
+Rejected facts:
+
+- The best W2327 candidate lost active at W2328/Y232 and only recovered post-loss to W2390; this is rejected as clear evidence.
+- The W2309 jump variants lost at W2310/Y233.
+- Static right, right-up, right-duck, and early/late jump variants repeated the W2178/W2179 fall death.
+- Left-fire regressed the no-death distance to W2161 and its post-loss W2608 recovery is rejected.
+
+Next weapon16 work:
+
+- Treat W2132-W2188 jump shaping as locally useful, but insufficient for the current W1450 branch.
+- Move the next search to W2309-W2328 landing and fixed-target timing only if using the W2112-W2188 pulse-up-jump route.
+- Otherwise rebuild the route before W1450 or use an external Japan package proposal to seed a different live `contra-j-good` W1450 approach.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
