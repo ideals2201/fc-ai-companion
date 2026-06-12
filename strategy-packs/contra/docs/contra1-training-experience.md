@@ -1858,3 +1858,42 @@ Next weapon16 work:
 - Do not repeat W1952-W2069 red-turret sequence overlays from `jp-stage1-w1830-weapon16-precontact-20260612.json`.
 - If using this external fragment again, first change the pre-W1830 route state and prove the branch survives past W2178 with zero deaths.
 - Prefer extracting state differences from the external clear route before W1830, not just copying the fixed-target action window.
+
+## 2026-06-12 Contra Japan W674 Entry-Phase Rebuild
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w674-entryphase-rebuild-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w674-weapon16-predeath-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w674-entryphase-rebuild-20260612.summary.json`.
+- Baseline fragment preserved: W674-W725 `left_jump_fire`, the only previously accepted weapon16 escape from this saved state.
+
+Accepted facts:
+
+- The batch tested the next earlier boundary after W1210/W1450/W1830 local repair failed: keep the W674 escape, then change W760-W1160 bridge/entry phase before the W1210/W1830 weapon16 connectors.
+- Twelve candidates varied W760-W1160 right-fire, right-up-fire, neutral fire, pulse-right-fire, left-delay recovery, jump-right-fire, pulse-jump, late duck-fire, and dense fire pulse patterns.
+- No candidate cleared, reached boss-wall validation, exceeded the official W3208 no-death ceiling, or exceeded the W2178 local weapon16 branch baseline.
+- The best no-death result was `jp-s1-w674-entryphase-rebuild-20260612-rightfire-760-930`, reaching W2026/screen 7 with `weapon = 16` before loss around W2023/Y156.
+- Zero-death active or stalled variants (`pulseright-p5-760-930`, `rightup-930-1160`, `neutral-760-930`, `duckfire-930-1080-rightfire-1080-1160`) ended below W1500 and are not useful local connectors.
+
+Rejected facts:
+
+- W760-W1160 bridge/entry phase overlays from the current W674 predeath state are rejected.
+- The old W674 escape plus W1160/W1440/W1830 connector chain regressed to W1717/W1702 and did not reproduce the earlier W2178 local branch under the longer 5200-frame probe.
+- Right-fire/right-up-fire W760-W930 improved over the baseline-chain candidate but still died before W2178, so it is not accepted even as local connector evidence.
+- Post-loss max progress such as W2726 is ignored for zero-death training.
+
+Cross-strategy application:
+
+- `survival-v0`: keep official best at W3208; W674 entry-phase rebuild does not advance the mother route.
+- `combat-v0`: do not inherit W760-W930 right-fire/right-up-fire as a combat fixed-target route, because it dies before reconnecting.
+- `loot-v0`: do not reuse this branch for weapon/reward collection until the W674 pickup state itself changes.
+- `guard-v0`: do not use the left-delay or duck-fire variants; they either die early or stall below W1500.
+- `speedrun-v0`: ignore this branch; it regresses clear progress and adds no speed evidence.
+
+Next weapon16 work:
+
+- Stop spending batches on W760-W1160 phase overlays from the current W674 state.
+- The next useful weapon16 search must rebuild before W674, especially the earlier W300-W390 pickup route that creates the W674 weapon16 state.
+- A future W674 attempt should first prove the new W674 snapshot differs in enemy/object/bullet phase before replaying W1210/W1830 connectors.
