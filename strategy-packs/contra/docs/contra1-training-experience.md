@@ -1647,3 +1647,44 @@ Next boss-wall work:
 - The next useful window must start before W3100 or use a different anchor that enters boss-wall with improved weapon or fixed-target HP state.
 - Prioritize routes that change the target state before W2764 or preserve weapon16 into boss-wall, because default-weapon boss-wall tuning is repeatedly converging to death at W3188/W3208.
 - Keep W3100 shaping reports as rejected evidence, not candidate fragments for validation.
+
+## Cross-Training Checkpoint Rule
+
+Use this rule for all Contra strategy training categories, not only `survival-v0`:
+
+- Work in bounded batches of about 20 minutes or at most 12 candidate overlays, whichever comes first.
+- Each batch must name one hypothesis, one start state, one candidate window, and explicit accept/reject criteria before running candidates.
+- Accepted evidence requires zero deaths and either stage clear, boss-wall clear, or no-death progress beyond the current official ledger ceiling.
+- Local connector evidence can be useful for the next batch, but it must stay marked as rejected unless it exceeds the official no-death ceiling or clears the stage.
+- Every batch must save the best candidate, rejected candidates, and next-window recommendation in the formal ledger or strategy docs before starting the next batch.
+- Runtime reports, overlays, segment-search reports, and states remain local analysis artifacts unless deliberately promoted into the strategy-pack standard.
+
+## 2026-06-12 Contra Japan W1753/W1914 Weapon16 Reconnect Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-w1914-weapon16-reconnect-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-w1914-weapon16-reconnect-20260612.summary.json`.
+- Diagnostic mode: `--force-candidate-overlay`, targeting weapon16 W1880-W1948 after the current route stalls around W1914.
+
+Accepted facts:
+
+- Current baseline from W1753 is not an immediate death: it can remain active with weapon16 and no deaths, but stalls around W1913/W1914 instead of reconnecting to the later route.
+- Twelve forced reconnect candidates tested right, right-fire, right-duck-fire, right-up-fire, jump-right, jump-right-fire, pulse jump-right-fire, pulse up-jump-right, neutral fire, and staged duck/right-up exits.
+- No candidate cleared, reached boss-wall validation, or exceeded the official W3208 no-death ledger ceiling.
+- The best local connector was `pulse_jump_right_fire` p8/w2 across W1880-W1948; it advanced no-death weapon16 progress to W2178 before dying at W2179/Y234.
+- Simple right/right-fire variants can pass W1914 but tend to die earlier around W1943/Y234 or later reconnect only after death.
+
+Rejected facts:
+
+- W1880-W1948 right-force reconnect is rejected as a standalone strategy class.
+- Do not promote the later final progress from recovered-after-loss candidates; it occurs after death and is invalid for 0-death training.
+- Do not repeat W1914 right/right-fire/duck/jump-only overlays unless the W2178 lowfall geometry is changed first.
+
+Next weapon16 work:
+
+- Treat W1753 -> W2178 via p8/w2 pulse jump-right-fire as connector evidence only.
+- The next bounded phase should target W2178/W2179 lowfall/blocker geometry from the W1753-derived connector, not another W1914 reconnect sweep.
+- If W2178 cannot be made stable, rebuild the pre-W1880 route state rather than reusing one-frame pre-loss W2939/W2945 states.
