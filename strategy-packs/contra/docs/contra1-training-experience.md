@@ -1169,3 +1169,36 @@ Next weapon16 work:
 - Move the next search earlier into the W2112-W2188 arc shape, especially pulse phase and jump-release cadence that determines descent into W2327.
 - If W2112-W2188 arc search cannot exceed W2327, rebuild before W1450 using a different live `contra-j-good` approach.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W1450 Pulse5x2 W2112-W2240 Arc Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1450-pulse5x2-w2112-arc-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1450-weapon16-20260612.json`.
+- Base overlays: W1450-W1510 `pulse_right_fire` p5/w2 plus W1648-W1718 `jump_right_fire`.
+- Arc trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2112-2328-arc-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2112-arc-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1450-pulse5x2-w2112-arc-pulseup2088-2168-p12w3-20260612.json`.
+
+Accepted facts:
+
+- The arc trace shows the current best W2112-W2188 p12/w3 route descending from W2272/Y42 through W2327/Y225, then dying at W2328/Y232 before boss-wall logic.
+- Twelve candidates varied W2088-W2240 `pulse_up_jump_right` start/end windows and p10/p12/p14/p16 cadence, plus W2112-W2240 `pulse_jump_right_fire` and W2096-W2188 hold-jump.
+- No candidate exceeded the W2327 no-death ceiling or reached W2960 for boss-wall validation.
+- Ten pulse-up variants reproduced the W2328/Y232 death, proving the current W1450 branch is insensitive to these local pulse phase changes.
+
+Rejected facts:
+
+- `pulse_jump_right_fire` from W2112-W2240 regressed to W2226/Y77.
+- W2096-W2188 hold-jump regressed to W2178/Y230.
+- The W2088-W2240 arc window is now locally exhausted for this branch.
+- Post-loss recovery remains rejected and must not be counted as route progress.
+
+Next weapon16 work:
+
+- Stop iterating W2112-W2240 arc-only variants for the current W1450 p5/w2 branch.
+- Rebuild before W1450, especially the W1210-W1450 weapon16 approach and enemy-cycle state.
+- Use the external Contra Japan package only as a proposal source for a different live `contra-j-good` W1450 approach, then revalidate through headless runtime.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
