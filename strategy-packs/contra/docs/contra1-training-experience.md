@@ -1560,3 +1560,33 @@ Next boss-wall work:
 - Do not repeat W3180-W3198 single-action forced overlays.
 - The next bounded phase should test boss-wall phase crowd-gate continuation after the W3188 left breakout, especially whether station-crowd contact needs a horizontal jump/fire continuation instead of reverting to `down+B`.
 - If that fails, move the search earlier than W3180 and change station spacing before slot 7 enters same-lane contact.
+
+## 2026-06-12 Contra Japan W3184 Forced Continuation Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2764-w3184-forced-continuation-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w3184-forced-continuation-20260612.summary.json`.
+- Diagnostic mode: `--force-candidate-overlay`, targeting W3184-W3212 after the W3188 breakout.
+
+Accepted facts:
+
+- The previous patch changed the W3188 contact response to `Left+A+B`, but the follow-up phase still returned to `down+B` at frame 8014 and lost active on the next frame.
+- Twelve forced continuation candidates replaced that post-breakout crowd-gate action with right-up fire, jump-right fire, pulse jump-right fire, pulse up-jump-right, right fire, up fire, neutral fire, left-up fire, left-jump fire, jump-right without fire, and pulse right fire.
+- Right-up, jump-right, pulse-jump, and right-fire continuations can delay the loss to frame 8084, but they still do not exceed W3208 with zero deaths.
+- `pulse_right_fire` produced recovered-after-loss behavior and final W555 after death, so it is rejected as invalid for 0-death strategy training.
+- The core remains effectively unsolved in this branch: W3208 reproductions still carry death evidence and fixed/core HP pressure remains the practical blocker.
+
+Rejected facts:
+
+- Replacing `down+B` with a forced post-breakout continuation is rejected as a standalone fix.
+- Do not treat delayed loss at frame 8084 as progress; no candidate met the no-death acceptance gate.
+- Do not repeat W3184-W3212 continuation-only overlays from the W2764 anchor unless the entry spacing or fixed/core HP state has changed first.
+
+Next boss-wall work:
+
+- Move the next search earlier than W3180 to alter soldier slot timing before the same-lane collapse.
+- Prefer candidates that reduce fixed/core HP or change player station height before W3184, then replay the W3188/W3208 segment without forced overlay.
+- Keep W2764 as the reconstruction anchor, but stop spending batches on post-contact continuation alone.
