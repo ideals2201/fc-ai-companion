@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T07:40:20.082Z",
+  "updatedAt": "2026-06-12T07:58:45.972Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 271,
+          "value": 283,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 260,
+          "value": 272,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -77,11 +77,11 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 258,
+          "value": 270,
           "status": "candidate"
         },
         "deaths": {
-          "value": 248,
+          "value": 260,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w2764-external-fixed-target-sequence-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w1830-external-redturret-transfer-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -3070,6 +3070,31 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w2764-external-fixed-target-sequence-20260612-fceux-sequence-late-shift.json"
       },
       "notes": "Rejected external FCEUX fixed-target sequence transfer from W2764: 12 forced jsnes overlays tested rotating-gun/plated-door duck/right-duck/right-up windows, bodyline x128 clamps, and late left dodge. No candidate cleared, stayed zero-death beyond W3208, or improved fixed/core HP enough for promotion. Best late-shift candidate only reproduced W3208 with death at W3195/Y151; treat external fragments as proposal evidence only until a different state/weapon phase validates them."
+    },
+    {
+      "runId": "jp-s1-w1830-external-redturret-transfer-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "contra-segment-candidate-search",
+      "startedAt": "2026-06-12T07:58:45.970Z",
+      "runCount": 12,
+      "frames": 0,
+      "durationSeconds": 0,
+      "activeFrame": null,
+      "lostActiveFrame": 5902,
+      "maxWorldX": 2014,
+      "maxWorldFrame": null,
+      "finalWorldX": 1982,
+      "finalFrame": null,
+      "targetWorldX": 3300,
+      "deaths": 12,
+      "status": "candidate-failed",
+      "reason": "training",
+      "rom": null,
+      "candidateTrial": "jp-s1-w1830-external-redturret-transfer-20260612-seq-jump-up-right",
+      "candidateConfig": null,
+      "notes": "Rejected external red-turret fixed-target transfer from W1830 weapon16 precontact state: 12 candidates translated R+A+B/R+U+B/R+B and related FCEUX fragment shapes across W1952-W2069. All candidates died before W2178, none exceeded the W3208 official ceiling, and best no-death progress regressed to W2014 with weapon16 and fixed HP still present. Treat external red-turret fragment as proposal evidence only until a different pre-W1830 state validates it."
     }
   ],
   "strategyDescriptions": {

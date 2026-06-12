@@ -1819,3 +1819,42 @@ Next boss-wall work:
 - Stop translating external FCEUX boss windows as raw WorldX action overlays from W2764.
 - Prefer extracting earlier state differences from the external successful route: weapon, player Y, player X, target HP, and projectile/body phase before W2764.
 - A future transfer attempt should first prove that jsnes can enter W2880+ with a comparable state; only then retest fixed-target order.
+
+## 2026-06-12 Contra Japan W1830 External Red-Turret Transfer
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1830-external-redturret-transfer-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1830-weapon16-precontact-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1830-external-redturret-transfer-20260612.summary.json`.
+- Source evidence: external FCEUX fragment `stage1_red_turret_x274_y8_fixed_target_destroyed`.
+
+Accepted facts:
+
+- The cross-training checkpoint rule was applied: one bounded 12-candidate batch, one start state, one hypothesis, and explicit accept/reject criteria before promotion.
+- The tested hypothesis was that the external red-turret fixed-target action sequence might change the W2178 lowfall/body phase after the current W1830 weapon16 connector.
+- Twelve jsnes candidates translated the fragment's R+A+B/R+U+B/R+B style sequence into W1952-W2069 forced overlays while preserving the W1830 close-body pulse-right-fire connector.
+- No candidate cleared, reached boss-wall validation, exceeded the official W3208 no-death ceiling, or improved the current local W2178 branch.
+- Best no-death progress was W2014 with `weapon = 16`; fixed HP was still present at the best snapshot.
+
+Rejected facts:
+
+- Direct external red-turret sequence transfer from the current W1830 weapon16 state is rejected.
+- The best variants died around W2015/Y228, while pre-fire/up/duck variants often died earlier around W1934 or W1982.
+- Recovered-after-loss progress from `pre-rightfire-then-seq` and `duckfire-then-rup` is invalid for zero-death training.
+- This batch regresses below the W2178 local connector and far below the W3208 official ceiling.
+
+Cross-strategy application:
+
+- `survival-v0`: keep official best at W3208; do not promote this red-turret transfer.
+- `combat-v0`: the fixed-target destruction concept remains useful, but this exact W1830 jsnes transfer is unsafe.
+- `loot-v0`: do not inherit this sequence as a weapon/reward route, because it creates earlier deaths before any validated reward advantage.
+- `guard-v0`: treat this transfer as unsafe guard behavior from the current W1830 state.
+- `speedrun-v0`: ignore this route class; it regresses progress and adds no clear-time evidence.
+
+Next weapon16 work:
+
+- Do not repeat W1952-W2069 red-turret sequence overlays from `jp-stage1-w1830-weapon16-precontact-20260612.json`.
+- If using this external fragment again, first change the pre-W1830 route state and prove the branch survives past W2178 with zero deaths.
+- Prefer extracting state differences from the external clear route before W1830, not just copying the fixed-target action window.
