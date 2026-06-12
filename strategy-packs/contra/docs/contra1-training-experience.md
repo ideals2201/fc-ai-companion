@@ -1342,3 +1342,35 @@ Next weapon16 work:
 - Do not repeat W1818-W1850 horizontal/duck/jump stance variants from the current W1210/W1440 setup.
 - Inspect the W2178/W2179 death geometry from `jp-s1-w1830-closebody-pulseright1818p4w2-20260612`.
 - If W2179 is another close-body timing problem, test a new 20-minute/12-candidate phase around W2130-W2185; if it is a route-state dead end, rebuild before W1808 instead of extending the same micro patch.
+
+## 2026-06-12 Contra Japan W2178 Lowfall Rescue Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2178-lowfall-rescue-rejected-20260612`.
+- Base candidate: `jp-s1-w1830-closebody-pulseright1818p4w2-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1210-weapon16-20260612.json`.
+- Diagnostic trace: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2178-lowfall-trace-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2178-lowfall-rescue-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2178-lowfall-pulseup2100-2175-p12w3-20260612.json`.
+
+Accepted facts:
+
+- The W2178 trace proves the immediate loss source: the current route falls into a low-body/object contact at W2179/Y235 while still using right/right-up fire.
+- Twelve candidates preserved the W1210/W1440/W1830 connector and varied only W2100-W2196 jump, right-jump, pulse-jump, pulse-up-jump, and fire timing.
+- No candidate survived the 5000-frame probe or reconnected to the previous W2945/W3208 branches.
+- The best local candidate was W2100-W2175 `pulse_up_jump_right` p12/w3, which advanced no-death `weapon = 16` progress to W2726 before losing active at W2727/Y93.
+- W2140-W2196 `jump_right_fire` also moved local progress to W2698; W2132-W2188 jump/pulse-up families typically reached W2309 or W2192.
+
+Rejected facts:
+
+- There were zero accepted candidates. All W2100-W2196 variants are rejected as clear candidates because they eventually died.
+- Static right-fire/right-up and early jump-fire variants repeated the W2178/W2179 lowfall death.
+- W2100-W2175 pulse-up jump is a useful connector candidate only; it is not validated route progress until W2727 is resolved and the route reconnects.
+
+Next weapon16 work:
+
+- Do not repeat W2132-W2188 rescue variants for this branch.
+- Inspect the W2698-W2727 contact geometry from the W2100-W2175 p12/w3 branch.
+- Accept the next branch only if it stays zero-death beyond W2726 and starts reconnecting toward W2945/W2960; otherwise rebuild before W2100.
