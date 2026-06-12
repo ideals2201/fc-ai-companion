@@ -791,3 +791,32 @@ Next weapon16 work:
 - Move earlier than W2784, especially the W2688-W2735 platform capture and the W2735-W2784 release.
 - Do not spend more candidates on W2860-W2905 late forced jumps for the current p12 arc.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2945 Early-Capture Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-earlycapture-sweep-rejected-20260612`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-earlycapture-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-earlycapture-jump2686-2735-p12-20260612.json`.
+
+Accepted facts:
+
+- The valid batch starts from `jp-stage1-w1753-weapon16-20260612.json`, matching the W2945 p12 route evidence.
+- Twelve W2644-W2784 early-capture candidates were tested around pre-capture control and W2680-W2688 platform-jump timing.
+- No candidate exceeded the existing W2945 zero-death ceiling or reached W2960.
+- Starting the platform jump at W2686 instead of W2688 tied W2945 and is the only non-regressing early-start variant in this batch.
+
+Rejected facts:
+
+- Starting the platform jump at W2680 regressed to W2838.
+- Starting at W2682 or W2684 died around W2730 and is not a viable earlier-capture route.
+- Forcing W2644-W2688 right/right-up/right-duck pre-capture produced post-death max progress as high as W3208, but zero-death progress was capped at W2724; those traces are rejected for 0-death training.
+- Early jump before W2686 and forced pre-capture right movement are exhausted for this route class.
+
+Next weapon16 work:
+
+- Keep W2686/W2688 platform jump as the viable start boundary for the current p12 route.
+- The remaining useful space is narrower: W2730-W2784 release timing without second-jump/early-pulse regression, or a different pre-W2644 capture route.
+- Continue rejecting any report whose max progress occurs after death, even if post-death replay reaches W3208.
