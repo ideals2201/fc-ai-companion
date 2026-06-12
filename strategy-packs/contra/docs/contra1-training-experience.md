@@ -1530,3 +1530,33 @@ Next weapon16/default-weapon boss-wall work:
 - Keep W2764 as the preferred reconstruction anchor over W2939/W2941/W2945.
 - Do not repeat broad W3148-W3225 action swaps.
 - The next phase should start from the W3208 reproduction candidate and test narrower W3188-W3210 contact/body separation or fixed-target damage timing, with explicit checks for core HP reduction and close-soldier clearance.
+
+## 2026-06-12 Contra Japan W3188 Narrow Contact Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger runs: `jp-s1-w2764-w3188-narrow-contact-rejected-20260612`, `jp-s1-w3188-precore-breakout-patch-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w3188-narrow-contact-batch-20260612.summary.json`.
+- Patch validation report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w3188-breakout-patch-runtime-20260612.json`.
+
+Accepted facts:
+
+- The W3188 baseline death is a grounded same-lane body contact: slot 7 closes from `dx=18, dy=-14` at frame 8002 to `dx=8, dy=2` at frame 8011 while player remains around `playerX=116`.
+- Widening the grounded contact breakout window to include `playerY <= 170` changes the live decision at W3188 from `A+B` to `Left+A+B`.
+- That patch delays loss from frame 8012 to 8015, but it does not improve no-death progress beyond W3188; the player slides back to W3184 and still dies with fixed targets intact.
+- Twelve forced W3180-W3198 overlays tested `up_fire`, `left_up_fire`, `neutral_fire`, `left_fire`, pure left/right, `right_up_fire`, `right_fire`, `duck_fire`, `left_duck_fire`, `jump_right_fire`, and `left_jump_fire`.
+- Every narrow forced overlay still died. Several reproduced W3208, but only as a death ceiling, not as zero-death progress.
+
+Rejected facts:
+
+- W3180-W3198 narrow forced overlays are rejected as clear evidence.
+- The W3188 single-frame `Left+A+B` breakout is insufficient by itself; it only delays the collision.
+- Do not count W3208 from this batch as progress, because all W3208 reproductions include death.
+
+Next boss-wall work:
+
+- Do not repeat W3180-W3198 single-action forced overlays.
+- The next bounded phase should test boss-wall phase crowd-gate continuation after the W3188 left breakout, especially whether station-crowd contact needs a horizontal jump/fire continuation instead of reverting to `down+B`.
+- If that fails, move the search earlier than W3180 and change station spacing before slot 7 enters same-lane contact.

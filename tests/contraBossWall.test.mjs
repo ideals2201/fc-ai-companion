@@ -1932,6 +1932,54 @@ test("Boss wall mid-entry body contact bails out instead of carrying up-right in
   assert.equal(decision?.reason, "boss-wall-bailout");
 });
 
+test("Boss wall pre-core grounded contact strafes left before the W3188 death frame", () => {
+  const decision = decideBossWallMicroAction(snapshot({
+    worldX: 3188,
+    playerX: 116,
+    playerY: 164,
+    jumpState: 0,
+    enemies: [
+      enemy({
+        slot: 7,
+        type: 0x01,
+        hp: 1,
+        x: 124,
+        y: 166,
+        kind: "enemy",
+        routine: 2,
+        vx: -2,
+        vy: 2
+      }),
+      enemy({
+        slot: 13,
+        type: 0x11,
+        hp: 32,
+        x: 161,
+        y: 176,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      }),
+      enemy({
+        slot: 15,
+        type: 0x10,
+        hp: 10,
+        x: 153,
+        y: 128,
+        kind: "durable",
+        fixed: true,
+        priority: 9
+      })
+    ]
+  }), 8011);
+
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.left, true);
+  assert.equal(decision?.buttons.right, false);
+  assert.equal(decision?.reason, "ground-contact-breakout");
+});
+
 test("Boss wall low stance close falling soldier gets vertical up fire", () => {
   const decision = decideBossWallMicroAction(snapshot({
     worldX: 3208,

@@ -906,7 +906,7 @@ export function decideBossWallMicroAction(
     && snapshot.playerX >= 112
     && snapshot.playerX <= 128
     && snapshot.playerY >= 116
-    && snapshot.playerY <= 150
+    && snapshot.playerY <= 170
   ) {
     const dx = contactHazard.x - snapshot.playerX;
     const dy = contactHazard.y - snapshot.playerY;
