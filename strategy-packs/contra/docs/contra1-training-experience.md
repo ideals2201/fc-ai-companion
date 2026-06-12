@@ -678,3 +678,32 @@ Next weapon16 work:
 - Search before W2804 or rebuild the W2735-W2884 trajectory so the player reaches W2918-W2942 with more vertical margin.
 - Treat W2941 as a measured incremental candidate, not as validated strategy-pack clear evidence.
 - Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
+
+## 2026-06-12 Contra Japan W2945 P12 Pre-Arc Increment
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-p12-prearc-rejected-20260612`.
+- Pre-arc batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2941-prearc-batch-20260612.summary.json`.
+- Repro trace report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-p12-repro-trace-20260612.json`.
+- Saved continuation state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2945-weapon16-20260612.json`.
+
+Accepted facts:
+
+- Replacing the W2735-W2884 setup with W2735-W2784 `right_fire` followed by W2784-W2884 p12/w1 `pulse_jump_right_fire` advanced the weapon16 branch from W2941 to reproducible no-death W2945.
+- The W2945 candidate still preserves `weapon = 16`, but it loses at W2946/Y236 and is not a boss-wall clear or Stage 1 clear.
+- The new best weapon16 continuation state is W2945, still below the all-route Stage 1 best W3208.
+
+Rejected facts:
+
+- Starting the p8 pulse at W2790 regressed to W2824, so the jump cannot begin too early from the W2735 platform chain.
+- Delayed p8 starts at W2796, W2798, W2800, W2808, and W2812 tied W2941 but did not improve it.
+- W2688 jump-release variants ending at W2720, W2728, or W2744 did not change the W2941 ceiling.
+- W2784 p10/w1 regressed to W2935, and W2784 p8/w2 only tied W2941; p12/w1 is the only accepted pre-arc improvement in this batch.
+
+Next weapon16 work:
+
+- Continue around the W2735-W2784 release and W2784-W2884 p12 pulse family, varying pulse width and exit timing before testing W2884+ controls again.
+- Accept only zero-death candidates that exceed W2945 or reach W2960+ for boss-wall validation.
+- Keep W2945 saved state as inspection evidence, not as a local rescue point, because the next loss happens at W2946/Y236.
