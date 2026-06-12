@@ -1688,3 +1688,32 @@ Next weapon16 work:
 - Treat W1753 -> W2178 via p8/w2 pulse jump-right-fire as connector evidence only.
 - The next bounded phase should target W2178/W2179 lowfall/blocker geometry from the W1753-derived connector, not another W1914 reconnect sweep.
 - If W2178 cannot be made stable, rebuild the pre-W1880 route state rather than reusing one-frame pre-loss W2939/W2945 states.
+
+## 2026-06-12 Contra Japan W2178 Lowfall Geometry Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w1753-w2178-lowfall-geometry-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w1753-weapon16-20260612.json`.
+- Inherited connector: W1880-W1948 `pulse_jump_right_fire` p8/w2 from `jp-s1-w1753-w1914-weapon16-reconnect-rejected-20260612`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w1753-w2178-lowfall-geometry-20260612.summary.json`.
+
+Accepted facts:
+
+- The W2178 death is a lowfall/grounded contact with a non-fixed object behind and below the player: at frame 6182 the object is around `dx=-24, dy=3`, then death occurs at W2179/Y234 as it crosses to `dy=-2`.
+- The old route input before tracing was `up+right+B`; the forced overlay batch confirmed the jump guard can apply because the pre-loss input becomes `A+Right+B`.
+- Twelve candidates tested W2148-W2196 jump-right-fire, jump-right, early jump, dense p4/p6/p8 pulse jump, pulse up-jump, right/right-fire, right-duck-fire, and staged right-fire then jump.
+- All candidates died at the same W2179/Y234 contact and none exceeded the prior local W2178 connector or the official W3208 no-death ceiling.
+
+Rejected facts:
+
+- W2160-W2196 jump-only and right-force geometry is rejected as a standalone repair.
+- The failure is not an overlay guard mismatch; input changed as intended but the collision still resolves before the jump can escape.
+- Do not repeat late lowfall A/right/jump pulse variants from the same W1753 connector.
+
+Next weapon16 work:
+
+- Rebuild before W2148 so the object phase at W2178 changes before the player reaches Y229/Y234.
+- Prefer earlier object-clear or spacing candidates over another local jump action at the death frame.
+- If earlier rebuild cannot alter the object phase, return to a different weapon16 saved-state branch rather than continuing late W2178 geometry.
