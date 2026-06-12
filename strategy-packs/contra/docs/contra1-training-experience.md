@@ -820,3 +820,32 @@ Next weapon16 work:
 - Keep W2686/W2688 platform jump as the viable start boundary for the current p12 route.
 - The remaining useful space is narrower: W2730-W2784 release timing without second-jump/early-pulse regression, or a different pre-W2644 capture route.
 - Continue rejecting any report whose max progress occurs after death, even if post-death replay reaches W3208.
+
+## 2026-06-12 Contra Japan W2945 Last-Frame Escape Rejection Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2945-lastframe-escape-sweep-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2945-weapon16-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-lastframe-escape-batch-20260612.summary.json`.
+- Representative report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2945-lastframe-neutralfire-20260612.json`.
+
+Accepted facts:
+
+- The W2945 save state is a precise pre-death inspection point: W2945/Y230, `screen = 11`, `weapon = 16`, `deathFlag = 0`.
+- Baseline replay from this state loses active on the next frame at W2946/Y236.
+- Twelve direct last-frame controls were tested from the same saved state: left, left-fire, left-up-fire, left-jump-fire, left-duck-fire, neutral-fire, up-fire, duck-fire, right-duck-fire, right-up-fire, right-fire, and jump-right-fire.
+
+Rejected facts:
+
+- No last-frame direct input exceeded the existing W2945 zero-death ceiling or reached W2960 for boss-wall validation.
+- Left-biased inputs changed the death x-position to W2944, but still died on the next frame at Y236.
+- Neutral, up, duck, right, and jump-right variants still died at W2946/Y236.
+- The W2945 pre-death frame is already unrecoverable for single-frame direction/fire/jump control.
+
+Next weapon16 work:
+
+- Do not spend more candidates on direct W2945 last-frame rescue.
+- Future candidates must change the route before W2945, preferably before the W2784-W2884 p12 arc or by finding a different pre-W2644 platform-capture entry.
+- Keep boss-wall validation disabled until a zero-death candidate reaches W2960+.
