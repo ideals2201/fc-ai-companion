@@ -217,10 +217,17 @@ function stationCrowdBodyContactThreat(snapshot: BossWallPhaseSnapshot, threats:
   return threats.find((threat) => {
     const dx = threat.x - snapshot.playerX;
     const dy = threat.y - snapshot.playerY;
-    return dx >= -6
+    const upperBodyContact = dx >= -6
       && dx <= 8
       && dy >= -24
       && dy <= -12;
+    const lowerForwardBodyContact = snapshot.worldX >= 3180
+      && snapshot.playerY >= 150
+      && dx >= 0
+      && dx <= 12
+      && dy >= 0
+      && dy <= 14;
+    return upperBodyContact || lowerForwardBodyContact;
   }) ?? null;
 }
 

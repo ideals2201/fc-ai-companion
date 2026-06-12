@@ -474,6 +474,38 @@ test("Boss wall phase down-fires close lower station crowd after HP damage start
   assert.equal(decision?.buttons.left, false);
 });
 
+test("Boss wall phase jumps over the W3184 lower-forward crowd contact", () => {
+  const snap = snapshot({
+    worldX: 3184,
+    playerX: 112,
+    playerY: 164,
+    jumpState: 0,
+    weapon: 0,
+    enemies: [
+      enemy({ slot: 13, type: 0x11, hp: 32, x: 161, y: 176, fixed: true, priority: 9 }),
+      enemy({ slot: 15, type: 0x10, hp: 8, x: 153, y: 128, fixed: true, priority: 9 }),
+      enemy({ slot: 7, type: 0x01, hp: 1, x: 121, y: 174, fixed: false, kind: "enemy", priority: 1 }),
+      enemy({ slot: 8, type: 0x01, hp: 1, x: 117, y: 126, fixed: false, kind: "enemy", priority: 1 }),
+      enemy({ slot: 10, type: 0x01, hp: 1, x: 112, y: 208, fixed: false, kind: "enemy", priority: 1 }),
+      enemy({ slot: 4, type: 0x01, hp: 1, x: 109, y: 209, fixed: false, kind: "object", priority: 1 })
+    ]
+  });
+  const state = {
+    phase: "enter-station",
+    fixedHpTotal: 40,
+    lastFixedHpTotal: 40,
+    noDamageFrames: 107,
+    lastFrame: 8014,
+    attempts: 0
+  };
+  const decision = decideBossWallPhaseAction(snap, state, 8014);
+
+  assert.equal(decision?.reason, "station-crowd-contact-jump");
+  assert.equal(decision?.buttons.a, true);
+  assert.equal(decision?.buttons.b, true);
+  assert.equal(decision?.buttons.down, false);
+});
+
 test("Boss wall phase treats the station boundary as crowd-gated", () => {
   const snap = snapshot({
     worldX: 3184,

@@ -1590,3 +1590,60 @@ Next boss-wall work:
 - Move the next search earlier than W3180 to alter soldier slot timing before the same-lane collapse.
 - Prefer candidates that reduce fixed/core HP or change player station height before W3184, then replay the W3188/W3208 segment without forced overlay.
 - Keep W2764 as the reconstruction anchor, but stop spending batches on post-contact continuation alone.
+
+## 2026-06-12 Contra Japan W3184 Lower-Forward Jump Patch
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w3184-lower-forward-jump-patch-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Runtime report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w3184-lower-forward-jump-patch-runtime-20260612.json`.
+
+Accepted facts:
+
+- The W3184 frame 8014 phase decision previously saw slot 7 at `dx=9, dy=10` but still selected `station-crowd-gate-clear` with `down+B`.
+- The phase rule now treats W3180+ low-position lower-forward body pressure as `station-crowd-contact-jump`, while preserving the earlier W3159 lower-crowd down-fire case.
+- Targeted phase tests pass for both the old down-fire case and the new W3184 jump case.
+- Runtime validation delays the normal phase loss from frame 8015 to frame 8021.
+
+Rejected facts:
+
+- The patch is not progress evidence: max no-death progress remains W3188, final progress collapses to W82 after death, and fixed targets remain alive.
+- This confirms the W3184 lower-forward jump is only a safety correction, not a boss-wall clear path.
+
+Next boss-wall work:
+
+- Do not spend another batch on W3184 jump/no-jump selection alone.
+- Use the patch as a guardrail, then rebuild the earlier entry so fixed/core HP or crowd timing changes before W3184.
+- Any future accepted candidate must exceed W3208 without death, not merely delay the frame of death.
+
+## 2026-06-12 Contra Japan W3100 Precontact Shaping Diagnostic
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2764-w3100-precontact-shaping-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-w3100-precontact-shaping-20260612.summary.json`.
+- Diagnostic mode: `--force-candidate-overlay`, targeting W3100-W3184 before the W3188 same-lane collapse.
+
+Accepted facts:
+
+- Twelve forced precontact candidates tested early right-up fire, up fire, neutral fire, right fire, pulse right fire, jump-right fire, pulse jump-right fire, left-fire/left-up pre-retreat followed by right-up re-entry, and fixed-target priority guards.
+- No candidate produced accepted zero-death progress beyond W3208.
+- The best local no-death value remained W3208 only on pulse-jump variants that still died.
+- Left pre-retreat variants avoided immediate death but stalled at W3100 and therefore failed the forward-progress gate.
+- Several early fire/right variants regressed to W3175 or W3156 with fixed targets still alive, proving they do not improve the boss-wall state.
+
+Rejected facts:
+
+- W3100-W3184 forced station shaping is rejected as a standalone strategy class from the W2764 anchor.
+- Do not repeat early right-up/up/right/neutral fire sweeps in this same window.
+- Do not use left pre-retreat unless it includes a proven forward-progress recovery; stalling alive is not a stage-clear candidate.
+
+Next boss-wall work:
+
+- The next useful window must start before W3100 or use a different anchor that enters boss-wall with improved weapon or fixed-target HP state.
+- Prioritize routes that change the target state before W2764 or preserve weapon16 into boss-wall, because default-weapon boss-wall tuning is repeatedly converging to death at W3188/W3208.
+- Keep W3100 shaping reports as rejected evidence, not candidate fragments for validation.
