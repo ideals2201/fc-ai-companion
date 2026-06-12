@@ -1499,3 +1499,34 @@ Next weapon16 work:
 - Start any older-branch boss-entry reconstruction earlier than W2939.
 - Prefer a trace-proven state before the low-lane fall/contact collapse instead of one-frame pre-loss snapshots.
 - If the next phase uses W2945-class evidence, first prove the chosen saved state survives at least several frames without a candidate overlay, then test boss-wall actions.
+
+## 2026-06-12 Contra Japan W2764 Boss-Wall Contact Rescue Sweep
+
+Runtime scope:
+
+- Strategy: `survival-v0`, 1P, `contra-j-good`.
+- Formal ledger run: `jp-s1-w2764-bosswall-contact-rescue-rejected-20260612`.
+- Start state: `data/training/contra/runtime_runs/contra-j-good/states/jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Baseline report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-anchor-baseline-jp-stage1-w2764-platform-before-late-jump-20260612.json`.
+- Batch report: `data/training/contra/runtime_runs/contra-j-good/segment-search-reports/jp-s1-w2764-bosswall-contact-rescue-batch-20260612.summary.json`.
+
+Accepted facts:
+
+- W2764 is a usable reconstruction anchor: unlike W2939/W2941/W2945, it survives under the normal route-plan probe and reaches W3188 before losing active.
+- The baseline loss at W3188/W3164 is boss-wall contact pressure: same-lane soldiers close on the player while core/fixed targets remain alive.
+- Twelve candidates varied only W3148-W3225 boss-wall contact handling: right-up, right, jump-right, duck/right-duck, left bailout, up/neutral fire, pulse-jump, pulse-up-jump, and staged right-up/jump recovery.
+- The best local candidates, W3148-W3225 `pulse_jump_right_fire` p8/w2 and `pulse_up_jump_right` p10/w2, reproduced W3208 but still died.
+- At W3208 the best candidates still have `weapon = 0`, core HP 32, fixed targets alive, and close same-lane body pressure. This is a reproduced ceiling, not a clear candidate.
+
+Rejected facts:
+
+- No candidate stayed zero-death beyond W3188 or exceeded the formal W3208 ceiling.
+- Full-window right-up/right/jump/duck variants regressed to W3175 or W3156.
+- Left bailout moved the collision class but still died around W3159/W3179.
+- W2764 is useful as a boss-wall reconstruction anchor, but W3148-W3225 whole-window action swaps are rejected as clear evidence.
+
+Next weapon16/default-weapon boss-wall work:
+
+- Keep W2764 as the preferred reconstruction anchor over W2939/W2941/W2945.
+- Do not repeat broad W3148-W3225 action swaps.
+- The next phase should start from the W3208 reproduction candidate and test narrower W3188-W3210 contact/body separation or fixed-target damage timing, with explicit checks for core HP reduction and close-soldier clearance.
