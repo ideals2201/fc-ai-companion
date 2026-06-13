@@ -40,3 +40,31 @@ test("TAS guard status refreshes are throttled during playback", () => {
     "TAS guard should avoid setState on every emulated frame"
   );
 });
+
+test("runtime input publishing skips unchanged button states", () => {
+  assert.match(
+    mainSource,
+    /function sameButtonState\(left: ButtonState, right: ButtonState\) \{[\s\S]*return buttonNames\.every\(\(button\) => left\[button\] === right\[button\]\);[\s\S]*\}/,
+    "runtime should compare button states before publishing them to React"
+  );
+  assert.match(
+    mainSource,
+    /const finalButtonsChanged = !sameButtonState\(previous, next\);/,
+    "final button recomputation should detect unchanged aggregate input"
+  );
+  assert.match(
+    mainSource,
+    /if \(finalButtonsChanged\) \{[\s\S]*finalButtonsRef\.current = \{[\s\S]*setButtonStates/,
+    "runtime should only refresh visible button state when aggregate input changed"
+  );
+  assert.match(
+    mainSource,
+    /if \(sameButtonState\(sourceButtonsRef\.current\[side\]\[source\], next\)\) return;/,
+    "source input publication should skip identical per-frame AI button states"
+  );
+  assert.match(
+    mainSource,
+    /if \(current\[side\] === nextLabel\) return current;/,
+    "last input labels should not be rewritten when the visible label is unchanged"
+  );
+});

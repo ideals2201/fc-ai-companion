@@ -2196,6 +2196,10 @@ function createButtonState(): ButtonState {
   };
 }
 
+function sameButtonState(left: ButtonState, right: ButtonState) {
+  return buttonNames.every((button) => left[button] === right[button]);
+}
+
 function createIdleTasPlaybackState(): TasPlaybackUiState {
   return {
     status: "idle",
@@ -9316,6 +9320,7 @@ function App() {
     }
 
     const previous = finalButtonsRef.current[side];
+    const finalButtonsChanged = !sameButtonState(previous, next);
     const nes = nesRef.current;
     const shouldCountInputMetrics = gameplayActiveRef.current
       && (side === "1P" || Boolean(ramSnapshotRef.current?.twoPlayerActive));
@@ -9343,25 +9348,32 @@ function App() {
       });
     }
 
-    finalButtonsRef.current = {
-      ...finalButtonsRef.current,
-      [side]: next
-    };
-    setButtonStates((current) => ({
-      ...current,
-      [side]: next
-    }));
+    if (finalButtonsChanged) {
+      finalButtonsRef.current = {
+        ...finalButtonsRef.current,
+        [side]: next
+      };
+      setButtonStates((current) => ({
+        ...current,
+        [side]: next
+      }));
+    }
   }, [addPlayerMetricDeltas, isSourceAllowed]);
 
   const setSourceButtons = useCallback((side: PlayerSide, source: InputSource, next: ButtonState) => {
+    if (sameButtonState(sourceButtonsRef.current[side][source], next)) return;
     sourceButtonsRef.current[side][source] = next;
     recomputeSide(side);
     if (source !== "system" && hasPressedButton(next)) {
       const sourceLabel = source === "keyboard" ? "Keyboard" : source === "gamepad" ? "Gamepad" : source === "panel" ? "Panel" : source === "tas" ? "TAS" : "AI";
-      setLastInputs((current) => ({
-        ...current,
-        [side]: `${sourceLabel} input`
-      }));
+      const nextLabel = `${sourceLabel} input`;
+      setLastInputs((current) => {
+        if (current[side] === nextLabel) return current;
+        return {
+          ...current,
+          [side]: nextLabel
+        };
+      });
     }
   }, [recomputeSide]);
 
