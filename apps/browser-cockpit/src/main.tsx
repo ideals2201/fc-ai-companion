@@ -3708,6 +3708,12 @@ function buildPlayTraceSample({
 
 const recentTraceSampleLimit = 1200;
 const deathTraceSampleLimit = 900;
+const traceSampleRetentionLimit = 60 * 60 * 10;
+
+function retainRecentTraceSamples(samples: PlayTraceSample[]) {
+  if (samples.length <= traceSampleRetentionLimit) return;
+  samples.splice(0, samples.length - traceSampleRetentionLimit);
+}
 
 function traceInputLabel(input: TraceInputSample) {
   const pressed = [
@@ -8859,6 +8865,8 @@ function App() {
   const sourceButtonsRef = useRef(createSourceInputStates());
   const tasMovieRef = useRef<Fm2Movie | null>(null);
   const tasPlaybackGuardRef = useRef<TasPlaybackGuardState>(createTasPlaybackGuardState());
+  const tasGuardUiFrameRef = useRef(0);
+  const tasGuardUiPhaseRef = useRef<TasPlaybackUiState["phase"]>("init");
   const tasPlaybackRef = useRef({
     active: false,
     movieId: "",
@@ -9129,7 +9137,7 @@ function App() {
     const count = traceSamplesRef.current.length;
     const report = count > 0 ? analyzePlayTrace(traceSamplesRef.current, "1P") : null;
     setPlayTraceReport(report);
-    setTraceSampleSnapshot(traceSamplesRef.current.slice());
+    setTraceSampleSnapshot(traceSamplesRef.current.slice(-traceSampleRetentionLimit));
     setTraceSampleCount(count);
     setTraceLastSummary(report ? `已记录 ${count} 帧 / 击杀 ${report.kills.total} / 武器 ${report.weaponPickups.total} / 快速 ${report.fastPasses.length}` : "轨迹未记录");
     appendLog(`Trace：停止记录（${count} 帧）`);
@@ -9973,6 +9981,7 @@ function App() {
         const keepTraceSample = shouldKeepTraceSample(traceSample, captureConfig);
         if (keepTraceSample) {
           traceSamplesRef.current.push(traceSample);
+          retainRecentTraceSamples(traceSamplesRef.current);
           traceCaptureEnteredRef.current = true;
         }
         if (frameRef.current % 30 === 0 || keepTraceSample) {
@@ -9990,17 +9999,24 @@ function App() {
           tasPlaybackRef.current.frameIndex
         );
         tasPlaybackGuardRef.current = guardResult.state;
-        setTasPlaybackState((current) => ({
-          ...current,
-          phase: guardResult.phase,
-          messageKey: guardResult.ok ? "guard-checking" : "desynced",
-          messageDetail: guardResult.ok
-            ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"} / FM2 row ${tasPlaybackRef.current.frameIndex}`
-            : guardResult.message,
-          message: guardResult.ok
-            ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"}：FM2 行 ${tasPlaybackRef.current.frameIndex}，RAM 校验中`
-            : guardResult.message
-        }));
+        const shouldRefreshTasGuardUi = !guardResult.ok
+          || tasPlaybackRef.current.frameIndex - tasGuardUiFrameRef.current >= 10
+          || guardResult.phase !== tasGuardUiPhaseRef.current;
+        if (shouldRefreshTasGuardUi) {
+          tasGuardUiFrameRef.current = tasPlaybackRef.current.frameIndex;
+          tasGuardUiPhaseRef.current = guardResult.phase;
+          setTasPlaybackState((current) => ({
+            ...current,
+            phase: guardResult.phase,
+            messageKey: guardResult.ok ? "guard-checking" : "desynced",
+            messageDetail: guardResult.ok
+              ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"} / FM2 row ${tasPlaybackRef.current.frameIndex}`
+              : guardResult.message,
+            message: guardResult.ok
+              ? `${guardResult.phase === "active" ? "Active Phase" : "Init Phase"}：FM2 行 ${tasPlaybackRef.current.frameIndex}，RAM 校验中`
+              : guardResult.message
+          }));
+        }
         if (!guardResult.ok) {
           stopTasPlaybackAsDesynced(guardResult.message);
           setFrameCount(frameRef.current);
