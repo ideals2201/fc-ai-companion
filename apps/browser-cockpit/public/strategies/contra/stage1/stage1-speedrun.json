@@ -8,7 +8,7 @@
   "version": 1,
   "generatedFrom": "strategy-packs/contra",
   "sourceVersion": "contra:contra-us-good:0.1.0",
-  "description": "Stage 1 speed route script V0. Advances aggressively while preserving safety overrides.",
+  "description": "Stage 1 TAS/FCEUX baseline candidate for speed route training. Advances aggressively while preserving safety overrides; still requires real runtime validation.",
   "segments": [
     {
       "id": "start-run",

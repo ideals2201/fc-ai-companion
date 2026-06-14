@@ -5,7 +5,7 @@
   "romProfileId": "contra-j-good",
   "stageId": "stage-1",
   "status": "candidate",
-  "updatedAt": "2026-06-12T09:10:40.507Z",
+  "updatedAt": "2026-06-12T09:21:25.026Z",
   "policy": {
     "appendOnlyRuns": true,
     "summaryDerivedFromRuns": true,
@@ -23,11 +23,11 @@
       "dataMode": "measured-ledger-only",
       "summary": {
         "trainingRuns": {
-          "value": 355,
+          "value": 367,
           "status": "candidate"
         },
         "knownDeaths": {
-          "value": 335,
+          "value": 347,
           "status": "candidate"
         },
         "unknownDeathRuns": {
@@ -35,7 +35,7 @@
           "status": "candidate"
         },
         "recordedRunTimeSeconds": {
-          "value": 27503.38,
+          "value": 28903.38,
           "status": "candidate"
         },
         "clearProgress": {
@@ -77,15 +77,15 @@
       "status": "candidate",
       "summary": {
         "trainingRuns": {
-          "value": 342,
+          "value": 354,
           "status": "candidate"
         },
         "deaths": {
-          "value": 323,
+          "value": 335,
           "status": "candidate"
         },
         "trainingTimeSeconds": {
-          "value": 26346.04,
+          "value": 27746.04,
           "status": "candidate"
         },
         "clearProgress": {
@@ -119,7 +119,7 @@
           "status": "candidate"
         }
       },
-      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w1688-preclear-phase-shaping-rejected-20260612; latest status candidate-failed."
+      "evidence": "Updated from contra-segment-candidate-search run jp-s1-w1942-lowbody-geometry-rejected-20260612; latest status candidate-failed."
     },
     "speedrun-v0": {
       "status": "candidate",
@@ -3260,6 +3260,34 @@
         "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1688-preclear-phase-shaping-20260612-pulserightfire-p2w1.json"
       },
       "notes": "12-candidate W1688 preclear/phase shaping improved the W300 weapon16 branch to local no-death W1942 and saved a continuation state, but all advancing variants still lost active around W1943; treat as rejected for clear promotion."
+    },
+    {
+      "runId": "jp-s1-w1942-lowbody-geometry-rejected-20260612",
+      "stageId": "stage-1",
+      "strategyKey": "survival-v0",
+      "side": "1P",
+      "source": "contra-segment-candidate-search",
+      "startedAt": "2026-06-12T09:20:33.714Z",
+      "runCount": 12,
+      "frames": 84000,
+      "durationSeconds": 1400,
+      "activeFrame": null,
+      "lostActiveFrame": 9473,
+      "maxWorldX": 1942,
+      "maxWorldFrame": 9472,
+      "finalWorldX": 737,
+      "finalFrame": null,
+      "targetWorldX": 3300,
+      "deaths": 12,
+      "status": "candidate-failed",
+      "reason": "w1942-lowbody-geometry-rejected",
+      "rom": null,
+      "candidateTrial": "jp-s1-w1942-lowbody-geometry-20260612-duck-fire",
+      "candidateConfig": {
+        "id": "jp-s1-w1942-lowbody-geometry-20260612-duck-fire",
+        "path": "data/training/contra/runtime_runs/contra-j-good/candidate-overlays/jp-s1-w1942-lowbody-geometry-20260612-duck-fire.json"
+      },
+      "notes": "12-candidate W1942 low-body geometry rescue rejected: all immediate duck/jump/left/right/fire variants lost active at frame 9473 with no no-death progress beyond W1942; next search must start earlier around W1880-W1940."
     }
   ],
   "strategyDescriptions": {

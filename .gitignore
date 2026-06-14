@@ -21,6 +21,18 @@ save_states/
 saves/
 logs/
 *.log
+codex-*
+*_BACKUP*
+*.patch
+
+# Generated training/runtime search artifacts
+data/training/contra/runtime_runs/**/candidate-overlays/
+data/training/contra/runtime_runs/**/segment-search-reports/
+data/training/contra/runtime_runs/**/states/
+candidate-overlays/
+segment-search-reports/
+states/
+strategy-packs/contra/docs/stage1-training-handoff-*.md
 
 # ROMs, BIOS, archives, and commercial assets
 *.nes

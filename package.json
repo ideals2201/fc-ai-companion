@@ -4,6 +4,9 @@
   "private": true,
   "description": "Browser-based FC/NES AI companion cockpit.",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
