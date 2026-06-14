@@ -11,6 +11,14 @@ The goal is not to build an auto-clear bot. The goal is to make the player feel 
 
 本项目目标不是制作自动通关机器人，而是让玩家感觉自己正在和一个 AI 队友一起玩。
 
+## Interface Preview / 界面预览
+
+![FC AI Companion browser cockpit](docs/assets/screenshots/browser-cockpit-v0.1.0.png)
+
+The screenshot shows the full browser cockpit version, not the separate viewing/studio prototype.
+
+截图展示的是完整浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
+
 ## Quick Start / 快速开始
 
 Requirements / 环境要求：
