@@ -13,11 +13,11 @@ The goal is not to build an auto-clear bot. The goal is to make the player feel 
 
 ## Interface Preview / 界面预览
 
-The screenshot shows the full browser cockpit version, not the separate viewing/studio prototype.
+The screenshot shows the browser cockpit release, not the separate viewing/studio prototype.
 
-截图展示的是完整浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
+截图展示的是浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
 
-<img src="docs/assets/screenshots/browser-cockpit-v0.1.0.png" alt="FC AI Companion browser cockpit" width="720">
+<img src="docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="720">
 
 English pilot panels / 英文角色侧栏：
 

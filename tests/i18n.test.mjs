@@ -3,6 +3,8 @@ import fs from "node:fs";
 import test from "node:test";
 import ts from "typescript";
 
+const mainSource = fs.readFileSync(new URL("../apps/browser-cockpit/src/main.tsx", import.meta.url), "utf8");
+
 async function importTypeScriptModule(path) {
   const source = fs.readFileSync(path, "utf8");
   const transpiled = ts.transpileModule(source, {
@@ -40,4 +42,12 @@ test("keeps internal keys stable and falls back safely for missing text", () => 
   assert.equal(t("en-US", "tas.windowTitle"), "TAS Watch / Training Base");
   assert.equal(t("zh-CN", "missing.key"), "missing.key");
   assert.equal(Object.keys(uiTranslations["zh-CN"]).length, Object.keys(uiTranslations["en-US"]).length);
+});
+
+test("localizes the center TV no-ROM overlay message", () => {
+  assert.equal(t("zh-CN", "tv.noRomMessage"), "加载本地用户自有 ROM 后开始真实模拟器测试。");
+  assert.equal(t("en-US", "tv.noRomMessage"), "Load a local user-owned ROM to start real emulator testing.");
+  assert.match(mainSource, /const overlayMessage = status === "no-rom" \? t\(uiLanguage, "tv\.noRomMessage"\) : message;/);
+  assert.match(mainSource, /<strong>\{overlayMessage\}<\/strong>/);
+  assert.doesNotMatch(mainSource, /<strong>\{message\}<\/strong>/);
 });

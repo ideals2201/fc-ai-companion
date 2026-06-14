@@ -5,11 +5,11 @@ Date: 2026-06-14
 
 ## Interface Preview / 界面预览
 
-The images below show the complete browser cockpit release, followed by English and Chinese side-panel previews. ROM files and private runtime output are not included.
+The images below show the browser cockpit release, followed by English and Chinese side-panel previews. ROM files, commercial game screenshots, and private runtime output are not included.
 
-以下图片展示完整浏览器驾驶舱版本，并分别提供英文、中文侧栏预览。发布内容不包含 ROM 文件或私有运行产物。
+以下图片展示浏览器驾驶舱版本，并分别提供英文、中文侧栏预览。发布内容不包含 ROM 文件、商业游戏截图或私有运行产物。
 
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/browser-cockpit-v0.1.0.png" alt="FC AI Companion browser cockpit" width="720">
+<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="720">
 
 English pilot panels / 英文角色侧栏：
 

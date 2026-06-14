@@ -7325,6 +7325,7 @@ function TelevisionView({
   const stepVisual = (key: keyof VisualSettings, delta: number, min: number, max: number) => {
     onVisualChange(key, clamp(visualSettings[key] + delta, min, max));
   };
+  const overlayMessage = status === "no-rom" ? t(uiLanguage, "tv.noRomMessage") : message;
 
   return (
     <section className="tv-station" aria-label={t(uiLanguage, "tv.title")}>
@@ -7348,7 +7349,7 @@ function TelevisionView({
           {!hasRom && (
             <div className="rom-overlay">
               <AlertTriangle size={22} />
-              <strong>{message}</strong>
+              <strong>{overlayMessage}</strong>
             </div>
           )}
         </div>
