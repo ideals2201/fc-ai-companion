@@ -25,6 +25,18 @@ Focused pilot panels / 角色侧栏细节：
 
 ![2P pilot panel](docs/assets/screenshots/pilot-panel-2p-v0.1.0.png)
 
+Feature detail views / 功能细节视图：
+
+![Central TV and host controls](docs/assets/screenshots/cockpit-tv-v0.1.0.png)
+
+![TAS training baseline panel](docs/assets/screenshots/tas-training-v0.1.0.png)
+
+![Strategy package training progress](docs/assets/screenshots/strategy-training-progress-v0.1.0.png)
+
+![Fast brain tactical panel](docs/assets/screenshots/fast-brain-panel-v0.1.0.png)
+
+![Runtime data dashboard](docs/assets/screenshots/data-dashboard-v0.1.0.png)
+
 ## Quick Start / 快速开始
 
 Requirements / 环境要求：
