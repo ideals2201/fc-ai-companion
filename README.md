@@ -19,6 +19,12 @@ The screenshot shows the full browser cockpit version, not the separate viewing/
 
 截图展示的是完整浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
 
+Focused pilot panels / 角色侧栏细节：
+
+![1P pilot panel](docs/assets/screenshots/pilot-panel-1p-v0.1.0.png)
+
+![2P pilot panel](docs/assets/screenshots/pilot-panel-2p-v0.1.0.png)
+
 ## Quick Start / 快速开始
 
 Requirements / 环境要求：
