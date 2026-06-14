@@ -13,29 +13,33 @@ The goal is not to build an auto-clear bot. The goal is to make the player feel 
 
 ## Interface Preview / 界面预览
 
-![FC AI Companion browser cockpit](docs/assets/screenshots/browser-cockpit-v0.1.0.png)
-
 The screenshot shows the full browser cockpit version, not the separate viewing/studio prototype.
 
 截图展示的是完整浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
 
-Focused pilot panels / 角色侧栏细节：
+<img src="docs/assets/screenshots/browser-cockpit-v0.1.0.png" alt="FC AI Companion browser cockpit" width="720">
 
-![1P pilot panel](docs/assets/screenshots/pilot-panel-1p-v0.1.0.png)
+English pilot panels / 英文角色侧栏：
 
-![2P pilot panel](docs/assets/screenshots/pilot-panel-2p-v0.1.0.png)
+<img src="docs/assets/screenshots/pilot-panel-1p-en-v0.1.0.png" alt="1P pilot panel in English" width="280">
+<img src="docs/assets/screenshots/pilot-panel-2p-en-v0.1.0.png" alt="2P pilot panel in English" width="280">
+
+中文角色侧栏：
+
+<img src="docs/assets/screenshots/pilot-panel-1p-v0.1.0.png" alt="1P 实体手柄舱" width="280">
+<img src="docs/assets/screenshots/pilot-panel-2p-v0.1.0.png" alt="2P 实体手柄舱" width="280">
 
 Feature detail views / 功能细节视图：
 
-![Central TV and host controls](docs/assets/screenshots/cockpit-tv-v0.1.0.png)
+<img src="docs/assets/screenshots/cockpit-tv-v0.1.0.png" alt="Central TV and host controls" width="620">
 
-![TAS training baseline panel](docs/assets/screenshots/tas-training-v0.1.0.png)
+<img src="docs/assets/screenshots/tas-training-v0.1.0.png" alt="TAS training baseline panel" width="620">
 
-![Strategy package training progress](docs/assets/screenshots/strategy-training-progress-v0.1.0.png)
+<img src="docs/assets/screenshots/strategy-training-progress-v0.1.0.png" alt="Strategy package training progress" width="620">
 
-![Fast brain tactical panel](docs/assets/screenshots/fast-brain-panel-v0.1.0.png)
+<img src="docs/assets/screenshots/fast-brain-panel-v0.1.0.png" alt="Fast brain tactical panel" width="620">
 
-![Runtime data dashboard](docs/assets/screenshots/data-dashboard-v0.1.0.png)
+<img src="docs/assets/screenshots/data-dashboard-v0.1.0.png" alt="Runtime data dashboard" width="620">
 
 ## Quick Start / 快速开始
 
