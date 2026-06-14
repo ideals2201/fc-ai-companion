@@ -1,9 +1,19 @@
-﻿# Strategy Packs / 绛栫暐鍖?
-This directory stores distributable FC AI Companion StrategyPack source files.
-鏈洰褰曚繚瀛?FC AI Companion 鍙垎鍙戠瓥鐣ュ寘鐨勬簮鏂囦欢銆?
-Rules / 瑙勫垯锛?
-- One game uses one subdirectory named by `game-profile-id`. / 涓€涓父鎴忓搴斾竴涓互 `game-profile-id` 鍛藉悕鐨勫瓙鐩綍銆?- Each game package must follow `docs/16_OPERATION_STRATEGY_STANDARD.md` and `docs/STRATEGY_PROTOCOL_CORE.md`. / 姣忎釜娓告垙绛栫暐鍖呭繀椤婚伒瀹?`docs/16_OPERATION_STRATEGY_STANDARD.md` 鍜?`docs/STRATEGY_PROTOCOL_CORE.md`銆?- This directory is the source-of-truth archive for StrategyPack files. / 鏈洰褰曟槸 StrategyPack 鏂囦欢鐨勬爣鍑嗘簮褰掓。浣嶇疆銆?- Browser runtime strategy files may be generated or copied from this directory, but runtime exports are not the source of truth. / 娴忚鍣ㄨ繍琛屾椂绛栫暐鏂囦欢鍙互鐢辨湰鐩綍鐢熸垚鎴栧鍒讹紝浣嗚繍琛屾椂瀵煎嚭涓嶆槸鏍囧噯婧愩€?- This directory must not contain ROM files, commercial game assets, save states, BIOS files, or unauthorized material. / 鏈洰褰曚笉寰楀寘鍚?ROM銆佸晢涓氭父鎴忚祫浜с€佸嵆鏃跺瓨妗ｃ€丅IOS 鎴栨湭鎺堟潈绱犳潗銆?
-Standard structure / 鏍囧噯缁撴瀯锛?
+# Strategy Packs / 策略包
+
+This directory stores source files for distributable FC AI Companion strategy packages.
+
+本目录保存 FC AI Companion 可分发策略包的源文件。
+
+Rules / 规则：
+
+- One game uses one subdirectory named by `game-profile-id`. / 一个游戏对应一个以 `game-profile-id` 命名的子目录。
+- Each game package must follow `docs/16_OPERATION_STRATEGY_STANDARD.md` and `docs/STRATEGY_PROTOCOL_CORE.md`. / 每个游戏策略包必须遵守 `docs/16_OPERATION_STRATEGY_STANDARD.md` 和 `docs/STRATEGY_PROTOCOL_CORE.md`。
+- This directory is the source-of-truth archive for StrategyPack files. / 本目录是 StrategyPack 文件的标准源归档位置。
+- Browser runtime strategy files may be generated or copied from this directory, but runtime exports are not the source of truth. / 浏览器运行时策略文件可以由本目录生成或复制，但运行时导出不是标准源。
+- This directory must not contain ROM files, commercial game assets, save states, BIOS files, or unauthorized material. / 本目录不得包含 ROM、商业游戏资产、即时存档、BIOS 或未授权素材。
+
+Standard structure / 标准结构：
+
 ```text
 strategy-packs/
   <game-profile-id>/
@@ -12,12 +22,10 @@ strategy-packs/
     rom-profiles/
     research/
     stages/
-    trace-evidence/
-    schemas/
-    docs/
 ```
 
-Current public candidate package / 褰撳墠鍏紑鍊欓€夌瓥鐣ュ寘锛?
+Current public candidate package / 当前公开候选策略包：
+
 ```text
 strategy-packs/contra/
 ```

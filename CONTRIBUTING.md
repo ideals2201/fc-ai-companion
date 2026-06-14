@@ -1,105 +1,111 @@
-﻿# Contributing and Development Guide / 璐＄尞涓庡紑鍙戣鏄?
-## Development Environment / 寮€鍙戠幆澧?
-Use Node.js 22 or newer.
-璇蜂娇鐢?Node.js 22 鎴栨洿鏂扮増鏈€?
-Install dependencies:
+# Contributing and Development Guide / 贡献与开发说明
 
-瀹夎渚濊禆锛?
+## Development Environment / 开发环境
+
+Use Node.js 22 or newer.
+
+请使用 Node.js 22 或更新版本。
+
+Install dependencies / 安装依赖：
+
 ```powershell
-npm install
+npm ci
 ```
 
-Run the browser cockpit:
+Run the browser cockpit / 运行浏览器驾驶舱：
 
-杩愯娴忚鍣ㄩ┚椹惰埍锛?
 ```powershell
 npm run dev:cockpit
 ```
 
-Run verification:
+Run verification / 运行验证：
 
-杩愯楠岃瘉锛?
 ```powershell
 npm test
 npm run build
 git diff --check
 ```
 
-## Strategy Package Workflow / 绛栫暐鍖呭伐浣滄祦
+## Scope / 修改范围
 
-Strategy package source files live in:
+Please keep changes focused. Avoid mixing unrelated UI, runtime, training, and documentation work in one commit.
 
-绛栫暐鍖呮簮鏂囦欢浣嶄簬锛?
+请保持修改范围清晰。避免在一个提交里混合无关的 UI、运行时、训练和文档工作。
+
+## Strategy Packs / 策略包
+
+Strategy pack source files are stored in:
+
+策略包源文件位于：
+
 ```text
-strategy-packs/contra/
+strategy-packs/
 ```
 
-Runtime strategy exports live in:
+Runtime exports are generated or synchronized into:
 
-杩愯鏃剁瓥鐣ュ鍑轰綅浜庯細
+运行时导出会生成或同步到：
 
 ```text
-apps/browser-cockpit/public/strategies/contra/stage1/
+apps/browser-cockpit/public/strategies/
 ```
 
 After changing `strategy-packs/contra/stages/stage-1/stage-plan.json`, regenerate runtime exports:
 
-淇敼 `strategy-packs/contra/stages/stage-1/stage-plan.json` 鍚庯紝璇烽噸鏂扮敓鎴愯繍琛屾椂瀵煎嚭锛?
+修改 `strategy-packs/contra/stages/stage-1/stage-plan.json` 后，请重新生成运行时导出：
+
 ```powershell
 npm run sync:strategies
 ```
 
-Do not promote a strategy from `candidate` to validated unless there is a real ValidationReport and the required quality gates pass.
-闄ら潪鏈夌湡瀹?ValidationReport 涓斿繀瑕佽川閲忛棬閫氳繃锛屽惁鍒欎笉瑕佹妸绛栫暐浠?`candidate` 鎻愬崌涓?validated銆?
-## Git Rules / Git 瑙勫垯
+Do not promote a strategy from `candidate` to `validated` unless real validation reports and quality gates support it.
+
+除非有真实 ValidationReport 且必要质量门通过，否则不要把策略从 `candidate` 提升为 `validated`。
+
+## Git Rules / Git 规则
 
 Stage files intentionally. Do not use broad staging for release commits.
-璇锋湁鎰忚瘑鍦伴€愰」鏆傚瓨鏂囦欢銆傚彂甯冩彁浜や笉瑕佷娇鐢ㄧ矖鏆寸殑鍏ㄩ噺鏆傚瓨銆?
-Recommended checks before committing:
 
-鎻愪氦鍓嶅缓璁鏌ワ細
+请有意识地逐项暂存文件。发布提交不要使用粗暴的全量暂存。
 
-```powershell
-git status --short
-git diff --stat
-git diff --check
-npm test
-npm run build
-```
+Do not commit / 不得提交：
 
-Generated local artifacts must stay out of commits:
-
-鏈湴鐢熸垚浜х墿涓嶅緱鎻愪氦锛?
 - `codex-*`
 - `*.patch`
 - `*_BACKUP*`
+- `node_modules/`
+- `candidate-overlays/`
+- `segment-search-reports/`
+- `states/`
 - `data/training/contra/runtime_runs/**/candidate-overlays/`
 - `data/training/contra/runtime_runs/**/segment-search-reports/`
 - `data/training/contra/runtime_runs/**/states/`
-- `node_modules/`
-- `dist/`, `build/`, `.vite/`, `*.tsbuildinfo`
 
-## ROM and Asset Rules / ROM 涓庤祫浜ц鍒?
+## ROM and Asset Rules / ROM 与资产规则
+
 Do not commit ROMs, BIOS files, save states, commercial archives, or ROM download links.
-涓嶈鎻愪氦 ROM銆丅IOS銆佸嵆鏃跺瓨妗ｃ€佸晢涓氬帇缂╁寘鎴?ROM 涓嬭浇閾炬帴銆?
+
+不要提交 ROM、BIOS、即时存档、商业压缩包或 ROM 下载链接。
+
 Use local environment variables for ROM testing:
 
-娴嬭瘯 ROM 鏃惰浣跨敤鏈湴鐜鍙橀噺锛?
+测试 ROM 时请使用本地环境变量：
+
 ```powershell
-$env:FC_AI_COMPANION_ROM_PATH = "D:\Ai-Play\ROM\contra_us_test.nes"
+$env:FC_ROM_PATH="D:\your-rom-folder\contra.nes"
 npm run dev:cockpit
 ```
 
-macOS/Linux:
-
-```bash
-FC_AI_COMPANION_ROM_PATH="$HOME/ROM/contra_us_test.nes" npm run dev:cockpit
-```
-
-## Public Release Process / 鍏紑鍙戝竷娴佺▼
+## Public Release Process / 公开发布流程
 
 For a public release:
 
-鍏紑鍙戝竷鏃讹細
+公开发布时：
 
-1. Update release notes and checklist. / 鏇存柊鍙戝竷璇存槑鍜屾鏌ユ竻鍗曘€?2. Sync strategy runtime exports. / 鍚屾杩愯鏃剁瓥鐣ュ鍑恒€?3. Run tests, build, audit, and diff checks. / 杩愯娴嬭瘯銆佹瀯寤恒€佸璁″拰 diff 妫€鏌ャ€?4. Commit only intended source, docs, tests, and strategy package files. / 鍙彁浜ら鏈熺殑婧愮爜銆佹枃妗ｃ€佹祴璇曞拰绛栫暐鍖呮枃浠躲€?5. Tag the release, for example `v0.1.0`. / 鍒涘缓鍙戝竷 tag锛屼緥濡?`v0.1.0`銆?6. Push branch and tag after the GitHub remote is configured. / 閰嶇疆 GitHub remote 鍚庡啀鎺ㄩ€佸垎鏀拰 tag銆?
+1. Update release notes and checklist. / 更新发布说明和检查清单。
+2. Sync strategy runtime exports. / 同步运行时策略导出。
+3. Run tests, build, audit, and diff checks. / 运行测试、构建、审计和 diff 检查。
+4. Commit only intended source, docs, tests, and strategy package files. / 只提交预期的源码、文档、测试和策略包文件。
+5. Tag the release, for example `v0.1.0`. / 创建发布 tag，例如 `v0.1.0`。
+6. Push branch and tag after the GitHub remote is configured. / 配置 GitHub remote 后再推送分支和 tag。
+7. Create a GitHub Release with bilingual release notes. / 使用中英双语发布说明创建 GitHub Release。
