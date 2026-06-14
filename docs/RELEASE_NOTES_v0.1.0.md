@@ -9,17 +9,25 @@ The images below show the browser cockpit release, followed by English and Chine
 
 以下图片展示浏览器驾驶舱版本，并分别提供英文、中文侧栏预览。发布内容不包含 ROM 文件、商业游戏截图或私有运行产物。
 
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="720">
+<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="560">
 
 English pilot panels / 英文角色侧栏：
 
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-1p-en-v0.1.0.png" alt="1P pilot panel in English" width="280">
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-2p-en-v0.1.0.png" alt="2P pilot panel in English" width="280">
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-1p-en-v0.1.0.png" alt="1P pilot panel in English" width="220"></td>
+    <td><img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-2p-en-v0.1.0.png" alt="2P pilot panel in English" width="220"></td>
+  </tr>
+</table>
 
 中文角色侧栏：
 
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-1p-v0.1.0.png" alt="1P 实体手柄舱" width="280">
-<img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-2p-v0.1.0.png" alt="2P 实体手柄舱" width="280">
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-1p-v0.1.0.png" alt="1P 实体手柄舱" width="220"></td>
+    <td><img src="https://raw.githubusercontent.com/ideals2201/fc-ai-companion/main/docs/assets/screenshots/pilot-panel-2p-v0.1.0.png" alt="2P 实体手柄舱" width="220"></td>
+  </tr>
+</table>
 
 ## Summary / 摘要
 

@@ -17,29 +17,37 @@ The screenshot shows the browser cockpit release, not the separate viewing/studi
 
 截图展示的是浏览器驾驶舱版本，不是单独的观赏版或 studio 原型。
 
-<img src="docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="720">
+<img src="docs/assets/screenshots/browser-cockpit-en-v0.1.0.png" alt="FC AI Companion browser cockpit in English" width="560">
 
 English pilot panels / 英文角色侧栏：
 
-<img src="docs/assets/screenshots/pilot-panel-1p-en-v0.1.0.png" alt="1P pilot panel in English" width="280">
-<img src="docs/assets/screenshots/pilot-panel-2p-en-v0.1.0.png" alt="2P pilot panel in English" width="280">
+<table>
+  <tr>
+    <td><img src="docs/assets/screenshots/pilot-panel-1p-en-v0.1.0.png" alt="1P pilot panel in English" width="220"></td>
+    <td><img src="docs/assets/screenshots/pilot-panel-2p-en-v0.1.0.png" alt="2P pilot panel in English" width="220"></td>
+  </tr>
+</table>
 
 中文角色侧栏：
 
-<img src="docs/assets/screenshots/pilot-panel-1p-v0.1.0.png" alt="1P 实体手柄舱" width="280">
-<img src="docs/assets/screenshots/pilot-panel-2p-v0.1.0.png" alt="2P 实体手柄舱" width="280">
+<table>
+  <tr>
+    <td><img src="docs/assets/screenshots/pilot-panel-1p-v0.1.0.png" alt="1P 实体手柄舱" width="220"></td>
+    <td><img src="docs/assets/screenshots/pilot-panel-2p-v0.1.0.png" alt="2P 实体手柄舱" width="220"></td>
+  </tr>
+</table>
 
 Feature detail views / 功能细节视图：
 
-<img src="docs/assets/screenshots/cockpit-tv-v0.1.0.png" alt="Central TV and host controls" width="620">
+<img src="docs/assets/screenshots/cockpit-tv-v0.1.0.png" alt="Central TV and host controls" width="500">
 
-<img src="docs/assets/screenshots/tas-training-v0.1.0.png" alt="TAS training baseline panel" width="620">
+<img src="docs/assets/screenshots/tas-training-v0.1.0.png" alt="TAS training baseline panel" width="500">
 
-<img src="docs/assets/screenshots/strategy-training-progress-v0.1.0.png" alt="Strategy package training progress" width="620">
+<img src="docs/assets/screenshots/strategy-training-progress-v0.1.0.png" alt="Strategy package training progress" width="500">
 
-<img src="docs/assets/screenshots/fast-brain-panel-v0.1.0.png" alt="Fast brain tactical panel" width="620">
+<img src="docs/assets/screenshots/fast-brain-panel-v0.1.0.png" alt="Fast brain tactical panel" width="500">
 
-<img src="docs/assets/screenshots/data-dashboard-v0.1.0.png" alt="Runtime data dashboard" width="620">
+<img src="docs/assets/screenshots/data-dashboard-v0.1.0.png" alt="Runtime data dashboard" width="500">
 
 ## Quick Start / 快速开始
 
