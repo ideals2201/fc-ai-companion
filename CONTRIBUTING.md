@@ -92,7 +92,7 @@ Use local environment variables for ROM testing:
 测试 ROM 时请使用本地环境变量：
 
 ```powershell
-$env:FC_ROM_PATH="D:\your-rom-folder\contra.nes"
+$env:FC_AI_COMPANION_ROM_PATH="D:\your-rom-folder\your-game.nes"
 npm run dev:cockpit
 ```
 
